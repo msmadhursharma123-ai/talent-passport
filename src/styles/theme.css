@@ -1,0 +1,42 @@
+:root {
+
+  --tp-navy: #143B73;
+  --tp-dark: #091A3A;
+  --tp-gold: #F4A623;
+  --tp-offwhite: #F8F7F4;
+  --tp-light: #F2F2F2;
+
+}
+
+body {
+  margin: 0;
+  background: var(--tp-offwhite);
+  font-family: Inter, sans-serif;
+}
+
+.tp-page {
+  min-height: 100vh;
+}
+
+.tp-hero {
+  background: linear-gradient(
+    135deg,
+    #091A3A,
+    #143B73
+  );
+}
+
+.tp-card {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.tp-button {
+  background: var(--tp-gold);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  cursor: pointer;
+}

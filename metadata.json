@@ -1,0 +1,6 @@
+{
+  "name": "Competition Submission Hub",
+  "description": "Flutter and Supabase built application for contest registration, event selection, and video uploads.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
