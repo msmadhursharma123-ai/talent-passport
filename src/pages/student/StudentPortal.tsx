@@ -5,7 +5,7 @@ import StudentLayout, {
 } from "./StudentLayout";
 import TalentPassport from "../TalentPassport";
 import Homeboard from "./Homeboard";
-import Timeline from "./Timeline";
+import Timeline from "./TimelineV2";
 import Portfolio from "./Portfolio";
 import Competitions from "./Competitions";
 import MyAnalysis from "./MyAnalysis";

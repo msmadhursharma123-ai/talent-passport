@@ -122,3 +122,60 @@ export async function saveAssessment(
 
   return data;
 }
+export async function getTimelineAchievements(
+  studentId: string
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return [];
+
+  const { data, error } =
+    await (supabase as any)
+      .from(
+        "student_timeline_achievements"
+      )
+      .select("*")
+      .eq(
+        "student_id",
+        studentId
+      )
+      .order(
+        "achievement_year",
+        {
+          ascending: true
+        }
+      );
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function saveTimelineAchievement(
+  achievement: any
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return null;
+
+  const { data, error } =
+    await (supabase as any)
+      .from(
+        "student_timeline_achievements"
+      )
+      .insert([achievement])
+      .select()
+      .single();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data;
+}
