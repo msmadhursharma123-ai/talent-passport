@@ -25,6 +25,7 @@ import SubmissionForm from './components/SubmissionForm';
 import SubmissionsList from './components/SubmissionsList';
 import SupabaseGuide from './components/SupabaseGuide';
 import AdminDashboard from "./pages/AdminDashboard";
+import StudentPortal from "./pages/student/StudentPortal";
 import { 
   Trophy, UploadCloud, Users, HelpCircle, 
   Database, RefreshCw, Layers, Sparkles, Sliders, CheckSquare 
@@ -315,45 +316,9 @@ schoolName: string;
 {activeTab === "leaderboard" && (
   <Leaderboard />
 )}
-console.log(
-  "CURRENT ACTIVE TAB:",
-  activeTab
-);
+
 {activeTab === "passport" && (
-  <>
-    <TalentPassport />
-
-    <div
-      style={{
-        textAlign: "center",
-        padding: "30px",
-        background: "#F8F7F4",
-      }}
-    >
-      <button
-        onClick={() =>
-          setActiveTab("growth-center")
-        }
-        style={{
-          background: "#143B73",
-          color: "white",
-          border: "none",
-          borderRadius: 12,
-          padding: "16px 28px",
-          fontSize: 16,
-          fontWeight: 600,
-          cursor: "pointer",
-        }}
-      >
-        View Growth Plan
-      </button>
-    </div>
-  </>
+  <StudentPortal />
 )}
 
-{activeTab === "growth-center" && (
-  <GrowthCenter />
-)}
-  </div>
-);
-}
+  </div>)}

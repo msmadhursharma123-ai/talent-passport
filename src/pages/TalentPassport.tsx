@@ -201,20 +201,7 @@ const rarityData =
     marginBottom: "20px"
   }}
 >
-  <button
-    onClick={handleLogout}
-    style={{
-      background: "#D32F2F",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      padding: "10px 20px",
-      cursor: "pointer",
-      fontWeight: 600
-    }}
-  >
-    Logout
-  </button>
+  
 </div>
       <div
       

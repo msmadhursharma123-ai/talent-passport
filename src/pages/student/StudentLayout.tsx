@@ -1,6 +1,7 @@
 import React from "react";
 
 export type StudentTab =
+  | "dna-radar"
   | "homeboard"
   | "timeline"
   | "portfolio"
@@ -19,6 +20,7 @@ const tabs: {
   key: StudentTab;
   label: string;
 }[] = [
+  { key: "dna-radar", label: "🏅 New User DNA Radar" },
   { key: "homeboard", label: "Home Board" },
   { key: "timeline", label: "Timeline" },
   { key: "portfolio", label: "Portfolio" },
@@ -36,222 +38,115 @@ export default function StudentLayout({
   return (
     <div
       style={{
-        background: "#F4F5F7",
+        background: "#F5F7F8",
         minHeight: "100vh",
-        padding: 30
+        padding: "0 24px 40px"
       }}
     >
       <div
         style={{
-          maxWidth: 1400,
+          maxWidth: "1800px",
           margin: "0 auto"
         }}
       >
+        {/* TOP BAR */}
+
         <div
           style={{
-            background: "#FFF",
-            borderRadius: 28,
-            padding: 30,
-            marginBottom: 25,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center"
+            background: "#FFFFFF",
+            borderRadius: 18,
+            padding: "20px 24px",
+            marginBottom: 20,
+            border: "1px solid #E5E7EB"
           }}
         >
-          <div>
-            <div
-              style={{
-                color: "#F97316",
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: 2
-              }}
-            >
-              STUDENT PORTAL
-            </div>
-
-            <h1
-              style={{
-                marginTop: 10,
-                color: "#0B2A4A",
-                fontSize: 42
-              }}
-            >
-              Student Talent Ledger Terminal
-            </h1>
-
-            <div
-              style={{
-                marginTop: 12,
-                color: "#64748B"
-              }}
-            >
-              Navigate between your student dashboard views and review progress.
-            </div>
-          </div>
+          {/* LOGOUT */}
 
           <div
             style={{
-              background: "#FF6B00",
-              borderRadius: 20,
-              padding: "22px 24px",
-              color: "white",
-              textAlign: "center",
-              minWidth: 200
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: 16
+            }}
+          >
+            <button
+              onClick={onLogout}
+              style={{
+                background: "#D32F2F",
+                color: "#FFF",
+                border: "none",
+                borderRadius: 10,
+                padding: "10px 20px",
+                cursor: "pointer",
+                fontWeight: 700
+              }}
+            >
+              Logout
+            </button>
+          </div>
+
+          {/* TABS */}
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end"
             }}
           >
             <div
               style={{
-                fontSize: 12,
-                letterSpacing: 1,
-                opacity: 0.9,
-                marginBottom: 8
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 10,
+                maxWidth: "1100px"
               }}
             >
-              STUDENT PORTAL ACCESS
-            </div>
-            <div
-              style={{
-                fontSize: 32,
-                fontWeight: 700,
-                lineHeight: 1
-              }}
-            >
-              LEDGER
+              {tabs.map((tab) => {
+                const isActive =
+                  activeTab === tab.key;
+
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() =>
+                      setActiveTab(tab.key)
+                    }
+                    style={{
+                      border: "none",
+                      cursor: "pointer",
+                      borderRadius: 10,
+                      padding: "10px 16px",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      background: isActive
+                        ? "#FF6B00"
+                        : "#EFF2F6",
+                      color: isActive
+                        ? "#FFFFFF"
+                        : "#475569",
+                      transition:
+                        "all .2s ease"
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
 
+        {/* PAGE CONTENT */}
+
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "280px 1fr",
-            gap: 24
+            background: "#FFFFFF",
+            borderRadius: 24,
+            border: "1px solid #E5E7EB",
+            overflow: "hidden"
           }}
         >
-          <div
-            style={{
-              background: "#FFF",
-              borderRadius: 28,
-              padding: 28,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              minHeight: 220,
-              boxShadow: "0 24px 48px rgba(15, 23, 42, 0.08)"
-            }}
-          >
-            <div
-              style={{
-                color: "#F97316",
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: 2,
-                marginBottom: 16
-              }}
-            >
-              PORTAL TERMINAL
-            </div>
-            <div
-              style={{
-                color: "#0B2A4A",
-                fontSize: 22,
-                fontWeight: 700,
-                lineHeight: 1.2,
-                marginBottom: 14
-              }}
-            >
-              STUDENT TALENT LEDGER TERMINAL
-            </div>
-            <div
-              style={{
-                color: "#475569",
-                lineHeight: 1.7
-              }}
-            >
-              Use the navigation on the right to move between Home Board, Timeline, Portfolio, Competitions, My Analysis, and Growth Plan.
-            </div>
-          </div>
-
-          <div>
-            <div
-              style={{
-                background: "#FFF",
-                borderRadius: 28,
-                padding: 24,
-                marginBottom: 24,
-                boxShadow: "0 20px 40px rgba(15, 23, 42, 0.08)"
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 12,
-                  marginBottom: 20
-                }}
-              >
-                {tabs.map((tab) => {
-                  const isActive = activeTab === tab.key;
-                  return (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => setActiveTab(tab.key)}
-                      style={{
-                        background: isActive ? "#F97316" : "#F8FAFC",
-                        color: isActive ? "white" : "#0B2A4A",
-                        border: "none",
-                        borderRadius: 14,
-                        padding: "12px 18px",
-                        cursor: "pointer",
-                        fontWeight: 700,
-                        minWidth: 140,
-                        transition: "background 0.2s ease"
-                      }}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end"
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  style={{
-                    background: "#D32F2F",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 12,
-                    padding: "12px 22px",
-                    cursor: "pointer",
-                    fontWeight: 700
-                  }}
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: "#FFF",
-                borderRadius: 28,
-                padding: 28,
-                minHeight: 400,
-                boxShadow: "0 20px 40px rgba(15, 23, 42, 0.08)"
-              }}
-            >
-              {children}
-            </div>
-          </div>
+          {children}
         </div>
       </div>
     </div>
