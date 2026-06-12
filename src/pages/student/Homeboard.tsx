@@ -1,4 +1,10 @@
+import { useState } from "react";
+
 export default function Homeboard() {
+  const [creditView, setCreditView] =
+    useState<"guidelines" | "rewards">(
+      "guidelines"
+    );
   const dimensions = [
     {
       name: "Communication",
@@ -300,79 +306,398 @@ export default function Homeboard() {
         </div>
       </div>
 
-      {/* CREDIT SYSTEM */}
+    {/* CREDIT SYSTEM */}
+
+<div
+  style={{
+    background: "#071226",
+    color: "white",
+    borderRadius: 32,
+    padding: 35,
+    marginTop: 30
+  }}
+>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 30
+    }}
+  >
+    <div>
+      <div
+        style={{
+          color: "#FF8A00",
+          fontSize: 11,
+          letterSpacing: 2,
+          fontWeight: 700,
+          marginBottom: 8
+        }}
+      >
+        NEP 2020 ACCREDITATION LEDGER
+      </div>
+
+      <h2
+        style={{
+          margin: 0,
+          fontSize: 34
+        }}
+      >
+        Student Co-Curricular Credits Dashboard
+      </h2>
+    </div>
+
+    <div
+      style={{
+        display: "flex",
+        gap: 12
+      }}
+    >
+      <button
+        style={{
+          background: "#FF6B00",
+          color: "white",
+          border: "none",
+          padding: "12px 18px",
+          borderRadius: 12,
+          fontWeight: 700
+        }}
+      >
+        + Simulate Win (+50)
+      </button>
+
+      <button
+        style={{
+          background: "#E08A00",
+          color: "white",
+          border: "none",
+          padding: "12px 18px",
+          borderRadius: 12,
+          fontWeight: 700
+        }}
+      >
+        + Simulate Tryout (+20)
+      </button>
+    </div>
+  </div>
+
+  {/* TOP STATS */}
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr 1fr",
+      gap: 20,
+      marginBottom: 25
+    }}
+  >
+    <div
+      style={{
+        background: "#03112A",
+        borderRadius: 18,
+        padding: 24
+      }}
+    >
+      <div>Total Earned Credits</div>
+      <h1>411</h1>
+    </div>
+
+    <div
+      style={{
+        background: "#03112A",
+        borderRadius: 18,
+        padding: 24
+      }}
+    >
+      <div>Spent Credits</div>
+      <h1>0</h1>
+    </div>
+
+    <div
+      style={{
+        background: "#140B14",
+        border: "1px solid #5E2D00",
+        borderRadius: 18,
+        padding: 24
+      }}
+    >
+      <div>Available Remaining Balance</div>
+      <h1>411</h1>
+    </div>
+  </div>
+
+  {/* ACTION BAR */}
+
+  <div
+    style={{
+      background: "#020C22",
+      borderRadius: 18,
+      padding: 18,
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 25
+    }}
+  >
+    <div>🔍 Search Ledger Mechanics</div>
+
+    <div
+      style={{
+        display: "flex",
+        gap: 10
+      }}
+    >
+      <button
+  onClick={() =>
+    setCreditView("rewards")
+  }
+  style={{
+    background:
+      creditView === "rewards"
+        ? "#FF6B00"
+        : "#16223D",
+    color: "white",
+    border: "none",
+    padding: "10px 18px",
+    borderRadius: 12,
+    cursor: "pointer"
+  }}
+>
+  Redeem Rewards & Earning Board
+</button>
+
+<button
+  onClick={() =>
+    setCreditView("guidelines")
+  }
+  style={{
+    background:
+      creditView === "guidelines"
+        ? "#FF6B00"
+        : "#16223D",
+    color: "white",
+    border: "none",
+    padding: "10px 18px",
+    borderRadius: 12,
+    cursor: "pointer"
+  }}
+>
+  Learn Credit Rules & Guidelines
+</button>
+    </div>
+  </div>
+
+  {/* MAIN TABLE */}
+
+<div
+  style={{
+    background: "#020C22",
+    borderRadius: 24,
+    padding: 28
+  }}
+>
+  {creditView === "guidelines" ? (
+    <>
+      <h3
+        style={{
+          marginTop: 0,
+          marginBottom: 25
+        }}
+      >
+        📖 Co-Curricular Accredited Earning & Spending Guidelines
+      </h3>
 
       <div
         style={{
-          background: "#071226",
-          color: "white",
-          borderRadius: 30,
-          padding: 35
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 24
         }}
       >
-        <h2>
-          Student Co-Curricular Credits Dashboard
-        </h2>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit,minmax(250px,1fr))",
-            gap: 20,
-            marginTop: 25
-          }}
-        >
-          <div
+        <div>
+          <h4
             style={{
-              background: "#09162F",
-              padding: 25,
-              borderRadius: 20
+              color: "#FF8A00"
             }}
           >
-            <h3>Total Credits</h3>
-            <h1>411</h1>
-          </div>
+            📈 Ways To Accrue Merit Credits
+          </h4>
 
-          <div
-            style={{
-              background: "#09162F",
-              padding: 25,
-              borderRadius: 20
-            }}
-          >
-            <h3>Spent Credits</h3>
-            <h1>0</h1>
-          </div>
+          {[
+            ["Competition Victories", "+50 Credits"],
+            ["Topping School Tryouts", "+20 Credits"],
+            ["Performance Uploads", "+5 Credits"],
+            ["Project Submissions", "+5 Credits"],
+            ["Event Participation", "+10 Credits"],
+            ["Semester Academic Toppers", "+50 Credits"],
+            ["Daily Academic Feedback", "+1 Credit"]
+          ].map((item) => (
+            <div
+              key={item[0]}
+              style={{
+                background: "#101B35",
+                padding: 18,
+                borderRadius: 14,
+                marginBottom: 12,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}
+            >
+              <span>{item[0]}</span>
 
-          <div
-            style={{
-              background: "#09162F",
-              padding: 25,
-              borderRadius: 20
-            }}
-          >
-            <h3>Available Balance</h3>
-            <h1>411</h1>
-          </div>
+              <span
+                style={{
+                  color: "#FFB000",
+                  fontWeight: 700
+                }}
+              >
+                {item[1]}
+              </span>
+            </div>
+          ))}
         </div>
 
-        <div
-          style={{
-            marginTop: 35
-          }}
-        >
-          <h3>Consultation & Rewards Portal</h3>
+        <div>
+          <h4
+            style={{
+              color: "#FF8A00"
+            }}
+          >
+            🎁 Ways To Retain & Spend Credits
+          </h4>
 
-          <ul>
-            <li>Direct Expert Consultation</li>
-            <li>Partner Reach-Out Match</li>
-            <li>Leadership Eligibility Status</li>
-            <li>Principal Roundtable Lunch</li>
-            <li>Bronze / Silver / Gold Club Membership</li>
-          </ul>
+          {[
+            ["Direct Expert Consultations", "-20 Credits"],
+            ["Partner Reach-Out Match", "-200 Credits"],
+            ["Institutional Leadership Roles", "-250 Credits"],
+            ["Principal Roundtable Lunch", "-300 Credits"],
+            ["Academy Merit Club Membership", "-350 to -500"]
+          ].map((item) => (
+            <div
+              key={item[0]}
+              style={{
+                background: "#101B35",
+                padding: 18,
+                borderRadius: 14,
+                marginBottom: 12,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}
+            >
+              <span>{item[0]}</span>
+
+              <span
+                style={{
+                  color: "#FF5A5A",
+                  fontWeight: 700
+                }}
+              >
+                {item[1]}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
+    </>
+  ) : (
+    <>
+      <h3
+        style={{
+          marginTop: 0,
+          marginBottom: 25
+        }}
+      >
+        🎁 Redeem Rewards & Opportunities
+      </h3>
+
+      <div
+        style={{
+          display: "grid",
+          gap: 14
+        }}
+      >
+        {[
+          [
+            "Direct Consultation From Experts",
+            "20 Credits"
+          ],
+          [
+            "Partner Reach-Out Match",
+            "200 Credits"
+          ],
+          [
+            "Leadership Eligibility Status",
+            "250 Credits"
+          ],
+          [
+            "Principal Roundtable Lunch",
+            "300 Credits"
+          ],
+          [
+            "Bronze Club Membership",
+            "350 Credits"
+          ],
+          [
+            "Silver Club Membership",
+            "400 Credits"
+          ],
+          [
+            "Gold Club Membership",
+            "500 Credits"
+          ]
+        ].map((item) => (
+          <div
+            key={item[0]}
+            style={{
+              background: "#101B35",
+              padding: 20,
+              borderRadius: 14,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontWeight: 700,
+                  marginBottom: 6
+                }}
+              >
+                {item[0]}
+              </div>
+
+              <div
+                style={{
+                  color: "#94A3B8"
+                }}
+              >
+                Cost: {item[1]}
+              </div>
+            </div>
+
+            <button
+              style={{
+                background: "#FF6B00",
+                border: "none",
+                color: "white",
+                borderRadius: 10,
+                padding: "12px 18px",
+                fontWeight: 700,
+                cursor: "pointer"
+              }}
+            >
+              Redeem
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  )}
+</div>
     </div>
-  );
-}
+    </div>
+  );}
