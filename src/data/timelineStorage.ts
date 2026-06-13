@@ -11,8 +11,18 @@ export async function uploadAchievementFile(
   if (!supabase)
     return null;
 
-  const path =
-    `${Date.now()}-${file.name}`;
+  const safeName =
+  file.name
+    .replace(/\s+/g, "-")
+    .replace(/[^a-zA-Z0-9.-]/g, "");
+
+const path =
+  `${Date.now()}-${safeName}`;
+
+console.log(
+  "UPLOAD PATH:",
+  path
+);
 
   const { error } =
     await supabase.storage

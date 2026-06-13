@@ -209,7 +209,7 @@ const [journeyScore,
             achievements.length
         );
 
-      }, 3500);
+      }, 7000);
 
     return () =>
       clearInterval(
@@ -221,26 +221,51 @@ const [journeyScore,
     achievements
   ]);
 
-  useEffect(() => {
+useEffect(() => {
 
-    const timer =
-      setInterval(() => {
+  if (!autoPlay)
+    return;
 
-        setGalleryImage(
-          (
-            prev
-          ) =>
+  const timer =
+    setInterval(() => {
+
+      setSelectedImage(
+        (prev) => {
+
+          const images = [
+            current?.certificate_url,
+            current?.medal_photo_url,
+            current?.award_photo_url
+          ].filter(Boolean);
+
+          if (images.length < 2)
+            return 0;
+
+          return (
             prev + 1
-        );
+          ) % images.length;
 
-      }, 2500);
-
-    return () =>
-      clearInterval(
-        timer
+        }
       );
 
-  }, []);
+    }, 7000);
+
+  return () =>
+    clearInterval(timer);
+
+}, [
+  autoPlay,
+  activeIndex
+]);
+
+useEffect(() => {
+
+  setSelectedImage(0);
+
+}, [
+  activeIndex
+]);
+
 useEffect(() => {
 
   setGalleryImage(0);
@@ -325,6 +350,8 @@ useEffect(() => {
           );
       }
 
+
+
       if (
         medalFile
       ) {
@@ -346,6 +373,21 @@ useEffect(() => {
             awardFile
           );
       }
+
+console.log(
+  "CERTIFICATE URL:",
+  certificateUrl
+);
+
+console.log(
+  "MEDAL URL:",
+  medalUrl
+);
+
+console.log(
+  "AWARD URL:",
+  awardUrl
+);
 
       const hasEvidence =
   certificateFile ||
@@ -381,14 +423,17 @@ const verification =
       ? form.custom_activity
       : form.activity_category,
 
-        certificate_url:
-          certificateUrl,
+       certificate_url:
+  certificateUrl ||
+  form.certificate_url,
 
-        medal_photo_url:
-          medalUrl,
+medal_photo_url:
+  medalUrl ||
+  form.medal_photo_url,
 
-        award_photo_url:
-          awardUrl,
+award_photo_url:
+  awardUrl ||
+  form.award_photo_url,
 
         verification_status:
           verification
@@ -543,6 +588,7 @@ award_photo_url:
     ];
 
   const gallery =
+  
     current
       ? [
           current.certificate_url,
@@ -1207,206 +1253,222 @@ function getSkillTags() {
         </div>
       </div>
 
-      {/* ROADMAP */}
+   {/* ROADMAP */}
 
-      <div
-        style={{
-          background:
-            "#071226",
-          borderRadius: 30,
-          padding: 40,
-          color: "white",
-          marginBottom: 30
-        }}
-      >
+<div
+  style={{
+    background: "#071226",
+    borderRadius: 30,
+    padding: 40,
+    color: "white",
+    marginBottom: 30
+  }}
+>
+  <div
+    style={{
+      textAlign: "center",
+      marginBottom: 30,
+      fontWeight: 700,
+      letterSpacing: 2
+    }}
+  >
+    TALENT JOURNEY HIGHWAY
+  </div>
 
-        <div
-          style={{
-            textAlign:
-              "center",
-            marginBottom:
-              40,
-            fontWeight:
-              700,
-            letterSpacing:
-              2
-          }}
-        >
-          TALENT JOURNEY HIGHWAY
-        </div>
+  <div
+    style={{
+      position: "relative",
+      height: 260,
+      overflowX: "auto",
+      overflowY: "hidden"
+    }}
+  >
+    <svg
+      width={Math.max(
+        achievements.length * 220,
+        1200
+      )}
+      height="260"
+      style={{
+        position: "absolute",
+        left: 0,
+        top: 0
+      }}
+    >
+      <path
+        d={achievements
+          .map((item, index) => {
+            const x =
+              120 +
+              index * 220;
 
-        <div
-          style={{
-            display: "flex",
-            alignItems:
-              "center",
-            justifyContent:
-              "space-between",
-            gap: 10,
-            overflowX:
-              "auto"
-          }}
-        >
+            const y =
+              index % 2 === 0
+                ? 90
+                : 180;
 
-          {achievements.map(
-            (
-              item,
-              index
-            ) => (
+            return `${
+              index === 0
+                ? "M"
+                : "L"
+            } ${x} ${y}`;
+          })
+          .join(" ")}
+        fill="none"
+        stroke="#203A63"
+        strokeWidth="8"
+        strokeLinecap="round"
+      />
+    </svg>
 
-              <React.Fragment
-                key={
-                  item.id
-                }
-              >
+    {achievements.map(
+      (item, index) => {
+        const x =
+          120 +
+          index * 220;
 
-                <div
-                  onClick={() =>
-                    setActiveIndex(
-                      index
-                    )
-                  }
-                  style={{
-                    minWidth:
-                      70,
-                    cursor:
-                      "pointer",
-                    textAlign:
-                      "center"
-                  }}
-                >
+        const y =
+          index % 2 === 0
+            ? 90
+            : 180;
 
-                  <div
-                    style={{
-                      width:
-                        60,
-                      height:
-                        60,
-                      borderRadius:
-                        "50%",
-                      background:
-                        activeIndex ===
-                        index
-                          ? "#FF6B00"
-                          : "#22304A",
-                      display:
-                        "flex",
-                      alignItems:
-                        "center",
-                      justifyContent:
-                        "center",
-                      margin:
-                        "0 auto",
-                      fontWeight:
-                        700
-                    }}
-                  >
-                    C
-                    {index +
-                      1}
-                  </div>
-
-                  <div
-                    style={{
-                      marginTop:
-                        10,
-                      fontSize:
-                        12
-                    }}
-                  >
-                    {
-                      item.achievement_year
-                    }
-                  </div>
-
-                </div>
-
-                {index !==
-                  achievements.length -
-                    1 && (
-
-                  <div
-                    style={{
-                      flex: 1,
-                      height: 4,
-                      background:
-                        "#22304A"
-                    }}
-                  />
-
-                )}
-
-              </React.Fragment>
-
-            )
-          )}
-
-        </div>
-
-        <div
-          style={{
-            display:
-              "flex",
-            justifyContent:
-              "center",
-            gap: 15,
-            marginTop:
-              35
-          }}
-        >
-
-          <button
+        return (
+          <div
+            key={item.id}
             onClick={() =>
-              setActiveIndex(
-                Math.max(
-                  activeIndex -
-                    1,
-                  0
-                )
-              )
+              setActiveIndex(index)
             }
             style={{
-              padding:
-                "10px 18px",
-              borderRadius:
-                12,
-              border:
-                "none",
-              cursor:
-                "pointer"
+              position: "absolute",
+              left: x - 35,
+              top: y - 35,
+              cursor: "pointer",
+              textAlign: "center",
+              width: 120
             }}
           >
-            ← Previous
-          </button>
+            <div
+              style={{
+                width: 70,
+                height: 70,
+                borderRadius: "50%",
+                background:
+                  activeIndex ===
+                  index
+                    ? "#FF6B00"
+                    : "#22304A",
+                display: "flex",
+                alignItems:
+                  "center",
+                justifyContent:
+                  "center",
+                margin:
+                  "0 auto",
+                fontWeight: 700,
+                transition:
+                  "all .4s"
+              }}
+            >
+              {index + 1}
+            </div>
 
-          <button
-            onClick={() =>
-              setActiveIndex(
-                Math.min(
-                  activeIndex +
-                    1,
-                  achievements.length -
-                    1
-                )
-              )
-            }
-            style={{
-              padding:
-                "10px 18px",
-              borderRadius:
-                12,
-              border:
-                "none",
-              cursor:
-                "pointer"
-            }}
-          >
-            Next →
-          </button>
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 12,
+                fontWeight: 600
+              }}
+            >
+              {item.event_name}
+            </div>
 
-        </div>
-      </div>
-      {/* PREVIOUS / CURRENT / NEXT */}
+            <div
+              style={{
+                fontSize: 11,
+                opacity: 0.7
+              }}
+            >
+              {
+                item.achievement_year
+              }
+            </div>
+          </div>
+        );
+      }
+    )}
+
+    <div
+      style={{
+        position: "absolute",
+        left:
+          120 +
+          activeIndex * 220 -
+          15,
+        top:
+          activeIndex % 2 === 0
+            ? 35
+            : 125,
+        fontSize: 30,
+        transition:
+          "all 1s ease"
+      }}
+    >
+      🚀
+    </div>
+  </div>
+
+  <div
+    style={{
+      display: "flex",
+      justifyContent:
+        "center",
+      gap: 15,
+      marginTop: 25
+    }}
+  >
+    <button
+      onClick={() =>
+        setActiveIndex(
+          Math.max(
+            activeIndex - 1,
+            0
+          )
+        )
+      }
+      style={{
+        padding:
+          "10px 18px",
+        borderRadius: 12,
+        border: "none",
+        cursor: "pointer"
+      }}
+    >
+      ← Previous
+    </button>
+
+    <button
+      onClick={() =>
+        setActiveIndex(
+          Math.min(
+            activeIndex + 1,
+            achievements.length - 1
+          )
+        )
+      }
+      style={{
+        padding:
+          "10px 18px",
+        borderRadius: 12,
+        border: "none",
+        cursor: "pointer"
+      }}
+    >
+      Next →
+    </button>
+  </div>
+</div>
+
+{/* PREVIOUS / CURRENT / NEXT */}
 
       {current && (
 
@@ -1466,15 +1528,24 @@ function getSkillTags() {
 
           {/* CURRENT */}
 
-          <div
-            style={{
-              background:
-                "#FF6B00",
-              borderRadius: 24,
-              padding: 28,
-              color: "white"
-            }}
-          >
+         <div
+  style={{
+    background:
+      "#FF6B00",
+    borderRadius: 24,
+    padding: 28,
+    color: "white",
+
+    transition:
+      "all 0.8s ease",
+
+    transform:
+      "translateX(0)",
+
+    animation:
+      "fadeSlide 0.8s ease"
+  }}
+>
             <div
               style={{
                 display: "flex",
@@ -1747,6 +1818,17 @@ function getSkillTags() {
   gallery.length > 0 ? (
 
 <>
+
+<div
+  style={{
+    color: "red",
+    fontSize: 20,
+    fontWeight: 700,
+    marginBottom: 20
+  }}
+>
+  Gallery Count: {gallery.length}
+</div>
 
     <img
   src={
@@ -2796,19 +2878,19 @@ function getSkillTags() {
     }}
   >
 
-    <img
-      src={
-        gallery[
-          selectedImage
-        ]
-      }
-      alt=""
-      style={{
-        maxWidth: "95%",
-        maxHeight: "90%",
-        borderRadius: 20
-      }}
-    />
+<img
+  src={
+    gallery[
+      selectedImage
+    ]
+  }
+  alt=""
+  style={{
+    maxWidth: "95%",
+    maxHeight: "90%",
+    borderRadius: 20
+  }}
+/>
 
     <button
       onClick={(e) => {
@@ -2839,6 +2921,23 @@ function getSkillTags() {
   </div>
 
 )}
+<style>
+  {`
+    @keyframes slideGallery {
+      from {
+        opacity: 0;
+        transform:
+          translateX(80px);
+      }
+
+      to {
+        opacity: 1;
+        transform:
+          translateX(0);
+      }
+    }
+  `}
+</style>
     </div>
   );
 }

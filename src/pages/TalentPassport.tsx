@@ -4,6 +4,13 @@ import React, {
   useState
 } from "react";
 import {
+  calculateTalentDNA
+} from "../data/talentDNAEngine";
+
+import {
+  getStudentAchievements
+} from "../data/timelineRepository";
+import {
   getSchoolBenchmarks
 } from "../data/schoolBenchmarkEngine";
 
@@ -20,7 +27,16 @@ import {
 import {
   getRecommendedCompetitions
 } from "../data/competitionEngine";
+
+import {
+  getDNAConfidence,
+  getStrongestSkill,
+  getWeakestSkill,
+  getFutureReadinessScore
+} from "../data/dnaInsightsEngine";
+
 export default function TalentPassport() {
+
 const handleLogout = () => {
   localStorage.removeItem("studentProfile");
   localStorage.removeItem("student_id");
@@ -29,22 +45,129 @@ const handleLogout = () => {
 
   window.location.reload();
 };
-  const answers = JSON.parse(
-    localStorage.getItem(
-      "studentCalibration"
-    ) || "{}"
-  );
 
-  const scores = JSON.parse(
-  localStorage.getItem("talentScores") || "{}"
+const answers = JSON.parse(
+  localStorage.getItem(
+    "studentCalibration"
+  ) || "{}"
 );
 
-const passport =
-  JSON.parse(
+const scores = JSON.parse(
+  localStorage.getItem(
+    "talentScores"
+  ) || "{}"
+);
+
+const [
+  passport,
+  setPassport
+] = useState<any>(null);
+
+const [
+  schoolBenchmarks,
+  setSchoolBenchmarks
+] = useState<any>(null);
+
+const [
+  percentileData,
+  setPercentileData
+] = useState<any>(null);
+
+const [
+  dnaScores,
+  setDnaScores
+] = useState<any>(null);
+
+useEffect(() => {
+
+  const storedPassport =
     localStorage.getItem(
       "studentPassport"
-    ) || "null"
+    );
+
+  if (
+    storedPassport
+  ) {
+
+    setPassport(
+      JSON.parse(
+        storedPassport
+      )
+    );
+
+  }
+
+}, []);
+
+useEffect(() => {
+
+  if (!passport)
+    return;
+
+  getSchoolBenchmarks(
+    passport
+  ).then(
+    (
+      data
+    ) => {
+
+      setSchoolBenchmarks(
+        data
+      );
+
+    }
   );
+
+}, [passport]);
+
+useEffect(() => {
+
+  if (!passport)
+    return;
+
+  getPercentileData(
+    passport
+  ).then(
+    setPercentileData
+  );
+
+}, [passport]);
+
+useEffect(() => {
+
+  const loadDNA =
+    async () => {
+
+      const profile =
+        JSON.parse(
+          localStorage.getItem(
+            "studentProfile"
+          ) || "{}"
+        );
+
+      if (
+        !profile?.id
+      )
+        return;
+
+      const achievements =
+        await getStudentAchievements(
+          profile.id
+        );
+
+      const dna =
+        calculateTalentDNA(
+          achievements
+        );
+
+      setDnaScores(
+        dna
+      );
+    };
+
+  loadDNA();
+
+}, []);
 
 if (!passport) {
 
@@ -54,52 +177,39 @@ if (!passport) {
         padding: 40
       }}
     >
-      No passport found
+      Loading Passport...
     </div>
   );
 }
-  const recommendedCompetitions =
+
+if (!dnaScores) {
+
+  return (
+    <div
+      style={{
+        padding: 40
+      }}
+    >
+      Loading Talent DNA...
+    </div>
+  );
+}
+
+const recommendedCompetitions =
   getRecommendedCompetitions(
     passport
   );
-  const [
-  schoolBenchmarks,
-  setSchoolBenchmarks
-] = useState<any>(null);
-
-useEffect(() => {
-
-  getSchoolBenchmarks(
-  passport
-).then(
-  setSchoolBenchmarks
-);
-
-}, []);
-  const [
-  percentileData,
-  setPercentileData
-] = useState<any>(null);
-
-useEffect(() => {
-
-  getPercentileData(
-    passport
-  ).then(
-    setPercentileData
-  );
-
-}, []);
 
   const dimensions = [
   {
     name: "Creativity",
     key: "Creativity",
-    score: passport.normalizedScores.Creativity,
+    score:
+  dnaScores.creativity,
     benchmark:
-      passport.benchmarkDelta.Creativity,
-    projected:
-      passport.projectedScores.Creativity,
+  passport?.benchmarkDelta?.Creativity ?? 0,
+   projected:
+  passport?.projectedScores?.Creativity ?? 0,
     icon: "🎨",
     color: "#FF6B00"
   },
@@ -107,11 +217,12 @@ useEffect(() => {
   {
     name: "Communication",
     key: "Communication",
-    score: passport.normalizedScores.Communication,
+  score:
+  dnaScores.communication,
     benchmark:
-      passport.benchmarkDelta.Communication,
+      passport?.benchmarkDelta?.Communication ?? 0,
     projected:
-      passport.projectedScores.Communication,
+      passport?.projectedScores?.Communication ?? 0,
     icon: "📢",
     color: "#1DA1F2"
   },
@@ -119,11 +230,12 @@ useEffect(() => {
   {
     name: "Leadership",
     key: "Leadership",
-    score: passport.normalizedScores.Leadership,
+    score:
+  dnaScores.leadership,
     benchmark:
-      passport.benchmarkDelta.Leadership,
+      passport?.benchmarkDelta?.Leadership ?? 0,
     projected:
-      passport.projectedScores.Leadership,
+      passport?.projectedScores?.Leadership ?? 0,
     icon: "👑",
     color: "#6C63FF"
   },
@@ -131,11 +243,12 @@ useEffect(() => {
   {
     name: "Confidence",
     key: "Confidence",
-    score: passport.normalizedScores.Confidence,
+    score:
+  dnaScores.confidence,
     benchmark:
-      passport.benchmarkDelta.Confidence,
+      passport?.benchmarkDelta?.Confidence ?? 0,
     projected:
-      passport.projectedScores.Confidence,
+      passport?.projectedScores?.Confidence ?? 0,
     icon: "🎯",
     color: "#FF2D55"
   },
@@ -143,12 +256,12 @@ useEffect(() => {
   {
     name: "Collaboration",
     key: "Collaboration",
-    score:
-      passport.normalizedScores.Collaboration,
+ score:
+  dnaScores.collaboration,
     benchmark:
-      passport.benchmarkDelta.Collaboration,
+      passport?.benchmarkDelta?.Collaboration ?? 0,
     projected:
-      passport.projectedScores.Collaboration,
+      passport?.projectedScores?.Collaboration ?? 0,
     icon: "🤝",
     color: "#00C781"
   },
@@ -157,11 +270,11 @@ useEffect(() => {
     name: "Critical Thinking",
     key: "CriticalThinking",
     score:
-      passport.normalizedScores.CriticalThinking,
+  dnaScores.criticalThinking,
     benchmark:
-      passport.benchmarkDelta.CriticalThinking,
+      passport?.benchmarkDelta?.CriticalThinking ?? 0,
     projected:
-      passport.projectedScores.CriticalThinking,
+      passport?.projectedScores?.CriticalThinking ?? 0,
     icon: "🧠",
     color: "#A855F7"
   }
@@ -186,6 +299,29 @@ const rarityData =
     [...sorted]
       .reverse()
       .slice(0, 2);
+
+const verifiedAchievements =
+  5;
+
+const strongestSkill =
+  getStrongestSkill(
+    dnaScores
+  );
+
+const weakestSkill =
+  getWeakestSkill(
+    dnaScores
+  );
+
+const futureReadiness =
+  getFutureReadinessScore(
+    dnaScores
+  );
+
+const dnaConfidence =
+  getDNAConfidence(
+    verifiedAchievements
+  );
 
   return (
     <div
@@ -399,161 +535,25 @@ const rarityData =
     border: "1px solid #E2E8F0"
   }}
 >
+
   <div
     style={{
       fontSize: 12,
       fontWeight: 700,
       color: "#94A3B8",
-      marginBottom: 10
+      marginBottom: 12
     }}
   >
     BENCHMARK ANALYSIS
-    <div
-  style={{
-    marginTop: 20,
-    padding: 20,
-    borderRadius: 16,
-    border:
-      "1px solid #E5E7EB",
-  }}
->
-  <div
-    style={{
-      fontSize: 12,
-      fontWeight: 700,
-      color: "#94A3B8",
-      marginBottom: 12,
-    }}
-  >
-    SCHOOL AVERAGES
-    <div
-  style={{
-    marginTop: 20,
-    padding: 20,
-    borderRadius: 16,
-    border:
-      "1px solid #E5E7EB",
-  }}
->
-  <div
-    style={{
-      fontSize: 12,
-      fontWeight: 700,
-      color: "#94A3B8",
-      marginBottom: 12,
-    }}
-  >
-    SCHOOL POSITIONING
-  </div>
-
-  {schoolBenchmarks && (
-    <>
-      <div
-        style={{
-          display: "flex",
-          justifyContent:
-            "space-between",
-          marginBottom: 8,
-        }}
-      >
-        <span>
-          Communication
-        </span>
-
-        <span>
-          Better than{" "}
-          {
-            schoolBenchmarks
-              .communication
-              .percentile
-          }
-          % students
-        </span>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent:
-            "space-between",
-          marginBottom: 8,
-        }}
-      >
-        <span>
-          Leadership
-        </span>
-
-        <span>
-          Better than{" "}
-          {
-            schoolBenchmarks
-              .leadership
-              .percentile
-          }
-          % students
-        </span>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent:
-            "space-between",
-          marginBottom: 8,
-        }}
-      >
-        <span>
-          Confidence
-        </span>
-
-        <span>
-          Better than{" "}
-          {
-            schoolBenchmarks
-              .confidence
-              .percentile
-          }
-          % students
-        </span>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent:
-            "space-between",
-        }}
-      >
-        <span>
-          Creativity
-        </span>
-
-        <span>
-          Better than{" "}
-          {
-            schoolBenchmarks
-              .creativity
-              .percentile
-          }
-          % students
-        </span>
-      </div>
-    </>
-  )}
-</div>
-  </div>
-
-  
-</div>
   </div>
 
   {dimensions.map((item) => (
+
     <div
       key={item.name}
       style={{
         display: "flex",
-        justifyContent:
-          "space-between",
+        justifyContent: "space-between",
         marginBottom: 8
       }}
     >
@@ -574,9 +574,13 @@ const rarityData =
           ? `+${item.benchmark}`
           : item.benchmark}
       </span>
+
     </div>
+
   ))}
+
 </div>
+
 <div
   style={{
     marginTop: 20,
@@ -586,14 +590,68 @@ const rarityData =
     border: "1px solid #E2E8F0"
   }}
 >
+
   <div
     style={{
       fontSize: 12,
       fontWeight: 700,
       color: "#94A3B8",
-      marginBottom: 10
+      marginBottom: 12
     }}
   >
+    SCHOOL POSITIONING
+  </div>
+
+  {schoolBenchmarks && (
+
+    <>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 8
+        }}
+      >
+        <span>Communication</span>
+
+        <span>
+          Better than {schoolBenchmarks?.communication?.percentile ?? 0}% students
+        </span>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 8
+        }}
+      >
+        <span>Leadership</span>
+
+        <span>
+          Better than {schoolBenchmarks?.leadership?.percentile ?? 0}% students
+        </span>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between"
+        }}
+      >
+        <span>Confidence</span>
+
+        <span>
+          Better than {schoolBenchmarks?.confidence?.percentile ?? 0}% students
+        </span>
+      </div>
+
+    </>
+
+  )}
+
+</div>
+
 RARITY INDEX
 
 </div>
@@ -810,6 +868,9 @@ RARITY INDEX
       marginBottom: 12,
     }}
   >
+
+
+
     RECOMMENDED COMPETITIONS
   </div>
 
@@ -956,6 +1017,7 @@ RARITY INDEX
   }
 </div>
             </div>
+            </div>
 
             {dimensions.map(
               (item) => {
@@ -1038,10 +1100,122 @@ RARITY INDEX
   : "Some responses indicate mixed behavioural signals. Additional assessments and competition participation will improve projection accuracy."}
             </div>
 
-          </div>
+<div
+  style={{
+    background:
+      "linear-gradient(135deg,#071226,#0B2A4A)",
+    color: "white",
+    padding: 24,
+    borderRadius: 24,
+    marginBottom: 40
+  }}
+>
 
-        </div>
+  <div
+    style={{
+      color: "#FF6B00",
+      fontWeight: 700,
+      letterSpacing: 2,
+      fontSize: 12
+    }}
+  >
+    TALENT INTELLIGENCE
+  </div>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns:
+        "1fr 1fr",
+      gap: 20,
+      marginTop: 20
+    }}
+  >
+
+    <div>
+      <div
+        style={{
+          opacity: .7,
+          fontSize: 12
+        }}
+      >
+        Future Readiness
+      </div>
+
+      <div
+        style={{
+          fontSize: 34,
+          fontWeight: 800
+        }}
+      >
+        {futureReadiness}
       </div>
     </div>
-  );
+
+    <div>
+      <div
+        style={{
+          opacity: .7,
+          fontSize: 12
+        }}
+      >
+        DNA Confidence
+      </div>
+
+      <div
+        style={{
+          fontSize: 24,
+          fontWeight: 700
+        }}
+      >
+        {dnaConfidence}
+      </div>
+    </div>
+
+    <div>
+      <div
+        style={{
+          opacity: .7,
+          fontSize: 12
+        }}
+      >
+        Strongest Skill
+      </div>
+
+      <div
+        style={{
+          fontSize: 22,
+          fontWeight: 700
+        }}
+      >
+        {strongestSkill}
+      </div>
+    </div>
+
+    <div>
+      <div
+        style={{
+          opacity: .7,
+          fontSize: 12
+        }}
+      >
+        Development Area
+      </div>
+
+      <div
+        style={{
+          fontSize: 22,
+          fontWeight: 700
+        }}
+      >
+        {weakestSkill}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</div>
+
+);
 }

@@ -3,6 +3,14 @@ import { getSupabaseClient } from "../supabaseClient";
 export async function getSchoolBenchmarks(
   passport: any
 ) {
+
+  if (
+  !passport ||
+  !passport.normalizedScores
+) {
+  return null;
+}
+
   const supabase =
     getSupabaseClient();
 
