@@ -138,16 +138,13 @@ export default function StudentLayout({
 
         {/* PAGE CONTENT */}
 
-        <div
-          style={{
-            background: "#FFFFFF",
-            borderRadius: 24,
-            border: "1px solid #E5E7EB",
-            overflow: "hidden"
-          }}
-        >
-          {children}
-        </div>
+       <div
+  style={{
+    width: "100%"
+  }}
+>
+  {children}
+</div>
       </div>
     </div>
   );
