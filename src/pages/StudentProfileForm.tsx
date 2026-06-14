@@ -22,14 +22,17 @@ export default function StudentProfileForm({
   const [className, setClassName] =
     useState("");
 
+    const [parentMobile, setParentMobile] =
+  useState("");
+
  const handleContinue = async () => {
 
   if (
-    !studentName ||
-    !parentEmail ||
-    !schoolName ||
-    !className
-  ) {
+  !studentName ||
+  !parentEmail ||
+  !parentMobile ||
+  !schoolName
+) {
     alert(
       "Please complete all fields"
     );
@@ -43,6 +46,8 @@ export default function StudentProfileForm({
 
       parent_email:
         parentEmail,
+
+        parent_mobile: parentMobile,
 
       school_name:
         schoolName,
@@ -123,6 +128,19 @@ localStorage.setItem(
             marginTop: 12,
           }}
         />
+
+<input
+  placeholder="Parent Mobile Number"
+  value={parentMobile}
+  onChange={(e) =>
+    setParentMobile(e.target.value)
+  }
+  style={{
+    width: "100%",
+    padding: 12,
+    marginTop: 12,
+  }}
+/>
 
         <input
           placeholder="School Name"

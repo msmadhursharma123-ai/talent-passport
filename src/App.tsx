@@ -26,6 +26,7 @@ import SubmissionsList from './components/SubmissionsList';
 import SupabaseGuide from './components/SupabaseGuide';
 import AdminDashboard from "./pages/AdminDashboard";
 import StudentPortal from "./pages/student/StudentPortal";
+
 import { 
   Trophy, UploadCloud, Users, HelpCircle, 
   Database, RefreshCw, Layers, Sparkles, Sliders, CheckSquare 

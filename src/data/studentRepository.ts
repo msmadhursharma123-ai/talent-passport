@@ -179,3 +179,149 @@ export async function saveTimelineAchievement(
 
   return data;
 }
+
+export async function getStudentPerformances(
+  studentId: string
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return [];
+
+  const { data, error } =
+    await (supabase as any)
+      .from("student_performances")
+      .select("*")
+      .eq("student_id", studentId)
+      .order("created_at", {
+        ascending: false
+      });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function createPerformance(
+  performance: any
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return null;
+
+  const { data, error } =
+    await (supabase as any)
+      .from("student_performances")
+      .insert([performance])
+      .select()
+      .single();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function getStudentProjects(
+  studentId: string
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return [];
+
+  const { data, error } =
+    await (supabase as any)
+      .from("student_projects")
+      .select("*")
+      .eq("student_id", studentId)
+      .order("created_at", {
+        ascending: false
+      });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function createProject(
+  project: any
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return null;
+
+  const { data, error } =
+    await (supabase as any)
+      .from("student_projects")
+      .insert([project])
+      .select()
+      .single();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function getStudentSkills(
+  studentId: string
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return [];
+
+  const { data, error } =
+    await (supabase as any)
+      .from("student_skills")
+      .select("*")
+      .eq("student_id", studentId)
+      .order("created_at", {
+        ascending: false
+      });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function createSkill(
+  skill: any
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return null;
+
+  const { data, error } =
+    await (supabase as any)
+      .from("student_skills")
+      .insert([skill])
+      .select()
+      .single();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data;
+}
+
+
