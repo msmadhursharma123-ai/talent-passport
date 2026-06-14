@@ -4,7 +4,15 @@ import { useEffect } from "react";
 import {
   getStudentPerformances,
   getStudentProjects,
-  getStudentSkills
+  getStudentSkills,
+  createPerformanceOtp,
+verifyPerformanceOtp
+} from "../../data/studentRepository";
+
+import {
+  createPerformance,
+  uploadPerformanceVideo,
+markPerformanceVerified
 } from "../../data/studentRepository";
 
 type PortfolioSection =
@@ -353,6 +361,15 @@ fontWeight: 700
 function PerformanceDrawer({
   performances
 }: any) {
+
+  console.log(
+  "PERFORMANCES",
+  performances
+);
+
+  const [showModal, setShowModal] =
+    useState(false);
+
   return (
     <div
       style={{
@@ -391,17 +408,21 @@ function PerformanceDrawer({
         </div>
 
         <button
-          style={{
-            background: "#EEF2F7",
-            border: "none",
-            padding: "14px 20px",
-            borderRadius: "14px",
-            fontWeight: 700,
-            cursor: "pointer"
-          }}
-        >
-          + ADD PERFORMANCE
-        </button>
+  onClick={() =>
+    setShowModal(true)
+  }
+  style={{
+    background: "#EEF2F7",
+    border: "none",
+    padding: "14px 20px",
+    borderRadius: "14px",
+    fontWeight: 700,
+    cursor: "pointer"
+  }}
+>
+  + ADD PERFORMANCE
+</button>
+
       </div>
 
       {performances.map(
@@ -412,12 +433,75 @@ function PerformanceDrawer({
     />
   )
 )}
+{showModal && (
+  <AddPerformanceModal
+    onClose={() =>
+      setShowModal(false)
+    }
+  />
+)}
+
     </div>
   );
 }
 function PerformanceCard({
   item
 }: any) {
+
+const [showOtpModal, setShowOtpModal] =
+  useState(false);
+
+const [otp, setOtp] =
+  useState("");
+
+const [verifying, setVerifying] =
+  useState(false);
+
+  async function handleVerifyOtp() {
+
+  try {
+
+    setVerifying(true);
+
+    const result =
+      await verifyPerformanceOtp(
+        item.student_id,
+        otp
+      );
+
+    if (!result) {
+
+      alert(
+        "Invalid OTP"
+      );
+
+      return;
+    }
+
+    await markPerformanceVerified(
+      item.id
+    );
+
+    alert(
+      "Performance Verified"
+    );
+
+    window.location.reload();
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      "Verification failed"
+    );
+
+  } finally {
+
+    setVerifying(false);
+  }
+}
+
   return (
     <div
       style={{
@@ -506,20 +590,140 @@ function PerformanceCard({
 
         <div>
           <div
-            style={{
-              background: "#DCFCE7",
-              color: "#166534",
-              padding: "8px 14px",
-              borderRadius: "999px",
-              fontWeight: 700
-            }}
-          >
-            {item.parent_verified
-  ? "✓ VERIFIED"
-  : "PENDING OTP"}
+  onClick={() => {
+
+    if (
+      !item.parent_verified
+    ) {
+      setShowOtpModal(
+        true
+      );
+    }
+
+  }}
+  style={{
+    background:
+      item.parent_verified
+        ? "#DCFCE7"
+        : "#FEF3C7",
+
+    color:
+      item.parent_verified
+        ? "#166534"
+        : "#92400E",
+
+    padding: "8px 14px",
+
+    borderRadius: "999px",
+
+    fontWeight: 700,
+
+    cursor:
+      item.parent_verified
+        ? "default"
+        : "pointer"
+  }}
+>
+            {
+  item.parent_verified
+    ? "✓ VERIFIED"
+    : "VERIFY OTP"
+}
           </div>
         </div>
       </div>
+
+{
+  showOtpModal && (
+
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background:
+          "rgba(0,0,0,0.6)",
+
+        display: "flex",
+
+        justifyContent:
+          "center",
+
+        alignItems:
+          "center",
+
+        zIndex: 9999
+      }}
+    >
+
+      <div
+        style={{
+          width: "400px",
+
+          background:
+            "#fff",
+
+          padding: "30px",
+
+          borderRadius:
+            "20px"
+        }}
+      >
+
+        <h3>
+          Verify Parent OTP
+        </h3>
+
+        <input
+          value={otp}
+          onChange={(e) =>
+            setOtp(
+              e.target.value
+            )
+          }
+          placeholder="Enter OTP"
+          style={{
+            width: "100%",
+            padding: "14px"
+          }}
+        />
+
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            marginTop: "20px"
+          }}
+        >
+
+          <button
+            onClick={
+              handleVerifyOtp
+            }
+          >
+            {verifying
+              ? "Verifying..."
+              : "Verify"}
+          </button>
+
+          <button
+            onClick={() =>
+              setShowOtpModal(
+                false
+              )
+            }
+          >
+            Cancel
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  )
+}
+
     </div>
   );
 }
@@ -773,4 +977,325 @@ function SkillsDrawer({
     </div>
   );
 }
+  function AddPerformanceModal({
+  onClose
+}: any) {
+
+  const [title, setTitle] =
+    useState("");
+
+  const [category, setCategory] =
+    useState("");
+
+  const [venue, setVenue] =
+    useState("");
+
+  const [
+    description,
+    setDescription
+  ] = useState("");
+
+  const [file, setFile] =
+    useState<File | null>(null);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  async function handleSave() {
+
+    try {
+
+      setLoading(true);
+
+      const profile =
+        JSON.parse(
+          localStorage.getItem(
+            "studentProfile"
+          ) || "{}"
+        );
+
+      if (!profile?.id) {
+
+        alert(
+          "Student not found"
+        );
+
+        return;
+      }
+
+      let videoUrl = "";
+
+      if (file) {
+
+        const uploaded =
+          await uploadPerformanceVideo(
+            file
+          );
+
+        if (uploaded)
+          videoUrl = uploaded;
+      }
+
+      await createPerformance({
+        student_id:
+          profile.id,
+
+        title,
+
+        category,
+
+        venue,
+
+        description,
+
+        video_url:
+          videoUrl,
+
+        parent_verified:
+          false
+      });
+
+      const otp =
+  Math.floor(
+    100000 +
+      Math.random() *
+        900000
+  ).toString();
+
+await createPerformanceOtp(
+  profile.id,
+  otp
+);
+
+alert(
+  `Parent OTP: ${otp}`
+);
+
+      alert(
+        "Performance Added"
+      );
+
+      window.location.reload();
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert(
+        "Failed to save"
+      );
+
+    } finally {
+
+      setLoading(false);
+    }
+  }
+
+
   
+  return (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background:
+        "rgba(5,8,22,0.75)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 9999
+    }}
+  >
+    <div
+      style={{
+        width: "820px",
+        background: "#FFFFFF",
+        borderRadius: "30px",
+        overflow: "hidden",
+        boxShadow:
+          "0 25px 60px rgba(0,0,0,0.25)"
+      }}
+    >
+      <div
+        style={{
+          background:
+            "linear-gradient(135deg,#050816,#0A0F2E)",
+          padding: "28px 35px",
+          color: "white"
+        }}
+      >
+        <div
+          style={{
+            color: "#F97316",
+            fontSize: "12px",
+            letterSpacing: "2px"
+          }}
+        >
+          PERFORMANCE REGISTRY NODE
+        </div>
+
+        <h2
+          style={{
+            margin: "10px 0 0",
+            fontSize: "32px"
+          }}
+        >
+          ADD LIVE PERFORMANCE
+        </h2>
+      </div>
+
+      <div
+        style={{
+          padding: "35px"
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gap: "16px"
+          }}
+        >
+          <input
+            placeholder="Performance Title"
+            value={title}
+            onChange={(e) =>
+              setTitle(e.target.value)
+            }
+            style={{
+              padding: "16px",
+              border:
+                "1px solid #E5E7EB",
+              borderRadius: "14px",
+              fontSize: "16px"
+            }}
+          />
+
+          <input
+            placeholder="Category (Drama, Dance, Music)"
+            value={category}
+            onChange={(e) =>
+              setCategory(
+                e.target.value
+              )
+            }
+            style={{
+              padding: "16px",
+              border:
+                "1px solid #E5E7EB",
+              borderRadius: "14px",
+              fontSize: "16px"
+            }}
+          />
+
+          <input
+            placeholder="Venue"
+            value={venue}
+            onChange={(e) =>
+              setVenue(
+                e.target.value
+              )
+            }
+            style={{
+              padding: "16px",
+              border:
+                "1px solid #E5E7EB",
+              borderRadius: "14px",
+              fontSize: "16px"
+            }}
+          />
+
+          <textarea
+            placeholder="Describe the performance"
+            rows={5}
+            value={description}
+            onChange={(e) =>
+              setDescription(
+                e.target.value
+              )
+            }
+            style={{
+              padding: "16px",
+              border:
+                "1px solid #E5E7EB",
+              borderRadius: "14px",
+              fontSize: "16px"
+            }}
+          />
+
+          <div
+            style={{
+              border:
+                "2px dashed #CBD5E1",
+              borderRadius: "18px",
+              padding: "25px"
+            }}
+          >
+            <div
+              style={{
+                marginBottom: "12px",
+                fontWeight: 600
+              }}
+            >
+              Upload Performance Video
+            </div>
+
+            <input
+              type="file"
+              accept="video/*"
+              onChange={(e) =>
+                setFile(
+                  e.target.files?.[0] ||
+                    null
+                )
+              }
+            />
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent:
+              "flex-end",
+            gap: "12px",
+            marginTop: "30px"
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              background: "#EEF2F7",
+              border: "none",
+              padding:
+                "14px 24px",
+              borderRadius: "14px",
+              cursor: "pointer"
+            }}
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            style={{
+              background: "#F97316",
+              color: "white",
+              border: "none",
+              padding:
+                "14px 24px",
+              borderRadius: "14px",
+              fontWeight: 700,
+              cursor: "pointer"
+            }}
+          >
+            {loading
+              ? "Saving..."
+              : "Save Performance"}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+}
