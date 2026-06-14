@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { submitCompetitionEntry } from "../../supabaseClient";
 
 const pathwayData = {
   Communication: {
@@ -242,87 +241,12 @@ const [summary, setSummary] =
 const [selectedFile, setSelectedFile] =
   useState<File | null>(null);
 
-  const [isSubmitting, setIsSubmitting] =
-  useState(false);
-
-const [uploadProgress, setUploadProgress] =
-  useState(0);
-
-const [submitMessage, setSubmitMessage] =
-  useState("");
-
   const eventData =
   (
     pathwayData[
       pathway as keyof typeof pathwayData
     ].events as any
   )[selectedEvent];
-
-const handleSubmit = async () => {
-  try {
-    setSubmitMessage("");
-
-    if (!selectedFile) {
-      alert("Please upload a file first.");
-      return;
-    }
-
-    if (!summary.trim()) {
-      alert("Please add performance summary.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-const profile = JSON.parse(
-  localStorage.getItem("studentProfile") || "{}"
-);
-
-console.log("PROFILE", profile);
-
-    const result = await submitCompetitionEntry(
-      {
-  studentName: profile.student_name,
-  studentEmail: profile.parent_email,
-  className: profile.class_name,
-  schoolName: profile.school_name,
-  pathway,
-  eventName: selectedEvent,
-  description: summary
-},
-      selectedFile,
-      (progress) => {
-        setUploadProgress(progress);
-      }
-    );
-
-    if (result.success) {
-      setSubmitMessage(
-        "✅ Submission uploaded successfully!"
-      );
-
-      console.log("SUBMISSION SUCCESS");
-      console.log(result.data);
-
-      setSummary("");
-      setSelectedFile(null);
-    } else {
-      setSubmitMessage(
-        "❌ " + result.error
-      );
-
-      console.log(result.error);
-    }
-  } catch (err) {
-    console.log(err);
-
-    setSubmitMessage(
-      "❌ Something went wrong"
-    );
-  } finally {
-    setIsSubmitting(false);
-  }
-};
 
   return (
   <div>
@@ -700,9 +624,8 @@ fontFamily:
         marginTop: 8
       }}
     >
-      {selectedFile
-  ? selectedFile.name
-  : "Drag and drop file here, or click to upload"}
+      Drag and drop file here,
+      or click to upload
     </div>
 
     <div
@@ -717,17 +640,11 @@ fontFamily:
     </div>
 
     <input
-  type="file"
-  accept=".mp4,.mp3,.wav,.pdf"
-  style={{
-    display: "none"
-  }}
-  onChange={(e) => {
-    if (e.target.files?.[0]) {
-      setSelectedFile(e.target.files[0]);
-    }
-  }}
-/>
+      type="file"
+      style={{
+        display: "none"
+      }}
+    />
   </label>
 </div>
 </div>
@@ -754,10 +671,8 @@ fontFamily:
     STEP 4: PERFORMANCE SUMMARY NOTE
   </div>
 
-<textarea
-  value={summary}
-  onChange={(e) => setSummary(e.target.value)}
-  placeholder="Provide a detailed note summarizing your tryout entry, co-curricular highlights, and which core competencies you practiced."
+  <textarea
+  placeholder="Provide a detailed note summarizing your tryout entry, co-curricular highlights, and which core competencies you practiced (minimum 20 words for NEP credit accreditation)..."
   rows={5}
   style={{
     width: "100%",
@@ -771,44 +686,23 @@ fontFamily:
 </div>
 
 <button
-  onClick={handleSubmit}
-  disabled={isSubmitting}
   style={{
-    width: "100%",
-    marginTop: 24,
-    padding: "20px",
-    background: "#F97316",
-    color: "#FFF",
-    border: "none",
-    borderRadius: 18,
-    fontWeight: 700,
-    fontSize: 15,
-    cursor: "pointer",
-    letterSpacing: "1px",
-    textTransform: "uppercase",
-    opacity: isSubmitting ? 0.7 : 1
-  }}
+  width: "100%",
+  marginTop: 24,
+  padding: "20px",
+  background: "#F97316",
+  color: "#FFF",
+  border: "none",
+  borderRadius: 18,
+  fontWeight: 700,
+  fontSize: 15,
+  cursor: "pointer",
+  letterSpacing: "1px",
+  textTransform: "uppercase"
+}}
 >
-  {isSubmitting
-    ? `Uploading ${uploadProgress}%`
-    : "SUBMIT FOR PARENTAL VERIFICATION →"}
+  SUBMIT FOR PARENTAL VERIFICATION →
 </button>
-
-{submitMessage && (
-  <div
-    style={{
-      marginTop: 16,
-      fontSize: 14,
-      fontWeight: 600,
-      color: submitMessage.includes("✅")
-        ? "#16A34A"
-        : "#DC2626"
-    }}
-  >
-    {submitMessage}
-  </div>
-)}
-
 
       </div>
 

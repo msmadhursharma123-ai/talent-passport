@@ -233,45 +233,46 @@ const { data: completedEvents } = await supabase
   .eq("status", "Completed");
 
 if (completedEvents?.length === 4) {
+
   console.log("ALL EVENTS COMPLETED");
 
-await (supabase as any)
-  .from("talent_passports_v2")
-  .upsert([{
-    student_id: studentId,
-    communication_score: 0,
-    creativity_score: 0,
-    critical_thinking_score: 0,
-    team_score: 0,
-    combined_score: 0,
-    final_feedback: "Awaiting Evaluation"
-  }]);
-  
+  await (supabase as any)
+    .from("talent_passports_v2")
+    .upsert([{
+      student_id: studentId,
+      communication_score: 0,
+      creativity_score: 0,
+      critical_thinking_score: 0,
+      team_score: 0,
+      combined_score: 0,
+      final_feedback: "Awaiting Evaluation"
+    }]);
+}
 
-console.log("STUDENT ID");
-console.log(studentId);
-    const firstRow = data?.[0] as any;
-    if (!firstRow) {
-      throw new Error('Inserted data could not be returned from database.');
-    }
+const firstRow = data?.[0] as any;
 
-    const insertedData: Submission = {
-      id: firstRow.id,
-      created_at: firstRow.created_at,
-      student_name: firstRow.student_name,
-      student_email: firstRow.student_email,
-      pathway: firstRow.pathway,
-      event_name: firstRow.event_name,
-      video_url: firstRow.video_url,
-      description: firstRow.description,
-      video_name: firstRow.video_name,
-      video_size: firstRow.video_size
-    };
+if (!firstRow) {
+  throw new Error(
+    "Inserted data could not be returned from database."
+  );
+}
 
-    return { success: true, data: insertedData, isMock: false };}
-    return {
-  success: false,
-  error: "Unexpected execution path",
+const insertedData: Submission = {
+  id: firstRow.id,
+  created_at: firstRow.created_at,
+  student_name: firstRow.student_name,
+  student_email: firstRow.student_email,
+  pathway: firstRow.pathway,
+  event_name: firstRow.event_name,
+  video_url: firstRow.video_url,
+  description: firstRow.description,
+  video_name: firstRow.video_name,
+  video_size: firstRow.video_size
+};
+
+return {
+  success: true,
+  data: insertedData,
   isMock: false
 };
   } catch (error: any) {
