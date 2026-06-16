@@ -2,10 +2,12 @@ import React from "react";
 
 interface Props {
   onSelect: (role: string) => void;
+  onBack: () => void;
 }
 
 export default function RoleSelection({
   onSelect,
+  onBack,
 }: Props) {
   const cardStyle = {
     background: "white",
@@ -61,6 +63,21 @@ export default function RoleSelection({
           margin: "0 auto",
         }}
       >
+        <button
+          onClick={onBack}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "#143B73",
+            fontSize: "18px",
+            fontWeight: 600,
+            cursor: "pointer",
+            marginBottom: "30px",
+          }}
+        >
+          ← Back to Identity World
+        </button>
+
         <div
           style={{
             color: "#F4A623",
@@ -101,8 +118,6 @@ export default function RoleSelection({
             gap: "30px",
           }}
         >
-          {/* Student */}
-
           <div
             style={cardStyle}
             onClick={() =>
@@ -126,8 +141,6 @@ export default function RoleSelection({
               Enter Portal →
             </button>
           </div>
-
-          {/* School */}
 
           <div
             style={cardStyle}
@@ -154,8 +167,6 @@ export default function RoleSelection({
             </button>
           </div>
 
-          {/* Teacher */}
-
           <div
             style={cardStyle}
             onClick={() =>
@@ -179,8 +190,6 @@ export default function RoleSelection({
               Enter Portal →
             </button>
           </div>
-
-          {/* Partner */}
 
           <div
             style={cardStyle}

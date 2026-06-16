@@ -3,14 +3,18 @@ import { getSupabaseClient } from "../supabaseClient";
 import {
   getLatestAssessment
 } from "../data/studentRepository";
+
 interface Props {
   onSuccess: () => void;
+  onRegister: () => void;
+  onBack: () => void;
 }
 
 export default function ExistingUserLogin({
   onSuccess,
-  onRegister
-}: any) {
+  onRegister,
+  onBack
+}: Props) {
 
   const [email, setEmail] =
     useState("");
@@ -27,66 +31,62 @@ export default function ExistingUserLogin({
 
     setLoading(true);
 
- const { data }: any =
-  await supabase
-    .from("students")
-    .select("*")
-    .eq(
-      "parent_email",
-      email
-    )
-    .single();
+    const { data }: any =
+      await supabase
+        .from("students")
+        .select("*")
+        .eq(
+          "parent_email",
+          email
+        )
+        .single();
 
-if (!data) {
+    if (!data) {
 
-  alert(
-    "No registration found. Please sign up first."
-  );
+      alert(
+        "No registration found. Please sign up first."
+      );
 
-  onRegister();
+      onRegister();
 
-  return;
-}
+      return;
+    }
 
-localStorage.setItem(
-  "studentProfile",
-  JSON.stringify(data)
-);
+    localStorage.setItem(
+      "studentProfile",
+      JSON.stringify(data)
+    );
 
-const assessment =
-  await getLatestAssessment(
-    data.id
-  );
+    const assessment =
+      await getLatestAssessment(
+        data.id
+      );
 
-if (assessment) {
+    if (assessment) {
 
-  localStorage.setItem(
-    "studentCalibration",
-    JSON.stringify(
-      assessment.answers
-    )
-  );
+      localStorage.setItem(
+        "studentCalibration",
+        JSON.stringify(
+          assessment.answers
+        )
+      );
 
-  localStorage.setItem(
-    "talentScores",
-    JSON.stringify(
-      assessment.scores
-    )
-  );
+      localStorage.setItem(
+        "talentScores",
+        JSON.stringify(
+          assessment.scores
+        )
+      );
 
-  localStorage.setItem(
-    "studentPassport",
-    JSON.stringify(
-      assessment.passport
-    )
-  );
+      localStorage.setItem(
+        "studentPassport",
+        JSON.stringify(
+          assessment.passport
+        )
+      );
+    }
 
-  console.log(
-    "ASSESSMENT LOADED"
-  );
-}
-
-onSuccess();
+    onSuccess();
   }
 
   return (
@@ -109,6 +109,23 @@ onSuccess();
           borderRadius: 24,
         }}
       >
+
+        <button
+          onClick={onBack}
+          style={{
+            background:
+              "transparent",
+            border: "none",
+            color: "#143B73",
+            fontSize: "16px",
+            fontWeight: 600,
+            cursor: "pointer",
+            marginBottom: "20px",
+          }}
+        >
+          ← Back
+        </button>
+
         <h1>
           Existing User Login
         </h1>
@@ -146,6 +163,7 @@ onSuccess();
             ? "Checking..."
             : "Access Passport"}
         </button>
+
       </div>
     </div>
   );

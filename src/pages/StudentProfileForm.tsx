@@ -2,12 +2,15 @@ import React, { useState } from "react";
 import {
   createStudent
 } from "../data/studentRepository";
+
 interface Props {
   onContinue: () => void;
+  onBack: () => void;
 }
 
 export default function StudentProfileForm({
   onContinue,
+  onBack,
 }: Props) {
 
   const [studentName, setStudentName] =
@@ -22,61 +25,63 @@ export default function StudentProfileForm({
   const [className, setClassName] =
     useState("");
 
-    const [parentMobile, setParentMobile] =
-  useState("");
+  const [parentMobile, setParentMobile] =
+    useState("");
 
- const handleContinue = async () => {
+  const handleContinue = async () => {
 
-  if (
-  !studentName ||
-  !parentEmail ||
-  !parentMobile ||
-  !schoolName
-) {
-    alert(
-      "Please complete all fields"
+    if (
+      !studentName ||
+      !parentEmail ||
+      !parentMobile ||
+      !schoolName
+    ) {
+      alert(
+        "Please complete all fields"
+      );
+      return;
+    }
+
+    const student =
+      await createStudent({
+        student_name:
+          studentName,
+
+        parent_email:
+          parentEmail,
+
+        parent_mobile:
+          parentMobile,
+
+        school_name:
+          schoolName,
+
+        class_name:
+          className,
+      });
+
+    if (!student) {
+
+      alert(
+        "Unable to create student profile"
+      );
+
+      return;
+    }
+
+    localStorage.setItem(
+      "student_id",
+      student.id
     );
-    return;
-  }
 
-  const student =
-    await createStudent({
-      student_name:
-        studentName,
-
-      parent_email:
-        parentEmail,
-
-        parent_mobile: parentMobile,
-
-      school_name:
-        schoolName,
-
-      class_name:
-        className,
-    });
-
-  if (!student) {
-
-    alert(
-      "Unable to create student profile"
+    localStorage.setItem(
+      "studentProfile",
+      JSON.stringify(student)
     );
 
-    return;
-  }
+    onContinue();
+  };
 
-  localStorage.setItem(
-    "student_id",
-    student.id
-  );
-
-localStorage.setItem(
-  "studentProfile",
-  JSON.stringify(student)
-);
-
-  onContinue();
-};
   return (
     <div
       style={{
@@ -95,6 +100,23 @@ localStorage.setItem(
           borderRadius: 24,
         }}
       >
+
+        <button
+          onClick={onBack}
+          style={{
+            background:
+              "transparent",
+            border: "none",
+            color: "#143B73",
+            fontSize: "16px",
+            fontWeight: 600,
+            cursor: "pointer",
+            marginBottom: "20px",
+          }}
+        >
+          ← Back
+        </button>
+
         <h1>
           Student Profile
         </h1>
@@ -129,18 +151,20 @@ localStorage.setItem(
           }}
         />
 
-<input
-  placeholder="Parent Mobile Number"
-  value={parentMobile}
-  onChange={(e) =>
-    setParentMobile(e.target.value)
-  }
-  style={{
-    width: "100%",
-    padding: 12,
-    marginTop: 12,
-  }}
-/>
+        <input
+          placeholder="Parent Mobile Number"
+          value={parentMobile}
+          onChange={(e) =>
+            setParentMobile(
+              e.target.value
+            )
+          }
+          style={{
+            width: "100%",
+            padding: 12,
+            marginTop: 12,
+          }}
+        />
 
         <input
           placeholder="School Name"
@@ -186,6 +210,7 @@ localStorage.setItem(
         >
           Continue
         </button>
+
       </div>
     </div>
   );

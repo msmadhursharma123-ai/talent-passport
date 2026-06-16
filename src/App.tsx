@@ -27,6 +27,8 @@ import SupabaseGuide from './components/SupabaseGuide';
 import AdminDashboard from "./pages/AdminDashboard";
 import StudentPortal from "./pages/student/StudentPortal";
 
+import AppHeader from "./components/AppHeader";
+
 import { 
   Trophy, UploadCloud, Users, HelpCircle, 
   Database, RefreshCw, Layers, Sparkles, Sliders, CheckSquare 
@@ -174,8 +176,13 @@ schoolName: string;
     { Communication: 0, 'Creative Expression': 0, 'Problem Solving': 0, 'Team Event': 0 } as Record<string, number>
   );
 
-  return (
+ return (
   <div>
+
+    {activeTab !== "identity" && (
+      <AppHeader />
+    )}
+
     {activeTab !== "identity" &&
  activeTab !== "role-selection" &&
  activeTab !== "user-type" &&
@@ -231,6 +238,9 @@ schoolName: string;
 
    {activeTab === "role-selection" && (
   <RoleSelection
+    onBack={() =>
+      setActiveTab("identity")
+    }
     onSelect={(role) => {
       setSelectedRole(role);
       setActiveTab("user-type");
@@ -241,6 +251,11 @@ schoolName: string;
 {activeTab === "user-type" && (
   <UserType
     role={selectedRole}
+    onBack={() =>
+      setActiveTab(
+        "role-selection"
+      )
+    }
     onSelect={(type) => {
 
       setUserType(type);
@@ -266,6 +281,11 @@ schoolName: string;
 {activeTab ===
   "student-profile" && (
   <StudentProfileForm
+    onBack={() =>
+      setActiveTab(
+        "user-type"
+      )
+    }
     onContinue={() =>
       setActiveTab("wizard")
     }
@@ -274,33 +294,43 @@ schoolName: string;
 {activeTab ===
   "existing-login" && (
   <ExistingUserLogin
-  onSuccess={() =>
-    setActiveTab(
-      "passport"
-    )
-  }
-  onRegister={() =>
-    setActiveTab(
-      "student-profile"
-    )
-  }
-/>
+    onBack={() =>
+      setActiveTab(
+        "user-type"
+      )
+    }
+    onSuccess={() =>
+      setActiveTab(
+        "passport"
+      )
+    }
+    onRegister={() =>
+      setActiveTab(
+        "student-profile"
+      )
+    }
+  />
 )}
 {activeTab === "wizard" &&
   selectedRole === "student" && (
-   <QuestionWizard
-     title="STUDENT / PARENT CALIBRATION"
-     questions={studentQuestions}
-     onComplete={() => {
-       console.log("GOING TO PASSPORT");
+    <QuestionWizard
+      title="STUDENT / PARENT CALIBRATION"
+      questions={studentQuestions}
+      onBack={() =>
+        setActiveTab(
+          "student-profile"
+        )
+      }
+      onComplete={() => {
+        console.log("GOING TO PASSPORT");
 
-       setActiveTab("passport");
+        setActiveTab("passport");
 
-       console.log(
-         "SET PASSPORT CALLED"
-       );
-     }}
-   />
+        console.log(
+          "SET PASSPORT CALLED"
+        );
+      }}
+    />
 )}
     {activeTab === "submit" && (
       <SubmissionForm

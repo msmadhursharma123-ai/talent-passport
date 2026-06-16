@@ -2,6 +2,7 @@ import React from "react";
 
 interface Props {
   role: string;
+  onBack: () => void;
   onSelect: (
     type: "new" | "existing"
   ) => void;
@@ -9,8 +10,10 @@ interface Props {
 
 export default function UserType({
   role,
+  onBack,
   onSelect,
 }: Props) {
+
   const roleTitle =
     role === "school"
       ? "School Portal"
@@ -66,6 +69,22 @@ export default function UserType({
           margin: "0 auto",
         }}
       >
+
+        <button
+          onClick={onBack}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "#143B73",
+            fontSize: "18px",
+            fontWeight: 600,
+            cursor: "pointer",
+            marginBottom: "30px",
+          }}
+        >
+          ← Back to Portal Selection
+        </button>
+
         <div
           style={{
             color: "#F4A623",
@@ -106,7 +125,6 @@ export default function UserType({
             gap: "30px",
           }}
         >
-          {/* NEW USER */}
 
           <div
             style={cardStyle}
@@ -146,8 +164,6 @@ export default function UserType({
             </button>
           </div>
 
-          {/* EXISTING USER */}
-
           <div
             style={cardStyle}
             onClick={() =>
@@ -185,6 +201,7 @@ export default function UserType({
               Login →
             </button>
           </div>
+
         </div>
       </div>
     </div>

@@ -25,12 +25,14 @@ interface Props {
   questions: Question[];
   title: string;
   onComplete?: () => void;
+  onBack?: () => void;
 }
 
 export default function QuestionWizard({
   questions,
   title,
   onComplete,
+  onBack,
 }: Props) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, any>>({});
@@ -248,19 +250,30 @@ Minimum Required: {current.minSelect}
             }}
           >
             <button
-              disabled={step === 0}
-              onClick={() =>
-                setStep(step - 1)
-              }
-              style={{
-                padding:
-                  "14px 30px",
-                borderRadius: "12px",
-                border: "none",
-              }}
-            >
-              Back
-            </button>
+  onClick={() => {
+
+    if (step === 0) {
+
+      onBack?.();
+
+      return;
+    }
+
+    setStep(step - 1);
+
+  }}
+  style={{
+    padding:
+      "14px 30px",
+    borderRadius: "12px",
+    border: "none",
+    cursor: "pointer",
+  }}
+>
+  {step === 0
+    ? "← Student Profile"
+    : "← Previous Question"}
+</button>
 
   <button
   disabled={false}
