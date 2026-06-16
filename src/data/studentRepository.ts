@@ -268,12 +268,42 @@ export async function createProject(
       .select()
       .single();
 
+  console.log(
+    "PROJECT INSERT RESULT",
+    data
+  );
+
+  console.log(
+    "PROJECT INSERT ERROR",
+    error
+  );
+
   if (error) {
     console.error(error);
     return null;
   }
 
   return data;
+}
+
+export async function deleteProject(
+  projectId: string
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return;
+
+  const { error } =
+    await (supabase as any)
+      .from("student_projects")
+      .delete()
+      .eq("id", projectId);
+
+  if (error) {
+    console.error(error);
+    throw error;
+  }
 }
 
 export async function getStudentSkills(
@@ -369,6 +399,7 @@ export async function uploadPerformanceVideo(
   return data.publicUrl;
 }
 export async function createPerformanceOtp(
+  performanceId: string,
   studentId: string,
   otpCode: string
 ) {
@@ -381,11 +412,12 @@ export async function createPerformanceOtp(
     await (supabase as any)
       .from("performance_otps")
       .insert([
-        {
-          student_id: studentId,
-          otp_code: otpCode,
-          is_used: false
-        }
+       {
+  performance_id: performanceId,
+  student_id: studentId,
+  otp_code: otpCode,
+  is_used: false
+}
       ])
       .select()
       .single();
@@ -398,7 +430,7 @@ export async function createPerformanceOtp(
   return data;
 }
 export async function verifyPerformanceOtp(
-  studentId: string,
+  performanceId: string,
   otpCode: string
 ) {
   const supabase =
@@ -410,7 +442,7 @@ export async function verifyPerformanceOtp(
     await (supabase as any)
       .from("performance_otps")
       .select("*")
-      .eq("student_id", studentId)
+      .eq("performance_id", performanceId)
       .eq("otp_code", otpCode)
       .eq("is_used", false)
       .single();
@@ -424,15 +456,12 @@ export async function verifyPerformanceOtp(
     })
     .eq("id", data.id);
 
-  await (supabase as any)
-    .from("student_performances")
-    .update({
-      parent_verified: true
-    })
-    .eq(
-      "student_id",
-      studentId
-    );
+await (supabase as any)
+  .from("student_performances")
+  .update({
+    parent_verified: true
+  })
+  .eq("id", performanceId);
 
   return true;
 }
@@ -456,4 +485,141 @@ export async function markPerformanceVerified(
           .toISOString()
     })
     .eq("id", performanceId);
+}
+export async function deletePerformance(
+  performanceId: string
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return false;
+
+  const { error } =
+    await (supabase as any)
+      .from("student_performances")
+      .delete()
+      .eq("id", performanceId);
+
+  if (error) {
+    console.error(error);
+    return false;
+  }
+
+  return true;
+}
+
+export async function updatePerformance(
+  performanceId: string,
+  updates: any
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return false;
+
+  const { error } =
+    await (supabase as any)
+      .from("student_performances")
+      .update(updates)
+      .eq("id", performanceId);
+
+  if (error) {
+    console.error(error);
+    return false;
+  }
+
+  return true;
+}
+
+export async function uploadProjectVideo(
+  file: File
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return "";
+
+  const fileName =
+    `${Date.now()}-${file.name}`;
+
+  const { error } =
+    await supabase.storage
+      .from("project_certificates")
+      .upload(
+        fileName,
+        file,
+        {
+          upsert: true
+        }
+      );
+
+  if (error) {
+    console.error(error);
+    return "";
+  }
+
+  const { data } =
+    supabase.storage
+      .from("project_certificates")
+      .getPublicUrl(
+        fileName
+      );
+
+  return data.publicUrl;
+}
+
+export async function uploadSkillCertificate(
+  file: File
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return "";
+
+  const fileName =
+    `${Date.now()}-${file.name}`;
+
+  const { error } =
+    await supabase.storage
+      .from("skill_certificates")
+      .upload(
+        fileName,
+        file,
+        {
+          upsert: true
+        }
+      );
+
+  if (error) {
+    console.error(error);
+    return "";
+  }
+
+  const { data } =
+    supabase.storage
+      .from("skill_certificates")
+      .getPublicUrl(
+        fileName
+      );
+
+  return data.publicUrl;
+}
+export async function deleteSkill(
+  skillId: string
+) {
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return;
+
+  const { error } =
+    await (supabase as any)
+      .from("student_skills")
+      .delete()
+      .eq("id", skillId);
+
+  if (error) {
+    console.error(error);
+    throw error;
+  }
 }

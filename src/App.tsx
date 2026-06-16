@@ -89,15 +89,26 @@ useState<"new" | "existing" | null>(null);
 
   // Check setup parameters
 useEffect(() => {
-  setSupabaseDetected(isSupabaseConfigured());
+  setSupabaseDetected(
+    isSupabaseConfigured()
+  );
+
   loadSubmissions();
 
   const savedProfile =
-    localStorage.getItem("studentProfile");
+    localStorage.getItem(
+      "studentProfile"
+    );
 
- if (savedProfile) {
-  setUserType("existing");
-}
+  if (savedProfile) {
+
+    setUserType("existing");
+
+    setActiveTab(
+      "passport"
+    );
+
+  }
 
 }, []);
 

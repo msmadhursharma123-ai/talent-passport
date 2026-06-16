@@ -6,13 +6,18 @@ import {
   getStudentProjects,
   getStudentSkills,
   createPerformanceOtp,
-verifyPerformanceOtp
-} from "../../data/studentRepository";
-
-import {
+  verifyPerformanceOtp,
+  deletePerformance,
+  updatePerformance,
+  createProject,
+   deleteProject,
+  createSkill,
   createPerformance,
   uploadPerformanceVideo,
-markPerformanceVerified
+  markPerformanceVerified,
+  uploadProjectVideo,
+deleteSkill,
+  uploadSkillCertificate
 } from "../../data/studentRepository";
 
 type PortfolioSection =
@@ -34,6 +39,20 @@ const [projects, setProjects] =
 
 const [skills, setSkills] =
   useState<any[]>([]);
+
+const performanceCredits =
+  performances.length * 5;
+
+const projectCredits =
+  projects.length * 5;
+
+const skillCredits =
+  skills.length * 5;
+
+const totalCredits =
+  performanceCredits +
+  projectCredits +
+  skillCredits;
 
 useEffect(() => {
   loadPortfolio();
@@ -231,6 +250,100 @@ fontWeight: 700
               "24px 0 30px"
           }}
         />
+<div
+  style={{
+    background: "#F8FAFC",
+    border:
+      "1px solid #E5E7EB",
+    borderRadius: "24px",
+    padding: "24px",
+    marginBottom: "30px"
+  }}
+>
+  <h2
+    style={{
+      marginTop: 0,
+      marginBottom: "20px"
+    }}
+  >
+    🎓 PORTFOLIO CREDIT SUMMARY
+  </h2>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns:
+        "repeat(4,1fr)",
+      gap: "16px"
+    }}
+  >
+
+    <div
+      style={{
+        background: "#FFF7ED",
+        padding: "20px",
+        borderRadius: "18px"
+      }}
+    >
+      <div>
+        Total Combined Credits
+      </div>
+
+      <h2>
+        {totalCredits}
+      </h2>
+    </div>
+
+    <div
+      style={{
+        background: "#EFF6FF",
+        padding: "20px",
+        borderRadius: "18px"
+      }}
+    >
+      <div>
+        Performance Credits
+      </div>
+
+      <h2>
+        {performanceCredits}
+      </h2>
+    </div>
+
+    <div
+      style={{
+        background: "#ECFDF5",
+        padding: "20px",
+        borderRadius: "18px"
+      }}
+    >
+      <div>
+        Project Credits
+      </div>
+
+      <h2>
+        {projectCredits}
+      </h2>
+    </div>
+
+    <div
+      style={{
+        background: "#F5F3FF",
+        padding: "20px",
+        borderRadius: "18px"
+      }}
+    >
+      <div>
+        Skill Credits
+      </div>
+
+      <h2>
+        {skillCredits}
+      </h2>
+    </div>
+
+  </div>
+</div>
 
         {/* EXPLORER */}
 
@@ -333,24 +446,28 @@ fontWeight: 700
         >
           {activeSection ===
             "performances" && (
-            <PerformanceDrawer
+   <PerformanceDrawer
   performances={performances}
+  loadPortfolio={loadPortfolio}
 />
           )}
 
-          {activeSection ===
-            "projects" && (
-            <ProjectsDrawer
-  projects={projects}
-/>
-          )}
+          {activeSection === "projects" && (
+  <ProjectsDrawer
+    projects={projects}
+    loadPortfolio={loadPortfolio}
 
-          {activeSection ===
-            "skills" && (
-            <SkillsDrawer
-  skills={skills}
-/>
-          )}
+  
+  />
+)}
+
+         {activeSection === "skills" && (
+  <SkillsDrawer
+    skills={skills}
+    loadPortfolio={loadPortfolio}
+
+  />
+)}
         </div>
       </div>
     </div>
@@ -359,13 +476,14 @@ fontWeight: 700
 }
 
 function PerformanceDrawer({
-  performances
+  performances,
+  loadPortfolio
 }: any) {
 
   console.log(
-  "PERFORMANCES",
-  performances
-);
+    "PERFORMANCES",
+    performances
+  );
 
   const [showModal, setShowModal] =
     useState(false);
@@ -403,109 +521,200 @@ function PerformanceDrawer({
               marginTop: "6px"
             }}
           >
-             Performances & Accredited Clips
+            Performances & Accredited Clips
           </div>
         </div>
 
         <button
-  onClick={() =>
-    setShowModal(true)
-  }
-  style={{
-    background: "#EEF2F7",
-    border: "none",
-    padding: "14px 20px",
-    borderRadius: "14px",
-    fontWeight: 700,
-    cursor: "pointer"
-  }}
->
-  + ADD PERFORMANCE
-</button>
-
+          onClick={() =>
+            setShowModal(true)
+          }
+          style={{
+            background: "#EEF2F7",
+            border: "none",
+            padding: "14px 20px",
+            borderRadius: "14px",
+            fontWeight: 700,
+            cursor: "pointer"
+          }}
+        >
+          + ADD PERFORMANCE
+        </button>
       </div>
 
       {performances.map(
-  (item: any) => (
-    <PerformanceCard
-      key={item.id}
-      item={item}
-    />
-  )
-)}
-{showModal && (
-  <AddPerformanceModal
-    onClose={() =>
-      setShowModal(false)
-    }
-  />
-)}
+        (item: any) => (
+          <PerformanceCard
+            key={item.id}
+            item={item}
+            loadPortfolio={
+              loadPortfolio
+            }
+          />
+        )
+      )}
 
+      {showModal && (
+        <AddPerformanceModal
+          onClose={() => {
+            setShowModal(false);
+            loadPortfolio();
+          }}
+        />
+      )}
     </div>
   );
 }
+
 function PerformanceCard({
-  item
+  item,
+  loadPortfolio
 }: any) {
 
-const [showOtpModal, setShowOtpModal] =
-  useState(false);
+async function handleDelete() {
 
-const [otp, setOtp] =
-  useState("");
+  const confirmDelete =
+    window.confirm(
+      "Delete this performance?"
+    );
 
-const [verifying, setVerifying] =
-  useState(false);
+  if (!confirmDelete)
+    return;
 
-  async function handleVerifyOtp() {
-
-  try {
-
-    setVerifying(true);
-
-    const result =
-      await verifyPerformanceOtp(
-        item.student_id,
-        otp
-      );
-
-    if (!result) {
-
-      alert(
-        "Invalid OTP"
-      );
-
-      return;
-    }
-
-    await markPerformanceVerified(
+  const success =
+    await deletePerformance(
       item.id
     );
 
+  if (success) {
+
+   console.log(
+  "Performance Deleted"
+);
+
+    loadPortfolio();
+
+  } else {
+
     alert(
-      "Performance Verified"
+      "Delete Failed"
     );
-
-    window.location.reload();
-
-  } catch (err) {
-
-    console.error(err);
-
-    alert(
-      "Verification failed"
-    );
-
-  } finally {
-
-    setVerifying(false);
   }
 }
+
+const [editing, setEditing] =
+  useState(false);
+
+const [editTitle, setEditTitle] =
+  useState(item.title);
+
+const [editDescription,
+  setEditDescription] =
+  useState(item.description);
+
+const [editVenue,
+  setEditVenue] =
+  useState(item.venue);
+
+  async function handleUpdate() {
+
+  const success =
+    await updatePerformance(
+      item.id,
+      {
+        title: editTitle,
+        description:
+          editDescription,
+        venue: editVenue
+      }
+    );
+
+  if (success) {
+
+    alert(
+      "Updated"
+    );
+
+    setEditing(false);
+
+    loadPortfolio();
+
+  } else {
+
+    alert(
+      "Update Failed"
+    );
+  }
+}
+
+  const [
+    showOtpModal,
+    setShowOtpModal
+  ] = useState(false);
+
+  const [otp, setOtp] =
+    useState("");
+
+  const [
+    verifying,
+    setVerifying
+  ] = useState(false);
+
+  async function handleVerifyOtp() {
+
+    try {
+
+      setVerifying(true);
+
+      const result =
+        await verifyPerformanceOtp(
+          item.id,
+          otp
+        );
+
+      if (!result) {
+
+        alert(
+          "Invalid OTP"
+        );
+
+        return;
+      }
+
+      await markPerformanceVerified(
+        item.id
+      );
+
+      alert(
+        "Performance Verified"
+      );
+
+      setShowOtpModal(false);
+
+      if (loadPortfolio) {
+        await loadPortfolio();
+      }
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert(
+        "Verification failed"
+      );
+
+    } finally {
+
+      setVerifying(false);
+
+    }
+  }
 
   return (
     <div
       style={{
-        border: "1px solid #E5E7EB",
+        border:
+          "1px solid #E5E7EB",
         borderRadius: "22px",
         padding: "30px",
         marginBottom: "20px"
@@ -514,49 +723,11 @@ const [verifying, setVerifying] =
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between"
+          justifyContent:
+            "space-between"
         }}
       >
         <div>
-          <div
-            style={{
-              display: "flex",
-              gap: "10px",
-              marginBottom: "14px"
-            }}
-          >
-            <span
-              style={{
-                background: "#FFF1E6",
-                color: "#F97316",
-                padding: "5px 12px",
-                borderRadius: "999px",
-                fontSize: "12px"
-              }}
-            >
-              CLASS 9TH B
-            </span>
-
-            <span
-              style={{
-                color: "#94A3B8"
-              }}
-            >
-              Year 2025
-            </span>
-
-            <span
-              style={{
-                background: "#EEF2FF",
-                color: "#4F46E5",
-                padding: "5px 12px",
-                borderRadius: "999px",
-                fontSize: "12px"
-              }}
-            >
-              THEATRE PLAY
-            </span>
-          </div>
 
           <h3
             style={{
@@ -574,8 +745,7 @@ const [verifying, setVerifying] =
               fontWeight: 600
             }}
           >
-            📍 Stage Venue:
-            {item.venue}
+            📍 {item.venue}
           </div>
 
           <p
@@ -586,158 +756,220 @@ const [verifying, setVerifying] =
           >
             {item.description}
           </p>
+
+          {item.video_url && (
+            <video
+              controls
+              style={{
+                width: "100%",
+                maxWidth: "700px",
+                borderRadius:
+                  "16px",
+                marginTop: "16px"
+              }}
+            >
+              <source
+                src={item.video_url}
+              />
+            </video>
+          )}
+
         </div>
 
-        <div>
-          <div
-  onClick={() => {
-
-    if (
-      !item.parent_verified
-    ) {
-      setShowOtpModal(
-        true
-      );
-    }
-
-  }}
+        <div
   style={{
-    background:
-      item.parent_verified
-        ? "#DCFCE7"
-        : "#FEF3C7",
-
-    color:
-      item.parent_verified
-        ? "#166534"
-        : "#92400E",
-
-    padding: "8px 14px",
-
-    borderRadius: "999px",
-
-    fontWeight: 700,
-
-    cursor:
-      item.parent_verified
-        ? "default"
-        : "pointer"
+    display: "flex",
+    gap: "10px",
+    alignItems: "center"
   }}
 >
-            {
-  item.parent_verified
-    ? "✓ VERIFIED"
-    : "VERIFY OTP"
-}
-          </div>
-        </div>
+
+  <div
+    style={{
+      background:
+        item.parent_verified
+          ? "#DCFCE7"
+          : "#FEF3C7",
+
+      color:
+        item.parent_verified
+          ? "#166534"
+          : "#92400E",
+
+      padding:
+        "8px 14px",
+
+      borderRadius:
+        "999px",
+
+      fontWeight: 700
+    }}
+  >
+    {item.parent_verified
+      ? "🟢 Parent Verified"
+      : "🟡 Self Reported"}
+  </div>
+
+  <button
+    onClick={() =>
+      setEditing(true)
+    }
+  >
+    ✏️ Edit
+  </button>
+
+  <button
+    onClick={handleDelete}
+  >
+    🗑 Delete
+  </button>
+
+</div>
       </div>
 
-{
-  showOtpModal && (
-
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background:
-          "rgba(0,0,0,0.6)",
-
-        display: "flex",
-
-        justifyContent:
-          "center",
-
-        alignItems:
-          "center",
-
-        zIndex: 9999
-      }}
-    >
-
-      <div
-        style={{
-          width: "400px",
-
-          background:
-            "#fff",
-
-          padding: "30px",
-
-          borderRadius:
-            "20px"
-        }}
-      >
-
-        <h3>
-          Verify Parent OTP
-        </h3>
-
-        <input
-          value={otp}
-          onChange={(e) =>
-            setOtp(
-              e.target.value
-            )
-          }
-          placeholder="Enter OTP"
-          style={{
-            width: "100%",
-            padding: "14px"
-          }}
-        />
+      {showOtpModal && (
 
         <div
           style={{
+            position: "fixed",
+            inset: 0,
+            background:
+              "rgba(0,0,0,0.6)",
             display: "flex",
-            gap: "10px",
-            marginTop: "20px"
+            justifyContent:
+              "center",
+            alignItems:
+              "center",
+            zIndex: 9999
           }}
         >
-
-          <button
-            onClick={
-              handleVerifyOtp
-            }
+          <div
+            style={{
+              width: "400px",
+              background: "#fff",
+              padding: "30px",
+              borderRadius: "20px"
+            }}
           >
-            {verifying
-              ? "Verifying..."
-              : "Verify"}
-          </button>
+            <h3>
+              Verify Parent OTP
+            </h3>
 
-          <button
-            onClick={() =>
-              setShowOtpModal(
-                false
-              )
-            }
-          >
-            Cancel
-          </button>
+            <input
+              value={otp}
+              onChange={(e) =>
+                setOtp(
+                  e.target.value
+                )
+              }
+              placeholder="Enter OTP"
+              style={{
+                width: "100%",
+                padding: "14px"
+              }}
+            />
 
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                marginTop: "20px"
+              }}
+            >
+              <button
+                onClick={
+                  handleVerifyOtp
+                }
+              >
+                {verifying
+                  ? "Verifying..."
+                  : "Verify"}
+              </button>
+
+              <button
+                onClick={() =>
+                  setShowOtpModal(
+                    false
+                  )
+                }
+              >
+                Cancel
+              </button>
+
+            </div>
+
+          </div>
         </div>
 
-      </div>
-
-    </div>
-
-  )
-}
-
+      )}
     </div>
   );
 }
 function ProjectCard({
-  item
+  item,
+  loadPortfolio
 }: any) {
+
+  async function handleDelete() {
+
+    const confirmed =
+      window.confirm(
+        "Delete this project?"
+      );
+
+    if (!confirmed) return;
+
+    try {
+
+      await deleteProject(
+        item.id
+      );
+
+      console.log(
+  "Project Deleted"
+);
+
+      if (loadPortfolio) {
+        await loadPortfolio();
+      }
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert(
+        "Failed to delete project"
+      );
+    }
+  }
+
   return (
     <div
       style={{
         border: "1px solid #E5E7EB",
         borderRadius: "22px",
-        padding: "30px"
+        padding: "30px",
+        position: "relative"
       }}
     >
+
+      <button
+        onClick={handleDelete}
+        style={{
+          position: "absolute",
+          top: "16px",
+          right: "16px",
+          border: "none",
+          background: "#FEE2E2",
+          color: "#DC2626",
+          borderRadius: "10px",
+          padding: "8px 12px",
+          cursor: "pointer"
+        }}
+      >
+        🗑 Delete
+      </button>
+
       <div
         style={{
           display: "flex",
@@ -772,7 +1004,7 @@ function ProjectCard({
           fontSize: "24px"
         }}
       >
-       {item.title}
+        {item.title}
       </h3>
 
       <p
@@ -784,29 +1016,35 @@ function ProjectCard({
       </p>
 
       <div
-  style={{
-    marginTop: "16px",
-    display: "inline-block",
-    background: item.is_verified
-      ? "#DCFCE7"
-      : "#FEF3C7",
-    color: item.is_verified
-      ? "#166534"
-      : "#92400E",
-    padding: "8px 14px",
-    borderRadius: "999px"
-  }}
->
-  {item.is_verified
-    ? "VERIFIED"
-    : "PENDING"}
-</div>
+        style={{
+          marginTop: "16px",
+          display: "inline-block",
+          background: item.is_verified
+            ? "#DCFCE7"
+            : "#FEF3C7",
+          color: item.is_verified
+            ? "#166534"
+            : "#92400E",
+          padding: "8px 14px",
+          borderRadius: "999px"
+        }}
+      >
+        {item.is_verified
+          ? "VERIFIED"
+          : "PENDING"}
+      </div>
+
     </div>
   );
 }
 function ProjectsDrawer({
-  projects
+  projects,
+  loadPortfolio
 }: any) {
+
+  const [showModal, setShowModal] =
+    useState(false);
+
   return (
     <div
       style={{
@@ -826,7 +1064,11 @@ function ProjectsDrawer({
       >
         <h2>📁 PROJECTS COMPLETED</h2>
 
-        <button>
+        <button
+          onClick={() =>
+            setShowModal(true)
+          }
+        >
           + ADD PROJECT
         </button>
       </div>
@@ -840,29 +1082,100 @@ function ProjectsDrawer({
         }}
       >
         {projects.map(
-  (item: any) => (
-    <ProjectCard
-      key={item.id}
-      item={item}
-    />
-  )
-)}
+          (item: any) => (
+            <ProjectCard
+              key={item.id}
+              item={item}
+              loadPortfolio={
+                loadPortfolio
+              }
+            />
+          )
+        )}
       </div>
+
+     {showModal && (
+  <AddProjectModal
+    onClose={() => {
+      console.log(
+        "PROJECT MODAL CLOSED"
+      );
+
+      setShowModal(false);
+
+      loadPortfolio();
+    }}
+  />
+)}
     </div>
   );
 }
 
 function SkillCard({
-  item
+  item,
+  loadPortfolio
 }: any) {
+
+  async function handleDelete() {
+
+    const confirmed =
+      window.confirm(
+        "Delete this skill?"
+      );
+
+    if (!confirmed) return;
+
+    try {
+
+      await deleteSkill(
+        item.id
+      );
+
+      console.log(
+  "Skill Deleted"
+);
+
+      if (loadPortfolio) {
+        await loadPortfolio();
+      }
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert(
+        "Failed to delete skill"
+      );
+    }
+  }
+
   return (
     <div
       style={{
         border: "1px solid #E5E7EB",
         borderRadius: "22px",
-        padding: "30px"
+        padding: "30px",
+        position: "relative"
       }}
     >
+
+      <button
+        onClick={handleDelete}
+        style={{
+          position: "absolute",
+          top: "16px",
+          right: "16px",
+          border: "none",
+          background: "#FEE2E2",
+          color: "#DC2626",
+          borderRadius: "10px",
+          padding: "8px 12px",
+          cursor: "pointer"
+        }}
+      >
+        🗑 Delete
+      </button>
+
       <div
         style={{
           display: "flex",
@@ -908,31 +1221,37 @@ function SkillCard({
         {item.description}
       </p>
 
-           <div
-  style={{
-    marginTop: "16px",
-    display: "inline-block",
-    background: item.is_verified
-      ? "#DCFCE7"
-      : "#FEF3C7",
-    color: item.is_verified
-      ? "#166534"
-      : "#92400E",
-    padding: "8px 14px",
-    borderRadius: "999px"
-  }}
->
-  {item.is_verified
-    ? "VERIFIED"
-    : "PENDING"}
-</div>
+      <div
+        style={{
+          marginTop: "16px",
+          display: "inline-block",
+          background: item.is_verified
+            ? "#DCFCE7"
+            : "#FEF3C7",
+          color: item.is_verified
+            ? "#166534"
+            : "#92400E",
+          padding: "8px 14px",
+          borderRadius: "999px"
+        }}
+      >
+        {item.is_verified
+          ? "VERIFIED"
+          : "PENDING"}
+      </div>
+
     </div>
   );
 }
 
 function SkillsDrawer({
-  skills
+  skills,
+  loadPortfolio
 }: any) {
+
+  const [showModal, setShowModal] =
+    useState(false);
+
   return (
     <div
       style={{
@@ -952,7 +1271,11 @@ function SkillsDrawer({
       >
         <h2>✨ SKILLS LEARNED</h2>
 
-        <button>
+        <button
+          onClick={() =>
+            setShowModal(true)
+          }
+        >
           + ADD SKILL
         </button>
       </div>
@@ -966,17 +1289,35 @@ function SkillsDrawer({
         }}
       >
         {skills.map(
-  (item: any) => (
-    <SkillCard
-      key={item.id}
-      item={item}
-    />
-  )
-)}
+          (item: any) => (
+            <SkillCard
+              key={item.id}
+              item={item}
+              loadPortfolio={
+                loadPortfolio
+              }
+            />
+          )
+        )}
       </div>
+
+ {showModal && (
+  <AddSkillModal
+    onClose={() => {
+      console.log(
+        "SKILL MODAL CLOSED"
+      );
+
+      setShowModal(false);
+
+      loadPortfolio();
+    }}
+  />
+)}
     </div>
   );
 }
+
   function AddPerformanceModal({
   onClose
 }: any) {
@@ -994,6 +1335,10 @@ function SkillsDrawer({
     description,
     setDescription
   ] = useState("");
+
+  const [performanceDate,
+setPerformanceDate] =
+useState("");
 
   const [file, setFile] =
     useState<File | null>(null);
@@ -1036,24 +1381,18 @@ function SkillsDrawer({
           videoUrl = uploaded;
       }
 
-      await createPerformance({
-        student_id:
-          profile.id,
-
-        title,
-
-        category,
-
-        venue,
-
-        description,
-
-        video_url:
-          videoUrl,
-
-        parent_verified:
-          false
-      });
+ const performance =
+  await createPerformance({
+    student_id: profile.id,
+    title,
+    category,
+    venue,
+    performance_date:
+  performanceDate,
+    description,
+    video_url: videoUrl,
+    parent_verified: false
+  });
 
       const otp =
   Math.floor(
@@ -1063,6 +1402,7 @@ function SkillsDrawer({
   ).toString();
 
 await createPerformanceOtp(
+  performance.id,
   profile.id,
   otp
 );
@@ -1075,7 +1415,7 @@ alert(
         "Performance Added"
       );
 
-      window.location.reload();
+      onClose();
 
     } catch (err) {
 
@@ -1187,23 +1527,39 @@ alert(
             }}
           />
 
-          <input
-            placeholder="Venue"
-            value={venue}
-            onChange={(e) =>
-              setVenue(
-                e.target.value
-              )
-            }
-            style={{
-              padding: "16px",
-              border:
-                "1px solid #E5E7EB",
-              borderRadius: "14px",
-              fontSize: "16px"
-            }}
-          />
+         <input
+  placeholder="Venue"
+  value={venue}
+  onChange={(e) =>
+    setVenue(
+      e.target.value
+    )
+  }
+  style={{
+    padding: "16px",
+    border:
+      "1px solid #E5E7EB",
+    borderRadius: "14px",
+    fontSize: "16px"
+  }}
+/>
 
+<input
+  type="date"
+  value={performanceDate}
+  onChange={(e) =>
+    setPerformanceDate(
+      e.target.value
+    )
+  }
+  style={{
+    padding: "16px",
+    border:
+      "1px solid #E5E7EB",
+    borderRadius: "14px",
+    fontSize: "16px"
+  }}
+/>
           <textarea
             placeholder="Describe the performance"
             rows={5}
@@ -1298,4 +1654,442 @@ alert(
     </div>
   </div>
 );
+}
+
+function AddProjectModal({
+  onClose
+}: any) {
+
+  const [title, setTitle] =
+    useState("");
+
+  const [category, setCategory] =
+    useState("");
+
+  const [projectDate, setProjectDate] =
+    useState("");
+
+  const [
+    description,
+    setDescription
+  ] = useState("");
+
+  const [projectLink, setProjectLink] =
+    useState("");
+
+  const [file, setFile] =
+    useState<File | null>(null);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  async function handleSave() {
+
+    try {
+
+      setLoading(true);
+
+      const profile =
+        JSON.parse(
+          localStorage.getItem(
+            "studentProfile"
+          ) || "{}"
+        );
+
+      if (!profile?.id) {
+        alert("Student not found");
+        return;
+      }
+
+      let videoUrl = "";
+
+      if (file) {
+
+        const uploaded =
+          await uploadProjectVideo(
+            file
+          );
+
+        if (uploaded)
+          videoUrl = uploaded;
+      }
+
+     await createProject({
+  student_id: profile.id,
+  title,
+  category,
+  project_date: projectDate,
+  description,
+  project_link: projectLink,
+  project_video_url: videoUrl,
+  parent_verified: false
+});
+
+
+
+console.log("PROJECT SAVED");
+
+console.log("CALLING ONCLOSE");
+
+onClose();
+
+console.log("ONCLOSE FINISHED");
+
+    } catch (err) {
+  console.error(
+    "PROJECT ERROR",
+    err
+  );
+
+  console.error(err);
+
+if (err instanceof Error) {
+  alert(err.message);
+} else {
+  alert("Unknown error");
+}
+} finally {
+
+      setLoading(false);
+    }
+
+    
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background:
+          "rgba(5,8,22,0.75)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 9999
+      }}
+    >
+      <div
+        style={{
+          width: "820px",
+          background: "#FFF",
+          borderRadius: "30px",
+          padding: "35px"
+        }}
+      >
+
+        <h2>
+          📁 ADD PROJECT
+        </h2>
+
+        <div
+          style={{
+            display: "grid",
+            gap: "16px"
+          }}
+        >
+
+          <input
+            placeholder="Project Title"
+            value={title}
+            onChange={(e)=>
+              setTitle(
+                e.target.value
+              )
+            }
+          />
+
+          <input
+            placeholder="Category"
+            value={category}
+            onChange={(e)=>
+              setCategory(
+                e.target.value
+              )
+            }
+          />
+
+          <input
+            type="date"
+            value={projectDate}
+            onChange={(e)=>
+              setProjectDate(
+                e.target.value
+              )
+            }
+          />
+
+          <textarea
+            rows={5}
+            placeholder="Description"
+            value={description}
+            onChange={(e)=>
+              setDescription(
+                e.target.value
+              )
+            }
+          />
+
+          <input
+            placeholder="Project Link"
+            value={projectLink}
+            onChange={(e)=>
+              setProjectLink(
+                e.target.value
+              )
+            }
+          />
+
+          <input
+            type="file"
+            accept="video/*"
+            onChange={(e)=>
+              setFile(
+                e.target.files?.[0]
+                || null
+              )
+            }
+          />
+
+        </div>
+
+        <div
+          style={{
+            marginTop:"20px",
+            display:"flex",
+            gap:"10px",
+            justifyContent:
+              "flex-end"
+          }}
+        >
+          <button
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={handleSave}
+          >
+            {loading
+              ? "Saving..."
+              : "Save Project"}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+function AddSkillModal({
+  onClose
+}: any) {
+
+  const [
+    skillName,
+    setSkillName
+  ] = useState("");
+
+  const [
+    organization,
+    setOrganization
+  ] = useState("");
+
+  const [
+    certificateDate,
+    setCertificateDate
+  ] = useState("");
+
+  const [
+    description,
+    setDescription
+  ] = useState("");
+
+  const [file, setFile] =
+    useState<File | null>(null);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  async function handleSave() {
+
+    try {
+
+      setLoading(true);
+
+      const profile =
+        JSON.parse(
+          localStorage.getItem(
+            "studentProfile"
+          ) || "{}"
+        );
+
+      if (!profile?.id) {
+        alert("Student not found");
+        return;
+      }
+
+      let imageUrl = "";
+
+      if (file) {
+
+        const uploaded =
+          await uploadSkillCertificate(
+            file
+          );
+
+        if (uploaded)
+          imageUrl = uploaded;
+      }
+
+     await createSkill({
+  student_id: profile.id,
+  skill_name: skillName,
+  organization,
+  certificate_date: certificateDate,
+  description,
+  certificate_url: imageUrl,
+  parent_verified: false
+});
+
+console.log("SKILL SAVED");
+
+console.log("CALLING ONCLOSE");
+
+onClose();
+
+console.log("ONCLOSE FINISHED");
+
+    }catch (err) {
+  console.error(
+    "SKILL ERROR",
+    err
+  );
+
+  alert(
+    JSON.stringify(err)
+  );
+} finally {
+
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position:"fixed",
+        inset:0,
+        background:
+          "rgba(5,8,22,0.75)",
+        display:"flex",
+        justifyContent:
+          "center",
+        alignItems:
+          "center",
+        zIndex:9999
+      }}
+    >
+      <div
+        style={{
+          width:"820px",
+          background:"#FFF",
+          borderRadius:"30px",
+          padding:"35px"
+        }}
+      >
+
+        <h2>
+          ✨ ADD SKILL
+        </h2>
+
+        <div
+          style={{
+            display:"grid",
+            gap:"16px"
+          }}
+        >
+
+          <input
+            placeholder="Skill Name"
+            value={skillName}
+            onChange={(e)=>
+              setSkillName(
+                e.target.value
+              )
+            }
+          />
+
+          <input
+            placeholder="Organization"
+            value={organization}
+            onChange={(e)=>
+              setOrganization(
+                e.target.value
+              )
+            }
+          />
+
+          <input
+            type="date"
+            value={certificateDate}
+            onChange={(e)=>
+              setCertificateDate(
+                e.target.value
+              )
+            }
+          />
+
+          <textarea
+            rows={5}
+            placeholder="Description"
+            value={description}
+            onChange={(e)=>
+              setDescription(
+                e.target.value
+              )
+            }
+          />
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e)=>
+              setFile(
+                e.target.files?.[0]
+                || null
+              )
+            }
+          />
+
+        </div>
+
+        <div
+          style={{
+            marginTop:"20px",
+            display:"flex",
+            gap:"10px",
+            justifyContent:
+              "flex-end"
+          }}
+        >
+          <button
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={handleSave}
+          >
+            {loading
+              ? "Saving..."
+              : "Save Skill"}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
 }
