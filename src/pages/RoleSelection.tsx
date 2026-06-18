@@ -114,7 +114,7 @@ export default function RoleSelection({
           style={{
             display: "grid",
             gridTemplateColumns:
-              "repeat(2, 1fr)",
+              "repeat(3, 1fr)",
             gap: "30px",
           }}
         >
@@ -214,6 +214,31 @@ export default function RoleSelection({
               Enter Portal →
             </button>
           </div>
+
+          <div
+  style={cardStyle}
+  onClick={() =>
+    onSelect("admin")
+  }
+>
+  <div>
+    <h2 style={titleStyle}>
+      Admin Team
+    </h2>
+
+    <p style={descriptionStyle}>
+      Competition operations,
+      evaluations, platform
+      analytics, reports,
+      leaderboard management
+      and ecosystem controls.
+    </p>
+  </div>
+
+  <button style={buttonStyle}>
+    Enter Portal →
+  </button>
+</div>
         </div>
       </div>
     </div>

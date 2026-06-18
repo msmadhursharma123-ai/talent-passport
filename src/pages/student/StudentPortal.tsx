@@ -1,8 +1,9 @@
 import { useState } from "react";
 
 import StudentLayout, {
-  StudentTab
+  StudentTab,
 } from "./StudentLayout";
+
 import TalentPassport from "../TalentPassport";
 import Homeboard from "./Homeboard";
 import Timeline from "./TimelineV3";
@@ -11,23 +12,30 @@ import Competitions from "./Competitions";
 import MyAnalysis from "./MyAnalysis";
 import GrowthPlan from "./GrowthPlan";
 
-export default function StudentPortal() {
- const [activeTab, setActiveTab] =
-  useState<StudentTab>("dna-radar");
+interface Props {
+  onLogout: () => void;
+  onStartDNA: () => void;
+}
 
-  const handleLogout = () => {
-    localStorage.removeItem("studentProfile");
-    localStorage.removeItem("student_id");
-
-    window.location.reload();
-  };
+export default function StudentPortal({
+  onLogout,
+  onStartDNA,
+}: Props) {
+  const [activeTab, setActiveTab] =
+    useState<StudentTab>("dna-radar");
 
   const renderPage = () => {
     switch (activeTab) {
-case "dna-radar":
-  return <TalentPassport />;
-        
-        case "homeboard":
+      case "dna-radar":
+        return (
+  <TalentPassport
+    onStartDNA={
+      onStartDNA
+    }
+  />
+);
+
+      case "homeboard":
         return <Homeboard />;
 
       case "timeline":
@@ -54,7 +62,7 @@ case "dna-radar":
     <StudentLayout
       activeTab={activeTab}
       setActiveTab={setActiveTab}
-      onLogout={handleLogout}
+      onLogout={onLogout}
     >
       {renderPage()}
     </StudentLayout>

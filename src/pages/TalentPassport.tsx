@@ -35,7 +35,13 @@ import {
   getFutureReadinessScore
 } from "../data/dnaInsightsEngine";
 
-export default function TalentPassport() {
+interface Props {
+  onStartDNA?: () => void;
+}
+
+export default function TalentPassport({
+  onStartDNA
+}: Props) {
 
 const handleLogout = () => {
   localStorage.removeItem("studentProfile");
@@ -150,19 +156,53 @@ useEffect(() => {
       )
         return;
 
-      const achievements =
-        await getStudentAchievements(
-          profile.id
-        );
+     const savedPassport =
+  JSON.parse(
+    localStorage.getItem(
+      "studentPassport"
+    ) || "null"
+  );
 
-      const dna =
-        calculateTalentDNA(
-          achievements
-        );
+if (savedPassport) {
 
-      setDnaScores(
-        dna
-      );
+  setDnaScores({
+    creativity:
+      savedPassport.normalizedScores
+        ?.Creativity || 0,
+
+    communication:
+      savedPassport.normalizedScores
+        ?.Communication || 0,
+
+    leadership:
+      savedPassport.normalizedScores
+        ?.Leadership || 0,
+
+    confidence:
+      savedPassport.normalizedScores
+        ?.Confidence || 0,
+
+    collaboration:
+      savedPassport.normalizedScores
+        ?.Collaboration || 0,
+
+    criticalThinking:
+      savedPassport.normalizedScores
+        ?.CriticalThinking || 0,
+  });
+
+} else {
+
+  setDnaScores({
+    creativity: 0,
+    communication: 0,
+    leadership: 0,
+    confidence: 0,
+    collaboration: 0,
+    criticalThinking: 0,
+  });
+
+}
     };
 
   loadDNA();
@@ -174,13 +214,81 @@ if (!passport) {
   return (
     <div
       style={{
-        padding: 40
+        minHeight: "70vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center"
       }}
     >
-      Loading Passport...
+      <div
+        style={{
+          background: "white",
+          padding: "40px",
+          borderRadius: "20px",
+          textAlign: "center",
+          boxShadow:
+            "0 8px 30px rgba(0,0,0,0.08)"
+        }}
+      >
+        <h2
+          style={{
+            color: "#143B73",
+            marginBottom: "20px"
+          }}
+        >
+          Talent Passport Not Found
+        </h2>
+
+        <p
+          style={{
+            color: "#666",
+            marginBottom: "25px"
+          }}
+        >
+          This student has not completed the
+          DNA Assessment yet.
+        </p>
+
+        <button
+          onClick={() => {
+
+  localStorage.removeItem(
+    "studentPassport"
+  );
+
+  localStorage.removeItem(
+    "talentScores"
+  );
+
+  localStorage.removeItem(
+    "studentCalibration"
+  );
+
+  localStorage.removeItem(
+    "studentAnswers"
+  );
+
+  onStartDNA?.();
+
+}}
+          style={{
+            background: "#F4A623",
+            color: "white",
+            border: "none",
+            padding: "12px 24px",
+            borderRadius: "12px",
+            cursor: "pointer",
+            fontWeight: 600
+          }}
+        >
+          Complete DNA Assessment
+        </button>
+      </div>
     </div>
   );
 }
+
+
 
 if (!dnaScores) {
 

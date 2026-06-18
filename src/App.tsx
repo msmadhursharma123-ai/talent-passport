@@ -15,6 +15,7 @@ import TalentPassport from "./pages/TalentPassport";
 import ExistingUserLogin from "./pages/ExistingUserLogin";
 import GrowthCenter from "./pages/GrowthCenter";
 import StudentProfileForm from "./pages/StudentProfileForm";
+import AdminLogin from "./pages/AdminLogin";
 import RoleSelection from "./pages/RoleSelection";
 import UserType from "./pages/UserType";
 import QuestionWizard from "./pages/QuestionWizard";
@@ -26,7 +27,8 @@ import SubmissionsList from './components/SubmissionsList';
 import SupabaseGuide from './components/SupabaseGuide';
 import AdminDashboard from "./pages/AdminDashboard";
 import StudentPortal from "./pages/student/StudentPortal";
-
+import AdminPortal
+from "./pages/admin/AdminPortal";
 import AppHeader from "./components/AppHeader";
 
 import { 
@@ -82,6 +84,44 @@ export default function App() {
 useState<"new" | "existing" | null>(null);
  const [activeTab, setActiveTab] =
   useState<string>("identity");
+
+const handleLogout = () => {
+
+  localStorage.removeItem(
+    "studentProfile"
+  );
+
+  localStorage.removeItem(
+    "student_id"
+  );
+
+  localStorage.removeItem(
+    "studentCalibration"
+  );
+
+  localStorage.removeItem(
+    "talentScores"
+  );
+
+  localStorage.removeItem(
+    "studentPassport"
+  );
+
+  localStorage.removeItem(
+    "studentAnswers"
+  );
+
+  localStorage.removeItem(
+  "userRole"
+);
+
+  setSelectedRole("");
+
+  setUserType(null);
+
+  setActiveTab("identity");
+};
+
  useEffect(() => {
 
 }, [activeTab]);
@@ -97,20 +137,54 @@ useEffect(() => {
 
   loadSubmissions();
 
-  const savedProfile =
-    localStorage.getItem(
-      "studentProfile"
-    );
 
-  if (savedProfile) {
 
-    setUserType("existing");
+const savedProfile =
+  localStorage.getItem(
+    "studentProfile"
+  );
 
-    setActiveTab(
-      "passport"
-    );
+const forceDNA =
+  localStorage.getItem(
+    "forceDNAAssessment"
+  );
+
+if (
+  savedProfile &&
+  savedProfile !== "undefined" &&
+  savedProfile !== "null"
+) {
+
+  setUserType("existing");
+
+console.log(
+  "FORCE DNA FLAG =",
+  forceDNA
+);
+
+if (forceDNA === "true") {
+
+  console.log(
+    "GOING TO WIZARD"
+  );
+
+  localStorage.removeItem(
+    "forceDNAAssessment"
+  );
+
+  setSelectedRole(
+    "student"
+  );
+
+  setActiveTab("wizard");
+
+} else {
+
+    setActiveTab("passport");
 
   }
+
+}
 
 }, []);
 
@@ -183,51 +257,6 @@ schoolName: string;
       <AppHeader />
     )}
 
-    {activeTab !== "identity" &&
- activeTab !== "role-selection" &&
- activeTab !== "user-type" &&
- activeTab !== "wizard" && (
-
-  <div
-    style={{
-      display: "flex",
-      gap: "20px",
-      padding: "20px",
-      background: "#0B2A4A",
-      color: "white",
-      fontSize: "20px",
-      fontWeight: "600"
-    }}
-  >
-    <button onClick={() => setActiveTab("submit")}>
-      Student Portal
-    </button>
-
-    <button onClick={() => setActiveTab("list")}>
-      Submissions
-    </button>
-
-    <button onClick={() => setActiveTab("guide")}>
-      Setup
-    </button>
-
-    <button
-      onClick={() =>
-        setActiveTab("leaderboard")
-      }
-    >
-      Leaderboard
-    </button>
-
-    <button
-      onClick={() => {
-        setActiveTab("admin");
-      }}
-    >
-      Dashboard
-    </button>
-  </div>
-)}
     {activeTab === "identity" && (
       <IdentityWorld
         onContinue={() =>
@@ -242,9 +271,22 @@ schoolName: string;
       setActiveTab("identity")
     }
     onSelect={(role) => {
-      setSelectedRole(role);
-      setActiveTab("user-type");
-    }}
+
+  setSelectedRole(role);
+
+  if (role === "admin") {
+
+    setActiveTab(
+      "admin-login"
+    );
+
+    return;
+  }
+
+  setActiveTab(
+    "user-type"
+  );
+}}
   />
 )}
 
@@ -311,6 +353,23 @@ schoolName: string;
     }
   />
 )}
+
+{activeTab ===
+  "admin-login" && (
+  <AdminLogin
+    onBack={() =>
+      setActiveTab(
+        "role-selection"
+      )
+    }
+    onSuccess={() =>
+      setActiveTab(
+        "admin"
+      )
+    }
+  />
+)}
+
 {activeTab === "wizard" &&
   selectedRole === "student" && (
     <QuestionWizard
@@ -352,7 +411,31 @@ schoolName: string;
     )}
 
 {activeTab === "admin" && (
-  <AdminDashboard />
+
+  localStorage.getItem(
+    "userRole"
+  ) === "admin"
+
+  ? (
+      <AdminPortal
+        onLogout={() => {
+
+          localStorage.removeItem(
+            "userRole"
+          );
+
+          setActiveTab(
+            "identity"
+          );
+
+        }}
+      />
+    )
+
+  : <div>
+      Access Denied
+    </div>
+
 )}
 
 {activeTab === "leaderboard" && (
@@ -360,7 +443,20 @@ schoolName: string;
 )}
 
 {activeTab === "passport" && (
-  <StudentPortal />
+  <StudentPortal
+    onLogout={handleLogout}
+    onStartDNA={() => {
+
+      setSelectedRole(
+        "student"
+      );
+
+      setActiveTab(
+        "wizard"
+      );
+
+    }}
+  />
 )}
 
   </div>)}

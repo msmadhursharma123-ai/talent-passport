@@ -14,9 +14,14 @@ export default function UserType({
   onSelect,
 }: Props) {
 
+  const isAdmin =
+    role === "admin";
+
   const roleTitle =
     role === "school"
       ? "School Portal"
+      : role === "admin"
+      ? "Admin Team Portal"
       : "Student / Parent Portal";
 
   const newLabel =
@@ -69,7 +74,6 @@ export default function UserType({
           margin: "0 auto",
         }}
       >
-
         <button
           onClick={onBack}
           style={{
@@ -117,92 +121,141 @@ export default function UserType({
           Choose how you would like to continue.
         </p>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(2, 1fr)",
-            gap: "30px",
-          }}
-        >
+        {isAdmin ? (
 
           <div
-            style={cardStyle}
-            onClick={() =>
-              onSelect("new")
-            }
+            style={{
+              maxWidth: "700px",
+            }}
           >
-            <div>
-              <h2
-                style={{
-                  color: "#143B73",
-                  fontSize: "32px",
-                  marginBottom: "15px",
-                }}
-              >
-                {newLabel}
-              </h2>
-
-              <p
-                style={{
-                  color: "#666",
-                  fontSize: "18px",
-                  lineHeight: "1.7",
-                }}
-              >
-                Begin your Talent Passport
-                journey with identity setup,
-                baseline assessment and
-                personalised talent mapping.
-              </p>
-            </div>
-
-            <button
-              style={buttonStyle}
+            <div
+              style={cardStyle}
+              onClick={() =>
+                onSelect("existing")
+              }
             >
-              Start Registration →
-            </button>
+              <div>
+                <h2
+                  style={{
+                    color: "#143B73",
+                    fontSize: "32px",
+                    marginBottom: "15px",
+                  }}
+                >
+                  Admin Team Login
+                </h2>
+
+                <p
+                  style={{
+                    color: "#666",
+                    fontSize: "18px",
+                    lineHeight: "1.7",
+                  }}
+                >
+                  Access platform
+                  operations, student
+                  records, competition
+                  management, analytics
+                  and evaluation systems.
+                </p>
+              </div>
+
+              <button
+                style={buttonStyle}
+              >
+                Login →
+              </button>
+            </div>
           </div>
+
+        ) : (
 
           <div
-            style={cardStyle}
-            onClick={() =>
-              onSelect("existing")
-            }
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(2, 1fr)",
+              gap: "30px",
+            }}
           >
-            <div>
-              <h2
-                style={{
-                  color: "#143B73",
-                  fontSize: "32px",
-                  marginBottom: "15px",
-                }}
-              >
-                {existingLabel}
-              </h2>
+            <div
+              style={cardStyle}
+              onClick={() =>
+                onSelect("new")
+              }
+            >
+              <div>
+                <h2
+                  style={{
+                    color: "#143B73",
+                    fontSize: "32px",
+                    marginBottom: "15px",
+                  }}
+                >
+                  {newLabel}
+                </h2>
 
-              <p
-                style={{
-                  color: "#666",
-                  fontSize: "18px",
-                  lineHeight: "1.7",
-                }}
+                <p
+                  style={{
+                    color: "#666",
+                    fontSize: "18px",
+                    lineHeight: "1.7",
+                  }}
+                >
+                  Begin your Talent Passport
+                  journey with identity setup,
+                  baseline assessment and
+                  personalised talent mapping.
+                </p>
+              </div>
+
+              <button
+                style={buttonStyle}
               >
-                Access your Talent Passport,
-                rankings, analytics,
-                assessments, reports and
-                growth dashboard.
-              </p>
+                Start Registration →
+              </button>
             </div>
 
-            <button
-              style={buttonStyle}
+            <div
+              style={cardStyle}
+              onClick={() =>
+                onSelect("existing")
+              }
             >
-              Login →
-            </button>
+              <div>
+                <h2
+                  style={{
+                    color: "#143B73",
+                    fontSize: "32px",
+                    marginBottom: "15px",
+                  }}
+                >
+                  {existingLabel}
+                </h2>
+
+                <p
+                  style={{
+                    color: "#666",
+                    fontSize: "18px",
+                    lineHeight: "1.7",
+                  }}
+                >
+                  Access your Talent Passport,
+                  rankings, analytics,
+                  assessments, reports and
+                  growth dashboard.
+                </p>
+              </div>
+
+              <button
+                style={buttonStyle}
+              >
+                Login →
+              </button>
+            </div>
           </div>
 
-        </div>
+        )}
       </div>
     </div>
   );
