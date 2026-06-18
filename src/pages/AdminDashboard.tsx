@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
+
 import {
   fetchAllSubmissions,
+  fetchStudentsMaster,
+  fetchStudentEvents,
+  fetchTalentPassports,
+  fetchDNAProfiles,
 } from "../supabaseClient";
 
 export default function AdminDashboard() {
@@ -8,9 +13,29 @@ export default function AdminDashboard() {
   const [submissions, setSubmissions] =
     useState<any[]>([]);
 
+  const [students, setStudents] =
+    useState<any[]>([]);
+
+  const [studentEvents, setStudentEvents] =
+    useState<any[]>([]);
+
+  const [passports, setPassports] =
+    useState<any[]>([]);
+
+  const [dnaProfiles, setDNAProfiles] =
+    useState<any[]>([]);
+
   const [selectedSchool,
     setSelectedSchool] =
     useState("All Schools");
+
+  const [selectedClass,
+    setSelectedClass] =
+    useState("All Classes");
+
+  const [showIncomplete,
+    setShowIncomplete] =
+    useState(false);
 
   useEffect(() => {
     loadData();
@@ -18,57 +43,216 @@ export default function AdminDashboard() {
 
   async function loadData() {
 
-    const result =
+    const submissionsResult =
       await fetchAllSubmissions();
 
+    const studentsResult =
+      await fetchStudentsMaster();
+
+    const eventsResult =
+      await fetchStudentEvents();
+
+    const passportsResult =
+      await fetchTalentPassports();
+
+    const dnaResult =
+      await fetchDNAProfiles();
+
     setSubmissions(
-      result.submissions || []
+      submissionsResult.submissions || []
+    );
+
+    setStudents(
+      studentsResult || []
+    );
+
+    setStudentEvents(
+      eventsResult || []
+    );
+
+    setPassports(
+      passportsResult || []
+    );
+
+    setDNAProfiles(
+      dnaResult || []
     );
   }
 
   const schools =
-    [...new Set(
-      submissions.map(
-        (x) => x.school_name
-      )
-    )];
+    [
+      ...new Set(
+        students
+          .map(
+            (x) =>
+              x.school_name
+          )
+          .filter(Boolean)
+      ),
+    ];
 
-  const filtered =
-    selectedSchool ===
-    "All Schools"
-      ? submissions
-      : submissions.filter(
-          (x) =>
-            x.school_name ===
-            selectedSchool
+  const classes =
+    [
+      ...new Set(
+        students
+          .filter(
+            (x) =>
+              selectedSchool ===
+                "All Schools" ||
+              x.school_name ===
+                selectedSchool
+          )
+          .map(
+            (x) =>
+              x.class_name
+          )
+          .filter(Boolean)
+      ),
+    ];
+
+  const filteredStudents =
+    students.filter(
+      (student) => {
+
+        const schoolMatch =
+          selectedSchool ===
+            "All Schools" ||
+          student.school_name ===
+            selectedSchool;
+
+        const classMatch =
+          selectedClass ===
+            "All Classes" ||
+          student.class_name ===
+            selectedClass;
+
+        return (
+          schoolMatch &&
+          classMatch
         );
+      }
+    );
+
+  const filteredSubmissions =
+    submissions.filter(
+      (submission) => {
+
+        const schoolMatch =
+          selectedSchool ===
+            "All Schools" ||
+          submission.school_name ===
+            selectedSchool;
+
+        const classMatch =
+          selectedClass ===
+            "All Classes" ||
+          submission.class_name ===
+            selectedClass;
+
+        return (
+          schoolMatch &&
+          classMatch
+        );
+      }
+    );
+
+  const totalStudents =
+    filteredStudents.length;
+
+  const totalEntries =
+    filteredSubmissions.length;
 
   const totalSchools =
-    [...new Set(
-      filtered.map(
-        (x) => x.school_name
-      )
-    )].length;
+    [
+      ...new Set(
+        filteredStudents.map(
+          (x) =>
+            x.school_name
+        )
+      ),
+    ].length;
 
-  const totalEvents =
-    [...new Set(
-      filtered.map(
-        (x) => x.event_name
-      )
-    )].length;
+  const totalClasses =
+    [
+      ...new Set(
+        filteredStudents.map(
+          (x) =>
+            x.class_name
+        )
+      ),
+    ].length;
 
-  const pending =
-    filtered.filter(
+  const totalCompetitions =
+    [
+      ...new Set(
+        filteredSubmissions.map(
+          (x) =>
+            x.event_name
+        )
+      ),
+    ].length;
+
+  const pendingEvaluations =
+    filteredSubmissions.filter(
       (x) =>
-        !x.evaluation_status ||
-        x.evaluation_status ===
-          "Pending"
+        !x.overall_score
     ).length;
 
-  const participationMap:
-    Record<string, number> = {};
+  const completedStudents =
+    filteredStudents.filter(
+      (student) => {
 
-  filtered.forEach(
+        const events =
+          studentEvents.filter(
+            (event) =>
+              event.student_id ===
+              student.student_id
+          );
+
+        const completed =
+          events.filter(
+            (event) =>
+              event.status ===
+              "Completed"
+          );
+
+        return (
+          completed.length >= 4
+        );
+      }
+    );
+
+  const incompleteStudents =
+    filteredStudents.filter(
+      (student) => {
+
+        const events =
+          studentEvents.filter(
+            (event) =>
+              event.student_id ===
+              student.student_id
+          );
+
+        const completed =
+          events.filter(
+            (event) =>
+              event.status ===
+              "Completed"
+          );
+
+        return (
+          completed.length < 4
+        );
+      }
+    );
+
+  const participationMap:
+    Record<
+      string,
+      number
+    > = {};
+
+  filteredSubmissions.forEach(
     (item) => {
 
       const school =
@@ -94,66 +278,164 @@ export default function AdminDashboard() {
       )
       .slice(0, 5);
 
+  const eventMap:
+    Record<
+      string,
+      number
+    > = {};
+
+  filteredSubmissions.forEach(
+    (item) => {
+
+      const event =
+        item.event_name ||
+        "Unknown";
+
+      eventMap[event] =
+        (eventMap[event] || 0) + 1;
+    }
+  );
+
+  const topEvents =
+    Object.entries(
+      eventMap
+    )
+      .sort(
+        (a, b) =>
+          b[1] - a[1]
+      )
+      .slice(0, 5);
+
+  const avgDNA =
+    dnaProfiles.length
+      ? Math.round(
+          dnaProfiles.reduce(
+            (
+              sum,
+              item
+            ) =>
+              sum +
+              (
+                item.dna_index ||
+                0
+              ),
+            0
+          ) /
+            dnaProfiles.length
+        )
+      : 0;
+
+  const avgPassport =
+    passports.length
+      ? Math.round(
+          passports.reduce(
+            (
+              sum,
+              item
+            ) =>
+              sum +
+              (
+                item.combined_score ||
+                0
+              ),
+            0
+          ) /
+            passports.length
+        )
+      : 0;
+
   return (
     <div
       style={{
         padding: "40px",
         background:
-          "radial-gradient(circle at top left, #0B2A4A 0%, #163A63 45%, #2A5A8E 100%)",
-        minHeight: "100vh",
+          "#F3F4F6",
+        minHeight:
+          "100vh",
       }}
     >
 
+      {/* HERO SECTION */}
+
       <div
         style={{
-          display: "flex",
-          justifyContent:
-            "space-between",
-          alignItems: "center",
-          marginBottom: "30px",
+          background:
+            "linear-gradient(90deg,#020617,#071952)",
+          borderRadius:
+            "28px",
+          padding: "40px",
+          marginBottom:
+            "24px",
         }}
       >
-
-        <div>
-
-          <h1
-            style={{
-              color: "white",
-              fontSize: "38px",
-            }}
-          >
-            Executive Dashboard
-          </h1>
-
-          <p
-            style={{
-              color:
-                "#D1D5DB",
-            }}
-          >
-            Talent Passport
-            Intelligence Center
-          </p>
-
+        <div
+          style={{
+            color:
+              "#F97316",
+            fontSize:
+              "12px",
+            letterSpacing:
+              "2px",
+            marginBottom:
+              "10px",
+          }}
+        >
+          TALENT PASSPORT
+          OPERATING SYSTEM
         </div>
 
+        <h1
+          style={{
+            color:
+              "white",
+            fontSize:
+              "52px",
+            margin: 0,
+          }}
+        >
+          ADMIN
+          INTELLIGENCE
+          CENTER
+        </h1>
+
+        <p
+          style={{
+            color:
+              "#CBD5E1",
+            marginTop:
+              "12px",
+          }}
+        >
+          Competition
+          Operations,
+          Participation,
+          Talent Passport &
+          School Insights
+        </p>
+      </div>
+
+       {/* FILTER BAR */}
+
+      <div
+        style={{
+          background: "white",
+          borderRadius: "24px",
+          padding: "20px",
+          marginBottom: "24px",
+          display: "flex",
+          gap: "12px",
+          flexWrap: "wrap",
+        }}
+      >
         <select
-          value={
-            selectedSchool
-          }
+          value={selectedSchool}
           onChange={(e) =>
             setSelectedSchool(
               e.target.value
             )
           }
-          style={{
-            padding:
-              "12px 16px",
-            borderRadius:
-              "12px",
-          }}
+          style={filterStyle}
         >
-
           <option>
             All Schools
           </option>
@@ -167,9 +449,54 @@ export default function AdminDashboard() {
               </option>
             )
           )}
-
         </select>
 
+        <select
+          value={selectedClass}
+          onChange={(e) =>
+            setSelectedClass(
+              e.target.value
+            )
+          }
+          style={filterStyle}
+        >
+          <option>
+            All Classes
+          </option>
+
+          {classes.map(
+            (item) => (
+              <option
+                key={item}
+              >
+                {item}
+              </option>
+            )
+          )}
+        </select>
+
+        <button
+          onClick={() =>
+            setShowIncomplete(
+              !showIncomplete
+            )
+          }
+          style={{
+            background:
+              "#F97316",
+            color: "white",
+            border: "none",
+            borderRadius:
+              "14px",
+            padding:
+              "12px 18px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Incomplete
+          Registrations
+        </button>
       </div>
 
       {/* KPI */}
@@ -180,37 +507,56 @@ export default function AdminDashboard() {
           gridTemplateColumns:
             "repeat(4,1fr)",
           gap: "20px",
-          marginBottom:
-            "25px",
+          marginBottom: "24px",
         }}
       >
+        <DashboardCard
+          title="Total Students"
+          value={totalStudents}
+        />
 
         <DashboardCard
-          title="Total Student Entries"
+          title="Total Entries"
+          value={totalEntries}
+        />
+
+        <DashboardCard
+          title="Completed Registrations"
           value={
-            filtered.length
+            completedStudents.length
+          }
+        />
+
+        <DashboardCard
+          title="Incomplete Registrations"
+          value={
+            incompleteStudents.length
           }
         />
 
         <DashboardCard
           title="Total Schools"
+          value={totalSchools}
+        />
+
+        <DashboardCard
+          title="Total Classes"
+          value={totalClasses}
+        />
+
+        <DashboardCard
+          title="Competitions"
           value={
-            totalSchools
+            totalCompetitions
           }
         />
 
         <DashboardCard
-          title="Total Events"
+          title="Pending Evaluations"
           value={
-            totalEvents
+            pendingEvaluations
           }
         />
-
-        <DashboardCard
-          title="Evaluations Pending"
-          value={pending}
-        />
-
       </div>
 
       {/* INSIGHTS */}
@@ -221,189 +567,386 @@ export default function AdminDashboard() {
           gridTemplateColumns:
             "1fr 1fr",
           gap: "20px",
+          marginBottom: "24px",
         }}
       >
-
-        <div
-          style={{
-            background:
-              "white",
-            borderRadius:
-              "16px",
-            padding:
-              "25px",
-          }}
+        <InfoCard
+          title="Top Schools"
         >
-
-          <h2>
-            School-wise Participation
-          </h2>
-
           {topSchools.map(
-            (
-              school
-            ) => (
-
-              <div
-                key={
-                  school[0]
-                }
-                style={{
-                  display:
-                    "flex",
-                  justifyContent:
-                    "space-between",
-                  padding:
-                    "12px 0",
-                  borderBottom:
-                    "1px solid #eee",
-                }}
-              >
-
-                <span>
-                  {school[0]}
-                </span>
-
-                <strong>
-                  {school[1]}
-                </strong>
-
-              </div>
-
+            (item) => (
+              <Row
+                key={item[0]}
+                label={item[0]}
+                value={item[1]}
+              />
             )
           )}
+        </InfoCard>
 
-        </div>
+        <InfoCard
+          title="Top Events"
+        >
+          {topEvents.map(
+            (item) => (
+              <Row
+                key={item[0]}
+                label={item[0]}
+                value={item[1]}
+              />
+            )
+          )}
+        </InfoCard>
+      </div>
+
+      {/* TALENT INTELLIGENCE */}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "1fr 1fr",
+          gap: "20px",
+          marginBottom: "24px",
+        }}
+      >
+        <InfoCard
+          title="Talent Passport Intelligence"
+        >
+          <Row
+            label="Average Passport Score"
+            value={avgPassport}
+          />
+
+          <Row
+            label="Average DNA Index"
+            value={avgDNA}
+          />
+
+          <Row
+            label="Students Evaluated"
+            value={
+              passports.length
+            }
+          />
+        </InfoCard>
+
+        <InfoCard
+          title="Platform Status"
+        >
+          <Row
+            label="Active Students"
+            value={totalStudents}
+          />
+
+          <Row
+            label="Active Schools"
+            value={totalSchools}
+          />
+
+          <Row
+            label="Pending Evaluations"
+            value={
+              pendingEvaluations
+            }
+          />
+        </InfoCard>
+      </div>
+
+     {/* INCOMPLETE REGISTRATION TRACKER */}
+
+{showIncomplete && (
+
+  <div
+    style={{
+      background: "white",
+      borderRadius: "24px",
+      padding: "24px",
+      marginTop: "20px",
+      boxShadow:
+        "0 8px 24px rgba(0,0,0,0.05)",
+    }}
+  >
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent:
+          "space-between",
+        alignItems: "center",
+        marginBottom: "24px",
+      }}
+    >
+
+      <div>
 
         <div
           style={{
-            background:
-              "white",
-            borderRadius:
-              "16px",
-            padding:
-              "25px",
+            color: "#F97316",
+            fontSize: "12px",
+            fontWeight: 700,
+            letterSpacing: "1px",
           }}
         >
-
-          <h2>
-            Talent Intelligence
-          </h2>
-
-          <p>
-            Total Active
-            Students:
-            {" "}
-            {
-              filtered.length
-            }
-          </p>
-
-          <p>
-            Schools
-            Participating:
-            {" "}
-            {
-              totalSchools
-            }
-          </p>
-
-          <p>
-            Events
-            Running:
-            {" "}
-            {
-              totalEvents
-            }
-          </p>
-
-          <p>
-            Pending
-            Evaluations:
-            {" "}
-            {pending}
-          </p>
-
+          OPERATIONS ALERT CENTER
         </div>
 
-      </div>
+        <h2
+          style={{
+            marginTop: "6px",
+          }}
+        >
+          Incomplete Registrations
+        </h2>
 
-      {/* TOP SCHOOLS */}
+      </div>
 
       <div
         style={{
           background:
-            "white",
-          borderRadius:
-            "16px",
+            "#FEF3C7",
+          color: "#92400E",
           padding:
-            "25px",
-          marginTop:
-            "20px",
+            "10px 16px",
+          borderRadius:
+            "999px",
+          fontWeight: 700,
         }}
       >
+        {incompleteStudents.length}
+        {" "}
+        Students Pending
+      </div>
 
-        <h2>
-          Top Schools
-        </h2>
+    </div>
 
-        {topSchools.map(
-          (
-            school
-          ) => (
+    {classes.map(
+      (className) => {
+
+        const classStudents =
+          incompleteStudents.filter(
+            (student) =>
+              student.class_name ===
+              className
+          );
+
+        if (
+          classStudents.length ===
+          0
+        ) {
+          return null;
+        }
+
+        return (
+
+          <div
+            key={className}
+            style={{
+              marginBottom:
+                "28px",
+            }}
+          >
 
             <div
-              key={school[0]}
               style={{
+                background:
+                  "#EEF2FF",
+                color: "#1E3A8A",
                 padding:
-                  "12px 0",
-                borderBottom:
-                  "1px solid #eee",
+                  "12px 18px",
+                borderRadius:
+                  "12px",
+                fontWeight: 700,
+                marginBottom:
+                  "16px",
               }}
             >
-              <strong>
-                {school[0]}
-              </strong>
-
-              {" - "}
-
-              {
-                school[1]
-              }
-
-              {" Entries"}
+              Class {className}
             </div>
 
-          )
-        )}
+            {classStudents.map(
+              (student) => {
 
-      </div>
+                const studentRows =
+                  studentEvents.filter(
+                    (
+                      event
+                    ) =>
+                      event.student_id ===
+                      student.student_id
+                  );
+
+                const missingEvents =
+                  [];
+
+                if (
+                  !studentRows.some(
+                    (x) =>
+                      x.event_name ===
+                      "Communication"
+                  )
+                ) {
+                  missingEvents.push(
+                    "Communication"
+                  );
+                }
+
+                if (
+                  !studentRows.some(
+                    (x) =>
+                      x.event_name ===
+                      "Creative Expression"
+                  )
+                ) {
+                  missingEvents.push(
+                    "Creative Expression"
+                  );
+                }
+
+                if (
+                  !studentRows.some(
+                    (x) =>
+                      x.event_name ===
+                      "Critical Thinking"
+                  )
+                ) {
+                  missingEvents.push(
+                    "Critical Thinking"
+                  );
+                }
+
+                if (
+                  !studentRows.some(
+                    (x) =>
+                      x.event_name ===
+                      "Team Event"
+                  )
+                ) {
+                  missingEvents.push(
+                    "Team Event"
+                  );
+                }
+
+                return (
+
+                  <div
+                    key={
+                      student.student_id
+                    }
+                    style={{
+                      padding:
+                        "18px",
+                      border:
+                        "1px solid #E5E7EB",
+                      borderRadius:
+                        "16px",
+                      marginBottom:
+                        "12px",
+                    }}
+                  >
+
+                    <div
+                      style={{
+                        fontWeight:
+                          700,
+                        fontSize:
+                          "18px",
+                      }}
+                    >
+                      {
+                        student.student_name
+                      }
+                    </div>
+
+                    <div
+                      style={{
+                        color:
+                          "#64748B",
+                        marginTop:
+                          "4px",
+                      }}
+                    >
+                      {
+                        student.school_name
+                      }
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop:
+                          "14px",
+                        color:
+                          "#DC2626",
+                        fontWeight:
+                          600,
+                      }}
+                    >
+                      Missing:
+                    </div>
+
+                    <ul
+                      style={{
+                        marginTop:
+                          "8px",
+                      }}
+                    >
+                      {missingEvents.map(
+                        (
+                          item
+                        ) => (
+                          <li
+                            key={
+                              item
+                            }
+                          >
+                            {item}
+                          </li>
+                        )
+                      )}
+                    </ul>
+
+                  </div>
+
+                );
+              }
+            )}
+
+          </div>
+
+        );
+      }
+    )}
+
+  </div>
+
+)}
 
     </div>
   );
 }
 
+const filterStyle = {
+  padding: "12px 16px",
+  borderRadius: "12px",
+  border: "1px solid #E5E7EB",
+};
+
 function DashboardCard({
   title,
   value,
 }: any) {
-
   return (
     <div
       style={{
-        background:
-          "white",
-        borderRadius:
-          "16px",
-        padding:
-          "25px",
+        background: "white",
+        borderRadius: "24px",
+        padding: "24px",
       }}
     >
-
       <div
         style={{
-          color:
-            "#64748B",
+          color: "#64748B",
+          fontSize: "14px",
         }}
       >
         {title}
@@ -411,16 +954,61 @@ function DashboardCard({
 
       <div
         style={{
-          fontSize:
-            "42px",
+          fontSize: "42px",
           fontWeight: 700,
-          color:
-            "#143B73",
+          color: "#071952",
+          marginTop: "8px",
         }}
       >
         {value}
       </div>
+    </div>
+  );
+}
 
+function InfoCard({
+  title,
+  children,
+}: any) {
+  return (
+    <div
+      style={{
+        background: "white",
+        borderRadius: "24px",
+        padding: "24px",
+      }}
+    >
+      <h2
+        style={{
+          marginBottom: "20px",
+          color: "#071952",
+        }}
+      >
+        {title}
+      </h2>
+
+      {children}
+    </div>
+  );
+}
+
+function Row({
+  label,
+  value,
+}: any) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent:
+          "space-between",
+        padding: "10px 0",
+        borderBottom:
+          "1px solid #E5E7EB",
+      }}
+    >
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }

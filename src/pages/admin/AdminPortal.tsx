@@ -17,13 +17,15 @@ export default function AdminPortal({
   onLogout,
 }: Props) {
 
- const [activeTab, setActiveTab] =
-  useState<AdminTab>(
-    "dashboard"
-  );
+  const [activeTab, setActiveTab] =
+    useState<AdminTab>(
+      "dashboard"
+    );
 
   return (
     <div>
+
+      {/* HEADER */}
 
       <div
         style={{
@@ -41,6 +43,7 @@ export default function AdminPortal({
         <h2
           style={{
             color: "#143B73",
+            margin: 0,
           }}
         >
           Admin Command Center
@@ -56,6 +59,7 @@ export default function AdminPortal({
               "12px 20px",
             borderRadius: "10px",
             cursor: "pointer",
+            fontWeight: 600,
           }}
         >
           Logout
@@ -63,91 +67,143 @@ export default function AdminPortal({
 
       </div>
 
+      {/* NAVIGATION */}
+
       <div
-  style={{
-    display: "flex",
-    gap: "12px",
-    padding: "20px 40px",
-    background: "#F8FAFC",
-    borderBottom:
-      "1px solid #E5E7EB",
-  }}
->
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "12px",
+          padding: "20px",
+          background: "#F8FAFC",
+          borderBottom:
+            "1px solid #E5E7EB",
+          flexWrap: "wrap",
+        }}
+      >
 
-  <button
-    onClick={() =>
-      setActiveTab(
-        "dashboard"
-      )
-    }
-  >
-    Dashboard
-  </button>
+        <button
+          onClick={() =>
+            setActiveTab(
+              "dashboard"
+            )
+          }
+          style={
+            activeTab ===
+            "dashboard"
+              ? activePill
+              : inactivePill
+          }
+        >
+          Dashboard
+        </button>
 
-  <button
-    onClick={() =>
-      setActiveTab(
-        "entries"
-      )
-    }
-  >
-    Competition Entries
-  </button>
+        <button
+          onClick={() =>
+            setActiveTab(
+              "entries"
+            )
+          }
+          style={
+            activeTab ===
+            "entries"
+              ? activePill
+              : inactivePill
+          }
+        >
+          Competition Entries
+        </button>
 
-  <button
-    onClick={() =>
-      setActiveTab(
-        "analytics"
-      )
-    }
-  >
-    Analytics
-  </button>
+        <button
+          onClick={() =>
+            setActiveTab(
+              "analytics"
+            )
+          }
+          style={
+            activeTab ===
+            "analytics"
+              ? activePill
+              : inactivePill
+          }
+        >
+          Analytics
+        </button>
 
-  <button
-    onClick={() =>
-      setActiveTab(
-        "settings"
-      )
-    }
-  >
-    Settings
-  </button>
+        <button
+          onClick={() =>
+            setActiveTab(
+              "settings"
+            )
+          }
+          style={
+            activeTab ===
+            "settings"
+              ? activePill
+              : inactivePill
+          }
+        >
+          Settings
+        </button>
 
-</div>
+      </div>
 
-{activeTab ===
-  "dashboard" && (
-  <AdminDashboard />
-)}
+      {/* CONTENT */}
 
-{activeTab ===
-  "entries" && (
-  <CompetitionEntries />
-)}
+      {activeTab ===
+        "dashboard" && (
+        <AdminDashboard />
+      )}
 
-{activeTab ===
-  "analytics" && (
-  <div
-    style={{
-      padding: "40px",
-    }}
-  >
-    Analytics Module
-  </div>
-)}
+      {activeTab ===
+        "entries" && (
+        <CompetitionEntries />
+      )}
 
-{activeTab ===
-  "settings" && (
-  <div
-    style={{
-      padding: "40px",
-    }}
-  >
-    Settings Module
-  </div>
-)}
+      {activeTab ===
+        "analytics" && (
+        <div
+          style={{
+            padding: "40px",
+          }}
+        >
+          Analytics Module
+        </div>
+      )}
+
+      {activeTab ===
+        "settings" && (
+        <div
+          style={{
+            padding: "40px",
+          }}
+        >
+          Settings Module
+        </div>
+      )}
 
     </div>
   );
 }
+
+const activePill = {
+  background: "#F97316",
+  color: "white",
+  border: "none",
+  padding: "14px 24px",
+  borderRadius: "14px",
+  fontWeight: 700,
+  cursor: "pointer",
+  boxShadow:
+    "0 4px 12px rgba(249,115,22,0.30)",
+};
+
+const inactivePill = {
+  background: "#E5E7EB",
+  color: "#475569",
+  border: "none",
+  padding: "14px 24px",
+  borderRadius: "14px",
+  fontWeight: 600,
+  cursor: "pointer",
+};

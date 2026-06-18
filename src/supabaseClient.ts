@@ -476,6 +476,8 @@ export const getEvaluationBySubmissionId = async (
     };
   }
 
+
+  
   const { data, error } = await supabase
     .from("evaluations")
     .select("*")
@@ -491,4 +493,83 @@ export const getEvaluationBySubmissionId = async (
     data: data?.[0],
     error
   };
+};
+export const fetchStudentsMaster =
+async () => {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data } =
+    await supabase
+      .from(
+        "students_master"
+      )
+      .select("*");
+
+  return data || [];
+};
+
+export const fetchStudentEvents =
+async () => {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data } =
+    await supabase
+      .from(
+        "student_events"
+      )
+      .select("*");
+
+  return data || [];
+};
+
+export const fetchTalentPassports =
+async () => {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data } =
+    await supabase
+      .from(
+        "talent_passports_v2"
+      )
+      .select("*");
+
+  return data || [];
+};
+
+export const fetchDNAProfiles =
+async () => {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data } =
+    await supabase
+      .from(
+        "student_dna_profiles"
+      )
+      .select("*");
+
+  return data || [];
 };
