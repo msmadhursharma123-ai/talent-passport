@@ -11,6 +11,21 @@ import {
   getEvaluationBySubmissionId,
 } from "../../supabaseClient";
 
+
+const PATHWAY_MAP: Record<string, string> = {
+  "Communication": "Communication",
+
+  "Creativity": "Creativity",
+  "Creative Expression": "Creativity",
+
+  "Thinking": "Thinking",
+  "Problem Solving": "Thinking",
+  "Critical Thinking": "Thinking",
+
+  "Team Event": "Team Event",
+  "Teamwork": "Team Event",
+};
+
 export default function CompetitionEntries() {
 
   const [submissions, setSubmissions] =
@@ -181,16 +196,59 @@ console.log(
           const completedCount =
 studentSubmissions.length;
 
-        const ALL_PATHWAYS = [
+       const ALL_PATHWAYS = [
   "Communication",
+  "Creativity",
   "Thinking",
   "Team Event",
 ];
 
+const normalizePathway = (
+  pathway: string
+) => {
+
+  const PATHWAY_MAP: Record<
+    string,
+    string
+  > = {
+
+    "Communication":
+      "Communication",
+
+    "Creativity":
+      "Creativity",
+
+    "Creative Expression":
+      "Creativity",
+
+    "Thinking":
+      "Thinking",
+
+    "Problem Solving":
+      "Thinking",
+
+    "Critical Thinking":
+      "Thinking",
+
+    "Team Event":
+      "Team Event",
+
+    "Teamwork":
+      "Team Event",
+  };
+
+  return (
+    PATHWAY_MAP[pathway] ||
+    pathway
+  );
+};
+
 const submittedPathways =
   studentSubmissions.map(
     (s: any) =>
-      s.pathway
+      normalizePathway(
+        s.pathway
+      )
   );
 
 const missingEvents =
@@ -927,20 +985,46 @@ console.log(
                                 Video
                               </h3>
 
-                              <video
-                                controls
-                                width="100%"
-                                style={{
-                                  borderRadius:
-                                    "12px",
-                                }}
-                              >
-                                <source
-                                  src={
-                                    activeSubmission.video_url
-                                  }
-                                />
-                              </video>
+                              <div
+  style={{
+    background: "#FFF7ED",
+    padding: "12px",
+    borderRadius: "12px",
+    marginBottom: "12px",
+    fontSize: "12px",
+  }}
+>
+  <strong>Event:</strong>{" "}
+  {activeSubmission.event_name}
+  <br />
+
+  <strong>Pathway:</strong>{" "}
+  {activeSubmission.pathway}
+  <br />
+
+  <strong>Submission ID:</strong>{" "}
+  {activeSubmission.id}
+  <br />
+
+  <strong>Video URL:</strong>{" "}
+  {activeSubmission.video_url}
+</div>
+
+<video
+  key={activeSubmission.id}
+  controls
+  width="100%"
+  style={{
+    borderRadius: "12px",
+  }}
+>
+  <source
+    src={
+      activeSubmission.video_url
+    }
+    type="video/mp4"
+  />
+</video>
 
                             </div>
 
