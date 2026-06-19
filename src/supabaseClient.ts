@@ -307,17 +307,23 @@ export const fetchAllSubmissions = async (): Promise<{ submissions: Submission[]
     }
 
     const parsed: Submission[] = (data || []).map((row: any) => ({
-      id: row.id || row.created_at,
-      created_at: row.created_at,
-      student_name: row.student_name,
-      student_email: row.student_email,
-      pathway: row.pathway,
-      event_name: row.event_name,
-      video_url: row.video_url,
-      description: row.description,
-      video_name: row.video_name || 'video.mp4',
-      video_size: row.video_size || 0,
-    }));
+  id: row.id,
+  student_id: row.student_id,
+
+  created_at: row.created_at,
+
+  student_name: row.student_name,
+  student_email: row.student_email,
+
+  pathway: row.pathway,
+  event_name: row.event_name,
+
+  video_url: row.video_url,
+  description: row.description,
+
+  video_name: row.video_name || "video.mp4",
+  video_size: row.video_size || 0,
+}));
 
     return { submissions: parsed, isMock: false };
   }
