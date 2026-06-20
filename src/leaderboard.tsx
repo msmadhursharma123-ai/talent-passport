@@ -16,6 +16,7 @@ export default function Leaderboard() {
 
     if (!supabase) return;
 
+  
     const { data, error } = await supabase
       .from("evaluations")
       .select(`

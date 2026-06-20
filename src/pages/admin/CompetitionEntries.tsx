@@ -8,6 +8,7 @@ import {
   fetchDNAProfiles,
   evaluateSubmission,
   deleteSubmission,
+  fetchTalentPassportScores,
   getEvaluationBySubmissionId,
 } from "../../supabaseClient";
 
@@ -50,6 +51,9 @@ export default function CompetitionEntries() {
   const [selectedEvent,
     setSelectedEvent] =
     useState("Communication");
+
+    const [passportScores, setPassportScores] =
+  useState<any[]>([]);
 
   const [selectedEvaluation,
     setSelectedEvaluation] =
@@ -118,6 +122,19 @@ console.log(
     setDnaProfiles(
       dnaResult || []
     );
+
+    const scoreResult =
+  await fetchTalentPassportScores();
+
+setPassportScores(
+  scoreResult || []
+);
+
+console.log(
+  "LOADED PASSPORT SCORES",
+  scoreResult
+);
+
   }
 
   const schools =
@@ -1088,36 +1105,49 @@ console.log(
                                   style={
                                     orangeButton
                                   }
-                                  onClick={async () => {
+                                 onClick={async () => {
 
-                                    const result =
-                                      await evaluateSubmission(
-                                        activeSubmission.id
-                                      );
+  const result =
+    await evaluateSubmission(
+      activeSubmission.id
+    );
 
-                                    if (
-                                      result?.error
-                                    ) {
-                                      alert(
-                                        result.error
-                                      );
-                                      return;
-                                    }
+  if (
+    result?.error
+  ) {
+    alert(
+      result.error
+    );
+    return;
+  }
 
-                                    const evaluation: any =
-                                      await getEvaluationBySubmissionId(
-                                        activeSubmission.id
-                                      );
+  const evaluation: any =
+    await getEvaluationBySubmissionId(
+      activeSubmission.id
+    );
 
-                                    if (
-                                      evaluation?.data
-                                    ) {
-                                      setSelectedEvaluation(
-                                        evaluation.data
-                                      );
-                                    }
+  if (
+    evaluation?.data
+  ) {
+    setSelectedEvaluation(
+      evaluation.data
+    );
+  }
 
-                                  }}
+  // =====================
+  // REFRESH DATA
+  // =====================
+
+  await loadData();
+
+const refreshedScores =
+  await fetchTalentPassportScores();
+
+setPassportScores(
+  refreshedScores || []
+);
+
+}}
                                 >
                                   AI Evaluate
                                 </button>
@@ -1204,6 +1234,234 @@ console.log(
                             "20px",
                         }}
                       >
+
+{(() => {
+
+  const studentScores =
+    passportScores.filter(
+      (s) =>
+        s.student_id ===
+        student.student_id
+    );
+<div
+  style={{
+    background: "yellow",
+    padding: "12px",
+    marginBottom: "10px",
+  }}
+>
+  Scores Found:
+  {studentScores.length}
+</div>
+
+  console.log(
+    "STUDENT SCORES",
+    student.student_name,
+    studentScores
+  );
+
+  if (
+    studentScores.length === 0
+  ) {
+    return (
+      <p>
+        No evaluations yet
+      </p>
+    );
+  }
+
+  const avgCommunication =
+    Math.round(
+      studentScores.reduce(
+        (sum, row) =>
+          sum +
+          (row.communication_score || 0),
+        0
+      ) /
+      studentScores.length
+    );
+
+  const avgLeadership =
+    Math.round(
+      studentScores.reduce(
+        (sum, row) =>
+          sum +
+          (row.leadership_score || 0),
+        0
+      ) /
+      studentScores.length
+    );
+
+  const avgThinking =
+    Math.round(
+      studentScores.reduce(
+        (sum, row) =>
+          sum +
+          (row.critical_thinking_score || 0),
+        0
+      ) /
+      studentScores.length
+    );
+
+  const avgCollaboration =
+    Math.round(
+      studentScores.reduce(
+        (sum, row) =>
+          sum +
+          (row.collaboration_score || 0),
+        0
+      ) /
+      studentScores.length
+    );
+
+  const avgConfidence =
+    Math.round(
+      studentScores.reduce(
+        (sum, row) =>
+          sum +
+          (row.confidence_score || 0),
+        0
+      ) /
+      studentScores.length
+    );
+
+  const avgOverall =
+    Math.round(
+      studentScores.reduce(
+        (sum, row) =>
+          sum +
+          (row.overall_score || 0),
+        0
+      ) /
+      studentScores.length
+    );
+
+  return (
+
+    <div
+      style={{
+        marginBottom: "20px",
+        overflowX: "auto",
+      }}
+    >
+
+      <table
+        style={{
+          width: "100%",
+          borderCollapse:
+            "collapse",
+        }}
+      >
+
+        <thead>
+
+          <tr>
+
+            <th>Event</th>
+
+            <th>Communication</th>
+
+            <th>Leadership</th>
+
+            <th>Thinking</th>
+
+            <th>Collaboration</th>
+
+            <th>Confidence</th>
+
+            <th>Overall</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr
+            style={{
+              background:
+                "#FEF3C7",
+              fontWeight: 700,
+            }}
+          >
+            <td>TOTAL</td>
+
+            <td>{avgCommunication}</td>
+
+            <td>{avgLeadership}</td>
+
+            <td>{avgThinking}</td>
+
+            <td>{avgCollaboration}</td>
+
+            <td>{avgConfidence}</td>
+
+            <td>{avgOverall}</td>
+          </tr>
+
+          {studentScores.map(
+            (row) => (
+
+              <tr
+                key={row.id}
+              >
+
+                <td>
+                  {
+                    row.event_name
+                  }
+                </td>
+
+                <td>
+                  {
+                    row.communication_score
+                  }
+                </td>
+
+                <td>
+                  {
+                    row.leadership_score
+                  }
+                </td>
+
+                <td>
+                  {
+                    row.critical_thinking_score
+                  }
+                </td>
+
+                <td>
+                  {
+                    row.collaboration_score
+                  }
+                </td>
+
+                <td>
+                  {
+                    row.confidence_score
+                  }
+                </td>
+
+                <td>
+                  {
+                    row.overall_score
+                  }
+                </td>
+
+              </tr>
+
+            )
+          )}
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  );
+
+})()}
 
                         <h3>
                           Talent Passport

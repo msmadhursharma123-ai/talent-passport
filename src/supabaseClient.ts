@@ -458,6 +458,207 @@ if (
         }
       ]);
 
+const passportInsertResult =
+  await (supabase as any)
+    .from("talent_passport_scores")
+    .insert([
+      {
+        student_id:
+          submission.student_id,
+
+        submission_id:
+          submission.id,
+
+        pathway:
+          submission.pathway,
+
+        event_name:
+          submission.event_name,
+
+        communication_score:
+          scores.communication,
+
+        leadership_score:
+          scores.leadership,
+
+        critical_thinking_score:
+          scores.critical_thinking,
+
+        collaboration_score:
+          scores.collaboration,
+
+        confidence_score:
+          scores.confidence,
+
+        overall_score:
+          overall
+      }
+    ]);
+
+// =====================================
+// UPDATE TALENT PASSPORT AGGREGATE
+// =====================================
+
+const { data: allScores } =
+  await (supabase as any)
+    .from("talent_passport_scores")
+    .select("*")
+    .eq(
+      "student_id",
+      submission.student_id
+    );
+
+if (
+  allScores &&
+  allScores.length > 0
+) {
+
+  const communicationAvg =
+    Math.round(
+      allScores.reduce(
+        (
+          sum: number,
+          row: any
+        ) =>
+          sum +
+          (row.communication_score || 0),
+        0
+      ) /
+      allScores.length
+    );
+
+  const leadershipAvg =
+    Math.round(
+      allScores.reduce(
+        (
+          sum: number,
+          row: any
+        ) =>
+          sum +
+          (row.leadership_score || 0),
+        0
+      ) /
+      allScores.length
+    );
+
+  const thinkingAvg =
+    Math.round(
+      allScores.reduce(
+        (
+          sum: number,
+          row: any
+        ) =>
+          sum +
+          (row.critical_thinking_score || 0),
+        0
+      ) /
+      allScores.length
+    );
+
+  const collaborationAvg =
+    Math.round(
+      allScores.reduce(
+        (
+          sum: number,
+          row: any
+        ) =>
+          sum +
+          (row.collaboration_score || 0),
+        0
+      ) /
+      allScores.length
+    );
+
+  const confidenceAvg =
+    Math.round(
+      allScores.reduce(
+        (
+          sum: number,
+          row: any
+        ) =>
+          sum +
+          (row.confidence_score || 0),
+        0
+      ) /
+      allScores.length
+    );
+
+  const overallAvg =
+    Math.round(
+      allScores.reduce(
+        (
+          sum: number,
+          row: any
+        ) =>
+          sum +
+          (row.overall_score || 0),
+        0
+      ) /
+      allScores.length
+    );
+
+  const strongestSkill =
+    [
+      {
+        name: "Communication",
+        value: communicationAvg,
+      },
+      {
+        name: "Leadership",
+        value: leadershipAvg,
+      },
+      {
+        name: "Critical Thinking",
+        value: thinkingAvg,
+      },
+      {
+        name: "Collaboration",
+        value: collaborationAvg,
+      },
+      {
+        name: "Confidence",
+        value: confidenceAvg,
+      },
+    ].sort(
+      (a, b) =>
+        b.value - a.value
+    )[0];
+
+  await (supabase as any)
+    .from(
+      "talent_passports_v2"
+    )
+    .upsert([
+      {
+        student_id:
+          submission.student_id,
+
+        communication_score:
+          communicationAvg,
+
+        creativity_score:
+          leadershipAvg,
+
+        critical_thinking_score:
+          thinkingAvg,
+
+        team_score:
+          collaborationAvg,
+
+        combined_score:
+          overallAvg,
+
+        final_feedback:
+          `Current strongest area: ${strongestSkill.name}`
+      }
+    ]);
+}
+
+
+console.log(
+  "PASSPORT INSERT RESULT",
+  passportInsertResult
+);
     return {
       success: true,
       scores
@@ -559,6 +760,32 @@ async () => {
 
   return data || [];
 };
+
+export async function
+fetchTalentPassportScores() {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return [];
+
+  const { data, error } =
+    await supabase
+      .from("talent_passport_scores")
+      .select("*");
+
+  console.log(
+    "PASSPORT SCORES",
+    data
+  );
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data || [];
+}
 
 export const fetchDNAProfiles =
 async () => {
