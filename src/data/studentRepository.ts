@@ -122,6 +122,165 @@ export async function saveAssessment(
 
   return data;
 }
+
+export async function saveStudentDNA(
+  studentProfile: any,
+  answers: any,
+  scores: any
+) {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return null;
+
+  const communication =
+    scores.communication || 0;
+
+  const leadership =
+    scores.leadership || 0;
+
+  const confidence =
+    scores.confidence || 0;
+
+  const collaboration =
+    scores.collaboration || 0;
+
+  const criticalThinking =
+    scores.criticalThinking || 0;
+
+  const creativity =
+    scores.creativity || 0;
+
+  const dnaIndex =
+    Math.round(
+      (
+        communication +
+        leadership +
+        confidence +
+        collaboration +
+        criticalThinking +
+        creativity
+      ) / 6
+    );
+
+  const strengths = [];
+
+  if (communication >= 70)
+    strengths.push("Communication");
+
+  if (leadership >= 70)
+    strengths.push("Leadership");
+
+  if (confidence >= 70)
+    strengths.push("Confidence");
+
+  if (collaboration >= 70)
+    strengths.push("Collaboration");
+
+  if (criticalThinking >= 70)
+    strengths.push("Critical Thinking");
+
+  if (creativity >= 70)
+    strengths.push("Creativity");
+
+  const growthAreas = [];
+
+  if (communication < 60)
+    growthAreas.push("Communication");
+
+  if (leadership < 60)
+    growthAreas.push("Leadership");
+
+  if (confidence < 60)
+    growthAreas.push("Confidence");
+
+  if (collaboration < 60)
+    growthAreas.push("Collaboration");
+
+  if (criticalThinking < 60)
+    growthAreas.push("Critical Thinking");
+
+  if (creativity < 60)
+    growthAreas.push("Creativity");
+
+  const payload = {
+
+    student_id:
+      studentProfile.id,
+
+    student_name:
+      studentProfile.student_name,
+
+    student_email:
+      studentProfile.parent_email,
+
+    school_name:
+      studentProfile.school_name,
+
+    class_name:
+      studentProfile.class_name,
+
+    dna_index:
+      dnaIndex,
+
+    participation:
+      0,
+
+    reliability:
+      0,
+
+    communication_score:
+      communication,
+
+    leadership_score:
+      leadership,
+
+    confidence_score:
+      confidence,
+
+    collaboration_score:
+      collaboration,
+
+    critical_thinking_score:
+      criticalThinking,
+
+    creativity_score:
+      creativity,
+
+    strengths,
+
+    growth_areas:
+      growthAreas,
+
+    answers
+  };
+
+  const { data, error } =
+    await (supabase as any)
+      .from(
+        "student_dna_profiles"
+      )
+      .upsert([payload])
+      .select()
+      .single();
+
+  if (error) {
+    console.error(
+      "DNA SAVE ERROR",
+      error
+    );
+    return null;
+  }
+
+  console.log(
+    "DNA PROFILE SAVED",
+    data
+  );
+
+  return data;
+}
+
 export async function getTimelineAchievements(
   studentId: string
 ) {

@@ -3,8 +3,10 @@ import { calculateTalentScores } from "../data/scoringEngine";
 
 import { savePassport }
 from "../data/passportRepository";
+
 import {
-  saveAssessment
+  saveAssessment,
+  saveStudentDNA
 } from "../data/studentRepository";
 
 import {
@@ -407,6 +409,12 @@ if (studentProfile?.id) {
     scores,
     passport
   );
+
+await saveStudentDNA(
+  studentProfile,
+  answers,
+  scores
+);
 
   console.log(
     "ASSESSMENT SAVED TO SUPABASE"

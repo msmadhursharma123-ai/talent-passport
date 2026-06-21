@@ -44,15 +44,39 @@ async function loadPassport() {
   setPassportData(scores);
 }
 
-  const studentId =
-  "msmadhursharma123_gmail_com";
+// ============================
+// CURRENT LOGGED IN STUDENT
+// ============================
 
-  const studentScores =
+const profile = JSON.parse(
+  localStorage.getItem(
+    "studentProfile"
+  ) || "{}"
+);
+
+const studentId =
+  profile.parent_email
+    ?.toLowerCase()
+    .replace("@", "_")
+    .replace(/\./g, "_");
+
+// ============================
+// STUDENT SPECIFIC SCORES
+// ============================
+
+const studentScores =
   passportData.filter(
     (row) =>
       row.student_id ===
       studentId
   );
+
+const hasCompetitionData =
+  studentScores.length > 0;
+
+// ============================
+// GROWTH DATA
+// ============================
 
 const growthData =
   [...studentScores]
@@ -62,8 +86,8 @@ const growthData =
       score: item.overall_score
     }));
 
-  const avgCommunication =
-  studentScores.length
+const avgCommunication =
+  hasCompetitionData
     ? Math.round(
         studentScores.reduce(
           (sum, row) =>
@@ -73,10 +97,10 @@ const growthData =
         ) /
           studentScores.length
       )
-    : 0;
+    : "--";
 
 const avgLeadership =
-  studentScores.length
+  hasCompetitionData
     ? Math.round(
         studentScores.reduce(
           (sum, row) =>
@@ -86,10 +110,10 @@ const avgLeadership =
         ) /
           studentScores.length
       )
-    : 0;
+    : "--";
 
 const avgThinking =
-  studentScores.length
+  hasCompetitionData
     ? Math.round(
         studentScores.reduce(
           (sum, row) =>
@@ -99,10 +123,10 @@ const avgThinking =
         ) /
           studentScores.length
       )
-    : 0;
+    : "--";
 
 const avgCollaboration =
-  studentScores.length
+  hasCompetitionData
     ? Math.round(
         studentScores.reduce(
           (sum, row) =>
@@ -112,10 +136,10 @@ const avgCollaboration =
         ) /
           studentScores.length
       )
-    : 0;
+    : "--";
 
 const avgConfidence =
-  studentScores.length
+  hasCompetitionData
     ? Math.round(
         studentScores.reduce(
           (sum, row) =>
@@ -125,10 +149,10 @@ const avgConfidence =
         ) /
           studentScores.length
       )
-    : 0;
+    : "--";
 
 const overallScore =
-  studentScores.length
+  hasCompetitionData
     ? Math.round(
         studentScores.reduce(
           (sum, row) =>
@@ -138,7 +162,10 @@ const overallScore =
         ) /
           studentScores.length
       )
-    : 0;
+    : "--";
+
+
+
 
     const dimensions = [
 {
@@ -215,6 +242,7 @@ icon: "🎯"
           >
             Student Talent Ledger Terminal
           </h1>
+
 
           <p
             style={{
@@ -432,57 +460,11 @@ icon: "🎯"
 
   <div>—</div>
 
-  <div>
-    {Math.round(
-      studentScores.reduce(
-        (sum, s) =>
-          sum + s.communication_score,
-        0
-      ) / studentScores.length
-    )}
-  </div>
-
-  <div>
-    {Math.round(
-      studentScores.reduce(
-        (sum, s) =>
-          sum + s.leadership_score,
-        0
-      ) / studentScores.length
-    )}
-  </div>
-
-  <div>
-    {Math.round(
-      studentScores.reduce(
-        (sum, s) =>
-          sum +
-          s.critical_thinking_score,
-        0
-      ) / studentScores.length
-    )}
-  </div>
-
-  <div>
-    {Math.round(
-      studentScores.reduce(
-        (sum, s) =>
-          sum +
-          s.collaboration_score,
-        0
-      ) / studentScores.length
-    )}
-  </div>
-
-  <div>
-    {Math.round(
-      studentScores.reduce(
-        (sum, s) =>
-          sum + s.confidence_score,
-        0
-      ) / studentScores.length
-    )}
-  </div>
+  <div>{avgCommunication}</div>
+  <div>{avgLeadership}</div>
+  <div>{avgThinking}</div>
+  <div>{avgCollaboration}</div>
+  <div>{avgConfidence}</div>
 
   <div>
     <span
@@ -494,18 +476,14 @@ icon: "🎯"
         fontWeight: 700
       }}
     >
-      {Math.round(
-        studentScores.reduce(
-          (sum, s) =>
-            sum + s.overall_score,
-          0
-        ) / studentScores.length
-      )}
+      {overallScore}
     </span>
   </div>
 </div>
 
-  {studentScores.map((row) => (
+  {hasCompetitionData ? (
+
+  studentScores.map((row) => (
 
     <div
       key={row.id}
@@ -577,7 +555,25 @@ icon: "🎯"
 
     </div>
 
-  ))}
+  ))
+
+) : (
+
+  <div
+    style={{
+      padding: 40,
+      textAlign: "center",
+      color: "#64748B",
+      background: "#FFF",
+      borderRadius: 16,
+      border: "1px dashed #CBD5E1"
+    }}
+  >
+    Competition history will appear after
+    your first evaluated submission.
+  </div>
+
+)}
 
 </div>
 </div>
@@ -686,50 +682,70 @@ icon: "🎯"
           height: 320
         }}
       >
-        <ResponsiveContainer
-          width="100%"
-          height="100%"
-        >
-          <LineChart
-            data={studentScores}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
+        {hasCompetitionData ? (
 
-            <XAxis dataKey="event_name" />
+  <ResponsiveContainer
+    width="100%"
+    height="100%"
+  >
+    <LineChart
+      data={studentScores}
+    >
+      <CartesianGrid strokeDasharray="3 3" />
 
-            <YAxis domain={[50,100]} />
+      <XAxis dataKey="event_name" />
 
-            <Tooltip />
+      <YAxis domain={[50,100]} />
 
-            <Line
-              type="monotone"
-              dataKey="communication_score"
-              stroke="#F97316"
-              strokeWidth={3}
-            />
+      <Tooltip />
 
-            <Line
-              type="monotone"
-              dataKey="leadership_score"
-              stroke="#2563EB"
-              strokeWidth={3}
-            />
+      <Line
+        type="monotone"
+        dataKey="communication_score"
+        stroke="#F97316"
+        strokeWidth={3}
+      />
 
-            <Line
-              type="monotone"
-              dataKey="critical_thinking_score"
-              stroke="#7C3AED"
-              strokeWidth={3}
-            />
+      <Line
+        type="monotone"
+        dataKey="leadership_score"
+        stroke="#2563EB"
+        strokeWidth={3}
+      />
 
-            <Line
-              type="monotone"
-              dataKey="confidence_score"
-              stroke="#E11D48"
-              strokeWidth={3}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+      <Line
+        type="monotone"
+        dataKey="critical_thinking_score"
+        stroke="#7C3AED"
+        strokeWidth={3}
+      />
+
+      <Line
+        type="monotone"
+        dataKey="confidence_score"
+        stroke="#E11D48"
+        strokeWidth={3}
+      />
+    </LineChart>
+  </ResponsiveContainer>
+
+) : (
+
+  <div
+    style={{
+      height: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: "#64748B",
+      fontSize: 16
+    }}
+  >
+    Performance analytics will unlock
+    after your first evaluation.
+  </div>
+
+)}
       </div>
     </div>
 

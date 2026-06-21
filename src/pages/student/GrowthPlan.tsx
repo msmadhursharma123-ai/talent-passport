@@ -1,6 +1,280 @@
 import React from "react";
 
+import { useEffect, useState } from "react";
+import {
+  getSupabaseClient
+} from "../../supabaseClient";
+
+import {
+  getGrowthStage,
+  getStrongestSkill,
+  getWeakestSkill,
+  getReadiness,
+  getGrowthBlockers,
+  getCoachAdvice
+} from "../../lib/tpifEngine";
+
+import {
+  getStudentDNA
+} from "../../lib/studentDNAEngine";
+
 export default function GrowthPlan() {
+
+const [passport,setPassport] =
+useState<any>(null);
+
+const [dnaProfile,setDnaProfile] =
+useState<any>(null);
+
+const [loading,setLoading] =
+useState(true);
+
+const [analysisStats,setAnalysisStats] =
+useState({
+  competitions: 0,
+  projects: 0,
+  portfolio: 0,
+  signals: 0
+});
+
+useEffect(() => {
+
+loadPassport();
+
+}, []);
+
+const loadPassport = async () => {
+
+try {
+
+const profile =
+JSON.parse(
+localStorage.getItem(
+"studentProfile"
+) || "{}"
+);
+
+const studentId = profile.id;
+
+if(!studentId) return;
+
+const supabase =
+getSupabaseClient();
+
+if(!supabase) return;
+
+const passportKey =
+profile.parent_email
+  ?.replace("@", "_")
+  .replace(/\./g, "_");
+
+console.log("PROFILE", profile);
+console.log("PROFILE ID", profile.id);
+console.log("PARENT EMAIL", profile.parent_email);
+console.log("PASSPORT KEY", passportKey);
+
+const { data, error } =
+await supabase
+  .from("talent_passports_v2")
+  .select("*")
+  .eq("student_id", passportKey)
+  .maybeSingle();
+
+if (error) {
+  console.error(error);
+}
+
+setPassport(data);
+
+setPassport(data);
+
+const [
+  submissionsResult,
+  projectsResult,
+  assessmentsResult,
+  dnaResult,
+  evaluationsResult
+] = await Promise.all([
+
+  supabase
+    .from("Submissions")
+    .select("*", { count: "exact" }),
+
+  supabase
+    .from("student_projects")
+    .select("*", { count: "exact" }),
+
+  supabase
+    .from("student_assessments")
+    .select("*", { count: "exact" }),
+
+  supabase
+    .from("student_dna_profiles")
+    .select("*", { count: "exact" }),
+
+  supabase
+    .from("evaluations")
+    .select("*", { count: "exact" })
+
+]);
+
+const competitions =
+submissionsResult.count || 0;
+
+const projects =
+projectsResult.count || 0;
+
+const portfolio =
+assessmentsResult.count || 0;
+
+const signals =
+competitions +
+projects +
+portfolio +
+(dnaResult.count || 0) +
+(evaluationsResult.count || 0);
+
+setAnalysisStats({
+  competitions,
+  projects,
+  portfolio,
+  signals
+});
+
+console.log(
+  "ANALYSIS STATS",
+  {
+    competitions,
+    projects,
+    portfolio,
+    signals
+  }
+);
+
+console.log(
+  "CONNECTED PASSPORT",
+  data
+);
+
+const { data:dnaData } =
+await supabase
+  .from("student_dna_profiles")
+  .select("*")
+  .eq(
+    "student_id",
+    passportKey
+  )
+  .maybeSingle();
+
+setDnaProfile(dnaData);
+
+console.log(
+  "DNA PROFILE",
+  dnaData
+);
+
+console.log("PASSPORT OBJECT", data);
+console.log("PASSPORT KEYS", Object.keys(data || {}));
+
+}
+catch(err){
+
+console.log(err);
+
+}
+finally{
+
+setLoading(false);
+
+}
+
+};
+
+if (loading) {
+  return <div>Loading Growth Plan...</div>;
+}
+
+if (!passport) {
+  return (
+    <div style={{ padding: 40 }}>
+      Loading Talent Passport...
+    </div>
+  );
+}
+
+const engineData = {
+
+communication:
+passport.communication_score || 0,
+
+leadership:
+Math.round(
+(
+(passport.communication_score || 0) +
+(passport.team_score || 0)
+) / 2
+),
+
+criticalThinking:
+passport.critical_thinking_score || 0,
+
+collaboration:
+passport.team_score || 0,
+
+confidence:
+passport.combined_score || 0,
+
+overall:
+passport.combined_score || 0
+
+};
+
+const stage =
+getGrowthStage(passport);
+
+const readiness =
+getReadiness(
+engineData
+);
+
+const growthStage =
+getGrowthStage(passport);
+
+const strongestSkill =
+getStrongestSkill(passport);
+
+const weakestSkill =
+getWeakestSkill(passport);
+
+const blockers =
+getGrowthBlockers(
+engineData
+);
+
+const coachAdvice =
+getCoachAdvice(
+engineData
+);
+
+const dnaEngine =
+getStudentDNA(
+  passport,
+  dnaProfile || {}
+);
+
+const studentDNA =
+getStudentDNA(
+  passport,
+  dnaProfile || {}
+);
+
+console.log("studentDNA", studentDNA);
+console.log("strongestSkill", strongestSkill);
+console.log("weakestSkill", weakestSkill);
+console.log("readiness", readiness);
+console.log("blockers", blockers);
+console.log("coachAdvice", coachAdvice);
+
   return (
     <div
       style={{
@@ -120,7 +394,7 @@ export default function GrowthPlan() {
                 color: "#FF6B00"
               }}
             >
-              12
+              {analysisStats.competitions}
             </h1>
           </div>
 
@@ -147,7 +421,7 @@ export default function GrowthPlan() {
                 color: "#FF6B00"
               }}
             >
-              8
+              {analysisStats.projects}
             </h1>
           </div>
 
@@ -174,7 +448,7 @@ export default function GrowthPlan() {
                 color: "#FF6B00"
               }}
             >
-              14
+              {analysisStats.portfolio}
             </h1>
           </div>
 
@@ -201,7 +475,7 @@ export default function GrowthPlan() {
                 color: "#FF6B00"
               }}
             >
-              147
+              {analysisStats.signals}
             </h1>
           </div>
         </div>
@@ -287,6 +561,8 @@ export default function GrowthPlan() {
         </div>
       </div>
 
+
+
 {/* STUDENT DNA INTELLIGENCE */}
 
 <div
@@ -332,8 +608,6 @@ export default function GrowthPlan() {
     strengths and development areas.
   </p>
 
-  {/* TOP SUMMARY */}
-
   <div
     style={{
       display: "grid",
@@ -366,7 +640,7 @@ export default function GrowthPlan() {
           color: "#F97316"
         }}
       >
-        Emerging Leader
+        {studentDNA.archetype}
       </h3>
     </div>
 
@@ -392,7 +666,7 @@ export default function GrowthPlan() {
           marginBottom: 0
         }}
       >
-        Communication
+        {studentDNA.strongest.name}
       </h3>
     </div>
 
@@ -418,12 +692,10 @@ export default function GrowthPlan() {
           marginBottom: 0
         }}
       >
-        Collaboration
+        {studentDNA.weakest.name}
       </h3>
     </div>
   </div>
-
-  {/* AI OBSERVATIONS */}
 
   <div
     style={{
@@ -448,34 +720,15 @@ export default function GrowthPlan() {
         gap: 12
       }}
     >
-      <div>
-        • Student performs best when presenting
-        ideas independently.
-      </div>
-
-      <div>
-        • Communication confidence remains
-        consistently high across activities.
-      </div>
-
-      <div>
-        • Leadership signals increase when
-        working on challenge-based tasks.
-      </div>
-
-      <div>
-        • Student prefers execution ownership
-        over support roles.
-      </div>
-
-      <div>
-        • Team participation exists but can be
-        improved through collaborative projects.
-      </div>
+      {studentDNA.observations.map(
+        (item:any,index:number) => (
+          <div key={index}>
+            • {item}
+          </div>
+        )
+      )}
     </div>
   </div>
-
-  {/* NATURAL WORKING STYLE */}
 
   <div
     style={{
@@ -504,32 +757,28 @@ export default function GrowthPlan() {
       <div>
         <strong>Decision Style</strong>
         <p>
-          Takes initiative quickly and prefers
-          action over long planning.
+          {studentDNA.decisionStyle}
         </p>
       </div>
 
       <div>
         <strong>Learning Style</strong>
         <p>
-          Learns faster through participation
-          and practical experiences.
+          {studentDNA.learningStyle}
         </p>
       </div>
 
       <div>
         <strong>Communication Style</strong>
         <p>
-          Comfortable speaking publicly and
-          sharing ideas confidently.
+          {studentDNA.communicationStyle}
         </p>
       </div>
 
       <div>
         <strong>Leadership Style</strong>
         <p>
-          Leads by taking responsibility and
-          influencing peers through action.
+          {studentDNA.leadershipStyle}
         </p>
       </div>
     </div>
@@ -846,22 +1095,22 @@ export default function GrowthPlan() {
     >
       <div>
         <strong>Overall Score</strong>
-        <h2>79</h2>
+        <h2>{engineData.overall}</h2>
       </div>
 
       <div>
         <strong>Growth Stage</strong>
-        <h2>Explorer</h2>
+        <h2>{stage}</h2>
       </div>
 
       <div>
         <strong>Strongest Skill</strong>
-        <h2>Leadership</h2>
+        <h2>{strongestSkill.name}</h2>
       </div>
 
       <div>
         <strong>Focus Area</strong>
-        <h2>Collaboration</h2>
+        <h2>{weakestSkill.name}</h2>
       </div>
     </div>
   </div>
@@ -1387,7 +1636,7 @@ export default function GrowthPlan() {
       }}
     >
       <div>Current Score</div>
-      <h1>79</h1>
+      <h1>{engineData.overall}</h1>
     </div>
 
     <div
@@ -1458,19 +1707,19 @@ export default function GrowthPlan() {
   >
 
     <div>
-      Leadership Readiness — 84%
+      Leadership Readiness — {readiness.leadership}%
     </div>
 
     <div>
-      Communication Readiness — 91%
+      Communication Readiness — {readiness.communication}%
     </div>
 
     <div>
-      Team Management Readiness — 73%
+      Team Management Readiness — {readiness.team}%
     </div>
 
     <div>
-      Project Ownership Readiness — 81%
+      Project Ownership Readiness — {readiness.ownership}%
     </div>
 
   </div>
@@ -1794,32 +2043,22 @@ export default function GrowthPlan() {
   </h2>
 
   <div
-    style={{
-      display:"grid",
-      gap:14,
-      marginTop:25
-    }}
-  >
+  style={{
+    display:"grid",
+    gap:14,
+    marginTop:25
+  }}
+>
 
-    <div>
-      Collaboration opportunities are lower than communication activities.
-    </div>
-
-    <div>
-      Team-based participation frequency is below ideal range.
-    </div>
-
-    <div>
-      Leadership responsibilities are not yet consistent.
-    </div>
-
-    <div>
-      More project ownership can accelerate growth.
-    </div>
-
+  {blockers.map((item: string, index: number) => (
+  <div key={index}>
+    {item}
   </div>
+))}
+
 </div>
 
+</div>
 
 <div
   style={{
@@ -1844,26 +2083,24 @@ export default function GrowthPlan() {
     Personalized Advice
   </h2>
 
-  <div
+ <div
+  style={{
+    background:"#FFF7ED",
+    border:"1px solid #FED7AA",
+    padding:25,
+    borderRadius:18,
+    marginTop:25
+  }}
+>
+  <p
     style={{
-      background:"#FFF7ED",
-      border:"1px solid #FED7AA",
-      padding:25,
-      borderRadius:18,
-      marginTop:25
+      whiteSpace:"pre-line",
+      lineHeight:1.8
     }}
   >
-    <p>
-      You already perform strongly when speaking individually.
-      The next stage of growth will come from leading small teams,
-      coordinating projects and taking responsibility for outcomes.
-    </p>
-
-    <p>
-      Focus on collaboration before trying to improve communication further.
-      This will create faster overall growth.
-    </p>
-  </div>
+    {coachAdvice}
+  </p>
+</div>
 </div>
 
 
