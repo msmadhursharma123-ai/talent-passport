@@ -227,22 +227,189 @@ export default function Timeline() {
 
       </div>
 
+{/* CREDIT SUMMARY */}
+
+<div
+  style={{
+    background: "#FFF",
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 25
+  }}
+>
+  <div
+    style={{
+      fontWeight: 700,
+      marginBottom: 18
+    }}
+  >
+    🎓 Achievement Credit Summary
+  </div>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns:
+        "repeat(4,1fr)",
+      gap: 15
+    }}
+  >
+    <div
+      style={{
+        background: "#E8E1D6",
+        borderRadius: 16,
+        padding: 18
+      }}
+    >
+      <div>Total Credits</div>
+      <h2>
+        {achievements.length * 25}
+      </h2>
+    </div>
+
+    <div
+      style={{
+        background: "#DCE3EF",
+        borderRadius: 16,
+        padding: 18
+      }}
+    >
+      <div>Achievements</div>
+      <h2>
+        {achievements.length}
+      </h2>
+    </div>
+
+    <div
+      style={{
+        background: "#D9ECE6",
+        borderRadius: 16,
+        padding: 18
+      }}
+    >
+      <div>Verified</div>
+      <h2>
+        {
+          achievements.filter(
+            (a) =>
+              a.verification_status ===
+              "Verified"
+          ).length
+        }
+      </h2>
+    </div>
+
+    <div
+      style={{
+        background: "#E8E7F7",
+        borderRadius: 16,
+        padding: 18
+      }}
+    >
+      <div>Categories</div>
+      <h2>
+        {
+          new Set(
+            achievements.map(
+              (a) =>
+                a.activity_category
+            )
+          ).size
+        }
+      </h2>
+    </div>
+  </div>
+</div>
+
       {showForm && (
 
-        <div
-          style={{
-            background:
-              "#071226",
-            color: "white",
-            padding: 30,
-            borderRadius: 24,
-            marginBottom: 30
-          }}
-        >
+  <div
+    onClick={() =>
+      setShowForm(false)
+    }
+    style={{
+      position: "fixed",
+      inset: 0,
+      background:
+        "rgba(0,0,0,0.65)",
+      zIndex: 9999,
+      display: "flex",
+      justifyContent:
+        "center",
+      alignItems: "center",
+      padding: 30
+    }}
+  >
 
-          <h2>
-            Add Achievement
-          </h2>
+    <div
+      onClick={(e) =>
+        e.stopPropagation()
+      }
+      style={{
+        background: "#FFF",
+        width: "100%",
+        maxWidth: 900,
+        maxHeight: "90vh",
+        overflowY: "auto",
+        borderRadius: 24,
+        padding: 30,
+        color: "#0F172A",
+        position: "relative"
+      }}
+    >
+
+          <div
+  style={{
+    display: "flex",
+    justifyContent:
+      "space-between",
+    alignItems: "center",
+    marginBottom: 20
+  }}
+>
+
+  <div>
+
+    <div
+      style={{
+        color: "#F97316",
+        fontSize: 12,
+        fontWeight: 700,
+        letterSpacing: 2
+      }}
+    >
+      ACHIEVEMENT SUBMISSION
+    </div>
+
+    <h2
+      style={{
+        marginTop: 8,
+        marginBottom: 0
+      }}
+    >
+      Add Achievement
+    </h2>
+
+  </div>
+
+  <button
+    onClick={() =>
+      setShowForm(false)
+    }
+    style={{
+      background: "#F1F5F9",
+      border: "none",
+      borderRadius: 12,
+      width: 40,
+      height: 40,
+      cursor: "pointer",
+      fontSize: 18
+    }}
+  >
+    ✕
+  </button>
+
+</div>
 
           <div
             style={{
@@ -490,7 +657,7 @@ export default function Timeline() {
             }
           />
 
-          <button
+           <button
             onClick={
               saveAchievement
             }
@@ -514,151 +681,270 @@ export default function Timeline() {
 
         </div>
 
-      )}
+      </div>
+
+    )}
+
+     <div
+  style={{
+    display: "grid",
+    gap: 18
+  }}
+>
+
+  {achievements.map(
+    (item: any) => (
 
       <div
+        key={item.id}
         style={{
-          display: "grid",
-          gap: 20
+          background: "#FFFFFF",
+          border: "1px solid #E5E7EB",
+          borderRadius: 24,
+          padding: 24
         }}
       >
-        {achievements.map(
-          (item: any) => (
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start"
+          }}
+        >
+
+          <div>
 
             <div
-              key={item.id}
               style={{
-                background:
-                  "#071226",
-                color: "white",
-                borderRadius: 24,
-                padding: 25
+                fontSize: 12,
+                color: "#F97316",
+                fontWeight: 700,
+                letterSpacing: 1
               }}
             >
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent:
-                    "space-between",
-                  alignItems:
-                    "center"
-                }}
-              >
-
-                <div>
-
-                  <h2>
-                    {item.event_name}
-                  </h2>
-
-                  <div>
-                    {item.activity_category}
-                  </div>
-
-                </div>
-
-                <div>
-
-                  {item.verification_status ===
-                  "Verified"
-                    ? "✅ Verified"
-                    : "⚠️ Unverified"}
-
-                </div>
-
-              </div>
-
-              <div
-                style={{
-                  marginTop: 15
-                }}
-              >
-                <strong>
-                  {item.achievement_type}
-                </strong>
-              </div>
-
-              <div>
-                {item.achievement_level}
-              </div>
-
-              <div>
-                {item.achievement_year}
-              </div>
-
-              <p
-                style={{
-                  marginTop: 15
-                }}
-              >
-                {item.description}
-              </p>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: 15,
-                  marginTop: 20,
-                  flexWrap: "wrap"
-                }}
-              >
-
-                {item.certificate_url && (
-                  <img
-                    src={
-                      item.certificate_url
-                    }
-                    alt=""
-                    style={{
-                      width: 180,
-                      height: 120,
-                      objectFit:
-                        "cover",
-                      borderRadius: 12
-                    }}
-                  />
-                )}
-
-                {item.medal_photo_url && (
-                  <img
-                    src={
-                      item.medal_photo_url
-                    }
-                    alt=""
-                    style={{
-                      width: 180,
-                      height: 120,
-                      objectFit:
-                        "cover",
-                      borderRadius: 12
-                    }}
-                  />
-                )}
-
-                {item.award_photo_url && (
-                  <img
-                    src={
-                      item.award_photo_url
-                    }
-                    alt=""
-                    style={{
-                      width: 180,
-                      height: 120,
-                      objectFit:
-                        "cover",
-                      borderRadius: 12
-                    }}
-                  />
-                )}
-
-              </div>
-
+              ACHIEVEMENT
             </div>
 
-          )
+            <h3
+              style={{
+                marginTop: 8,
+                marginBottom: 6,
+                color: "#0F172A"
+              }}
+            >
+              {item.event_name}
+            </h3>
+
+            <div
+              style={{
+                color: "#64748B",
+                fontSize: 14
+              }}
+            >
+              {item.activity_category}
+            </div>
+
+          </div>
+
+          {item.verification_status ===
+          "Verified" ? (
+
+            <div
+              style={{
+                background: "#DCFCE7",
+                color: "#166534",
+                padding: "8px 14px",
+                borderRadius: 999,
+                fontWeight: 600,
+                fontSize: 13
+              }}
+            >
+              ✓ Verified
+            </div>
+
+          ) : (
+
+            <div
+              style={{
+                background: "#FEF3C7",
+                color: "#92400E",
+                padding: "8px 14px",
+                borderRadius: 999,
+                fontWeight: 600,
+                fontSize: 13
+              }}
+            >
+              Pending
+            </div>
+
+          )}
+
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(3,1fr)",
+            gap: 12,
+            marginTop: 18
+          }}
+        >
+
+          <div
+            style={{
+              background: "#F8FAFC",
+              borderRadius: 14,
+              padding: 12
+            }}
+          >
+            <div
+              style={{
+                fontSize: 12,
+                color: "#64748B"
+              }}
+            >
+              Award
+            </div>
+
+            <div
+              style={{
+                fontWeight: 600
+              }}
+            >
+              {item.achievement_type}
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "#F8FAFC",
+              borderRadius: 14,
+              padding: 12
+            }}
+          >
+            <div
+              style={{
+                fontSize: 12,
+                color: "#64748B"
+              }}
+            >
+              Level
+            </div>
+
+            <div
+              style={{
+                fontWeight: 600
+              }}
+            >
+              {item.achievement_level}
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "#F8FAFC",
+              borderRadius: 14,
+              padding: 12
+            }}
+          >
+            <div
+              style={{
+                fontSize: 12,
+                color: "#64748B"
+              }}
+            >
+              Year
+            </div>
+
+            <div
+              style={{
+                fontWeight: 600
+              }}
+            >
+              {item.achievement_year}
+            </div>
+          </div>
+
+        </div>
+
+        {item.description && (
+
+          <div
+            style={{
+              marginTop: 18,
+              color: "#475569",
+              lineHeight: 1.6
+            }}
+          >
+            {item.description}
+          </div>
+
         )}
+
+        {(item.certificate_url ||
+          item.medal_photo_url ||
+          item.award_photo_url) && (
+
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              overflowX: "auto",
+              marginTop: 20
+            }}
+          >
+
+            {item.certificate_url && (
+              <img
+                src={item.certificate_url}
+                alt=""
+                style={{
+                  width: 180,
+                  height: 120,
+                  objectFit: "cover",
+                  borderRadius: 14
+                }}
+              />
+            )}
+
+            {item.medal_photo_url && (
+              <img
+                src={item.medal_photo_url}
+                alt=""
+                style={{
+                  width: 180,
+                  height: 120,
+                  objectFit: "cover",
+                  borderRadius: 14
+                }}
+              />
+            )}
+
+            {item.award_photo_url && (
+              <img
+                src={item.award_photo_url}
+                alt=""
+                style={{
+                  width: 180,
+                  height: 120,
+                  objectFit: "cover",
+                  borderRadius: 14
+                }}
+              />
+            )}
+
+          </div>
+
+        )}
+
       </div>
+
+    )
+  )}
+
+</div>
 
     </div>
   );

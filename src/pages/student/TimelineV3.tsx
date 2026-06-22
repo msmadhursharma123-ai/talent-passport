@@ -831,82 +831,73 @@ function getSkillTags() {
 }
        return (
     <div>
-{/* V4 PREMIUM DASHBOARD */}
+
+      
+{/* TIMELINE V5 HERO */}
 
 <div
   style={{
-    background:
-      "linear-gradient(135deg,#071226,#0B2A4A)",
-    padding: 30,
-    borderRadius: 30,
-    marginBottom: 30,
-    color: "white"
+    background: "white",
+    borderRadius: 28,
+    padding: 28,
+    marginBottom: 24,
+    border: "1px solid #E2E8F0"
   }}
 >
 
   <div
     style={{
-      display: "flex",
-      justifyContent:
-        "space-between",
-      alignItems:
-        "center",
-      marginBottom: 25
+      color: "#FF6B00",
+      fontSize: 18,
+      letterSpacing: 2,
+      fontWeight: 700
     }}
   >
+    Showcase Your Achievements 
+  </div>
 
-    <div>
+  <h1
+    style={{
+      marginTop: 10,
+      marginBottom: 8,
+      color: "#0F172A",
+      fontSize: 34,
+      fontWeight: 500
+    }}
+  >
+   Bring Your Achievements Here  🏆  
 
-      <div
-        style={{
-          color: "#FF6B00",
-          fontWeight: 700,
-          letterSpacing: 2,
-          fontSize: 12
-        }}
-      >
-        TALENT PASSPORT
-      </div>
+  </h1>
 
-      <h1
-        style={{
-          marginTop: 12,
-          marginBottom: 0
-        }}
-      >
-        Talent Journey Intelligence
-      </h1>
+  <div
+    style={{
+      color: "#000000",
+      fontSize: 18
+    }}
+  >
+    Complete achievement history, evidence vault and accredited student record.
+  </div>
 
-    </div>
+</div>
 
-    <div
-      style={{
-        textAlign: "right"
-      }}
-    >
+{/* TIMELINE CREDIT SUMMARY */}
 
-      <div
-        style={{
-          fontSize: 12,
-          opacity: .7
-        }}
-      >
-        Journey Score
-      </div>
+<div
+  style={{
+    background: "white",
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 24
+  }}
+>
 
-      <div
-        style={{
-          fontSize: 42,
-          fontWeight: 800
-        }}
-      >
-        {
-          calculateJourneyScore()
-        }
-      </div>
-
-    </div>
-
+  <div
+    style={{
+      fontWeight: 700,
+      marginBottom: 16
+    }}
+  >
+    🎓 Achievement Credit Summary
   </div>
 
   <div
@@ -914,99 +905,84 @@ function getSkillTags() {
       display: "grid",
       gridTemplateColumns:
         "repeat(4,1fr)",
-      gap: 20
+      gap: 14
     }}
   >
 
     <div
       style={{
-        background:
-          "rgba(255,255,255,.08)",
-        padding: 20,
-        borderRadius: 20
+        background: "#E8E1D6",
+        padding: 18,
+        borderRadius: 16
       }}
     >
+      <div>Total Achievements</div>
+
       <div
         style={{
-          fontSize: 12,
-          opacity: .7
+          fontSize: 28,
+          fontWeight: 700
         }}
       >
-        Total Achievements
-      </div>
-
-      <h2>
         {totalCount}
-      </h2>
+      </div>
     </div>
 
     <div
       style={{
-        background:
-          "rgba(255,255,255,.08)",
-        padding: 20,
-        borderRadius: 20
+        background: "#DCE3EF",
+        padding: 18,
+        borderRadius: 16
       }}
     >
+      <div>Achievement Credits</div>
+
       <div
         style={{
-          fontSize: 12,
-          opacity: .7
+          fontSize: 28,
+          fontWeight: 700
         }}
       >
-        Verified
+        {totalCount * 10}
       </div>
-
-      <h2>
-        {verifiedCount}
-      </h2>
     </div>
 
     <div
       style={{
-        background:
-          "rgba(255,255,255,.08)",
-        padding: 20,
-        borderRadius: 20
+        background: "#D9ECE6",
+        padding: 18,
+        borderRadius: 16
       }}
     >
+      <div>Verified Credits</div>
+
       <div
         style={{
-          fontSize: 12,
-          opacity: .7
+          fontSize: 28,
+          fontWeight: 700
         }}
       >
-        Categories
+        {verifiedCount * 10}
       </div>
-
-      <h2>
-        {categoriesCount}
-      </h2>
     </div>
 
     <div
       style={{
-        background:
-          "rgba(255,255,255,.08)",
-        padding: 20,
-        borderRadius: 20
+        background: "#E9E5F4",
+        padding: 18,
+        borderRadius: 16
       }}
     >
+      <div>Total Ledger Credits</div>
+
       <div
         style={{
-          fontSize: 12,
-          opacity: .7
+          fontSize: 28,
+          fontWeight: 700
         }}
       >
-        Completion
+        {(totalCount * 10) + (verifiedCount * 10)}
       </div>
-
-      <h2>
-        {
-          getCompletionPercentage()
-        }
-        %
-      </h2>
     </div>
 
   </div>
@@ -1257,19 +1233,21 @@ function getSkillTags() {
 
 <div
   style={{
-    background: "#071226",
-    borderRadius: 30,
-    padding: 40,
-    color: "white",
-    marginBottom: 30
+    background: "#FFFFFF",
+    border: "1px solid #E2E8F0",
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 24
   }}
 >
+
   <div
     style={{
       textAlign: "center",
-      marginBottom: 30,
+      marginBottom: 16,
       fontWeight: 700,
-      letterSpacing: 2
+      color: "#0F172A",
+      letterSpacing: 1
     }}
   >
     TALENT JOURNEY HIGHWAY
@@ -1278,17 +1256,18 @@ function getSkillTags() {
   <div
     style={{
       position: "relative",
-      height: 260,
+      height: 120,
       overflowX: "auto",
       overflowY: "hidden"
     }}
   >
+
     <svg
       width={Math.max(
-        achievements.length * 220,
-        1200
+        achievements.length * 180,
+        900
       )}
-      height="260"
+      height="120"
       style={{
         position: "absolute",
         left: 0,
@@ -1299,13 +1278,11 @@ function getSkillTags() {
         d={achievements
           .map((item, index) => {
             const x =
-              120 +
-              index * 220;
+              100 +
+              index * 180;
 
             const y =
-              index % 2 === 0
-                ? 90
-                : 180;
+              50;
 
             return `${
               index === 0
@@ -1316,7 +1293,7 @@ function getSkillTags() {
           .join(" ")}
         fill="none"
         stroke="#203A63"
-        strokeWidth="8"
+        strokeWidth="4"
         strokeLinecap="round"
       />
     </svg>
@@ -1324,13 +1301,8 @@ function getSkillTags() {
     {achievements.map(
       (item, index) => {
         const x =
-          120 +
-          index * 220;
-
-        const y =
-          index % 2 === 0
-            ? 90
-            : 180;
+          100 +
+          index * 180;
 
         return (
           <div
@@ -1340,17 +1312,18 @@ function getSkillTags() {
             }
             style={{
               position: "absolute",
-              left: x - 35,
-              top: y - 35,
+              left: x - 20,
+              top: 30,
               cursor: "pointer",
               textAlign: "center",
-              width: 120
+              width: 90
             }}
           >
+
             <div
               style={{
-                width: 70,
-                height: 70,
+                width: 40,
+                height: 40,
                 borderRadius: "50%",
                 background:
                   activeIndex ===
@@ -1365,6 +1338,7 @@ function getSkillTags() {
                 margin:
                   "0 auto",
                 fontWeight: 700,
+                color: "white",
                 transition:
                   "all .4s"
               }}
@@ -1374,24 +1348,17 @@ function getSkillTags() {
 
             <div
               style={{
-                marginTop: 8,
+                marginTop: 6,
                 fontSize: 12,
-                fontWeight: 600
+                fontWeight: 600,
+                color: "#0F172A",
+                whiteSpace:
+                  "nowrap"
               }}
             >
               {item.event_name}
             </div>
 
-            <div
-              style={{
-                fontSize: 11,
-                opacity: 0.7
-              }}
-            >
-              {
-                item.achievement_year
-              }
-            </div>
           </div>
         );
       }
@@ -1401,20 +1368,18 @@ function getSkillTags() {
       style={{
         position: "absolute",
         left:
-          120 +
-          activeIndex * 220 -
-          15,
-        top:
-          activeIndex % 2 === 0
-            ? 35
-            : 125,
-        fontSize: 30,
+          100 +
+          activeIndex * 180 -
+          10,
+        top: 2,
+        fontSize: 18,
         transition:
-          "all 1s ease"
+          "all .8s ease"
       }}
     >
       🚀
     </div>
+
   </div>
 
   <div
@@ -1422,10 +1387,11 @@ function getSkillTags() {
       display: "flex",
       justifyContent:
         "center",
-      gap: 15,
-      marginTop: 25
+      gap: 12,
+      marginTop: 10
     }}
   >
+
     <button
       onClick={() =>
         setActiveIndex(
@@ -1437,9 +1403,12 @@ function getSkillTags() {
       }
       style={{
         padding:
-          "10px 18px",
-        borderRadius: 12,
-        border: "none",
+          "8px 14px",
+        borderRadius: 10,
+        border:
+          "1px solid #E2E8F0",
+        background:
+          "#FFFFFF",
         cursor: "pointer"
       }}
     >
@@ -1457,346 +1426,313 @@ function getSkillTags() {
       }
       style={{
         padding:
-          "10px 18px",
-        borderRadius: 12,
-        border: "none",
+          "8px 14px",
+        borderRadius: 10,
+        border:
+          "1px solid #E2E8F0",
+        background:
+          "#FFFFFF",
         cursor: "pointer"
       }}
     >
       Next →
     </button>
+
   </div>
+
 </div>
 
 {/* PREVIOUS / CURRENT / NEXT */}
 
-      {current && (
+{current && (
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "1fr 1.2fr 1fr",
-            gap: 20,
-            marginBottom: 30
-          }}
-        >
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "0.9fr 1.3fr 0.9fr",
+      gap: 16,
+      marginBottom: 24
+    }}
+  >
 
-          {/* PREVIOUS */}
+    {/* PREVIOUS */}
 
-          <div
-            style={{
-              background:
-                "#E2E8F0",
-              borderRadius: 24,
-              padding: 24
-            }}
-          >
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: "#64748B",
-                letterSpacing: 2
-              }}
-            >
-              PREVIOUS
-            </div>
+    <div
+      style={{
+        background: "#F8FAFC",
+        border: "1px solid #E2E8F0",
+        borderRadius: 20,
+        padding: 18,
+        minHeight: 170
+      }}
+    >
+      <div
+        style={{
+          fontSize: 18,
+          fontWeight: 700,
+          color: "#64748B",
+          letterSpacing: 2
+        }}
+      >
+        PREVIOUS
+      </div>
 
-            <h3>
-              {
-                previous?.event_name
-              }
-            </h3>
+      <h4
+        style={{
+          marginTop: 12,
+          marginBottom: 8,
+          color: "#0F172A"
+        }}
+      >
+        {previous?.event_name}
+      </h4>
 
-            <div>
-              {
-                previous?.achievement_level
-              }
-            </div>
+      <div
+        style={{
+          color: "#475569",
+          fontSize: 18
+        }}
+      >
+        {previous?.achievement_level}
+      </div>
 
-            <div
-              style={{
-                marginTop: 10
-              }}
-            >
-              {
-                previous?.achievement_year
-              }
-            </div>
-          </div>
+      <div
+        style={{
+          marginTop: 8,
+          color: "#64748B",
+          fontSize: 18
+        }}
+      >
+        {previous?.achievement_year}
+      </div>
+    </div>
 
-          {/* CURRENT */}
+    {/* CURRENT */}
 
-         <div
-  style={{
-    background:
-      "#FF6B00",
-    borderRadius: 24,
-    padding: 28,
-    color: "white",
-
-    transition:
-      "all 0.8s ease",
-
-    transform:
-      "translateX(0)",
-
-    animation:
-      "fadeSlide 0.8s ease"
-  }}
->
-            <div
-              style={{
-                display: "flex",
-                justifyContent:
-                  "space-between"
-              }}
-            >
-              <div>
-
-                <div
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    letterSpacing: 2
-                  }}
-                >
-                  CURRENT ACHIEVEMENT
-                </div>
-
-                <h2
-                  style={{
-                    marginTop: 12
-                  }}
-                >
-                  {
-                    current.event_name
-                  }
-                </h2>
-
-              </div>
-
-              <div>
-
-               <div
-  style={{
-    background:
-      current.verification_status ===
-      "Verified"
-        ? "#22C55E"
-        : "#DC2626",
-    padding: "8px 14px",
-    borderRadius: 999,
-    fontWeight: 700
-  }}
->
-  {current.verification_status ===
-  "Verified"
-    ? "✓ VERIFIED"
-    : "✕ UNVERIFIED"}
-</div>
-
-              </div>
-            </div>
-
-            <div
-              style={{
-                marginTop: 20,
-                display: "grid",
-                gap: 10
-              }}
-            >
-
-              <div>
-                <strong>
-                  Activity:
-                </strong>{" "}
-                {
-                  current.activity_category
-                }
-              </div>
-
-              <div>
-                <strong>
-                  Level:
-                </strong>{" "}
-                {
-                  current.achievement_level
-                }
-              </div>
-
-              <div>
-                <strong>
-                  Award:
-                </strong>{" "}
-                {
-                  current.achievement_type
-                }
-              </div>
-
-              <div>
-                <strong>
-                  Organised By:
-                </strong>{" "}
-                {
-                  current.organised_by
-                }
-              </div>
-
-              <div>
-                <strong>
-                  Judges:
-                </strong>{" "}
-                {
-                  current.judges
-                }
-              </div>
-
-              <div>
-                <strong>
-                  Location:
-                </strong>{" "}
-                {
-                  current.location
-                }
-              </div>
-
-              <div>
-                <strong>
-                  Year:
-                </strong>{" "}
-                {
-                  current.achievement_year
-                }
-              </div>
-
-            </div>
-
-            <p
-              style={{
-                marginTop: 20,
-                lineHeight: 1.8
-              }}
-            >
-              {
-                current.description
-              }
-            </p>
-
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                marginTop: 20
-              }}
-            >
-
-              <button
-                onClick={() =>
-                  editAchievement(
-                    current
-                  )
-                }
-                style={{
-                  border: "none",
-                  background:
-                    "#0B2A4A",
-                  color:
-                    "white",
-                  padding:
-                    "10px 16px",
-                  borderRadius:
-                    10,
-                  cursor:
-                    "pointer"
-                }}
-              >
-                ✏ Edit
-              </button>
-
-              <button
-                onClick={() =>
-                  removeAchievement(
-                    current.id
-                  )
-                }
-                style={{
-                  border: "none",
-                  background:
-                    "#DC2626",
-                  color:
-                    "white",
-                  padding:
-                    "10px 16px",
-                  borderRadius:
-                    10,
-                  cursor:
-                    "pointer"
-                }}
-              >
-                🗑 Delete
-              </button>
-
-            </div>
-
-          </div>
-
-          {/* NEXT */}
+    <div
+      style={{
+        background: "#D9ECE6",
+        border: "1px solid #BFD8D0",
+        borderRadius: 20,
+        padding: 20,
+        minHeight: 170,
+        color: "#0F172A"
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start"
+        }}
+      >
+        <div>
 
           <div
             style={{
-              background:
-                "#E2E8F0",
-              borderRadius: 24,
-              padding: 24
+              fontSize: 18,
+              fontWeight: 700,
+              letterSpacing: 2,
+              color: "#64748B"
             }}
           >
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: "#64748B",
-                letterSpacing: 2
-              }}
-            >
-              NEXT
-            </div>
-
-            <h3>
-              {next?.event_name}
-            </h3>
-
-            <div>
-              {
-                next?.achievement_level
-              }
-            </div>
-
-            <div
-              style={{
-                marginTop: 10
-              }}
-            >
-              {
-                next?.achievement_year
-              }
-            </div>
-
+            CURRENT ACHIEVEMENT
           </div>
+
+          <h3
+            style={{
+              marginTop: 10,
+              marginBottom: 0,
+              color: "#0F172A"
+            }}
+          >
+            {current.event_name}
+          </h3>
 
         </div>
 
-      )}
+        <div
+          style={{
+            background:
+              current.verification_status ===
+              "Verified"
+                ? "#22C55E"
+                : "#DC2626",
+            color: "white",
+            padding: "6px 12px",
+            borderRadius: 999,
+            fontWeight: 700,
+            fontSize: 18
+          }}
+        >
+          {current.verification_status ===
+          "Verified"
+            ? "✓ VERIFIED"
+            : "✕ UNVERIFIED"}
+        </div>
 
+      </div>
+
+      <div
+        style={{
+          marginTop: 16,
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(2,1fr)",
+          gap: 10,
+          fontSize: 18
+        }}
+      >
+
+        <div>
+          <strong>Activity:</strong>
+          <br />
+          {current.activity_category}
+        </div>
+
+        <div>
+          <strong>Level:</strong>
+          <br />
+          {current.achievement_level}
+        </div>
+
+        <div>
+          <strong>Award:</strong>
+          <br />
+          {current.achievement_type}
+        </div>
+
+        <div>
+          <strong>Year:</strong>
+          <br />
+          {current.achievement_year}
+        </div>
+
+      </div>
+
+      <div
+        style={{
+          marginTop: 14,
+          fontSize: 18,
+          color: "#334155",
+          lineHeight: 1.5
+        }}
+      >
+        {current.description}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          marginTop: 14
+        }}
+      >
+
+        <button
+          onClick={() =>
+            editAchievement(
+              current
+            )
+          }
+          style={{
+            border: "none",
+            background: "#0B2A4A",
+            color: "white",
+            padding: "8px 14px",
+            borderRadius: 10,
+            cursor: "pointer"
+          }}
+        >
+          ✏ Edit
+        </button>
+
+        <button
+          onClick={() =>
+            removeAchievement(
+              current.id
+            )
+          }
+          style={{
+            border: "none",
+            background: "#DC2626",
+            color: "white",
+            padding: "8px 14px",
+            borderRadius: 10,
+            cursor: "pointer"
+          }}
+        >
+          🗑 Delete
+        </button>
+
+      </div>
+
+    </div>
+
+    {/* NEXT */}
+
+    <div
+      style={{
+        background: "#F8FAFC",
+        border: "1px solid #E2E8F0",
+        borderRadius: 20,
+        padding: 18,
+        minHeight: 170
+      }}
+    >
+      <div
+        style={{
+          fontSize: 18,
+          fontWeight: 700,
+          color: "#64748B",
+          letterSpacing: 2
+        }}
+      >
+        NEXT
+      </div>
+
+      <h4
+        style={{
+          marginTop: 12,
+          marginBottom: 8,
+          color: "#0F172A"
+        }}
+      >
+        {next?.event_name}
+      </h4>
+
+      <div
+        style={{
+          color: "#475569",
+          fontSize: 18
+        }}
+      >
+        {next?.achievement_level}
+      </div>
+
+      <div
+        style={{
+          marginTop: 8,
+          color: "#64748B",
+          fontSize: 18
+        }}
+      >
+        {next?.achievement_year}
+      </div>
+
+    </div>
+
+  </div>
+
+)}
       {/* GALLERY */}
 
       {current && (
 
         <div
           style={{
-            background:
-              "#071226",
+            background:"#FFFFFF",
+border:"1px solid #E2E8F0",
             borderRadius: 30,
             padding: 30,
             color: "white",
@@ -1926,11 +1862,8 @@ function getSkillTags() {
 
 <div
   style={{
-    display: "grid",
-    gridTemplateColumns:
-      "1.2fr 1fr",
-    gap: 24,
-    marginBottom: 30
+    width: "100%",
+    marginBottom: 24
   }}
 >
 
@@ -2008,216 +1941,6 @@ function getSkillTags() {
 
   </div>
 
-  {/* SKILLS */}
-
-  <div
-    style={{
-      background:
-        "#071226",
-      color: "white",
-      borderRadius: 24,
-      padding: 24
-    }}
-  >
-
-    <div
-      style={{
-        color: "#FF6B00",
-        fontWeight: 700,
-        fontSize: 12,
-        letterSpacing: 2
-      }}
-    >
-      TALENT DNA
-    </div>
-
-    <h2>
-      Skill Tags
-    </h2>
-
-    <div
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 10,
-        marginTop: 20
-      }}
-    >
-
-      {
-     getSkillTags().map(
-  (
-    tag: string
-  ) => (
-
-            <div
-              key={tag}
-              style={{
-                background:
-                  "#FF6B00",
-                padding:
-                  "8px 14px",
-                borderRadius:
-                  999,
-                fontSize: 13,
-                fontWeight: 600
-              }}
-            >
-              {tag}
-            </div>
-
-          )
-        )
-      }
-
-    </div>
-
-  </div>
-
-</div>
-{/* V4 DNA SCOREBOARD */}
-
-<div
-  style={{
-    background:
-      "linear-gradient(135deg,#071226,#0B2A4A)",
-    color: "white",
-    padding: 30,
-    borderRadius: 30,
-    marginBottom: 30
-  }}
->
-
-  <div
-    style={{
-      color: "#FF6B00",
-      fontWeight: 700,
-      fontSize: 12,
-      letterSpacing: 2
-    }}
-  >
-    STUDENT POTENTIAL DNA
-  </div>
-
-  <h2>
-    Growth Indicators
-  </h2>
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns:
-        "repeat(5,1fr)",
-      gap: 20,
-      marginTop: 25
-    }}
-  >
-
-    {[
-      {
-        name:
-          "Communication",
-        value:
-          Math.min(
-            100,
-            totalCount *
-              8
-          )
-      },
-
-      {
-        name:
-          "Leadership",
-        value:
-          Math.min(
-            100,
-            verifiedCount *
-              10
-          )
-      },
-
-      {
-        name:
-          "Confidence",
-        value:
-          Math.min(
-            100,
-            totalCount *
-              7
-          )
-      },
-
-      {
-        name:
-          "Collaboration",
-        value:
-          Math.min(
-            100,
-            categoriesCount *
-              12
-          )
-      },
-
-      {
-        name:
-          "Critical Thinking",
-        value:
-          Math.min(
-            100,
-            totalCount *
-              6
-          )
-      }
-    ].map(
-      (
-        item
-      ) => (
-
-        <div
-          key={
-            item.name
-          }
-          style={{
-            background:
-              "rgba(255,255,255,.08)",
-            padding:
-              20,
-            borderRadius:
-              20
-          }}
-        >
-
-          <div
-            style={{
-              fontSize: 13,
-              opacity: .8
-            }}
-          >
-            {
-              item.name
-            }
-          </div>
-
-          <div
-            style={{
-              fontSize: 32,
-              fontWeight:
-                800,
-              marginTop:
-                10
-            }}
-          >
-            {
-              item.value
-            }
-          </div>
-
-        </div>
-
-      )
-    )}
-
-  </div>
 
 </div>
 

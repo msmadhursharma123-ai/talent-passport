@@ -6,6 +6,7 @@ export type StudentTab =
   | "timeline"
   | "portfolio"
   | "competitions"
+  | "opportunities"
   | "my-analysis"
   | "growth-plan";
 
@@ -24,8 +25,9 @@ const tabs: {
   { key: "homeboard", label: "Home Board" },
   { key: "timeline", label: "Timeline" },
   { key: "portfolio", label: "Portfolio" },
-  { key: "competitions", label: "Competitions" },
-  { key: "my-analysis", label: "My Analysis" },
+{ key: "competitions", label: "Competitions" },
+{ key: "opportunities", label: "Opportunities" },
+{ key: "my-analysis", label: "My Analysis" },
   { key: "growth-plan", label: "Growth Plan" }
 ];
 

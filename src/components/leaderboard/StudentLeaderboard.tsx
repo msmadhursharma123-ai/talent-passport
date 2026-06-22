@@ -20,19 +20,22 @@ function CompetencyCard({
     <div
       style={{
         background: "#FFFFFF",
-        borderRadius: 24,
-        padding: 24,
+        borderRadius: 20,
+        padding: 20,
         border: "1px solid #E2E8F0",
+        minHeight: 120,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
         boxShadow:
-          "0px 2px 8px rgba(0,0,0,0.04)",
+          "0 1px 3px rgba(15,23,42,0.04)"
       }}
     >
       <div
         style={{
           color: "#64748B",
-          fontSize: 13,
-          fontWeight: 600,
-          marginBottom: 8,
+          fontSize: 12,
+          fontWeight: 600
         }}
       >
         {title}
@@ -40,9 +43,9 @@ function CompetencyCard({
 
       <div
         style={{
-          fontSize: 36,
+          fontSize: 30,
           fontWeight: 800,
-          color: "#0F172A",
+          color: "#0F172A"
         }}
       >
         #{rank}
@@ -50,10 +53,9 @@ function CompetencyCard({
 
       <div
         style={{
-          marginTop: 10,
           color: "#F97316",
           fontWeight: 700,
-          fontSize: 16,
+          fontSize: 14
         }}
       >
         Score {score}
@@ -70,19 +72,25 @@ function MetricCard({
     <div
       style={{
         background: "#FFFFFF",
-        borderRadius: 24,
-        padding: 24,
+        borderRadius: 20,
+        padding: "18px 20px",
         border: "1px solid #E2E8F0",
+        minHeight: 105,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        boxShadow:
+          "0 1px 3px rgba(15,23,42,0.04)"
       }}
     >
       <div
         style={{
-          fontSize: 12,
-          color: "#64748B",
-          marginBottom: 10,
-          fontWeight: 600,
+          fontSize: 11,
+          color: "#94A3B8",
+          marginBottom: 8,
+          fontWeight: 700,
           textTransform: "uppercase",
-          letterSpacing: 1,
+          letterSpacing: 1.5
         }}
       >
         {title}
@@ -90,9 +98,10 @@ function MetricCard({
 
       <div
         style={{
-          fontSize: 32,
+          fontSize: 24,
           fontWeight: 800,
           color: "#0F172A",
+          lineHeight: 1.2
         }}
       >
         {value}
@@ -197,15 +206,15 @@ export default function StudentLeaderboard() {
     score: number
   ) {
     if (score >= 90)
-      return "ELITE";
+      return "Elite";
 
     if (score >= 80)
-      return "RISING STAR";
+      return "Rising Star";
 
     if (score >= 70)
-      return "EMERGING TALENT";
+      return "Emerging Talent";
 
-    return "EXPLORER";
+    return "Explorer";
   }
 
   const competencies = myRow
@@ -281,356 +290,72 @@ export default function StudentLeaderboard() {
       }}
     >
 
-      {/* HERO */}
-
-      <div
-        style={{
-          background:
-            "linear-gradient(135deg,#0F172A,#1E293B)",
-          color: "#FFF",
-          borderRadius: 30,
-          padding: 36,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: 2,
-            color: "#F97316",
-          }}
-        >
-          TALENT PASSPORT
-        </div>
-
-        <h1
-          style={{
-            marginTop: 12,
-            marginBottom: 10,
-            fontSize: 40,
-          }}
-        >
-          Talent Ranking
-          Command Center
-        </h1>
-
-        <div
-          style={{
-            opacity: 0.8,
-          }}
-        >
-          Understand where you
-          stand across your
-          school, class and
-          competition ecosystem.
-        </div>
-      </div>
-
-      {/* POSITION CARDS */}
-
-      <div
-  style={{
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(6,1fr)",
-    gap: 18,
-    marginTop: 24,
-  }}
->
-  <MetricCard
-    title="Global Rank"
-    value={`#${myRow?.rank || "-"}`}
-  />
-
-  <MetricCard
-    title="School Rank"
-    value={`#${myRow?.school_rank || "-"}`}
-  />
-
-  <MetricCard
-    title="Class Rank"
-    value={`#${myRow?.class_rank || "-"}`}
-  />
-
-  <MetricCard
-    title="Percentile"
-    value={`${myRow?.percentile || 0}%`}
-  />
-
-  <MetricCard
-    title="Gap To Leader"
-    value={myRow?.gap_to_top || 0}
-  />
-
-</div>
+     {/* HERO */}
 
 <div
   style={{
-    background: "#FFF7ED",
-    border:
-      "1px solid #FDBA74",
-    padding: 20,
-    borderRadius: 16,
-    marginTop: 24,
-    fontWeight: 600,
-    color: "#9A3412",
+    background: "#F8FAFC",
+    borderRadius: 28,
+    padding: "42px 40px",
+    border: "1px solid #E2E8F0",
   }}
 >
-  You rank #{myRow?.rank}
-  globally, #{myRow?.school_rank}
-  in your school and are
-  currently in the top{" "}
-  {myRow?.percentile}% of
-  Talent Passport students.
+  <div
+    style={{
+      color: "#F97316",
+      fontSize: 16,
+      fontWeight: 200,
+      letterSpacing: 2,
+      marginBottom: 12,
+      textTransform: "uppercase",
+    }}
+  >
+    ACCREDITED TALENT LEDGER
+  </div>
+
+  <h1
+    style={{
+      margin: 0,
+      fontSize: 48,
+      fontWeight: 200,
+      color: "#0F172A",
+      lineHeight: 1.15,
+    }}
+  >
+    Student Leaderboard
+  </h1>
+
+  <div
+    style={{
+      marginTop: 16,
+      fontSize: 20,
+      color: "#000000",
+      lineHeight: 1.7,
+      maxWidth: 1800,
+    }}
+  >
+    Complete ranking intelligence, school benchmarking,
+    competency positioning and performance analytics
+    across the Talent Passport ecosystem.
+  </div>
 </div>
 
-      {/* COMPETENCY POSITION */}
-
-      <div
-        style={{
-          background: "#FFF",
-          borderRadius: 28,
-          padding: 28,
-          border: "1px solid #E2E8F0",
-        }}
-      >
-        <div
-          style={{
-            color: "#F97316",
-            fontWeight: 700,
-            marginBottom: 20,
-          }}
-        >
-          YOUR COMPETENCY POSITION
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(5,1fr)",
-            gap: 20,
-          }}
-        >
-             <CompetencyCard
-            title="Communication"
-            score={
-              myRow?.communication_score || 0
-            }
-            rank={myRow?.rank || 0}
-          />
-
-          <CompetencyCard
-            title="Leadership"
-            score={
-              myRow?.leadership_score || 0
-            }
-            rank={myRow?.rank || 0}
-          />
-
-          <CompetencyCard
-            title="Critical Thinking"
-            score={
-              myRow?.critical_thinking_score || 0
-            }
-            rank={myRow?.rank || 0}
-          />
-
-          <CompetencyCard
-            title="Collaboration"
-            score={
-              myRow?.collaboration_score || 0
-            }
-            rank={myRow?.rank || 0}
-          />
-
-          <CompetencyCard
-            title="Confidence"
-            score={
-              myRow?.confidence_score || 0
-            }
-            rank={myRow?.rank || 0}
-          />
-
-        </div>
-      </div>
-
-      {/* TALENT PROFILE */}
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "1fr 1fr 1fr 1fr",
-          gap: 20,
-        }}
-      >
-        <MetricCard
-          title="Talent Tier"
-          value={getTier(
-            myRow?.overall_score || 0
-          )}
-        />
-
-        <MetricCard
-          title="Top Strength"
-          value={
-            strongestSkill?.title || "-"
-          }
-        />
-
-        <MetricCard
-          title="Growth Area"
-          value={
-            growthSkill?.title || "-"
-          }
-        />
-
-        <MetricCard
-          title="Overall Score"
-          value={
-            myRow?.overall_score || 0
-          }
-        />
-      </div>
-
-      {/* MEDAL ZONE */}
-
-      <div
-        style={{
-          background: "#FFF",
-          borderRadius: 28,
-          padding: 28,
-          border: "1px solid #E2E8F0",
-        }}
-      >
-        <div
-          style={{
-            color: "#F97316",
-            fontWeight: 700,
-            marginBottom: 20,
-          }}
-        >
-          MEDAL ZONE
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(4,1fr)",
-            gap: 20,
-          }}
-        >
-          <MetricCard
-            title="Gold"
-            value={goldCutoff}
-          />
-
-          <MetricCard
-            title="Silver"
-            value={silverCutoff}
-          />
-
-          <MetricCard
-            title="Bronze"
-            value={bronzeCutoff}
-          />
-
-          <MetricCard
-            title="Current Medal"
-            value={
-              myRow?.overall_score >=
-              goldCutoff
-                ? "🥇"
-                : myRow?.overall_score >=
-                  silverCutoff
-                ? "🥈"
-                : myRow?.overall_score >=
-                  bronzeCutoff
-                ? "🥉"
-                : "-"
-            }
-          />
-        </div>
-      </div>
-
-      {/* FILTERS */}
-
-      <div
-        style={{
-          background: "#FFF",
-          borderRadius: 24,
-          padding: 24,
-          border: "1px solid #E2E8F0",
-          display: "flex",
-          gap: 16,
-        }}
-      >
-        <select
-          value={selectedSchool}
-          onChange={(e) =>
-            setSelectedSchool(
-              e.target.value
-            )
-          }
-        >
-          <option>
-            All Schools
-          </option>
-
-          {filters.schools.map(
-            (school: any) => (
-              <option
-                key={school}
-              >
-                {school}
-              </option>
-            )
-          )}
-        </select>
-
-        <select
-          value={selectedClass}
-          onChange={(e) =>
-            setSelectedClass(
-              e.target.value
-            )
-          }
-        >
-          <option>
-            All Classes
-          </option>
-
-          {filters.classes.map(
-            (item: any) => (
-              <option
-                key={item}
-              >
-                {item}
-              </option>
-            )
-          )}
-        </select>
-      </div>
-
-      {/* LEADERBOARD */}
-
-     {/* LEADERBOARD */}
+{/* LEADERBOARD */}
 
 <div
   style={{
     background: "#FFF",
-    borderRadius: 28,
-    padding: 30,
+    borderRadius: 24,
+    padding: 28,
     border: "1px solid #E2E8F0",
+    minHeight: 520
   }}
 >
   <div
     style={{
       display: "flex",
       justifyContent: "space-between",
-      marginBottom: 24,
+      marginBottom: 18,
       alignItems: "center",
     }}
   >
@@ -638,32 +363,36 @@ export default function StudentLeaderboard() {
       <div
         style={{
           color: "#F97316",
-          fontSize: 12,
-          fontWeight: 700,
+          fontSize: 14,
+          fontWeight: 400,
           letterSpacing: 2,
         }}
       >
-        PERFORMANCE LEADERBOARD
+        ACCREDITED PERFORMANCE LEDGER
       </div>
 
       <h2
-        style={{
-          marginTop: 8,
-          marginBottom: 0,
-        }}
-      >
-        Student Ranking Ledger
+  style={{
+    marginTop: 6,
+    marginBottom: 0,
+    fontSize: 30,
+    fontWeight: 200
+  }}
+>
+        Student Talent Ranking Ledger
       </h2>
     </div>
 
     <div
-      style={{
-        background: "#F8FAFC",
-        padding: "12px 18px",
-        borderRadius: 14,
-        fontWeight: 700,
-      }}
-    >
+  style={{
+    background: "#ffffff",
+    border: "1px solid #FED7AA",
+    padding: "14px 20px",
+    borderRadius: 14,
+    fontWeight: 700,
+    color: "#9A3412",
+  }}
+>
       {filteredRows.length} Students
     </div>
   </div>
@@ -675,11 +404,14 @@ export default function StudentLeaderboard() {
       display: "grid",
       gridTemplateColumns:
         "120px 220px 160px repeat(5,1fr) 120px",
-      padding: "18px",
-      background: "#F8FAFC",
+      padding: "20px 24px",
+      fontSize: 19,
+color: "#0a0303",
+      background: "#f3f3f3",
       borderRadius: 14,
       fontWeight: 700,
       marginBottom: 12,
+      minHeight: 80,
     }}
   >
     <div>Rank</div>
@@ -702,13 +434,13 @@ export default function StudentLeaderboard() {
           gridTemplateColumns:
             "120px 220px 160px repeat(5,1fr) 120px",
           alignItems: "center",
-          padding: "20px",
+          padding: "18px 22px",
           marginBottom: 12,
 
           border:
             row.student_id ===
             studentId
-              ? "2px solid #F97316"
+              ? "2px solid #f6e4d7"
               : "1px solid #E2E8F0",
 
           background:
@@ -794,8 +526,9 @@ export default function StudentLeaderboard() {
             style={{
               background: "#F97316",
               color: "#FFF",
-              padding: "10px 14px",
-              borderRadius: 10,
+              padding: "8px 12px",
+borderRadius: 8,
+fontSize: 13,
               fontWeight: 700,
             }}
           >
@@ -807,73 +540,327 @@ export default function StudentLeaderboard() {
   )}
 </div>
 
-      {/* TALENT INSIGHT */}
+     {/* STUDENT POSITION SUMMARY */}
 
+<div
+  style={{
+    background: "#f7ffed",
+    border: "1px solid #0f0a04",
+    padding: "22px 28px",
+    borderRadius: 18,
+    marginTop: 24,
+    marginBottom: 24
+  }}
+>
+  <div
+    style={{
+      fontSize: 14,
+      color: "#EA580C",
+      fontWeight: 700,
+      letterSpacing: 1.5,
+      marginBottom: 10
+    }}
+  >
+    STUDENT POSITION SUMMARY
+  </div>
 
-      <div
-        style={{
-          background: "#FFF",
-          borderRadius: 28,
-          padding: 28,
-          border: "1px solid #E2E8F0",
-        }}
-      >
+  <div
+    style={{
+      fontSize: 17.5,
+      lineHeight: 2.0,
+      color: "#398d01",
+      fontWeight: 600
+    }}
+  >
+    You rank
+
+    <strong>
+      {" "}#{myRow?.rank}
+    </strong>
+
+    {" "}globally,
+
+    <strong>
+      {" "}#{myRow?.school_rank}
+    </strong>
+
+    {" "}in your school,
+
+    <strong>
+      {" "}#{myRow?.class_rank}
+    </strong>
+
+    {" "}in your class and currently sit in the
+
+    <strong>
+      {" "}Top {myRow?.percentile}%
+    </strong>
+
+    {" "}of Talent Passport students with an overall score of
+
+    <strong>
+      {" "} {myRow?.overall_score}
+    </strong>
+
+    . You are currently
+
+    <strong>
+      {" "} {myRow?.gap_to_top}
+    </strong>
+
+    {" "}points behind the leaderboard leader.
+  </div>
+</div>
+
+      {/* COMPETENCY POSITION */}
+<div
+  style={{
+    background: "#FFF",
+    borderRadius: 24,
+    padding: 20,
+    border: "1px solid #E2E8F0",
+    marginBottom: 24
+  }}
+>
         <div
           style={{
             color: "#F97316",
             fontWeight: 700,
-            marginBottom: 20,
+            marginBottom: 18,
+fontSize: 13,
+letterSpacing: 1,
           }}
         >
-          TALENT INSIGHT
+          YOUR COMPETENCY POSITION
         </div>
 
         <div
           style={{
-            lineHeight: 2,
-            color: "#334155",
-            fontSize: 15,
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(5,1fr)",
+            gap: 12,
           }}
         >
-          • You currently rank
-          #{myRow?.rank || "-"} globally.
+             <CompetencyCard
+            title="Communication"
+            score={
+              myRow?.communication_score || 0
+            }
+            rank={myRow?.rank || 0}
+          />
 
-          <br />
+          <CompetencyCard
+            title="Leadership"
+            score={
+              myRow?.leadership_score || 0
+            }
+            rank={myRow?.rank || 0}
+          />
 
-          • You rank
-          #{myRow?.school_rank || "-"}
-          in your school.
+          <CompetencyCard
+            title="Critical Thinking"
+            score={
+              myRow?.critical_thinking_score || 0
+            }
+            rank={myRow?.rank || 0}
+          />
 
-          <br />
+          <CompetencyCard
+            title="Collaboration"
+            score={
+              myRow?.collaboration_score || 0
+            }
+            rank={myRow?.rank || 0}
+          />
 
-          • Your strongest area is{" "}
-          {
-            strongestSkill?.title
-          }.
+          <CompetencyCard
+            title="Confidence"
+            score={
+              myRow?.confidence_score || 0
+            }
+            rank={myRow?.rank || 0}
+          />
 
-          <br />
-
-          • Biggest growth
-          opportunity is{" "}
-          {
-            growthSkill?.title
-          }.
-
-          <br />
-
-          • You are {gapToLeader}
-          points behind the
-          current leader.
-
-          <br />
-
-          • Your Talent Tier is{" "}
-          {getTier(
-            myRow?.overall_score || 0
-          )}.
         </div>
       </div>
 
+      {/* TALENT PROFILE */}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "1fr 1fr 1fr 1fr",
+          gap: 16,
+        }}
+      >
+        <MetricCard
+          title="Talent Tier"
+          value={getTier(
+            myRow?.overall_score || 0
+          )}
+        />
+
+        <MetricCard
+          title="Top Strength"
+          value={
+            strongestSkill?.title || "-"
+          }
+        />
+
+        <MetricCard
+          title="Growth Area"
+          value={
+            growthSkill?.title || "-"
+          }
+        />
+
+        <MetricCard
+          title="Overall Score"
+          value={
+            myRow?.overall_score || 0
+          }
+        />
+      </div>
+
+
+      {/* FILTERS */}
+
+      <div
+        style={{
+  background: "#FFF",
+  borderRadius: 20,
+  padding: 18,
+  border: "1px solid #E2E8F0",
+  display: "flex",
+  gap: 12,
+  alignItems: "center"
+}}
+      >
+        <select
+          value={selectedSchool}
+          onChange={(e) =>
+            setSelectedSchool(
+              e.target.value
+            )
+          }
+        >
+          <option>
+            All Schools
+          </option>
+
+          {filters.schools.map(
+            (school: any) => (
+              <option
+                key={school}
+              >
+                {school}
+              </option>
+            )
+          )}
+        </select>
+
+        <select
+          value={selectedClass}
+          onChange={(e) =>
+            setSelectedClass(
+              e.target.value
+            )
+          }
+        >
+          <option>
+            All Classes
+          </option>
+
+          {filters.classes.map(
+            (item: any) => (
+              <option
+                key={item}
+              >
+                {item}
+              </option>
+            )
+          )}
+        </select>
+      </div>
+
+    
+     <div
+  style={{
+    background: "#FFFFFF",
+    borderRadius: 24,
+    padding: 32,
+    minHeight: 220,
+    border: "1px solid #E2E8F0"
+  }}
+>
+  <div
+    style={{
+      color: "#F97316",
+      fontWeight: 700,
+      fontSize: 12,
+      letterSpacing: 2,
+      marginBottom: 24
+    }}
+  >
+    TALENT INSIGHT
+  </div>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns:
+        "1fr 1fr",
+      gap: 18,
+      lineHeight: 1.8
+    }}
+  >
+    <div>
+      ✓ You currently rank #{myRow?.rank} globally.
     </div>
-  );
-}
+
+    <div>
+      ✓ You rank #{myRow?.school_rank} in school.
+    </div>
+
+    <div>
+      ✓ Strongest competency:
+      {" "}
+      {strongestSkill?.title}
+    </div>
+
+    <div>
+      ✓ Growth opportunity:
+      {" "}
+      {growthSkill?.title}
+    </div>
+
+    <div>
+      ✓ Gap to leader:
+      {" "}
+      {myRow?.gap_to_top}
+      {" "}points.
+    </div>
+
+    <div>
+      ✓ Talent Tier:
+      {" "}
+      {getTier(myRow?.overall_score || 0)}
+    </div>
+
+    <div>
+      ✓ Overall score:
+      {" "}
+      {myRow?.overall_score}
+    </div>
+
+    <div>
+      ✓ Percentile:
+      {" "}
+      {myRow?.percentile}%
+    </div>
+  </div>
+</div>
+</div>
+)}

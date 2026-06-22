@@ -10,6 +10,7 @@ import Timeline from "./TimelineV3";
 import Portfolio from "./Portfolio";
 import Competitions from "./Competitions";
 import MyAnalysis from "./MyAnalysis";
+import Opportunities from "./Opportunities.tsx";
 import GrowthPlan from "./GrowthPlan";
 
 interface Props {
@@ -46,6 +47,9 @@ export default function StudentPortal({
 
       case "competitions":
         return <Competitions />;
+
+        case "opportunities":
+  return <Opportunities />;
 
       case "my-analysis":
         return <MyAnalysis />;

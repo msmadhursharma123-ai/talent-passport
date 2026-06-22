@@ -331,7 +331,7 @@ console.log("PROFILE", profile);
 <div
   style={{
     background: "#FFF8F2",
-    border: "1px solid #F4E6D4",
+    border: "1px solid #ffffff",
     borderRadius: 24,
     padding: 28,
     marginBottom: 28
@@ -340,7 +340,7 @@ console.log("PROFILE", profile);
   <div
     style={{
       display: "inline-block",
-      background: "#FFF0DE",
+      background: "#ffffff",
       border: "1px solid #F2D8B5",
       borderRadius: 999,
       padding: "6px 12px",

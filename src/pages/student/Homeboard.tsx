@@ -128,6 +128,14 @@ const studentScores =
 const hasCompetitionData =
   studentScores.length > 0;
 
+const totalSubmissions =
+  submissions.length;
+
+const submissionCredits =
+  totalSubmissions * 10;
+
+
+  
 // ============================
 // GROWTH DATA
 // ============================
@@ -754,81 +762,207 @@ const closeVideo = () =>
   ) : (
 
     <div
-      style={{
-        display: "flex",
-        gap: 20,
-        overflowX: "auto",
-        paddingBottom: 10
-      }}
-    >
-      {submissions.map(
-        (item) => (
+  style={{
+    display: "flex",
+    gap: 24,
+    alignItems: "flex-start"
+  }}
+>
+
+      {/* LEFT SIDE VIDEOS */}
+
+     <div
+  style={{
+    flex: 1,
+    overflowX: "auto"
+  }}
+>
+        <div
+          style={{
+            display: "flex",
+            gap: 20,
+            paddingBottom: 10
+          }}
+        >
+          {submissions.map(
+            (item) => (
+              <div
+                key={item.id}
+                onClick={() =>
+                  setSelectedVideo(item)
+                }
+                style={{
+                  minWidth: 280,
+                  cursor: "pointer"
+                }}
+              >
+                <div
+                  style={{
+                    borderRadius: 18,
+                    overflow: "hidden",
+                    border:
+                      "1px solid #E2E8F0"
+                  }}
+                >
+                  <video
+                    src={item.video_url}
+                    muted
+                    preload="metadata"
+                    style={{
+                      width: "100%",
+                      height: 180,
+                      objectFit: "cover",
+                      background: "#000"
+                    }}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 12
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      fontSize: 15
+                    }}
+                  >
+                    {item.event_name}
+                  </div>
+
+                  <div
+                    style={{
+                      color: "#64748B",
+                      fontSize: 13
+                    }}
+                  >
+                    Submitted on{" "}
+                    {new Date(
+                      item.created_at
+                    ).toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+        </div>
+      </div>
+
+      {/* RIGHT SIDE CREDIT SUMMARY */}
+
+  <div
+  style={{
+    width: 260,
+    flexShrink: 0,
+    border: "1px solid #E2E8F0",
+    borderRadius: 18,
+    padding: 10,
+    background: "#FAFAFA",
+    marginTop: 0
+  }}
+>
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 700,
+            marginBottom: 16
+          }}
+        >
+          🎓 Submission Credit Summary
+        </div>
+
+       <div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: 8
+  }}
+>
+
           <div
-            key={item.id}
-            onClick={() =>
-              setSelectedVideo(item)
-            }
             style={{
-              minWidth: 280,
-              cursor: "pointer"
+              background: "#E8E1D6",
+              borderRadius: 14,
+              padding: 4
             }}
           >
             <div
               style={{
-                borderRadius: 18,
-                overflow: "hidden",
-                border:
-                  "1px solid #E2E8F0"
+                fontSize: 13
               }}
             >
-              <video
-                src={item.video_url}
-                muted
-                preload="metadata"
-                style={{
-                  width: "100%",
-                  height: 180,
-                  objectFit: "cover",
-                  background: "#000"
-                }}
-              />
+              Total Submissions
             </div>
 
             <div
               style={{
-                marginTop: 12
+                fontSize: 22,
+                fontWeight: 700
               }}
             >
-              <div
-                style={{
-                  fontWeight: 700,
-                  fontSize: 15
-                }}
-              >
-                {item.event_name}
-              </div>
-
-              <div
-                style={{
-                  color: "#64748B",
-                  fontSize: 13
-                }}
-              >
-                Submitted on{" "}
-                {new Date(
-                  item.created_at
-                ).toLocaleDateString()}
-              </div>
+              {totalSubmissions}
             </div>
           </div>
-        )
-      )}
+
+          <div
+            style={{
+              background: "#DCE3EF",
+              borderRadius: 14,
+              padding: 4
+            }}
+          >
+            <div
+              style={{
+                fontSize: 13
+              }}
+            >
+              Credit Per Submission
+            </div>
+
+            <div
+              style={{
+                fontSize: 22,
+                fontWeight: 700
+              }}
+            >
+              10
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "#D9ECE6",
+              borderRadius: 14,
+              padding: 4
+            }}
+          >
+            <div
+              style={{
+                fontSize: 13
+              }}
+            >
+              Total Credits Earned
+            </div>
+
+            <div
+              style={{
+                fontSize: 22,
+                fontWeight: 700
+              }}
+            >
+              {submissionCredits}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
 
   )}
-</div>
 
-    
+</div>
 
       {/* GRAPH SECTION */}
 
@@ -1018,398 +1152,6 @@ const closeVideo = () =>
   </div>
 </div>
   
-    {/* CREDIT SYSTEM */}
-
-<div
-  style={{
-    background: "#071226",
-    color: "white",
-    borderRadius: 32,
-    padding: 35,
-    marginTop: 30
-  }}
->
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 30
-    }}
-  >
-    <div>
-      <div
-        style={{
-          color: "#FF8A00",
-          fontSize: 11,
-          letterSpacing: 2,
-          fontWeight: 700,
-          marginBottom: 8
-        }}
-      >
-        NEP 2020 ACCREDITATION LEDGER
-      </div>
-
-      <h2
-        style={{
-          margin: 0,
-          fontSize: 34
-        }}
-      >
-        Student Co-Curricular Credits Dashboard
-      </h2>
-    </div>
-
-    <div
-      style={{
-        display: "flex",
-        gap: 12
-      }}
-    >
-      <button
-        style={{
-          background: "#FF6B00",
-          color: "white",
-          border: "none",
-          padding: "12px 18px",
-          borderRadius: 12,
-          fontWeight: 700
-        }}
-      >
-        + Simulate Win (+50)
-      </button>
-
-      <button
-        style={{
-          background: "#E08A00",
-          color: "white",
-          border: "none",
-          padding: "12px 18px",
-          borderRadius: 12,
-          fontWeight: 700
-        }}
-      >
-        + Simulate Tryout (+20)
-      </button>
-    </div>
-  </div>
-
-  {/* TOP STATS */}
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr 1fr",
-      gap: 20,
-      marginBottom: 25
-    }}
-  >
-    <div
-      style={{
-        background: "#03112A",
-        borderRadius: 18,
-        padding: 24
-      }}
-    >
-      <div>Total Earned Credits</div>
-      <h1>411</h1>
-    </div>
-
-    <div
-      style={{
-        background: "#03112A",
-        borderRadius: 18,
-        padding: 24
-      }}
-    >
-      <div>Spent Credits</div>
-      <h1>0</h1>
-    </div>
-
-    <div
-      style={{
-        background: "#140B14",
-        border: "1px solid #5E2D00",
-        borderRadius: 18,
-        padding: 24
-      }}
-    >
-      <div>Available Remaining Balance</div>
-      <h1>411</h1>
-    </div>
-  </div>
-
-  {/* ACTION BAR */}
-
-  <div
-    style={{
-      background: "#020C22",
-      borderRadius: 18,
-      padding: 18,
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 25
-    }}
-  >
-    <div>🔍 Search Ledger Mechanics</div>
-
-    <div
-      style={{
-        display: "flex",
-        gap: 10
-      }}
-    >
-      <button
-  onClick={() =>
-    setCreditView("rewards")
-  }
-  style={{
-    background:
-      creditView === "rewards"
-        ? "#FF6B00"
-        : "#16223D",
-    color: "white",
-    border: "none",
-    padding: "10px 18px",
-    borderRadius: 12,
-    cursor: "pointer"
-  }}
->
-  Redeem Rewards & Earning Board
-</button>
-
-<button
-  onClick={() =>
-    setCreditView("guidelines")
-  }
-  style={{
-    background:
-      creditView === "guidelines"
-        ? "#FF6B00"
-        : "#16223D",
-    color: "white",
-    border: "none",
-    padding: "10px 18px",
-    borderRadius: 12,
-    cursor: "pointer"
-  }}
->
-  Learn Credit Rules & Guidelines
-</button>
-    </div>
-  </div>
-
-  {/* MAIN TABLE */}
-
-<div
-  style={{
-    background: "#020C22",
-    borderRadius: 24,
-    padding: 28
-  }}
->
-  {creditView === "guidelines" ? (
-    <>
-      <h3
-        style={{
-          marginTop: 0,
-          marginBottom: 25
-        }}
-      >
-        📖 Co-Curricular Accredited Earning & Spending Guidelines
-      </h3>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 24
-        }}
-      >
-        <div>
-          <h4
-            style={{
-              color: "#FF8A00"
-            }}
-          >
-            📈 Ways To Accrue Merit Credits
-          </h4>
-
-          {[
-            ["Competition Victories", "+50 Credits"],
-            ["Topping School Tryouts", "+20 Credits"],
-            ["Performance Uploads", "+5 Credits"],
-            ["Project Submissions", "+5 Credits"],
-            ["Event Participation", "+10 Credits"],
-            ["Semester Academic Toppers", "+50 Credits"],
-            ["Daily Academic Feedback", "+1 Credit"]
-          ].map((item) => (
-            <div
-              key={item[0]}
-              style={{
-                background: "#101B35",
-                padding: 18,
-                borderRadius: 14,
-                marginBottom: 12,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center"
-              }}
-            >
-              <span>{item[0]}</span>
-
-              <span
-                style={{
-                  color: "#FFB000",
-                  fontWeight: 700
-                }}
-              >
-                {item[1]}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div>
-          <h4
-            style={{
-              color: "#FF8A00"
-            }}
-          >
-            🎁 Ways To Retain & Spend Credits
-          </h4>
-
-          {[
-            ["Direct Expert Consultations", "-20 Credits"],
-            ["Partner Reach-Out Match", "-200 Credits"],
-            ["Institutional Leadership Roles", "-250 Credits"],
-            ["Principal Roundtable Lunch", "-300 Credits"],
-            ["Academy Merit Club Membership", "-350 to -500"]
-          ].map((item) => (
-            <div
-              key={item[0]}
-              style={{
-                background: "#101B35",
-                padding: 18,
-                borderRadius: 14,
-                marginBottom: 12,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center"
-              }}
-            >
-              <span>{item[0]}</span>
-
-              <span
-                style={{
-                  color: "#FF5A5A",
-                  fontWeight: 700
-                }}
-              >
-                {item[1]}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
-  ) : (
-    <>
-      <h3
-        style={{
-          marginTop: 0,
-          marginBottom: 25
-        }}
-      >
-        🎁 Redeem Rewards & Opportunities
-      </h3>
-
-      <div
-        style={{
-          display: "grid",
-          gap: 14
-        }}
-      >
-        {[
-          [
-            "Direct Consultation From Experts",
-            "20 Credits"
-          ],
-          [
-            "Partner Reach-Out Match",
-            "200 Credits"
-          ],
-          [
-            "Leadership Eligibility Status",
-            "250 Credits"
-          ],
-          [
-            "Principal Roundtable Lunch",
-            "300 Credits"
-          ],
-          [
-            "Bronze Club Membership",
-            "350 Credits"
-          ],
-          [
-            "Silver Club Membership",
-            "400 Credits"
-          ],
-          [
-            "Gold Club Membership",
-            "500 Credits"
-          ]
-        ].map((item) => (
-          <div
-            key={item[0]}
-            style={{
-              background: "#101B35",
-              padding: 20,
-              borderRadius: 14,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center"
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  fontWeight: 700,
-                  marginBottom: 6
-                }}
-              >
-                {item[0]}
-              </div>
-
-              <div
-                style={{
-                  color: "#94A3B8"
-                }}
-              >
-                Cost: {item[1]}
-              </div>
-            </div>
-
-            <button
-              style={{
-                background: "#FF6B00",
-                border: "none",
-                color: "white",
-                borderRadius: 10,
-                padding: "12px 18px",
-                fontWeight: 700,
-                cursor: "pointer"
-              }}
-            >
-              Redeem
-            </button>
-          </div>
-        ))}
-      </div>
-    </>
-  )}
-</div>
-    </div>
+   
     </div>
   );}

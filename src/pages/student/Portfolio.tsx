@@ -100,73 +100,90 @@ return (
     padding: "25px"
   }}
 >
-    {/* TERMINAL HEADER */}
+   {/* TERMINAL HEADER */}
+
+<div
+  style={{
+    background: "white",
+    borderRadius: 28,
+    padding: 28,
+    marginBottom: 24,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    border: "1px solid #E2E8F0"
+  }}
+>
+  <div>
 
     <div
       style={{
-        background:
-          "linear-gradient(135deg,#050816,#0A0F2E)",
-        borderRadius: "24px",
-        padding: "28px",
-        color: "white",
-        marginBottom: "24px",
-        display: "flex",
-        justifyContent:
-          "space-between",
-        alignItems: "center"
+        color: "#F97316",
+        fontSize: 24,
+        letterSpacing: 2,
+        fontWeight: 500,
+        marginBottom: 10
       }}
     >
-      <div>
-        <div
-          style={{
-            color: "#F97316",
-            fontSize: "12px",
-            letterSpacing: "2px"
-          }}
-        >
-          NEP-2020 STANDARDIZED
-          LEDGER NODE
-        </div>
-
-        <h1
-          style={{
-            margin: "8px 0",
-            fontSize: "52px",
-fontWeight: 700
-          }}
-        >
-          TALENT REGISTRY —
-          STUDENT GATEWAY
-        </h1>
-      </div>
-
-      <div
-        style={{
-          background:
-            "rgba(255,255,255,0.08)",
-          padding: "16px 24px",
-          borderRadius: "16px"
-        }}
-      >
-        <div
-          style={{
-            fontSize: "12px",
-            opacity: 0.7
-          }}
-        >
-          SYSTEM STATUS
-        </div>
-
-        <div
-          style={{
-            color: "#F97316",
-            fontWeight: 700
-          }}
-        >
-          SECURE CONTEXT
-        </div>
-      </div>
+      Build Your Own Portfolio
     </div>
+
+    <h1
+      style={{
+        margin: 0,
+        color: "#0F172A",
+        fontSize: 42,
+        fontWeight: 500,
+        lineHeight: 1.2
+      }}
+    >
+      Your Portfolio - Your Gateway 
+    </h1>
+
+    <div
+      style={{
+        marginTop: 10,
+        color: "#64748B",
+        fontSize: 16
+      }}
+    >
+      Secure access to your complete Talent Passport record.
+    </div>
+
+  </div>
+
+  <div
+    style={{
+      background: "#FF6B00",
+      color: "white",
+      padding: 24,
+      borderRadius: 20,
+      minWidth: 180,
+      textAlign: "center"
+    }}
+  >
+    <div
+      style={{
+        fontSize: 11,
+        letterSpacing: 1,
+        fontWeight: 700,
+        marginBottom: 8
+      }}
+    >
+      SYSTEM STATUS
+    </div>
+
+    <div
+      style={{
+        fontSize: 22,
+        fontWeight: 800
+      }}
+    >
+      SECURE CONTEXT
+    </div>
+  </div>
+
+</div>
 
     {/* LEDGER */}
 
@@ -179,40 +196,6 @@ fontWeight: 700
           "1px solid #E5E7EB"
       }}
     >
-      {/* TITLE */}
-
-      <div
-        style={{
-          padding: "28px 32px",
-          borderBottom:
-            "1px solid #ECECEC"
-        }}
-      >
-        <div
-          style={{
-            display: "inline-block",
-            background: "#FFF1E6",
-            color: "#F97316",
-            fontSize: "12px",
-            padding:
-              "6px 12px",
-            borderRadius: "10px",
-            marginBottom: "10px"
-          }}
-        >
-          PORTAL : STUDENT/PARENT
-        </div>
-
-        <h2
-          style={{
-            margin: 0,
-            fontSize: "34px"
-          }}
-        >
-          STUDENT TALENT LEDGER
-          TERMINAL
-        </h2>
-      </div>
 
       {/* SHOWCASE */}
 
