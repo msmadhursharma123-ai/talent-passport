@@ -83,135 +83,167 @@ export default function StudentProfileForm({
   };
 
   return (
+  <div
+    style={{
+      minHeight: "100vh",
+      background: "#F8F7F4",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 40,
+    }}
+  >
     <div
       style={{
-        minHeight: "100vh",
-        background: "#F8F7F4",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
+        width: 720,
+        background: "white",
+        padding: 60,
+        borderRadius: 32,
+        boxShadow:
+          "0 10px 30px rgba(0,0,0,0.08)",
       }}
     >
-      <div
+
+      <button
+        onClick={onBack}
         style={{
-          width: 500,
-          background: "white",
-          padding: 40,
-          borderRadius: 24,
+          background: "transparent",
+          border: "none",
+          color: "#143B73",
+          fontSize: "20px",
+          fontWeight: 700,
+          cursor: "pointer",
+          marginBottom: "30px",
         }}
       >
+        ← Back
+      </button>
 
-        <button
-          onClick={onBack}
-          style={{
-            background:
-              "transparent",
-            border: "none",
-            color: "#143B73",
-            fontSize: "16px",
-            fontWeight: 600,
-            cursor: "pointer",
-            marginBottom: "20px",
-          }}
-        >
-          ← Back
-        </button>
+      <h1
+        style={{
+          margin: 0,
+          marginBottom: 30,
+          fontSize: 42,
+          fontWeight: 400,
+          color: "#0F172A",
+        }}
+      >
+        Student Profile
+      </h1>
 
-        <h1>
-          Student Profile
-        </h1>
+      <input
+        placeholder="Student Name"
+        value={studentName}
+        onChange={(e) =>
+          setStudentName(
+            e.target.value
+          )
+        }
+        style={{
+          width: "100%",
+          padding: 20,
+          marginTop: 16,
+          fontSize: 18,
+          borderRadius: 14,
+          border: "1px solid #CBD5E1",
+          boxSizing: "border-box",
+        }}
+      />
 
-        <input
-          placeholder="Student Name"
-          value={studentName}
-          onChange={(e) =>
-            setStudentName(
-              e.target.value
-            )
-          }
-          style={{
-            width: "100%",
-            padding: 12,
-            marginTop: 12,
-          }}
-        />
+      <input
+        placeholder="Parent Email"
+        value={parentEmail}
+        onChange={(e) =>
+          setParentEmail(
+            e.target.value
+          )
+        }
+        style={{
+          width: "100%",
+          padding: 20,
+          marginTop: 16,
+          fontSize: 18,
+          borderRadius: 14,
+          border: "1px solid #CBD5E1",
+          boxSizing: "border-box",
+        }}
+      />
 
-        <input
-          placeholder="Parent Email"
-          value={parentEmail}
-          onChange={(e) =>
-            setParentEmail(
-              e.target.value
-            )
-          }
-          style={{
-            width: "100%",
-            padding: 12,
-            marginTop: 12,
-          }}
-        />
+      <input
+        placeholder="Parent Mobile Number"
+        value={parentMobile}
+        onChange={(e) =>
+          setParentMobile(
+            e.target.value
+          )
+        }
+        style={{
+          width: "100%",
+          padding: 20,
+          marginTop: 16,
+          fontSize: 18,
+          borderRadius: 14,
+          border: "1px solid #CBD5E1",
+          boxSizing: "border-box",
+        }}
+      />
 
-        <input
-          placeholder="Parent Mobile Number"
-          value={parentMobile}
-          onChange={(e) =>
-            setParentMobile(
-              e.target.value
-            )
-          }
-          style={{
-            width: "100%",
-            padding: 12,
-            marginTop: 12,
-          }}
-        />
+      <input
+        placeholder="School Name"
+        value={schoolName}
+        onChange={(e) =>
+          setSchoolName(
+            e.target.value
+          )
+        }
+        style={{
+          width: "100%",
+          padding: 20,
+          marginTop: 16,
+          fontSize: 18,
+          borderRadius: 14,
+          border: "1px solid #CBD5E1",
+          boxSizing: "border-box",
+        }}
+      />
 
-        <input
-          placeholder="School Name"
-          value={schoolName}
-          onChange={(e) =>
-            setSchoolName(
-              e.target.value
-            )
-          }
-          style={{
-            width: "100%",
-            padding: 12,
-            marginTop: 12,
-          }}
-        />
+      <input
+        placeholder="Class"
+        value={className}
+        onChange={(e) =>
+          setClassName(
+            e.target.value
+          )
+        }
+        style={{
+          width: "100%",
+          padding: 20,
+          marginTop: 16,
+          fontSize: 18,
+          borderRadius: 14,
+          border: "1px solid #CBD5E1",
+          boxSizing: "border-box",
+        }}
+      />
 
-        <input
-          placeholder="Class"
-          value={className}
-          onChange={(e) =>
-            setClassName(
-              e.target.value
-            )
-          }
-          style={{
-            width: "100%",
-            padding: 12,
-            marginTop: 12,
-          }}
-        />
+      <button
+        onClick={handleContinue}
+        style={{
+          marginTop: 28,
+          width: "100%",
+          padding: 20,
+          background: "#F4A623",
+          color: "white",
+          border: "none",
+          borderRadius: 14,
+          fontSize: 18,
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        Continue
+      </button>
 
-        <button
-          onClick={handleContinue}
-          style={{
-            marginTop: 20,
-            width: "100%",
-            padding: 14,
-            background: "#F4A623",
-            color: "white",
-            border: "none",
-            borderRadius: 12,
-          }}
-        >
-          Continue
-        </button>
-
-      </div>
     </div>
-  );
-}
+  </div>
+);}

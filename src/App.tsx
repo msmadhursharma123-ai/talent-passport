@@ -36,6 +36,17 @@ import {
   Database, RefreshCw, Layers, Sparkles, Sliders, CheckSquare 
 } from 'lucide-react';
 
+import PartnerRegistration
+from "./pages/PartnerRegistration";
+
+import PartnerLogin
+from "./pages/PartnerLogin";
+
+import PartnerPortal
+from "./pages/partner/PartnerPortal";
+
+
+
 const DEMO_ITEMS: Submission[] = [
   {
     id: "demo-1",
@@ -257,36 +268,37 @@ schoolName: string;
       <AppHeader />
     )}
 
-    {activeTab === "identity" && (
-      <IdentityWorld
-        onContinue={() =>
-          setActiveTab("role-selection")
-        }
-      />
-    )}
+   {activeTab === "identity" && (
+  <IdentityWorld
+    onContinue={() =>
+      setActiveTab("role-selection")
+    }
+  />
+)}
 
-   {activeTab === "role-selection" && (
+{activeTab === "role-selection" && (
   <RoleSelection
     onBack={() =>
       setActiveTab("identity")
     }
     onSelect={(role) => {
 
-  setSelectedRole(role);
+      setSelectedRole(role);
 
-  if (role === "admin") {
+      if (role === "admin") {
 
-    setActiveTab(
-      "admin-login"
-    );
+        setActiveTab(
+          "admin-login"
+        );
 
-    return;
-  }
+        return;
+      }
 
-  setActiveTab(
-    "user-type"
-  );
-}}
+      setActiveTab(
+        "user-type"
+      );
+
+    }}
   />
 )}
 
@@ -301,6 +313,25 @@ schoolName: string;
     onSelect={(type) => {
 
       setUserType(type);
+
+      if (selectedRole === "partner") {
+
+        if (type === "new") {
+
+          setActiveTab(
+            "partner-registration"
+          );
+
+        } else {
+
+          setActiveTab(
+            "partner-login"
+          );
+
+        }
+
+        return;
+      }
 
       if (type === "new") {
 
@@ -333,6 +364,28 @@ schoolName: string;
     }
   />
 )}
+
+{activeTab ===
+  "partner-registration" && (
+
+  <PartnerRegistration
+
+    onBack={() =>
+      setActiveTab(
+        "user-type"
+      )
+    }
+
+    onContinue={() =>
+      setActiveTab(
+        "partner-portal"
+      )
+    }
+
+  />
+
+)}
+
 {activeTab ===
   "existing-login" && (
   <ExistingUserLogin
@@ -353,6 +406,29 @@ schoolName: string;
     }
   />
 )}
+
+{activeTab ===
+  "partner-login" && (
+
+  <PartnerLogin
+
+    onBack={() =>
+      setActiveTab(
+        "user-type"
+      )
+    }
+
+    onSuccess={() =>
+      setActiveTab(
+        "partner-portal"
+      )
+    }
+
+  />
+
+)}
+
+
 
 {activeTab ===
   "admin-login" && (
@@ -457,6 +533,39 @@ schoolName: string;
 
     }}
   />
+)}
+
+{activeTab ===
+  "partner-portal" && (
+
+  <PartnerPortal
+
+    onLogout={() => {
+
+      localStorage.removeItem(
+        "partnerProfile"
+      );
+
+      localStorage.removeItem(
+        "partner_id"
+      );
+
+      localStorage.removeItem(
+        "userRole"
+      );
+
+      setSelectedRole("");
+
+      setUserType(null);
+
+      setActiveTab(
+        "identity"
+      );
+
+    }}
+
+  />
+
 )}
 
   </div>)}
