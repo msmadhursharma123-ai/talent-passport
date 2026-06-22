@@ -4,6 +4,10 @@ import {
 } from "react";
 
 import {
+  getSupabaseClient
+} from "../../supabaseClient";
+
+import {
   LineChart,
   Line,
   XAxis,
@@ -25,11 +29,18 @@ export default function Homeboard() {
 
     const [passportData, setPassportData] =
   useState<any[]>([]);
+
+
+const [submissions, setSubmissions] =
+  useState<any[]>([]);
+
+const [selectedVideo, setSelectedVideo] =
+  useState<any>(null);
+
 useEffect(() => {
   loadPassport();
+  loadSubmissions();
 }, []);
-
-
 
 async function loadPassport() {
 
@@ -43,6 +54,49 @@ async function loadPassport() {
 
   setPassportData(scores);
 }
+
+async function loadSubmissions() {
+
+  const profile = JSON.parse(
+    localStorage.getItem(
+      "studentProfile"
+    ) || "{}"
+  );
+
+  const studentId =
+    profile.parent_email
+      ?.toLowerCase()
+      .replace("@", "_")
+      .replace(/\./g, "_");
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return;
+
+  const { data, error } =
+    await supabase
+      .from("submissions")
+      .select("*")
+      .eq(
+        "student_id",
+        studentId
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  setSubmissions(data || []);
+}
+
 
 // ============================
 // CURRENT LOGGED IN STUDENT
@@ -200,6 +254,9 @@ icon: "🎯"
 }
 ];
 
+const closeVideo = () =>
+  setSelectedVideo(null);
+
   return (
     <div
       style={{
@@ -208,6 +265,60 @@ icon: "🎯"
         minHeight: "100vh"
       }}
     >
+{selectedVideo && (
+
+  <div
+    onClick={closeVideo}
+    style={{
+      position: "fixed",
+      inset: 0,
+      background:
+        "rgba(0,0,0,0.85)",
+      zIndex: 9999,
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 40
+    }}
+  >
+    <div
+      onClick={(e) =>
+        e.stopPropagation()
+      }
+      style={{
+        width: "90%",
+        maxWidth: 1100
+      }}
+    >
+      <video
+        src={
+          selectedVideo.video_url
+        }
+        controls
+        autoPlay
+        style={{
+          width: "100%",
+          borderRadius: 20
+        }}
+      />
+
+      <div
+        style={{
+          color: "#FFF",
+          marginTop: 12,
+          fontSize: 18,
+          fontWeight: 700
+        }}
+      >
+        {
+          selectedVideo.event_name
+        }
+      </div>
+    </div>
+  </div>
+
+)}
+
       {/* HEADER */}
 
       <div
@@ -578,52 +689,146 @@ icon: "🎯"
 </div>
 </div>
 
-      {/* AI SECTION */}
+{/* SUBMISSION EVIDENCE VAULT */}
 
-      <div
-        style={{
-          background: "#FFF",
-          borderRadius: 24,
-          padding: 30,
-          marginBottom: 25
-        }}
-      >
-        <h2>AI Evaluation Center</h2>
+<div
+  style={{
+    background: "#FFF",
+    borderRadius: 24,
+    padding: 30,
+    marginBottom: 25
+  }}
+>
+  <div
+    style={{
+      marginBottom: 24
+    }}
+  >
+    <div
+      style={{
+        color: "#F97316",
+        fontSize: 12,
+        fontWeight: 700,
+        letterSpacing: 1.5
+      }}
+    >
+      VERIFIED PERFORMANCE EVIDENCE
+    </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 15,
-            marginTop: 20
-          }}
-        >
-          <button
+    <h2
+      style={{
+        margin: "8px 0"
+      }}
+    >
+      Submission Evidence Vault
+    </h2>
+
+    <p
+      style={{
+        color: "#64748B",
+        margin: 0
+      }}
+    >
+      Every score, rank and growth
+      metric in your Talent Passport
+      is generated from the verified
+      submissions below.
+    </p>
+  </div>
+
+  {submissions.length === 0 ? (
+
+    <div
+      style={{
+        padding: 40,
+        textAlign: "center",
+        color: "#64748B",
+        border:
+          "1px dashed #CBD5E1",
+        borderRadius: 18
+      }}
+    >
+      No submissions uploaded yet.
+    </div>
+
+  ) : (
+
+    <div
+      style={{
+        display: "flex",
+        gap: 20,
+        overflowX: "auto",
+        paddingBottom: 10
+      }}
+    >
+      {submissions.map(
+        (item) => (
+          <div
+            key={item.id}
+            onClick={() =>
+              setSelectedVideo(item)
+            }
             style={{
-              background: "#FF6B00",
-              color: "#FFF",
-              border: "none",
-              padding: "14px 24px",
-              borderRadius: 12,
+              minWidth: 280,
               cursor: "pointer"
             }}
           >
-            AI Evaluate Student
-          </button>
+            <div
+              style={{
+                borderRadius: 18,
+                overflow: "hidden",
+                border:
+                  "1px solid #E2E8F0"
+              }}
+            >
+              <video
+                src={item.video_url}
+                muted
+                preload="metadata"
+                style={{
+                  width: "100%",
+                  height: 180,
+                  objectFit: "cover",
+                  background: "#000"
+                }}
+              />
+            </div>
 
-          <button
-            style={{
-              background: "#0F172A",
-              color: "#FFF",
-              border: "none",
-              padding: "14px 24px",
-              borderRadius: 12,
-              cursor: "pointer"
-            }}
-          >
-            View Evaluation
-          </button>
-        </div>
-      </div>
+            <div
+              style={{
+                marginTop: 12
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: 15
+                }}
+              >
+                {item.event_name}
+              </div>
+
+              <div
+                style={{
+                  color: "#64748B",
+                  fontSize: 13
+                }}
+              >
+                Submitted on{" "}
+                {new Date(
+                  item.created_at
+                ).toLocaleDateString()}
+              </div>
+            </div>
+          </div>
+        )
+      )}
+    </div>
+
+  )}
+</div>
+
+    
 
       {/* GRAPH SECTION */}
 
@@ -812,388 +1017,7 @@ icon: "🎯"
 
   </div>
 </div>
-     {/* PERFORMANCE INTELLIGENCE */}
-
-<div
-  style={{
-    background: "#FFF",
-    borderRadius: 24,
-    padding: 30,
-    marginBottom: 25
-  }}
->
-  <div
-    style={{
-      color: "#F97316",
-      fontSize: 12,
-      fontWeight: 700,
-      letterSpacing: 1.5
-    }}
-  >
-    PERFORMANCE INTELLIGENCE
-  </div>
-
-  <h2
-    style={{
-      marginTop: 8
-    }}
-  >
-    Student Capability Intelligence Report
-  </h2>
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 24,
-      marginTop: 20
-    }}
-  >
-
-    <div
-      style={{
-        background: "#F8FAFC",
-        borderRadius: 18,
-        padding: 24
-      }}
-    >
-      <h3>Primary Strength</h3>
-
-      <div
-        style={{
-          fontSize: 28,
-          fontWeight: 800,
-          color: "#F97316"
-        }}
-      >
-        Leadership
-      </div>
-
-      <p>
-        Student consistently demonstrates
-        decision making, initiative and
-        influence across activities.
-      </p>
-    </div>
-
-    <div
-      style={{
-        background: "#F8FAFC",
-        borderRadius: 18,
-        padding: 24
-      }}
-    >
-      <h3>Growth Opportunity</h3>
-
-      <div
-        style={{
-          fontSize: 28,
-          fontWeight: 800,
-          color: "#2563EB"
-        }}
-      >
-        Collaboration
-      </div>
-
-      <p>
-        Team participation scores indicate
-        room for stronger group engagement.
-      </p>
-    </div>
-
-  </div>
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns:
-        "repeat(4,1fr)",
-      gap: 16,
-      marginTop: 24
-    }}
-  >
-
-    <div
-      style={{
-        background: "#FFF7ED",
-        padding: 20,
-        borderRadius: 18
-      }}
-    >
-      <div>Communication Index</div>
-      <h2>{avgCommunication}</h2>
-    </div>
-
-    <div
-      style={{
-        background: "#EFF6FF",
-        padding: 20,
-        borderRadius: 18
-      }}
-    >
-      <div>Leadership Index</div>
-      <h2>{avgLeadership}</h2>
-    </div>
-
-    <div
-      style={{
-        background: "#F5F3FF",
-        padding: 20,
-        borderRadius: 18
-      }}
-    >
-      <div>Thinking Index</div>
-      <h2>{avgThinking}</h2>
-    </div>
-
-    <div
-      style={{
-        background: "#F0FDF4",
-        padding: 20,
-        borderRadius: 18
-      }}
-    >
-      <div>Confidence Index</div>
-      <h2>{avgConfidence}</h2>
-    </div>
-
-  </div>
-</div>
-
-{/* PATHWAY RECOMMENDATION */}
-
-<div
-  style={{
-    background: "#FFF",
-    borderRadius: 24,
-    padding: 30,
-    marginBottom: 25
-  }}
->
-  <div
-    style={{
-      color: "#F97316",
-      fontSize: 12,
-      fontWeight: 700,
-      letterSpacing: 1.5
-    }}
-  >
-    AI PATHWAY ENGINE
-  </div>
-
-  <h2
-    style={{
-      marginTop: 8
-    }}
-  >
-    Recommended Growth Pathway
-  </h2>
-
-  <div
-    style={{
-      background:
-        "linear-gradient(90deg,#FFF7ED,#FFFFFF)",
-      borderRadius: 20,
-      padding: 30,
-      marginTop: 20
-    }}
-  >
-    <h1
-      style={{
-        color: "#F97316",
-        marginBottom: 10
-      }}
-    >
-      Emerging Student Leader
-    </h1>
-
-    <p>
-      Based on performance patterns,
-      leadership consistency and
-      communication capability,
-      this student shows strong
-      potential in student council,
-      debating, entrepreneurship
-      and public leadership tracks.
-    </p>
-  </div>
-</div>
-
-
-{/* STUDENT DNA PROFILE */}
-
-<div
-  style={{
-    background: "#FFF",
-    borderRadius: 24,
-    padding: 30,
-    marginBottom: 25
-  }}
->
-  <div
-    style={{
-      color: "#F97316",
-      fontSize: 12,
-      fontWeight: 700,
-      letterSpacing: 1.5
-    }}
-  >
-    STUDENT DNA INTELLIGENCE
-  </div>
-
-  <h2
-    style={{
-      marginTop: 8
-    }}
-  >
-    Student DNA Profile
-  </h2>
-
-  <p
-    style={{
-      color: "#64748B",
-      marginBottom: 25
-    }}
-  >
-    Behavioral fingerprint generated from
-    competition performance patterns.
-  </p>
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 24
-    }}
-  >
-
-    {/* LEFT */}
-
-    <div
-      style={{
-        background: "#F8FAFC",
-        borderRadius: 18,
-        padding: 24
-      }}
-    >
-      <h3>Core DNA Archetype</h3>
-
-      <div
-        style={{
-          fontSize: 32,
-          fontWeight: 800,
-          color: "#F97316",
-          marginBottom: 10
-        }}
-      >
-        Emerging Leader
-      </div>
-
-      <p>
-        Strong communication,
-        leadership presence and
-        confidence suggest a natural
-        inclination toward influence,
-        presentation and team guidance.
-      </p>
-    </div>
-
-    {/* RIGHT */}
-
-    <div
-      style={{
-        background: "#F8FAFC",
-        borderRadius: 18,
-        padding: 24
-      }}
-    >
-      <h3>Potential Career Clusters</h3>
-
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 10,
-          marginTop: 12
-        }}
-      >
-        {[
-          "Entrepreneur",
-          "Public Speaker",
-          "Law",
-          "Management",
-          "Politics",
-          "Leadership"
-        ].map((item) => (
-          <div
-            key={item}
-            style={{
-              background: "#FFF7ED",
-              color: "#F97316",
-              padding: "8px 14px",
-              borderRadius: 20,
-              fontWeight: 600
-            }}
-          >
-            {item}
-          </div>
-        ))}
-      </div>
-    </div>
-
-  </div>
-
-  {/* DNA RADARS */}
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns:
-        "repeat(6,1fr)",
-      gap: 16,
-      marginTop: 24
-    }}
-  >
-    {[
-      ["Leader", 88],
-      ["Creator", 72],
-      ["Thinker", 81],
-      ["Collaborator", 75],
-      ["Performer", 84],
-      ["Innovator", 78]
-    ].map(([label, score]) => (
-      <div
-        key={label}
-        style={{
-          background: "#F8FAFC",
-          borderRadius: 16,
-          padding: 18,
-          textAlign: "center"
-        }}
-      >
-        <div
-          style={{
-            fontSize: 12,
-            color: "#64748B"
-          }}
-        >
-          {label}
-        </div>
-
-        <div
-          style={{
-            fontSize: 28,
-            fontWeight: 800,
-            color: "#0F172A"
-          }}
-        >
-          {score}
-        </div>
-      </div>
-    ))}
-  </div>
-</div>
-
+  
     {/* CREDIT SYSTEM */}
 
 <div
