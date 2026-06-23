@@ -9,10 +9,25 @@ export async function createStudent(
 
   if (!supabase) return null;
 
-  const { data, error } =
-    await (supabase as any)
-      .from("students")
-      .insert([student])
+ const studentEmail =
+  student.parent_email || "";
+
+const generatedStudentId =
+  studentEmail
+    .toLowerCase()
+    .replace("@", "_")
+    .replace(/\./g, "_");
+
+const payload = {
+  ...student,
+  student_email: studentEmail,
+  student_id: generatedStudentId
+};
+
+const { data, error } =
+  await (supabase as any)
+    .from("students")
+    .insert([payload])
       .select()
       .single();
 
@@ -47,6 +62,43 @@ export async function findStudentByEmail(
       .eq(
         "parent_email",
         email
+      )
+      .single();
+
+  if (error) {
+    return null;
+  }
+
+  return data;
+}
+
+export async function findStudentMasterByEmail(
+  email: string
+) {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) {
+    return null;
+  }
+
+  const studentId =
+    email
+      .toLowerCase()
+      .replace("@", "_")
+      .replace(/\./g, "_");
+
+  const {
+    data,
+    error
+  } =
+    await (supabase as any)
+      .from("students_master")
+      .select("*")
+      .eq(
+        "student_id",
+        studentId
       )
       .single();
 

@@ -579,3 +579,281 @@ updateOffer(
     .update(payload)
     .eq("id", id);
 }
+
+// ======================================
+// PARTNER DIRECTORY
+// ======================================
+
+export async function fetchPartners() {
+
+  const supabase =
+    getSupabaseClient() as any;
+
+  if (!supabase) {
+    return [];
+  }
+
+  const {
+    data,
+    error
+  } =
+    await supabase
+      .from("partner_profiles")
+      .select("*")
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// ======================================
+// STUDENT / PARENT REQUESTS
+// ======================================
+
+export async function createIncomingRequest(
+  request: any
+) {
+
+  const supabase =
+    getSupabaseClient() as any;
+
+  if (!supabase) {
+    return null;
+  }
+
+  const {
+    data,
+    error
+  } =
+    await supabase
+      .from(
+        "partner_incoming_requests"
+      )
+      .insert([
+        {
+          ...request,
+          status: "pending",
+          updated_at:
+            new Date()
+              .toISOString()
+        }
+      ])
+      .select()
+      .single();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data;
+}
+
+// ======================================
+// MY REQUESTS
+// ======================================
+
+export async function fetchStudentRequests(
+  studentId: string
+) {
+
+  const supabase =
+    getSupabaseClient() as any;
+
+  if (!supabase) {
+    return [];
+  }
+
+  const {
+    data,
+    error
+  } =
+    await supabase
+      .from(
+        "partner_incoming_requests"
+      )
+      .select("*")
+      .eq(
+        "student_id",
+        studentId
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// ======================================
+// ACCEPT / REJECT
+// SCHOLARSHIP
+// ======================================
+
+export async function acceptScholarshipOffer(
+  id: string
+) {
+  return updateOfferStatus(
+    "partner_scholarship_offers",
+    id,
+    "accepted"
+  );
+}
+
+export async function rejectScholarshipOffer(
+  id: string
+) {
+  return updateOfferStatus(
+    "partner_scholarship_offers",
+    id,
+    "rejected"
+  );
+}
+
+// ======================================
+// ACCEPT / REJECT
+// WORKSHOP
+// ======================================
+
+export async function acceptWorkshopOffer(
+  id: string
+) {
+  return updateOfferStatus(
+    "partner_workshop_offers",
+    id,
+    "accepted"
+  );
+}
+
+export async function rejectWorkshopOffer(
+  id: string
+) {
+  return updateOfferStatus(
+    "partner_workshop_offers",
+    id,
+    "rejected"
+  );
+}
+
+// ======================================
+// ACCEPT / REJECT
+// CONTACT
+// ======================================
+
+export async function acceptContactOffer(
+  id: string
+) {
+  return updateOfferStatus(
+    "partner_contact_requests",
+    id,
+    "accepted"
+  );
+}
+
+export async function rejectContactOffer(
+  id: string
+) {
+  return updateOfferStatus(
+    "partner_contact_requests",
+    id,
+    "rejected"
+  );
+}
+
+export async function createMarketplaceActivity(
+  activity: {
+    student_id: string;
+    activity_type: string;
+    activity_title: string;
+    partner_id: string;
+    partner_name: string;
+    status: string;
+    metadata?: any;
+  }
+) {
+
+const supabase =
+  getSupabaseClient() as any;
+
+  if (!supabase) return;
+
+  const { error } =
+    await supabase
+      .from(
+        "student_marketplace_activity"
+      )
+      .insert([
+        {
+          student_id:
+            activity.student_id,
+
+          activity_type:
+            activity.activity_type,
+
+          activity_title:
+            activity.activity_title,
+
+          partner_id:
+            activity.partner_id,
+
+          partner_name:
+            activity.partner_name,
+
+          status:
+            activity.status,
+
+          metadata:
+            activity.metadata || {}
+        }
+      ]);
+
+  if (error) {
+    console.error(error);
+  }
+}
+
+export async function fetchMarketplaceActivity(
+  studentId: string
+) {
+
+ const supabase =
+  getSupabaseClient() as any;
+
+  if (!supabase)
+    return [];
+
+  const { data } =
+    await supabase
+      .from(
+        "student_marketplace_activity"
+      )
+      .select("*")
+      .eq(
+        "student_id",
+        studentId
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
+
+  return data || [];
+}
