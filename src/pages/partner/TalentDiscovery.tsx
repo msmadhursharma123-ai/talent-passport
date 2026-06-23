@@ -14,14 +14,26 @@ from "../../supabaseClient";
 import {
   fetchPartnerScholarshipOffers,
   fetchPartnerWorkshopOffers,
-  fetchPartnerContactRequests
+  fetchPartnerContactRequests,
+  updateOffer
 }
 from "../../data/partnerMarketplaceRepository";
 
 import {
   createScholarshipOffer,
   createWorkshopOffer,
-  createContactRequest
+  createContactRequest,
+
+  fetchPartnerPipeline,
+
+  discardScholarshipOffer,
+  discardWorkshopOffer,
+  discardContactRequest,
+
+  resendScholarshipOffer,
+  resendWorkshopOffer,
+  resendContactRequest
+
 }
 from "../../data/partnerMarketplaceRepository";
 
@@ -43,6 +55,46 @@ interface StudentRecord {
   overall_score?: number;
 }
 
+function Card({
+ title,
+ value
+}:{
+ title:string;
+ value:any;
+}){
+
+ return(
+
+<div
+ style={{
+   border:"1px solid #E5E7EB",
+   borderRadius:"12px",
+   padding:"16px"
+ }}
+>
+
+<div
+ style={{
+   color:"#64748B",
+   marginBottom:"8px"
+ }}
+>
+ {title}
+</div>
+
+<div
+ style={{
+   fontWeight:700
+ }}
+>
+ {value}
+</div>
+
+</div>
+
+ );
+}
+
 export default function TalentDiscovery() {
 
 const [selectedStudent, setSelectedStudent] =
@@ -56,6 +108,12 @@ const [showWorkshopDialog, setShowWorkshopDialog] =
 
 const [showContactDialog, setShowContactDialog] =
   useState(false);
+
+  const [viewOffer, setViewOffer] =
+useState<any>(null);
+
+const [editOffer, setEditOffer] =
+useState<any>(null);
 
 const [
   scholarshipTitle,
@@ -147,6 +205,36 @@ useState<any[]>([]);
 const [contactRequests,
 setContactRequests] =
 useState<any[]>([]);
+
+const [
+  pipeline,
+  setPipeline
+] =
+useState<any[]>([]);
+
+const [
+  activePipelineTab,
+  setActivePipelineTab
+] =
+useState("All");
+
+const [
+  selectedOffer,
+  setSelectedOffer
+] =
+useState<any>(null);
+
+const [
+  showViewDialog,
+  setShowViewDialog
+] =
+useState(false); 
+
+const [
+  showEditDialog,
+  setShowEditDialog
+] =
+useState(false);
 
 async function saveScholarship() {
 
@@ -332,6 +420,8 @@ async function saveContactRequest() {
 
   loadStudents();
 
+  loadPipeline();
+
   loadPartnerActivity();
 
 }, []);
@@ -458,7 +548,6 @@ setFilteredStudents(
 
 
 
-
 return {
   ...student,
 
@@ -493,6 +582,115 @@ return {
       merged
     );
   }
+
+async function
+loadPipeline() {
+
+  const data =
+    await fetchPartnerPipeline(
+      "partner_demo"
+    );
+
+  setPipeline(
+    data || []
+  );
+}
+
+async function saveOfferChanges() {
+
+  if (!editOffer)
+    return;
+
+  let tableName = "";
+  let payload: any = {};
+
+  if (
+    editOffer.type ===
+    "Scholarship"
+  ) {
+
+    tableName =
+      "partner_scholarship_offers";
+
+    payload = {
+      offer_title:
+        editOffer.offer_title,
+      offer_description:
+        editOffer.offer_description,
+      scholarship_type:
+        editOffer.scholarship_type,
+      scholarship_value:
+        editOffer.scholarship_value
+    };
+  }
+
+  if (
+    editOffer.type ===
+    "Workshop"
+  ) {
+
+    tableName =
+      "partner_workshop_offers";
+
+    payload = {
+      workshop_title:
+        editOffer.workshop_title,
+      workshop_description:
+        editOffer.workshop_description,
+      workshop_date:
+        editOffer.workshop_date,
+      workshop_mode:
+        editOffer.workshop_mode
+    };
+  }
+
+  if (
+    editOffer.type ===
+    "Contact"
+  ) {
+
+    tableName =
+      "partner_contact_requests";
+
+    payload = {
+      request_reason:
+        editOffer.request_reason
+    };
+  }
+
+  const result =
+    await updateOffer(
+      tableName,
+      editOffer.id,
+      payload
+    );
+
+  console.log(
+    "UPDATE RESULT",
+    result
+  );
+
+  if (
+    result?.error
+  ) {
+
+    alert(
+      JSON.stringify(
+        result.error
+      )
+    );
+
+    return;
+  }
+
+  alert(
+    "Offer Updated Successfully"
+  );
+
+  setEditOffer(null);
+
+  await loadPipeline();
+}
 
 async function
 loadPartnerActivity() {
@@ -558,7 +756,7 @@ loadPartnerActivity() {
     )
   );
 
-  console.log("EVENTS", events);
+
 
   return (
 
@@ -812,169 +1010,329 @@ loadPartnerActivity() {
 
   </div>
 
-  {/* PARTNER PIPELINE */}
+  {/* OFFER MANAGEMENT */}
+
+<div
+  style={{
+    background:"#fff",
+    border:"1px solid #E5E7EB",
+    borderRadius:"20px",
+    overflow:"hidden"
+  }}
+>
 
   <div
     style={{
-      border:"1px solid #E5E7EB",
-      borderRadius:"20px",
-      overflow:"hidden"
+      padding:"20px",
+      borderBottom:
+        "1px solid #E5E7EB"
     }}
   >
 
+    <h3
+      style={{
+        margin:0,
+        marginBottom:"15px"
+      }}
+    >
+      Offer Management
+    </h3>
+
     <div
       style={{
-        padding:"18px 24px",
-        borderBottom:
-          "1px solid #E5E7EB",
-        background:"#F8FAFC",
-        fontWeight:700,
-        fontSize:"18px"
+        display:"flex",
+        gap:"10px"
       }}
     >
-      Partner Pipeline
+
+      {[
+        "All",
+        "Scholarship",
+        "Workshop",
+        "Contact"
+      ].map(tab => (
+
+        <button
+          key={tab}
+          onClick={() =>
+            setActivePipelineTab(tab)
+          }
+          style={{
+            padding:"10px 16px",
+            border:"none",
+            borderRadius:"10px",
+            cursor:"pointer",
+            background:
+              activePipelineTab === tab
+                ? "#143B73"
+                : "#F3F4F6",
+            color:
+              activePipelineTab === tab
+                ? "white"
+                : "#111827",
+            fontWeight:600
+          }}
+        >
+          {tab}
+        </button>
+
+      ))}
+
     </div>
 
-    <table
-      style={{
-        width:"100%",
-        borderCollapse:"collapse"
-      }}
-    >
+  </div>
 
-      <thead>
+  <table
+    style={{
+      width:"100%",
+      borderCollapse:"collapse"
+    }}
+  >
 
-        <tr>
+    <thead>
 
-          <th style={{
+      <tr>
+
+        <th
+          style={{
             padding:"14px",
-            textAlign:"left",
-            borderBottom:"1px solid #E5E7EB"
-          }}>
-            Type
-          </th>
+            textAlign:"left"
+          }}
+        >
+          Type
+        </th>
 
-          <th style={{
+        <th
+          style={{
             padding:"14px",
-            textAlign:"left",
-            borderBottom:"1px solid #E5E7EB"
-          }}>
-            Student
-          </th>
+            textAlign:"left"
+          }}
+        >
+          Student
+        </th>
 
-          <th style={{
+        <th
+          style={{
             padding:"14px",
-            textAlign:"left",
-            borderBottom:"1px solid #E5E7EB"
-          }}>
-            School
-          </th>
+            textAlign:"left"
+          }}
+        >
+          School
+        </th>
 
-          <th style={{
+        <th
+          style={{
             padding:"14px",
-            textAlign:"left",
-            borderBottom:"1px solid #E5E7EB"
-          }}>
-            Status
-          </th>
+            textAlign:"left"
+          }}
+        >
+          Status
+        </th>
 
-        </tr>
+        <th
+          style={{
+            padding:"14px",
+            textAlign:"left"
+          }}
+        >
+          Actions
+        </th>
 
-      </thead>
+      </tr>
 
-      <tbody>
+    </thead>
 
-        {[
-          ...scholarshipOffers.map(
-            x => ({
-              type:"Scholarship",
-              student:x.student_name,
-              school:x.school_name,
-              status:x.status
-            })
-          ),
+    <tbody>
 
-          ...workshopOffers.map(
-            x => ({
-              type:"Workshop",
-              student:x.student_name,
-              school:x.school_name,
-              status:x.status
-            })
-          ),
+      {pipeline
 
-          ...contactRequests.map(
-            x => ({
-              type:"Contact",
-              student:x.student_name,
-              school:x.school_name,
-              status:x.status
-            })
-          )
+        .filter(
+          item =>
+            activePipelineTab === "All"
+            ||
+            item.type === activePipelineTab
+        )
 
-        ].map(
-          (row,index)=>(
-            <tr key={index}>
+        .map(item => (
 
-              <td style={{
-                padding:"14px",
-                borderBottom:"1px solid #F3F4F6"
-              }}>
-                {row.type}
-              </td>
+          <tr
+            key={item.id}
+          >
 
-              <td style={{
-                padding:"14px",
-                borderBottom:"1px solid #F3F4F6"
-              }}>
-                {row.student}
-              </td>
+            <td
+              style={{
+                padding:"14px"
+              }}
+            >
+              {item.type}
+            </td>
 
-              <td style={{
-                padding:"14px",
-                borderBottom:"1px solid #F3F4F6"
-              }}>
-                {row.school}
-              </td>
+            <td
+              style={{
+                padding:"14px"
+              }}
+            >
+              {item.student_name}
+            </td>
 
-              <td style={{
-                padding:"14px",
-                borderBottom:"1px solid #F3F4F6"
-              }}>
+            <td
+              style={{
+                padding:"14px"
+              }}
+            >
+              {item.school_name}
+            </td>
 
-                <span
-                  style={{
-                    padding:"6px 12px",
-                    borderRadius:"999px",
-                    background:
-                      row.status === "accepted"
-                      ? "#DCFCE7"
-                      : row.status === "rejected"
-                      ? "#FEE2E2"
-                      : "#FEF3C7",
-                    color:
-                      row.status === "accepted"
-                      ? "#166534"
-                      : row.status === "rejected"
-                      ? "#991B1B"
-                      : "#92400E",
-                    fontWeight:600
+            <td
+              style={{
+                padding:"14px"
+              }}
+            >
+              {item.status}
+            </td>
+
+            <td
+              style={{
+                padding:"14px"
+              }}
+            >
+
+              <div
+                style={{
+                  display:"flex",
+                  gap:"8px",
+                  flexWrap:"wrap"
+                }}
+              >
+
+                <button
+  onClick={() => {
+    setViewOffer(item);
+  }}
+>
+  View
+</button>
+
+<button
+  onClick={() => {
+    setEditOffer(item);
+  }}
+>
+  Edit
+</button>
+
+                <button
+                  onClick={async() => {
+
+                    if (
+                      item.type ===
+                      "Scholarship"
+                    ) {
+
+                      await resendScholarshipOffer(
+                        item.id
+                      );
+
+                    }
+
+                    if (
+                      item.type ===
+                      "Workshop"
+                    ) {
+
+                      await resendWorkshopOffer(
+                        item.id
+                      );
+
+                    }
+
+                    if (
+                      item.type ===
+                      "Contact"
+                    ) {
+
+                      await resendContactRequest(
+                        item.id
+                      );
+
+                    }
+
+                    loadPipeline();
+
                   }}
                 >
-                  {row.status}
-                </span>
+                  Send Again
+                </button>
 
-              </td>
+                <button
+                  style={{
+                    color:"red"
+                  }}
+                  onClick={async() => {
 
-            </tr>
-          )
-        )}
+                    const ok =
+                      window.confirm(
+                        "Discard this request?"
+                      );
 
-      </tbody>
+                    if (!ok)
+                      return;
 
-    </table>
+                    if (
+                      item.type ===
+                      "Scholarship"
+                    ) {
 
-  </div>
+                      await discardScholarshipOffer(
+                        item.id
+                      );
+
+                    }
+
+                    if (
+                      item.type ===
+                      "Workshop"
+                    ) {
+
+                      await discardWorkshopOffer(
+                        item.id
+                      );
+
+                    }
+
+                    if (
+                      item.type ===
+                      "Contact"
+                    ) {
+
+                      await discardContactRequest(
+                        item.id
+                      );
+
+                    }
+
+                    loadPipeline();
+
+                  }}
+                >
+                  Discard
+                </button>
+
+              </div>
+
+            </td>
+
+          </tr>
+
+      ))}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+
 
 </div>
 
@@ -1661,7 +2019,355 @@ Send Request
 
 )}
 
+{/* VIEW OFFER DIALOG */}
+
+{viewOffer && (
+
+<div
+  style={{
+    position:"fixed",
+    inset:0,
+    background:"rgba(0,0,0,.55)",
+    display:"flex",
+    alignItems:"center",
+    justifyContent:"center",
+    zIndex:9999
+  }}
+>
+
+<div
+  style={{
+    width:"900px",
+    background:"white",
+    borderRadius:"24px",
+    padding:"32px"
+  }}
+>
+
+<div
+  style={{
+    display:"flex",
+    justifyContent:"space-between",
+    marginBottom:"25px"
+  }}
+>
+  <h2>
+    Offer Details
+  </h2>
+
+  <button
+    onClick={() =>
+      setViewOffer(null)
+    }
+  >
+    Close
+  </button>
+</div>
+
+<div
+  style={{
+    display:"grid",
+    gridTemplateColumns:
+      "1fr 1fr",
+    gap:"20px"
+  }}
+>
+
+<Card
+ title="Offer Type"
+ value={viewOffer.type}
+/>
+
+<Card
+ title="Status"
+ value={viewOffer.status}
+/>
+
+<Card
+ title="Student"
+ value={viewOffer.student_name}
+/>
+
+<Card
+ title="School"
+ value={viewOffer.school_name}
+/>
+
+<Card
+ title="Created"
+ value={
+   new Date(
+     viewOffer.created_at
+   ).toLocaleDateString()
+ }
+/>
+
+<Card
+ title="Last Updated"
+ value={
+   viewOffer.updated_at
+     ? new Date(
+         viewOffer.updated_at
+       ).toLocaleDateString()
+     : "-"
+ }
+/>
+
+</div>
+
+<div
+ style={{
+   marginTop:"25px"
+ }}
+>
+
+<h3>
+Offer Title
+</h3>
+
+<div className="tp-box">
+{
+viewOffer.offer_title ||
+viewOffer.workshop_title ||
+"Contact Request"
+}
+</div>
+
+<h3>
+Description
+</h3>
+
+<div className="tp-box">
+{
+viewOffer.offer_description ||
+viewOffer.workshop_description ||
+viewOffer.request_reason ||
+"-"
+}
+</div>
+
+</div>
+
+</div>
+</div>
+
+)}
+
+{/* EDIT OFFER DIALOG */}
+
+{editOffer && (
+
+<div
+ style={{
+   position:"fixed",
+   inset:0,
+   background:"rgba(0,0,0,.55)",
+   display:"flex",
+   justifyContent:"center",
+   alignItems:"center",
+   zIndex:9999
+ }}
+>
+
+<div
+ style={{
+   width:"850px",
+   background:"white",
+   borderRadius:"24px",
+   padding:"32px"
+ }}
+>
+
+<h2>
+Edit Offer
+</h2>
+
+<div
+ style={{
+   display:"grid",
+   gridTemplateColumns:
+   "1fr 1fr",
+   gap:"20px"
+ }}
+>
+
+<input
+ value={
+   editOffer.offer_title ||
+   editOffer.workshop_title ||
+   ""
+ }
+ onChange={(e)=>
+ setEditOffer({
+   ...editOffer,
+   offer_title:
+   e.target.value
+ })
+ }
+/>
+
+<input
+ value={
+   editOffer.scholarship_value ||
+   ""
+ }
+ onChange={(e)=>
+ setEditOffer({
+   ...editOffer,
+   scholarship_value:
+   e.target.value
+ })
+ }
+ placeholder="Value"
+/>
+
+<input
+ value={
+   editOffer.scholarship_type ||
+   ""
+ }
+ onChange={(e)=>
+ setEditOffer({
+   ...editOffer,
+   scholarship_type:
+   e.target.value
+ })
+ }
+ placeholder="Type"
+/>
+
+<input
+ value={
+   editOffer.workshop_date ||
+   ""
+ }
+ onChange={(e)=>
+ setEditOffer({
+   ...editOffer,
+   workshop_date:
+   e.target.value
+ })
+ }
+/>
+
+<input
+ value={
+   editOffer.workshop_mode ||
+   ""
+ }
+ onChange={(e)=>
+ setEditOffer({
+   ...editOffer,
+   workshop_mode:
+   e.target.value
+ })
+ }
+/>
+
+</div>
+
+<textarea
+ value={
+   editOffer.offer_description ||
+   editOffer.workshop_description ||
+   editOffer.request_reason ||
+   ""
+ }
+ onChange={(e)=>
+ setEditOffer({
+   ...editOffer,
+   offer_description:
+   e.target.value
+ })
+ }
+ rows={6}
+ style={{
+   width:"100%",
+   marginTop:"20px"
+ }}
+/>
+
+<div
+ style={{
+   display:"flex",
+   justifyContent:"flex-end",
+   gap:"12px",
+   marginTop:"20px"
+ }}
+>
+
+<button
+ onClick={() =>
+ setEditOffer(null)
+ }
+>
+ Cancel
+</button>
+
+<button
+  onClick={async () => {
+
+    console.log(
+      "EDIT OFFER BEFORE SAVE",
+      editOffer
+    );
+
+    await saveOfferChanges();
+
+  }}
+>
+  Save Changes
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+)}
     </div>
 
   );
+}
+
+function InfoCard({
+  label,
+  value
+}: any) {
+
+  return (
+
+    <div
+      style={{
+        background:"#F8FAFC",
+        border:
+          "1px solid #E2E8F0",
+        borderRadius:"14px",
+        padding:"16px"
+      }}
+    >
+
+      <div
+        style={{
+          fontSize:"12px",
+          color:"#64748B",
+          marginBottom:"6px"
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          fontWeight:600
+        }}
+      >
+        {value || "-"}
+      </div>
+
+    </div>
+
+  );
+
 }
