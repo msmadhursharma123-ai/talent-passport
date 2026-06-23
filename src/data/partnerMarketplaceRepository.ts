@@ -26,10 +26,19 @@ createScholarshipOffer(
       .select()
       .single();
 
-  if (error) {
-    console.error(error);
-    return null;
-  }
+ if (error) {
+
+  console.error(
+    "SCHOLARSHIP INSERT ERROR",
+    error
+  );
+
+  alert(
+    JSON.stringify(error)
+  );
+
+  return null;
+}
 
   return data;
 }
