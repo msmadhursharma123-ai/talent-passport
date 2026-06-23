@@ -1,6 +1,4 @@
-import React, {
-  useState
-} from "react";
+import React, { useState } from "react";
 
 import {
   createPartner
@@ -60,12 +58,15 @@ export default function PartnerRegistration({
       if (
         skillFocus.includes(skill)
       ) {
+
         setSkillFocus(
           skillFocus.filter(
             s => s !== skill
           )
         );
+
       } else {
+
         setSkillFocus([
           ...skillFocus,
           skill
@@ -82,9 +83,11 @@ export default function PartnerRegistration({
         !email ||
         !mobile
       ) {
+
         alert(
           "Please complete all fields"
         );
+
         return;
       }
 
@@ -96,6 +99,7 @@ export default function PartnerRegistration({
 
       const partner =
         await createPartner({
+
           partner_id:
             partnerId,
 
@@ -112,12 +116,15 @@ export default function PartnerRegistration({
 
           skill_focus:
             skillFocus
+
         });
 
       if (!partner) {
+
         alert(
           "Unable to create partner profile"
         );
+
         return;
       }
 
@@ -142,58 +149,89 @@ export default function PartnerRegistration({
   return (
     <div
       style={{
-        minHeight:"100vh",
-        background:"#F8F7F4",
-        display:"flex",
-        justifyContent:"center",
-        alignItems:"center",
-        padding:40
+        minHeight: "100vh",
+        background: "#F8F7F4",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 40,
       }}
     >
       <div
         style={{
-          width:800,
-          background:"white",
-          padding:60,
-          borderRadius:32
+          width: 760,
+          background: "white",
+          padding: 60,
+          borderRadius: 32,
+          boxShadow:
+            "0 10px 30px rgba(0,0,0,0.08)",
         }}
       >
 
         <button
           onClick={onBack}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "#143B73",
+            fontSize: "20px",
+            fontWeight: 700,
+            cursor: "pointer",
+            marginBottom: "30px",
+          }}
         >
           ← Back
         </button>
 
-        <h1>
+        <h1
+          style={{
+            margin: 0,
+            fontSize: 42,
+            fontWeight: 400,
+            color: "#0F172A",
+          }}
+        >
           Partner Registration
         </h1>
+
+        <p
+          style={{
+            color: "#64748B",
+            fontSize: 18,
+            marginBottom: 30,
+          }}
+        >
+          Join the Talent Passport Ecosystem
+        </p>
 
         <input
           placeholder="Institute Name"
           value={instituteName}
-          onChange={(e)=>
+          onChange={(e) =>
             setInstituteName(
               e.target.value
             )
           }
+          style={inputStyle}
         />
 
         <select
           value={city}
-          onChange={(e)=>
+          onChange={(e) =>
             setCity(
               e.target.value
             )
           }
+          style={inputStyle}
         >
-          <option>
+          <option value="">
             Select City
           </option>
 
-          {cities.map(city=>(
+          {cities.map(city => (
             <option
               key={city}
+              value={city}
             >
               {city}
             </option>
@@ -203,61 +241,93 @@ export default function PartnerRegistration({
         <input
           placeholder="Email ID"
           value={email}
-          onChange={(e)=>
+          onChange={(e) =>
             setEmail(
               e.target.value
             )
           }
+          style={inputStyle}
         />
 
         <input
           placeholder="Mobile Number"
           value={mobile}
-          onChange={(e)=>
+          onChange={(e) =>
             setMobile(
               e.target.value
             )
           }
+          style={inputStyle}
         />
 
-        <h3>
+        <h3
+          style={{
+            marginTop: 30,
+            marginBottom: 20,
+            color: "#143B73",
+          }}
+        >
           Skill Focus
         </h3>
 
         <div
           style={{
-            display:"grid",
-            gridTemplateColumns:
-            "repeat(3,1fr)",
-            gap:10
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 12,
           }}
         >
           {skills.map(skill => (
 
-            <div
+            <button
               key={skill}
-              onClick={()=>
+              type="button"
+              onClick={() =>
                 toggleSkill(skill)
               }
-            >
-              <input
-                type="checkbox"
-                checked={
+              style={{
+                padding:
+                  "12px 18px",
+                borderRadius:
+                  "999px",
+                border:
                   skillFocus.includes(skill)
-                }
-                readOnly
-              />
+                    ? "none"
+                    : "1px solid #CBD5E1",
 
+                background:
+                  skillFocus.includes(skill)
+                    ? "#F4A623"
+                    : "white",
+
+                color:
+                  skillFocus.includes(skill)
+                    ? "white"
+                    : "#334155",
+
+                cursor:"pointer"
+              }}
+            >
               {skill}
-            </div>
+            </button>
 
           ))}
         </div>
 
         <button
-          onClick={
-            handleContinue
-          }
+          onClick={handleContinue}
+          style={{
+            marginTop: 40,
+            width: "100%",
+            padding: 20,
+            background: "#F4A623",
+            color: "white",
+            border: "none",
+            borderRadius: 14,
+            fontSize: 18,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
         >
           Continue
         </button>
@@ -266,3 +336,13 @@ export default function PartnerRegistration({
     </div>
   );
 }
+
+const inputStyle = {
+  width: "100%",
+  padding: "20px",
+  marginTop: "16px",
+  fontSize: "18px",
+  borderRadius: "14px",
+  border: "1px solid #CBD5E1",
+  boxSizing: "border-box" as const,
+};

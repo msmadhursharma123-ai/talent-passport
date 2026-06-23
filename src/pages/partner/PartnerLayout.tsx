@@ -1,29 +1,32 @@
 import React from "react";
 
 export type PartnerTab =
-  | "home"
-  | "programs"
+  | "dashboard"
   | "talent-discovery"
-  | "workshops"
-  | "scholarships"
-  | "opportunities"
-  | "profile";
+  | "consultations";
 
 interface Props {
   activeTab: PartnerTab;
-  setActiveTab: (tab: PartnerTab) => void;
+  setActiveTab: (
+    tab: PartnerTab
+  ) => void;
   onLogout: () => void;
   children: React.ReactNode;
 }
 
 const tabs = [
-  { key: "home", label: "Partner Home" },
-  { key: "programs", label: "Programs" },
-  { key: "talent-discovery", label: "Talent Discovery" },
-  { key: "workshops", label: "Workshops" },
-  { key: "scholarships", label: "Scholarships" },
-  { key: "opportunities", label: "Opportunities" },
-  { key: "profile", label: "Profile" }
+  {
+    key: "dashboard",
+    label: "Dashboard"
+  },
+  {
+    key: "talent-discovery",
+    label: "Talent Discovery"
+  },
+  {
+    key: "consultations",
+    label: "Consultations"
+  }
 ];
 
 export default function PartnerLayout({
@@ -32,46 +35,82 @@ export default function PartnerLayout({
   onLogout,
   children
 }: Props) {
+
   return (
     <div
       style={{
-        background:"#F5F7F8",
-        minHeight:"100vh",
-        padding:"20px"
+        minHeight: "100vh",
+        background: "#F5F7F8"
       }}
     >
+
       <div
         style={{
-          background:"white",
-          borderRadius:20,
-          padding:20,
-          marginBottom:20
+          background: "#0F172A",
+          padding: "20px 40px",
+          color: "white"
         }}
       >
+
         <div
           style={{
-            display:"flex",
-            justifyContent:"space-between",
-            alignItems:"center"
+            display: "flex",
+            justifyContent:
+              "space-between",
+            alignItems: "center"
           }}
         >
-          <h2>Partner Portal</h2>
+
+          <div>
+
+            <div
+              style={{
+                color: "#F4A623",
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: 2
+              }}
+            >
+              TALENT PASSPORT
+            </div>
+
+            <h2
+              style={{
+                margin: 0,
+                marginTop: 6
+              }}
+            >
+              Partner Portal
+            </h2>
+
+          </div>
 
           <button
             onClick={onLogout}
+            style={{
+              background: "#F4A623",
+              color: "white",
+              border: "none",
+              borderRadius: 12,
+              padding:
+                "12px 20px",
+              fontWeight: 700,
+              cursor: "pointer"
+            }}
           >
             Logout
           </button>
+
         </div>
 
         <div
           style={{
-            display:"flex",
-            gap:10,
-            flexWrap:"wrap",
-            marginTop:20
+            display: "flex",
+            gap: 12,
+            marginTop: 20
           }}
         >
+
           {tabs.map(tab => (
 
             <button
@@ -82,28 +121,39 @@ export default function PartnerLayout({
                 )
               }
               style={{
-                padding:"10px 16px",
-                borderRadius:10,
-                border:"none",
-                cursor:"pointer",
+                border: "none",
+                borderRadius: 12,
+                padding:
+                  "12px 18px",
+                cursor: "pointer",
+                fontWeight: 600,
+
                 background:
-                  activeTab === tab.key
-                    ? "#FF6B00"
-                    : "#EFF2F6",
-                color:
-                  activeTab === tab.key
-                    ? "white"
-                    : "#475569"
+                  activeTab ===
+                  tab.key
+                    ? "#F4A623"
+                    : "#1E293B",
+
+                color: "white"
               }}
             >
               {tab.label}
             </button>
 
           ))}
+
         </div>
+
       </div>
 
-      {children}
+      <div
+        style={{
+          padding: "30px"
+        }}
+      >
+        {children}
+      </div>
+
     </div>
   );
 }

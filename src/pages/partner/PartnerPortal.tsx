@@ -13,6 +13,9 @@ from "./PartnerLayout";
 import PartnerHome
 from "./PartnerHome";
 
+import TalentDiscovery
+from "./TalentDiscovery";
+
 interface Props {
   onLogout: () => void;
 }
@@ -24,7 +27,7 @@ export default function PartnerPortal({
   const [activeTab,
     setActiveTab] =
     useState<PartnerTab>(
-      "home"
+      "dashboard"
     );
 
   const renderPage =
@@ -34,9 +37,25 @@ export default function PartnerPortal({
         activeTab
       ) {
 
-        case "home":
+        case "dashboard":
           return (
             <PartnerHome />
+          );
+
+        case "talent-discovery":
+
+  return (
+    <TalentDiscovery />
+  );
+
+        case
+        "consultations":
+
+          return (
+            <div>
+              Consultations
+              (Coming Next)
+            </div>
           );
 
         default:

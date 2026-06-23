@@ -17,22 +17,71 @@ export default function UserType({
   const isAdmin =
     role === "admin";
 
-  const roleTitle =
-    role === "school"
-      ? "School Portal"
-      : role === "admin"
-      ? "Admin Team Portal"
-      : "Student / Parent Portal";
+  const roleConfig = {
 
-  const newLabel =
-    role === "school"
-      ? "New School"
-      : "New User";
+  student: {
+    title: "Student / Parent Portal",
+    subtitle:
+      "{currentRole.subtitle}",
+    newLabel: "New User",
+    existingLabel: "Existing User",
+    newDescription:
+      "{currentRole.newDescription}",
+    existingDescription:
+      "{currentRole.existingDescription}"
+  },
 
-  const existingLabel =
-    role === "school"
-      ? "Existing School"
-      : "Existing User";
+  partner: {
+    title: "Partner Portal",
+    subtitle:
+      "Register your institute or access your partner dashboard.",
+    newLabel: "New Partner",
+    existingLabel: "Existing Partner",
+    newDescription:
+      "Join the Talent Passport ecosystem and showcase your workshops, scholarships, masterclasses and talent opportunities.",
+    existingDescription:
+      "Manage programs, discover talent, track student engagement and grow your institute network."
+  },
+
+  school: {
+    title: "School Portal",
+    subtitle:
+      "Access school intelligence and student analytics.",
+    newLabel: "New School",
+    existingLabel: "Existing School",
+    newDescription:
+      "Register your school and unlock talent analytics, competitions and growth insights.",
+    existingDescription:
+      "Access reports, rankings, student performance and school intelligence dashboards."
+  },
+
+  teacher: {
+    title: "Teacher Portal",
+    subtitle:
+      "Manage classroom performance and student development.",
+    newLabel: "New Teacher",
+    existingLabel: "Existing Teacher",
+    newDescription:
+      "Join Talent Passport and access classroom tools and student development resources.",
+    existingDescription:
+      "Review student growth, assessments and classroom performance insights."
+  }
+
+};
+
+const currentRole =
+  roleConfig[
+    role as keyof typeof roleConfig
+  ] || roleConfig.student;
+
+const roleTitle =
+  currentRole.title;
+
+const newLabel =
+  currentRole.newLabel;
+
+const existingLabel =
+  currentRole.existingLabel;
 
   const cardStyle = {
     background: "white",

@@ -1,153 +1,190 @@
 import React from "react";
 
-export type StudentTab =
-  | "dna-radar"
-  | "homeboard"
-  | "timeline"
-  | "portfolio"
-  | "competitions"
+export type PartnerTab =
+  | "home"
+  | "programs"
+  | "talent-discovery"
+  | "workshops"
+  | "scholarships"
   | "opportunities"
-  | "my-analysis"
-  | "growth-plan";
+  | "profile";
 
-interface StudentLayoutProps {
-  activeTab: StudentTab;
-  setActiveTab: (tab: StudentTab) => void;
+interface Props {
+  activeTab: PartnerTab;
+  setActiveTab: (
+    tab: PartnerTab
+  ) => void;
   onLogout: () => void;
   children: React.ReactNode;
 }
 
-const tabs: {
-  key: StudentTab;
-  label: string;
-}[] = [
-  { key: "dna-radar", label: "🏅 New User DNA Radar" },
-  { key: "homeboard", label: "Home Board" },
-  { key: "timeline", label: "Timeline" },
-  { key: "portfolio", label: "Portfolio" },
-{ key: "competitions", label: "Competitions" },
-{ key: "opportunities", label: "Opportunities" },
-{ key: "my-analysis", label: "My Analysis" },
-  { key: "growth-plan", label: "Growth Plan" }
+const tabs = [
+  {
+    key: "home",
+    label: "Home"
+  },
+  {
+    key: "programs",
+    label: "Programs"
+  },
+  {
+    key: "talent-discovery",
+    label: "Talent Discovery"
+  },
+  {
+    key: "workshops",
+    label: "Workshops"
+  },
+  {
+    key: "scholarships",
+    label: "Scholarships"
+  },
+  {
+    key: "opportunities",
+    label: "Opportunities"
+  },
+  {
+    key: "profile",
+    label: "Profile"
+  }
 ];
 
-export default function StudentLayout({
+export default function PartnerLayout({
   activeTab,
   setActiveTab,
   onLogout,
   children
-}: StudentLayoutProps) {
+}: Props) {
+
   return (
     <div
       style={{
-        background: "#F5F7F8",
         minHeight: "100vh",
-        padding: "0 24px 40px"
+        background: "#F8F7F4",
+        padding: "30px"
       }}
     >
+
       <div
         style={{
-          maxWidth: "1800px",
+          maxWidth: "1400px",
           margin: "0 auto"
         }}
       >
-        {/* TOP BAR */}
 
         <div
           style={{
-            background: "#FFFFFF",
-            borderRadius: 18,
-            padding: "20px 24px",
-            marginBottom: 20,
-            border: "1px solid #E5E7EB"
+            background: "white",
+            borderRadius: "24px",
+            padding: "25px 35px",
+            boxShadow:
+              "0 10px 30px rgba(0,0,0,0.05)",
+            marginBottom: "25px"
           }}
         >
-          {/* LOGOUT */}
 
           <div
             style={{
               display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: 16
+              justifyContent:
+                "space-between",
+              alignItems: "center"
             }}
           >
+
+            <div>
+
+              <div
+                style={{
+                  color: "#F4A623",
+                  fontWeight: 700,
+                  letterSpacing: "2px",
+                  marginBottom: 6
+                }}
+              >
+                TALENT PASSPORT
+              </div>
+
+              <h2
+                style={{
+                  margin: 0,
+                  color: "#143B73"
+                }}
+              >
+                Partner Portal
+              </h2>
+
+            </div>
+
             <button
               onClick={onLogout}
               style={{
-                background: "#D32F2F",
-                color: "#FFF",
+                background: "#143B73",
+                color: "white",
                 border: "none",
-                borderRadius: 10,
-                padding: "10px 20px",
+                borderRadius: "12px",
+                padding:
+                  "12px 20px",
                 cursor: "pointer",
-                fontWeight: 700
+                fontWeight: 600
               }}
             >
               Logout
             </button>
-          </div>
 
-          {/* TABS */}
+          </div>
 
           <div
             style={{
               display: "flex",
-              justifyContent: "flex-end"
+              gap: "12px",
+              marginTop: "25px",
+              flexWrap: "wrap"
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 10,
-                maxWidth: "1100px"
-              }}
-            >
-              {tabs.map((tab) => {
-                const isActive =
-                  activeTab === tab.key;
+            {tabs.map(tab => (
 
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() =>
-                      setActiveTab(tab.key)
-                    }
-                    style={{
-                      border: "none",
-                      cursor: "pointer",
-                      borderRadius: 10,
-                      padding: "10px 16px",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      background: isActive
-                        ? "#FF6B00"
-                        : "#EFF2F6",
-                      color: isActive
-                        ? "#FFFFFF"
-                        : "#475569",
-                      transition:
-                        "all .2s ease"
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
+              <button
+                key={tab.key}
+                onClick={() =>
+                  setActiveTab(
+                    tab.key as PartnerTab
+                  )
+                }
+                style={{
+                  padding:
+                    "14px 22px",
+                  borderRadius:
+                    "14px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: 600,
+
+                  background:
+                    activeTab ===
+                    tab.key
+                      ? "#F4A623"
+                      : "#EFF2F6",
+
+                  color:
+                    activeTab ===
+                    tab.key
+                      ? "white"
+                      : "#475569"
+                }}
+              >
+                {tab.label}
+              </button>
+
+            ))}
           </div>
+
         </div>
 
-        {/* PAGE CONTENT */}
+        {children}
 
-       <div
-  style={{
-    width: "100%"
-  }}
->
-  {children}
-</div>
       </div>
+
     </div>
   );
 }
