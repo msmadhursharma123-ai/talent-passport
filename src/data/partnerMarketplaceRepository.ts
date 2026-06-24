@@ -857,3 +857,62 @@ export async function fetchMarketplaceActivity(
 
   return data || [];
 }
+
+export async function
+fetchPartnerInbox(
+  partnerId: string
+) {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return [];
+
+  const { data } =
+    await supabase
+      .from(
+        "partner_contact_requests"
+      )
+      .select("*")
+      .eq(
+        "partner_id",
+        partnerId
+      )
+      .order(
+        "created_at",
+        { ascending: false }
+      );
+
+  return data || [];
+}
+
+export async function withdrawApplication(
+  requestId: string
+) {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase)
+    return false;
+
+  const { error } =
+    await (supabase as any)
+      .from(
+        "partner_incoming_requests"
+      )
+      .update({
+        withdrawn: true
+      })
+      .eq(
+        "id",
+        requestId
+      );
+
+  if (error) {
+    console.error(error);
+    return false;
+  }
+
+  return true;
+}
