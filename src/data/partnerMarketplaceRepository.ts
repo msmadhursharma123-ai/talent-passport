@@ -916,3 +916,170 @@ export async function withdrawApplication(
 
   return true;
 }
+
+// ======================================
+// LEAD PIPELINE
+// ======================================
+
+export async function createLead(
+  lead: any
+) {
+
+  const supabase =
+    getSupabaseClient() as any;
+
+  if (!supabase)
+    return null;
+
+  const {
+    data,
+    error
+  } =
+    await supabase
+      .from(
+        "partner_student_leads"
+      )
+      .insert([lead])
+      .select()
+      .single();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function fetchPartnerLeads(
+  partnerId: string
+) {
+
+  const supabase =
+    getSupabaseClient() as any;
+
+  if (!supabase)
+    return [];
+
+  const {
+    data,
+    error
+  } =
+    await supabase
+      .from(
+  "partner_student_leads"
+)
+.select("*")
+.order(
+  "created_at",
+  {
+    ascending:false
+  }
+)
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function updateLeadStatus(
+  leadId: string,
+  status: string
+) {
+
+  const supabase =
+    getSupabaseClient() as any;
+
+  return supabase
+    .from(
+      "partner_student_leads"
+    )
+    .update({
+      status,
+      updated_at:
+        new Date()
+          .toISOString()
+    })
+    .eq(
+      "id",
+      leadId
+    );
+}
+
+export async function updateLeadNotes(
+  leadId: string,
+  notes: string
+) {
+
+  const supabase =
+    getSupabaseClient() as any;
+
+  return supabase
+    .from(
+      "partner_student_leads"
+    )
+    .update({
+      notes,
+      updated_at:
+        new Date()
+          .toISOString()
+    })
+    .eq(
+      "id",
+      leadId
+    );
+}
+
+export async function fetchLeadMetrics(
+  partnerId: string
+) {
+
+  const leads =
+    await fetchPartnerLeads(
+      partnerId
+    );
+
+  return {
+
+  total:
+    leads.length,
+
+  incoming:
+    leads.filter(
+      (l: any) =>
+        l.lead_source ===
+        "incoming"
+    ).length,
+
+  outgoing:
+    leads.filter(
+      (l: any) =>
+        l.lead_source ===
+        "outgoing"
+    ).length,
+
+  admissions:
+    leads.filter(
+      (l: any) =>
+        l.status ===
+        "admission_completed"
+    ).length,
+
+  rejected:
+    leads.filter(
+      (l: any) =>
+        l.status ===
+        "rejected"
+    ).length
+};
+}
+
