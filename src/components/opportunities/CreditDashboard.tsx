@@ -595,7 +595,47 @@ border: "1px solid #E2E8F0",
           )}
         </div>
       )}
+
+
+
+      {/* CONSULTATION MARKETPLACE */}
+
+      <div
+        style={{
+          background:
+            "linear-gradient(135deg,#FFF7ED,#FFEDD5)",
+          borderRadius: 24,
+          padding: 24,
+          marginBottom: 24
+        }}
+      >
+
+        <div
+          style={{
+            fontSize: 24,
+            fontWeight: 700,
+            color: "#9A3412"
+          }}
+        >
+          🎓 Consultation Marketplace
+        </div>
+
+        <div
+          style={{
+            marginTop: 12,
+            color: "#7C2D12"
+          }}
+        >
+          Coming Soon:
+          Expert Mentors,
+          Career Coaches,
+          Scholarship Guidance,
+          Personal Growth Advisors.
+        </div>
+
+      </div>
     </div>
   </div>
 );
 }
+

@@ -7,6 +7,7 @@ export type StudentTab =
   | "portfolio"
   | "competitions"
   | "opportunities"
+  | "mauke-pe-chauka"
   | "my-analysis"
   | "growth-plan";
 
@@ -27,6 +28,10 @@ const tabs: {
   { key: "portfolio", label: "Portfolio" },
 { key: "competitions", label: "Competitions" },
 { key: "opportunities", label: "Opportunities" },
+{
+  key: "mauke-pe-chauka",
+  label: "🎯 Mauke Pe Chauka"
+},
 { key: "my-analysis", label: "My Analysis" },
   { key: "growth-plan", label: "Growth Plan" }
 ];

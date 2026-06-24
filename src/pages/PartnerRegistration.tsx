@@ -18,13 +18,16 @@ const cities = [
 ];
 
 const skills = [
-  "Dancing",
+  "Dance",
   "Singing",
   "Acting",
-  "Speaking",
+  "Drama",
+  "Debate",
+  "Public Speaking",
+  "Creative Writing",
   "Art & Craft",
   "Painting",
-  "Others"
+  "Music Instrument"
 ];
 
 export default function PartnerRegistration({
@@ -52,6 +55,18 @@ export default function PartnerRegistration({
     setSkillFocus] =
     useState<string[]>([]);
 
+const [preferredAgeFrom,
+  setPreferredAgeFrom] =
+  useState("");
+
+const [preferredAgeTo,
+  setPreferredAgeTo] =
+  useState("");
+
+const [instituteArea,
+  setInstituteArea] =
+  useState("");
+
   const toggleSkill =
     (skill: string) => {
 
@@ -77,12 +92,15 @@ export default function PartnerRegistration({
   const handleContinue =
     async () => {
 
-      if (
-        !instituteName ||
-        !city ||
-        !email ||
-        !mobile
-      ) {
+     if (
+  !instituteName ||
+  !city ||
+  !email ||
+  !mobile ||
+  !preferredAgeFrom ||
+  !preferredAgeTo ||
+  !instituteArea
+) {
 
         alert(
           "Please complete all fields"
@@ -97,27 +115,45 @@ export default function PartnerRegistration({
           .replaceAll("@","_")
           .replaceAll(".","_");
 
-      const partner =
-        await createPartner({
+     const partner =
+  await createPartner({
 
-          partner_id:
-            partnerId,
+    partner_id:
+      partnerId,
 
-          institute_name:
-            instituteName,
+    partner_name:
+      instituteName,
 
-          institute_city:
-            city,
+    category:
+      "Institute",
 
-          email,
+    email,
 
-          mobile_number:
-            mobile,
+    phone:
+      mobile,
 
-          skill_focus:
-            skillFocus
+    specialization:
+      skillFocus,
 
-        });
+    preferred_age_from:
+      Number(
+        preferredAgeFrom
+      ),
+
+    preferred_age_to:
+      Number(
+        preferredAgeTo
+      ),
+
+    institute_area:
+      instituteArea,
+
+    description: "",
+
+    website: "",
+
+    status: "active"
+  });
 
       if (!partner) {
 
@@ -259,6 +295,53 @@ export default function PartnerRegistration({
           }
           style={inputStyle}
         />
+
+<input
+  placeholder="Institute Area / Sector"
+  value={instituteArea}
+  onChange={(e) =>
+    setInstituteArea(
+      e.target.value
+    )
+  }
+  style={inputStyle}
+/>
+
+<div
+  style={{
+    display: "grid",
+    gridTemplateColumns:
+      "1fr 1fr",
+    gap: 16,
+    marginTop: 16
+  }}
+>
+
+  <input
+    type="number"
+    placeholder="Preferred Age From"
+    value={preferredAgeFrom}
+    onChange={(e) =>
+      setPreferredAgeFrom(
+        e.target.value
+      )
+    }
+    style={inputStyle}
+  />
+
+  <input
+    type="number"
+    placeholder="Preferred Age To"
+    value={preferredAgeTo}
+    onChange={(e) =>
+      setPreferredAgeTo(
+        e.target.value
+      )
+    }
+    style={inputStyle}
+  />
+
+</div>
 
         <h3
           style={{

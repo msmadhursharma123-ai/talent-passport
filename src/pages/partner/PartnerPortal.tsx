@@ -16,16 +16,30 @@ from "./PartnerHome";
 import TalentDiscovery
 from "./TalentDiscovery";
 
+import IncomingRequests
+from "./IncomingRequests";
+
+import LeadPipeline
+from "./LeadPipeline";
+
 interface Props {
+
   onLogout: () => void;
 }
 
 export default function PartnerPortal({
+
   onLogout
+
 }: Props) {
 
-  const [activeTab,
-    setActiveTab] =
+  const [
+
+    activeTab,
+
+    setActiveTab
+
+  ] =
     useState<PartnerTab>(
       "dashboard"
     );
@@ -38,27 +52,34 @@ export default function PartnerPortal({
       ) {
 
         case "dashboard":
+
           return (
             <PartnerHome />
           );
 
-        case "talent-discovery":
-
-  return (
-    <TalentDiscovery />
-  );
-
         case
-        "consultations":
+        "talent-discovery":
 
           return (
-            <div>
-              Consultations
-              (Coming Next)
-            </div>
+            <TalentDiscovery />
+          );
+
+        case
+        "incoming-requests":
+
+          return (
+            <IncomingRequests />
+          );
+
+        case
+        "lead-pipeline":
+
+          return (
+            <LeadPipeline />
           );
 
         default:
+
           return (
             <PartnerHome />
           );
@@ -66,18 +87,26 @@ export default function PartnerPortal({
     };
 
   return (
+
     <PartnerLayout
+
       activeTab={
         activeTab
       }
+
       setActiveTab={
         setActiveTab
       }
+
       onLogout={
         onLogout
       }
+
     >
+
       {renderPage()}
+
     </PartnerLayout>
+
   );
 }

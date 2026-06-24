@@ -12,6 +12,8 @@ import Competitions from "./Competitions";
 import MyAnalysis from "./MyAnalysis";
 import Opportunities from "./Opportunities.tsx";
 import GrowthPlan from "./GrowthPlan";
+import MaukePeChauka
+from "./MaukePeChauka";
 
 interface Props {
   onLogout: () => void;
@@ -50,6 +52,11 @@ export default function StudentPortal({
 
         case "opportunities":
   return <Opportunities />;
+
+  case "mauke-pe-chauka":
+  return (
+    <MaukePeChauka />
+  );
 
       case "my-analysis":
         return <MyAnalysis />;

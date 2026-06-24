@@ -6,12 +6,8 @@ import React,
 from "react";
 
 import {
-  fetchStudentsMaster,
-  fetchTalentPassportScores
-}
-from "../../supabaseClient";
-
-import {
+  fetchAllocatedStudents,
+  markLeadRequestSent,
   fetchPartnerScholarshipOffers,
   fetchPartnerWorkshopOffers,
   fetchPartnerContactRequests,
@@ -38,9 +34,15 @@ import {
 from "../../data/partnerMarketplaceRepository";
 
 interface StudentRecord {
+
+  id?: string;
+
   student_id: string;
+
   student_name: string;
+
   school_name: string;
+
   class_name: string;
 
   event_name?: string;
@@ -96,6 +98,19 @@ function Card({
 }
 
 export default function TalentDiscovery() {
+
+const partnerProfile =
+JSON.parse(
+  localStorage.getItem(
+    "partnerProfile"
+  ) || "{}"
+);
+
+const partnerId =
+  partnerProfile.partner_id;
+
+const partnerName =
+  partnerProfile.institute_name;
 
 const [selectedStudent, setSelectedStudent] =
   useState<StudentRecord | null>(null);
@@ -244,10 +259,10 @@ async function saveScholarship() {
     await createScholarshipOffer({
 
       partner_id:
-        "partner_demo",
+  partnerId,
 
-      partner_name:
-        "Talent Partner",
+partner_name:
+  partnerName,
 
       student_id:
         selectedStudent.student_id,
@@ -307,10 +322,10 @@ async function saveWorkshop() {
     await createWorkshopOffer({
 
       partner_id:
-        "partner_demo",
+  partnerId,
 
-      partner_name:
-        "Talent Partner",
+partner_name:
+  partnerName,
 
       student_id:
         selectedStudent.student_id,
@@ -371,10 +386,10 @@ async function saveContactRequest() {
     await createContactRequest({
 
       partner_id:
-        "partner_demo",
+        partnerId,
 
       partner_name:
-        "Talent Partner",
+        partnerName,
 
       student_id:
         selectedStudent.student_id,
@@ -386,10 +401,11 @@ async function saveContactRequest() {
         selectedStudent.school_name,
 
       request_reason:
-  contactMessage,
+        contactMessage,
 
       status:
         "pending"
+
     });
 
   if (!result) {
@@ -401,6 +417,15 @@ async function saveContactRequest() {
     return;
   }
 
+ if (!selectedStudent.id) {
+  alert("Lead ID not found");
+  return;
+}
+
+await markLeadRequestSent(
+  selectedStudent.id
+);
+
   setContactMessage("");
 
   setShowContactDialog(false);
@@ -409,8 +434,12 @@ async function saveContactRequest() {
     "Contact request sent"
   );
 
+  await loadStudents();
+
   setTimeout(() => {
+
     setOfferSuccess("");
+
   }, 3000);
 }
 
@@ -526,69 +555,23 @@ setFilteredStudents(
   scoreFilter
 ]);
 
-  async function
-  loadStudents() {
+  async function loadStudents() {
 
-    const studentData =
-      await fetchStudentsMaster();
-
-    const scoreData =
-      await fetchTalentPassportScores();
-
-    const merged =
-      studentData.map(
-        (student: any) => {
-
-          const score: any =
-  scoreData.find(
-    (s: any) =>
-      s.student_id ===
-      student.student_id
-  ) || {};
-
-
-
-return {
-  ...student,
-
-  event_name:
-    score.event_name || "",
-
-  pathway:
-    score.pathway || "",
-
-  communication_score:
-    score.communication_score || 0,
-
-  leadership_score:
-    score.leadership_score || 0,
-
-  critical_thinking_score:
-    score.critical_thinking_score || 0,
-
-  collaboration_score:
-    score.collaboration_score || 0,
-
-  confidence_score:
-    score.confidence_score || 0,
-
-  overall_score:
-    score.overall_score || 0
-};
-        }
-      );
-
-    setStudents(
-      merged
+  const allocatedStudents =
+    await fetchAllocatedStudents(
+      partnerId
     );
-  }
 
-async function
-loadPipeline() {
+  setStudents(
+    allocatedStudents || []
+  );
+}
+
+async function loadPipeline() {
 
   const data =
     await fetchPartnerPipeline(
-      "partner_demo"
+      partnerId
     );
 
   setPipeline(
@@ -697,17 +680,17 @@ loadPartnerActivity() {
 
   const scholarships =
     await fetchPartnerScholarshipOffers(
-      "partner_demo"
+      partnerId
     );
 
   const workshops =
     await fetchPartnerWorkshopOffers(
-      "partner_demo"
+      partnerId
     );
 
   const contacts =
     await fetchPartnerContactRequests(
-      "partner_demo"
+      partnerId
     );
 
   setScholarshipOffers(
@@ -783,7 +766,7 @@ loadPartnerActivity() {
             marginBottom: 10
           }}
         >
-          TALENT MARKETPLACE
+          ALLOCATED TALENT POOL
         </div>
 
         <h1
@@ -792,7 +775,7 @@ loadPartnerActivity() {
             fontSize: 42
           }}
         >
-          Discover Students
+          Allocated Talent Pool
         </h1>
 
         <p
@@ -801,10 +784,10 @@ loadPartnerActivity() {
             marginTop: 12
           }}
         >
-          Find talented students,
-          offer workshops,
-          scholarships and
-          learning opportunities.
+          Students allocated by Talent Passport.
+Reach out through scholarships,
+workshops or contact requests.
+Students move to CRM only after consent.
         </p>
 
       </div>

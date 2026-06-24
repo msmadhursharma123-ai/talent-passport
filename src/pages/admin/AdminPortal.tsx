@@ -2,6 +2,8 @@ import { useState } from "react";
 
 import AdminDashboard from "../AdminDashboard";
 import CompetitionEntries from "./CompetitionEntries";
+import AdminAnalytics
+from "./AdminAnalytics";
 
 type AdminTab =
   | "dashboard"
@@ -161,15 +163,9 @@ export default function AdminPortal({
       )}
 
       {activeTab ===
-        "analytics" && (
-        <div
-          style={{
-            padding: "40px",
-          }}
-        >
-          Analytics Module
-        </div>
-      )}
+  "analytics" && (
+  <AdminAnalytics />
+)}
 
       {activeTab ===
         "settings" && (

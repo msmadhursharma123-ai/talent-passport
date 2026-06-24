@@ -4,6 +4,12 @@ import {
   getLatestAssessment
 } from "../data/studentRepository";
 
+import {
+  findStudentByEmail,
+  findStudentMasterByEmail
+}
+from "../data/studentRepository";
+
 interface Props {
   onSuccess: () => void;
   onRegister: () => void;
@@ -52,10 +58,58 @@ export default function ExistingUserLogin({
       return;
     }
 
-    localStorage.setItem(
-      "studentProfile",
-      JSON.stringify(data)
-    );
+  const masterStudent =
+  await findStudentMasterByEmail(
+    email
+  );
+
+console.log(
+  "MASTER STUDENT",
+  masterStudent
+);
+
+const enrichedProfile = {
+
+  ...data,
+
+  student_id:
+    masterStudent?.student_id,
+
+  student_email:
+    masterStudent?.student_email,
+
+  school_name:
+    masterStudent?.school_name ||
+    data.school_name,
+
+  class_name:
+    masterStudent?.class_name ||
+    data.class_name,
+
+  phone:
+    masterStudent?.phone ||
+    data.phone ||
+    data.parent_mobile ||
+    "",
+
+  parent_mobile:
+    masterStudent?.phone ||
+    data.phone ||
+    data.parent_mobile ||
+    ""
+};
+
+console.log(
+  "ENRICHED PROFILE",
+  enrichedProfile
+);
+
+localStorage.setItem(
+  "studentProfile",
+  JSON.stringify(
+    enrichedProfile
+  )
+);
 
     const assessment =
       await getLatestAssessment(

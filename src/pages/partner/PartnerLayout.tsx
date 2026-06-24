@@ -3,40 +3,60 @@ import React from "react";
 export type PartnerTab =
   | "dashboard"
   | "talent-discovery"
-  | "consultations";
+  | "incoming-requests"
+  | "lead-pipeline";
 
 interface Props {
+
   activeTab: PartnerTab;
+
   setActiveTab: (
     tab: PartnerTab
   ) => void;
+
   onLogout: () => void;
+
   children: React.ReactNode;
 }
 
 const tabs = [
+
   {
     key: "dashboard",
     label: "Dashboard"
   },
+
   {
     key: "talent-discovery",
     label: "Talent Discovery"
   },
+
   {
-    key: "consultations",
-    label: "Consultations"
+    key: "incoming-requests",
+    label: "Incoming Requests"
+  },
+
+  {
+    key: "lead-pipeline",
+    label: "Lead Pipeline"
   }
+
 ];
 
 export default function PartnerLayout({
+
   activeTab,
+
   setActiveTab,
+
   onLogout,
+
   children
+
 }: Props) {
 
   return (
+
     <div
       style={{
         minHeight: "100vh",
@@ -92,8 +112,7 @@ export default function PartnerLayout({
               color: "white",
               border: "none",
               borderRadius: 12,
-              padding:
-                "12px 20px",
+              padding: "12px 20px",
               fontWeight: 700,
               cursor: "pointer"
             }}
@@ -107,7 +126,8 @@ export default function PartnerLayout({
           style={{
             display: "flex",
             gap: 12,
-            marginTop: 20
+            marginTop: 20,
+            flexWrap: "wrap"
           }}
         >
 
@@ -123,15 +143,17 @@ export default function PartnerLayout({
               style={{
                 border: "none",
                 borderRadius: 12,
-                padding:
-                  "12px 18px",
+                padding: "12px 18px",
                 cursor: "pointer",
                 fontWeight: 600,
 
                 background:
+
                   activeTab ===
                   tab.key
+
                     ? "#F4A623"
+
                     : "#1E293B",
 
                 color: "white"
@@ -155,5 +177,6 @@ export default function PartnerLayout({
       </div>
 
     </div>
+
   );
 }

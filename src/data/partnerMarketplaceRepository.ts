@@ -759,11 +759,58 @@ export async function rejectWorkshopOffer(
 export async function acceptContactOffer(
   id: string
 ) {
-  return updateOfferStatus(
-    "partner_contact_requests",
-    id,
-    "accepted"
-  );
+
+  const supabase =
+    getSupabaseClient() as any;
+
+  if (!supabase)
+    return;
+
+  const {
+    data: request
+  } =
+    await supabase
+      .from(
+        "partner_contact_requests"
+      )
+      .select("*")
+      .eq("id", id)
+      .single();
+
+  await supabase
+    .from(
+      "partner_contact_requests"
+    )
+    .update({
+      status: "accepted"
+    })
+    .eq("id", id);
+
+  if (!request)
+    return;
+
+  await supabase
+    .from(
+      "partner_student_leads"
+    )
+    .update({
+
+      status:
+        "contacted",
+
+      updated_at:
+        new Date()
+          .toISOString()
+
+    })
+    .eq(
+      "partner_id",
+      request.partner_id
+    )
+    .eq(
+      "student_id",
+      request.student_id
+    );
 }
 
 export async function rejectContactOffer(
@@ -974,10 +1021,25 @@ export async function fetchPartnerLeads(
         "partner_id",
         partnerId
       )
+      .in(
+        "status",
+        [
+          "contacted",
+          "follow_up",
+          "counselling_scheduled",
+          "counselling_done",
+          "interested",
+          "admission_completed",
+          "parent_declined",
+          "not_reachable",
+          "rejected",
+          "closed"
+        ]
+      )
       .order(
         "created_at",
         {
-          ascending: false
+          ascending:false
         }
       );
 
@@ -1124,6 +1186,84 @@ export async function fetchLeadMetrics(
         "rejected"
     ).length
 };
+}
+
+export async function fetchAllLeads() {
+
+  const supabase =
+    getSupabaseClient() as any;
+
+  if (!supabase) return [];
+
+  const { data, error } =
+    await supabase
+      .from("partner_student_leads")
+      .select("*")
+      .order(
+        "created_at",
+        { ascending: false }
+      );
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function fetchAllocationHistory() {
+
+  const leads =
+    await fetchAllLeads();
+
+  const partnerMap:
+    Record<string, any> = {};
+
+  leads.forEach((lead:any) => {
+
+    const partner =
+      lead.partner_name ||
+      "Unknown";
+
+    if (!partnerMap[partner]) {
+
+      partnerMap[partner] = {
+        partner_name: partner,
+        total_leads: 0,
+        admissions: 0
+      };
+    }
+
+    partnerMap[partner]
+      .total_leads++;
+
+    if (
+      lead.status ===
+      "admission_completed"
+    ) {
+
+      partnerMap[partner]
+        .admissions++;
+    }
+  });
+
+  return Object.values(
+    partnerMap
+  ).map((row:any) => ({
+
+    ...row,
+
+    conversion_percentage:
+      row.total_leads > 0
+        ? Math.round(
+            (
+              row.admissions /
+              row.total_leads
+            ) * 100
+          )
+        : 0
+  }));
 }
 
 export async function
@@ -1305,5 +1445,44 @@ logLeadAdmission(
 
   });
 
+}
+
+export async function fetchAllocatedStudents(
+  partnerId: string
+) {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return [];
+
+  const { data } =
+    await (supabase as any)
+      .from("partner_student_leads")
+      .select("*")
+      .eq("partner_id", partnerId)
+      .eq("status", "allocated")
+      .order("created_at", {
+        ascending: false
+      });
+
+  return data || [];
+}
+
+export async function markLeadRequestSent(
+  leadId: string
+) {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) return;
+
+  await (supabase as any)
+    .from("partner_student_leads")
+    .update({
+      status: "request_sent"
+    })
+    .eq("id", leadId);
 }
 
