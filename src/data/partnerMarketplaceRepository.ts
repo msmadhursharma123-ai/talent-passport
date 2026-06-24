@@ -967,15 +967,13 @@ export async function fetchPartnerLeads(
   } =
     await supabase
       .from(
-  "partner_student_leads"
-)
-.select("*")
-.order(
-  "created_at",
-  {
-    ascending:false
-  }
-)
+        "partner_student_leads"
+      )
+      .select("*")
+      .eq(
+        "partner_id",
+        partnerId
+      )
       .order(
         "created_at",
         {
@@ -984,59 +982,104 @@ export async function fetchPartnerLeads(
       );
 
   if (error) {
-    console.error(error);
+
+    console.error(
+      "FETCH LEADS ERROR",
+      error
+    );
+
     return [];
   }
 
   return data || [];
 }
 
-export async function updateLeadStatus(
-  leadId: string,
-  status: string
+export async function
+updateLeadStatus(
+  leadId:string,
+  status:string
 ) {
 
   const supabase =
     getSupabaseClient() as any;
 
-  return supabase
-    .from(
-      "partner_student_leads"
-    )
-    .update({
-      status,
-      updated_at:
-        new Date()
-          .toISOString()
-    })
-    .eq(
-      "id",
-      leadId
-    );
+  const result =
+    await supabase
+      .from(
+        "partner_student_leads"
+      )
+      .update({
+        status,
+        updated_at:
+          new Date()
+            .toISOString()
+      })
+      .eq(
+        "id",
+        leadId
+      );
+
+  await createLeadActivity({
+
+    lead_id:
+      leadId,
+
+    activity_type:
+      "status_change",
+
+    activity_note:
+      `Status changed to ${status}`,
+
+    created_by:
+      "partner"
+
+  });
+
+  return result;
 }
 
-export async function updateLeadNotes(
-  leadId: string,
-  notes: string
+export async function
+updateLeadNotes(
+  leadId:string,
+  notes:string
 ) {
 
   const supabase =
     getSupabaseClient() as any;
 
-  return supabase
-    .from(
-      "partner_student_leads"
-    )
-    .update({
-      notes,
-      updated_at:
-        new Date()
-          .toISOString()
-    })
-    .eq(
-      "id",
-      leadId
-    );
+  const result =
+    await supabase
+      .from(
+        "partner_student_leads"
+      )
+      .update({
+        notes,
+        updated_at:
+          new Date()
+            .toISOString()
+      })
+      .eq(
+        "id",
+        leadId
+      );
+
+  await createLeadActivity({
+
+    lead_id:
+      leadId,
+
+    activity_type:
+      "notes",
+
+    activity_note:
+      `Notes updated: ${notes}`,
+
+    created_by:
+      "partner"
+
+  });
+
+  return result;
 }
 
 export async function fetchLeadMetrics(
@@ -1081,5 +1124,186 @@ export async function fetchLeadMetrics(
         "rejected"
     ).length
 };
+}
+
+export async function
+createLeadActivity(
+  activity:any
+) {
+
+  const supabase =
+    getSupabaseClient() as any;
+
+  return supabase
+    .from(
+      "partner_lead_activity"
+    )
+    .insert([activity]);
+}
+
+export async function
+fetchLeadActivity(
+  leadId:string
+) {
+
+  const supabase =
+    getSupabaseClient() as any;
+
+  const {
+    data
+  } =
+    await supabase
+      .from(
+        "partner_lead_activity"
+      )
+      .select("*")
+      .eq(
+        "lead_id",
+        leadId
+      )
+      .order(
+        "created_at",
+        {
+          ascending:false
+        }
+      );
+
+  return data || [];
+}
+
+export async function
+updateLeadFollowup(
+  leadId:string,
+  nextDate:string
+) {
+
+  const supabase =
+    getSupabaseClient() as any;
+
+  const result =
+    await supabase
+      .from(
+        "partner_student_leads"
+      )
+      .update({
+
+        next_followup_date:
+          nextDate,
+
+        last_followup_date:
+          new Date()
+            .toISOString()
+
+      })
+      .eq(
+        "id",
+        leadId
+      );
+
+  await createLeadActivity({
+
+    lead_id:
+      leadId,
+
+    activity_type:
+      "followup",
+
+    activity_note:
+      `Follow up scheduled for ${nextDate}`,
+
+    created_by:
+      "partner"
+
+  });
+
+  return result;
+}
+
+export async function
+logLeadCall(
+  leadId:string
+) {
+
+  return createLeadActivity({
+
+    lead_id: leadId,
+
+    activity_type:
+      "call",
+
+    activity_note:
+      "Parent called",
+
+    created_by:
+      "partner"
+
+  });
+
+}
+
+export async function
+logLeadWhatsapp(
+  leadId:string
+) {
+
+  return createLeadActivity({
+
+    lead_id: leadId,
+
+    activity_type:
+      "whatsapp",
+
+    activity_note:
+      "WhatsApp sent",
+
+    created_by:
+      "partner"
+
+  });
+
+}
+
+export async function
+logLeadCounselling(
+  leadId:string
+) {
+
+  return createLeadActivity({
+
+    lead_id: leadId,
+
+    activity_type:
+      "counselling",
+
+    activity_note:
+      "Counselling completed",
+
+    created_by:
+      "partner"
+
+  });
+
+}
+
+export async function
+logLeadAdmission(
+  leadId:string
+) {
+
+  return createLeadActivity({
+
+    lead_id: leadId,
+
+    activity_type:
+      "admission",
+
+    activity_note:
+      "Admission completed",
+
+    created_by:
+      "partner"
+
+  });
+
 }
 
