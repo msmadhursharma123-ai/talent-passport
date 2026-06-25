@@ -336,127 +336,255 @@ export default function AllocateLeadsModal({
 
         </div>
 
-        <div
-          style={{
-            display:"grid",
-            gridTemplateColumns:
-              "repeat(4,1fr)",
-            gap:"12px",
-            marginTop:"24px"
-          }}
-        >
+       <div
+  style={{
+    background: "#FFFFFF",
+    border: "1px solid #E2E8F0",
+    borderRadius: 20,
+    padding: 22,
+    marginTop: 24,
+    marginBottom: 24,
+    boxShadow: "0 8px 24px rgba(15,23,42,.05)",
+  }}
+>
+  {/* Search */}
 
-          <input
-            placeholder=
-              "Search Partner"
-            value={search}
-            onChange={(e)=>
-              setSearch(
-                e.target.value
-              )
-            }
-          />
+  <div
+    style={{
+      display: "flex",
+      gap: 16,
+      alignItems: "center",
+      marginBottom: 20,
+    }}
+  >
+    <div
+      style={{
+        flex: 1,
+        position: "relative",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          left: 16,
+          top: "50%",
+          transform: "translateY(-50%)",
+          fontSize: 18,
+        }}
+      >
+        🔍
+      </span>
 
-          <select
-            value={
-              activityFilter
-            }
-            onChange={(e)=>
-              setActivityFilter(
-                e.target.value
-              )
-            }
+      <input
+        placeholder="Search Partner..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{
+          width: "100%",
+          height: 50,
+          padding: "0 18px 0 48px",
+          borderRadius: 14,
+          border: "1px solid #E2E8F0",
+          background: "#F8FAFC",
+          fontSize: 14,
+          outline: "none",
+        }}
+      />
+    </div>
+
+    <button
+      onClick={() => {
+        setSearch("");
+        setActivityFilter("All");
+        setAreaFilter("All");
+      }}
+      style={{
+        height: 50,
+        padding: "0 20px",
+        borderRadius: 14,
+        border: "1px solid #CBD5E1",
+        background: "#F8FAFC",
+        cursor: "pointer",
+        fontWeight: 600,
+      }}
+    >
+      ↺ Reset
+    </button>
+  </div>
+
+  {/* Filters */}
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(2,minmax(220px,1fr))",
+      gap: 18,
+    }}
+  >
+    {/* Activity */}
+
+    <div
+      style={{
+        background: "#F8FAFC",
+        border: "1px solid #E2E8F0",
+        borderRadius: 16,
+        padding: 16,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          color: "#64748B",
+          marginBottom: 8,
+          textTransform: "uppercase",
+          letterSpacing: ".05em",
+        }}
+      >
+        🎯 Specialization
+      </div>
+
+      <select
+        value={activityFilter}
+        onChange={(e) =>
+          setActivityFilter(e.target.value)
+        }
+        style={{
+          width: "100%",
+          border: "none",
+          background: "transparent",
+          outline: "none",
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
+      >
+        <option value="All">
+          All Specializations
+        </option>
+
+        {specializations.map((spec) => (
+          <option
+            key={spec}
+            value={spec}
           >
+            {spec}
+          </option>
+        ))}
+      </select>
+    </div>
 
-            <option>
-              All
-            </option>
+    {/* Area */}
 
-            {specializations.map(
-              spec => (
+    <div
+      style={{
+        background: "#F8FAFC",
+        border: "1px solid #E2E8F0",
+        borderRadius: 16,
+        padding: 16,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          color: "#64748B",
+          marginBottom: 8,
+          textTransform: "uppercase",
+          letterSpacing: ".05em",
+        }}
+      >
+        📍 Area
+      </div>
 
-                <option
-                  key={spec}
-                >
-                  {spec}
-                </option>
+      <select
+        value={areaFilter}
+        onChange={(e) =>
+          setAreaFilter(e.target.value)
+        }
+        style={{
+          width: "100%",
+          border: "none",
+          background: "transparent",
+          outline: "none",
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
+      >
+        <option value="All">
+          All Areas
+        </option>
 
-              )
-            )}
-
-          </select>
-
-          <select
-            value={
-              areaFilter
-            }
-            onChange={(e)=>
-              setAreaFilter(
-                e.target.value
-              )
-            }
+        {areas.map((area) => (
+          <option
+            key={area}
+            value={area}
           >
+            {area}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+</div>
 
-            <option>
-              All
-            </option>
+       <div
+  style={{
+    marginTop: 24,
+    border: "1px solid #E2E8F0",
+    borderRadius: 16,
+    overflow: "hidden",
+  }}
+>
+  <table
+    style={{
+      width: "100%",
+      borderCollapse: "collapse",
+      tableLayout: "fixed",
+    }}
+  >
 
-            {areas.map(
-              area => (
+         <thead>
+  <tr
+    style={{
+      background: "#F8FAFC",
+      borderBottom: "1px solid #E2E8F0",
+    }}
+  >
+    <th style={headerStyle}>Select</th>
 
-                <option
-                  key={area}
-                >
-                  {area}
-                </option>
+    <th
+      style={{
+        ...headerStyle,
+        width: 280,
+      }}
+    >
+      Partner
+    </th>
 
-              )
-            )}
+    <th style={headerStyle}>
+      Category
+    </th>
 
-          </select>
+    <th
+      style={{
+        ...headerStyle,
+        width: 260,
+      }}
+    >
+      Specialization
+    </th>
 
-        </div>
+    <th style={headerStyle}>
+      Age Range
+    </th>
 
-        <table
-          style={{
-            width:"100%",
-            marginTop:"24px",
-            borderCollapse:
-              "collapse"
-          }}
-        >
-
-          <thead>
-
-            <tr>
-
-              <th>
-                Select
-              </th>
-
-              <th>
-                Partner
-              </th>
-
-              <th>
-                Category
-              </th>
-
-              <th>
-                Specialization
-              </th>
-
-              <th>
-                Age Range
-              </th>
-
-              <th>
-                Area
-              </th>
-
-            </tr>
-
-          </thead>
+    <th style={headerStyle}>
+      Area
+    </th>
+  </tr>
+</thead>
 
           <tbody>
 
@@ -464,12 +592,19 @@ export default function AllocateLeadsModal({
               partner => (
 
                 <tr
-                  key={
-                    partner.partner_id
-                  }
-                >
+  key={partner.partner_id}
+  style={{
+    borderBottom: "1px solid #F1F5F9",
+  }}
+>
+                
 
-                  <td>
+                  <td
+  style={{
+    padding: "18px 16px",
+    verticalAlign: "top",
+  }}
+>
 
                     <input
                       type="radio"
@@ -487,19 +622,34 @@ export default function AllocateLeadsModal({
 
                   </td>
 
-                  <td>
+                  <td
+  style={{
+    padding: "18px 16px",
+    verticalAlign: "top",
+  }}
+>
                     {
                       partner.partner_name
                     }
                   </td>
 
-                  <td>
+                  <td
+  style={{
+    padding: "18px 16px",
+    verticalAlign: "top",
+  }}
+>
                     {
                       partner.category
                     }
                   </td>
 
-                  <td>
+                  <td
+  style={{
+    padding: "18px 16px",
+    verticalAlign: "top",
+  }}
+>
 
                     {Array.isArray(
                       partner.specialization
@@ -511,7 +661,12 @@ export default function AllocateLeadsModal({
 
                   </td>
 
-                  <td>
+                  <td
+  style={{
+    padding: "18px 16px",
+    verticalAlign: "top",
+  }}
+>
 
                     {
                       partner.preferred_age_from
@@ -525,7 +680,12 @@ export default function AllocateLeadsModal({
 
                   </td>
 
-                  <td>
+                  <td
+  style={{
+    padding: "18px 16px",
+    verticalAlign: "top",
+  }}
+>
                     {
                       partner.institute_area
                     }
@@ -539,6 +699,7 @@ export default function AllocateLeadsModal({
           </tbody>
 
         </table>
+</div>
 
         <div
           style={{
@@ -582,3 +743,15 @@ export default function AllocateLeadsModal({
     </div>
   );
 }
+
+const headerStyle: React.CSSProperties = {
+  padding: "16px",
+  textAlign: "left",
+  background: "#F8FAFC",
+  color: "#475569",
+  fontWeight: 700,
+  fontSize: 13,
+  textTransform: "uppercase",
+  letterSpacing: ".05em",
+  borderBottom: "1px solid #E2E8F0",
+};

@@ -61,6 +61,55 @@ export default function AdminAnalytics() {
     setHistoryModalOpen
   ] = useState(false);
 
+const [cityFilter, setCityFilter] = useState("All");
+const [areaFilter, setAreaFilter] = useState("All");
+const [categoryFilter, setCategoryFilter] = useState("All");
+const [specializationFilter, setSpecializationFilter] = useState("All");
+const [ageFilter, setAgeFilter] = useState("All");
+
+const cities = [
+  "All",
+  ...new Set(
+    partners
+      .map((p) => p.institute_city)
+      .filter(Boolean)
+  ),
+];
+
+const areas = [
+  "All",
+  ...new Set(
+    partners
+      .map((partner) => partner.institute_area)
+      .filter(Boolean)
+  ),
+];
+
+const categories = [
+  "All",
+  ...new Set(
+    partners
+      .map((partner) => partner.category)
+      .filter(Boolean)
+  ),
+];
+
+const specializations = [
+  "All",
+  ...new Set(
+    partners
+      .flatMap((partner) => {
+        if (!partner.specialization) return [];
+
+        return String(partner.specialization)
+          .replace(/[{}[\]"]/g, "")
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+      })
+  ),
+];
+
   useEffect(() => {
 
     loadData();
@@ -141,26 +190,45 @@ export default function AdminAnalytics() {
     );
   }
 
-  const filteredPartners =
-    useMemo(() => {
+ const filteredPartners = partners.filter((partner) => {
+  const matchesSearch =
+    partner.partner_name
+      ?.toLowerCase()
+      .includes(partnerSearch.toLowerCase());
 
-      return partners.filter(
-        partner =>
-          (
-            partner.partner_name ||
-            ""
-          )
-            .toLowerCase()
-            .includes(
-              partnerSearch
-                .toLowerCase()
-            )
-      );
+  const matchesCategory =
+    categoryFilter === "All" ||
+    partner.category === categoryFilter;
 
-    }, [
-      partners,
-      partnerSearch
-    ]);
+  const matchesArea =
+    areaFilter === "All" ||
+    partner.institute_area === areaFilter;
+
+  const matchesSpecialization =
+  specializationFilter === "All" ||
+  String(partner.specialization)
+    .replace(/[{}[\]"]/g, "")
+    .split(",")
+    .map((item) => item.trim())
+    .includes(specializationFilter);
+
+  const matchesAge =
+    ageFilter === "All" ||
+    (
+      partner.preferred_age_from <=
+        Number(ageFilter.split("-")[0]) &&
+      partner.preferred_age_to >=
+        Number(ageFilter.split("-")[1])
+    );
+
+  return (
+    matchesSearch &&
+    matchesCategory &&
+    matchesArea &&
+    matchesSpecialization &&
+    matchesAge
+  );
+});
 
   const totalSchools =
     new Set(
@@ -606,7 +674,19 @@ export default function AdminAnalytics() {
             title="Partner Registry"
           >
 
-            <input
+          
+
+           <div
+  style={{
+    display: "grid",
+    gridTemplateColumns:
+      "2fr repeat(5,minmax(170px,1fr))",
+    gap: 16,
+    marginBottom: 24,
+  }}
+>
+
+  <input
               placeholder="Search Partner"
               value={
                 partnerSearch
@@ -619,115 +699,217 @@ export default function AdminAnalytics() {
               style={searchStyle}
             />
 
-            <table
-              style={tableStyle}
-            >
+<div style={filterCard}>
+  <div style={filterLabel}>👥 Category</div>
 
-              <thead>
+  <select
+    value={categoryFilter}
+    onChange={(e) =>
+      setCategoryFilter(e.target.value)
+    }
+    style={filterSelect}
+  >
+    {categories.map((item) => (
+      <option key={item}>{item}</option>
+    ))}
+  </select>
+</div>
 
-                <tr>
+<div style={filterCard}>
+  <div style={filterLabel}>📍 City</div>
 
-                  <th>
-                    Partner
-                  </th>
+  <select
+    value={cityFilter}
+    onChange={(e) =>
+      setCityFilter(e.target.value)
+    }
+    style={filterSelect}
+  >
+    {cities.map((item) => (
+      <option key={item}>{item}</option>
+    ))}
+  </select>
+</div>
 
-                  <th>
-                    Category
-                  </th>
+<div style={filterCard}>
+  <div style={filterLabel}>📌 Area</div>
 
-                  <th>
-                    Area
-                  </th>
+  <select
+    value={areaFilter}
+    onChange={(e) =>
+      setAreaFilter(e.target.value)
+    }
+    style={filterSelect}
+  >
+    {areas.map((item) => (
+      <option key={item}>{item}</option>
+    ))}
+  </select>
+</div>
 
-                  <th>
-                    Email
-                  </th>
+<div style={filterCard}>
+  <div style={filterLabel}>🎯 Specialization</div>
 
-                  <th>
-                    Age Range
-                  </th>
+  <select
+    value={specializationFilter}
+    onChange={(e) =>
+      setSpecializationFilter(
+        e.target.value
+      )
+    }
+    style={filterSelect}
+  >
+    {specializations.map((item) => (
+      <option key={item}>{item}</option>
+    ))}
+  </select>
+</div>
 
-                  <th>
-                    Specialization
-                  </th>
+<div style={filterCard}>
+  <div style={filterLabel}>🎂 Age</div>
 
-                </tr>
+  <select
+    value={ageFilter}
+    onChange={(e) =>
+      setAgeFilter(e.target.value)
+    }
+    style={filterSelect}
+  >
+    <option>All</option>
+    <option>3-5</option>
+    <option>6-8</option>
+    <option>9-12</option>
+    <option>13-15</option>
+    <option>16-18</option>
+  </select>
+</div>
 
-              </thead>
+</div>
 
-              <tbody>
+<div
+  style={{
+    width: "100%",
+    marginTop: 24,
+    border: "1px solid #E2E8F0",
+    borderRadius: 18,
+    overflowX: "auto",
+    background: "#FFFFFF",
+  }}
+>
 
-                {filteredPartners
-                  .slice(0,100)
-                  .map(
-                    partner => (
+ <table
+  style={{
+    width: "100%",
+    minWidth: 1350,
+    borderCollapse: "collapse",
+    background: "#FFFFFF",
+  }}
+>
+  <thead>
+  <tr
+    style={{
+      background: "#F8FAFC",
+      borderBottom: "2px solid #E2E8F0",
+    }}
+  >
+    <th style={{ ...headerCell, width: 260 }}>
+      Partner
+    </th>
 
-                    <tr
-                      key={
-                        partner.id
-                      }
-                    >
+    <th style={{ ...headerCell, width: 170 }}>
+      Category
+    </th>
 
-                      <td>
-                        {
-                          partner.partner_name
-                        }
-                      </td>
+    <th style={{ ...headerCell, width: 250 }}>
+      Specialization
+    </th>
 
-                      <td>
-                        {
-                          partner.category
-                        }
-                      </td>
+    <th
+      style={{
+        ...headerCell,
+        width: 120,
+        textAlign: "center",
+      }}
+    >
+      Age From
+    </th>
 
-                      <td>
-                        {
-                          partner.institute_area
-                        }
-                      </td>
+    <th
+      style={{
+        ...headerCell,
+        width: 120,
+        textAlign: "center",
+      }}
+    >
+      Age To
+    </th>
 
-                      <td>
-                        {
-                          partner.email
-                        }
-                      </td>
+    <th style={{ ...headerCell, width: 180 }}>
+      Area
+    </th>
 
-                      <td>
+    <th style={{ ...headerCell, width: 280 }}>
+      Email
+    </th>
+  </tr>
+</thead>
 
-                        {
-                          partner.preferred_age_from
-                        }
+  <tbody>
+  {filteredPartners.map((partner) => (
+    <tr
+      key={partner.id}
+      style={{
+        borderBottom: "1px solid #E2E8F0",
+      }}
+    >
+      <td
+        style={{
+          ...bodyCell,
+          fontWeight: 700,
+        }}
+      >
+        {partner.partner_name}
+      </td>
 
-                        {" - "}
+      <td style={bodyCell}>
+        {partner.category || "-"}
+      </td>
 
-                        {
-                          partner.preferred_age_to
-                        }
+      <td style={bodyCell}>
+        {partner.specialization || "-"}
+      </td>
 
-                      </td>
+      <td
+        style={{
+          ...bodyCell,
+          textAlign: "center",
+        }}
+      >
+        {partner.preferred_age_from ?? "-"}
+      </td>
 
-                      <td>
+      <td
+        style={{
+          ...bodyCell,
+          textAlign: "center",
+        }}
+      >
+        {partner.preferred_age_to ?? "-"}
+      </td>
 
-                        {Array.isArray(
-                          partner.specialization
-                        )
+      <td style={bodyCell}>
+        {partner.institute_area || "-"}
+      </td>
 
-                          ? partner.specialization.join(
-                              ", "
-                            )
+      <td style={bodyCell}>
+        {partner.email || "-"}
+      </td>
+    </tr>
+  ))}
+</tbody>
+</table>
+</div>
 
-                          : "-"}
-
-                      </td>
-
-                    </tr>
-
-                  )
-                )}
-
-              </tbody>
-
-            </table>
 
           </Section>
 
@@ -1140,4 +1322,47 @@ const inactiveTabStyle = {
 
   fontWeight:600
 
+};
+
+const headerCell: React.CSSProperties = {
+  padding: "18px 20px",
+  textAlign: "left",
+  fontSize: 13,
+  fontWeight: 700,
+  color: "#475569",
+  textTransform: "uppercase",
+  letterSpacing: ".05em",
+};
+
+const bodyCell: React.CSSProperties = {
+  padding: "18px 20px",
+  verticalAlign: "middle",
+  color: "#0F172A",
+  fontSize: 14,
+};
+
+const filterCard: React.CSSProperties = {
+  background: "#F8FAFC",
+  border: "1px solid #E2E8F0",
+  borderRadius: 14,
+  padding: "14px 16px",
+};
+
+const filterLabel: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: "#64748B",
+  marginBottom: 8,
+  textTransform: "uppercase",
+  letterSpacing: ".05em",
+};
+
+const filterSelect: React.CSSProperties = {
+  width: "100%",
+  border: "none",
+  background: "transparent",
+  outline: "none",
+  fontSize: 14,
+  fontWeight: 600,
+  cursor: "pointer",
 };

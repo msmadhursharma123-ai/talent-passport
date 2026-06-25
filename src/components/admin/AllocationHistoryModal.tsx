@@ -247,173 +247,317 @@ export default function AllocationHistoryModal({
 
         </div>
 
-        {/* FILTERS */}
+       {/* FILTERS */}
 
-        <div
+<div
+  style={{
+    background: "#FFFFFF",
+    border: "1px solid #E2E8F0",
+    borderRadius: 20,
+    padding: 22,
+    marginTop: 24,
+    marginBottom: 24,
+    boxShadow: "0 8px 24px rgba(15,23,42,.05)",
+  }}
+>
+  <div
+    style={{
+      display: "flex",
+      gap: 18,
+      alignItems: "center",
+      flexWrap: "wrap",
+    }}
+  >
+    {/* Search */}
+
+    <div
+      style={{
+        flex: 1,
+        minWidth: 350,
+        position: "relative",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          left: 16,
+          top: "50%",
+          transform: "translateY(-50%)",
+          fontSize: 18,
+        }}
+      >
+        🔍
+      </span>
+
+      <input
+        placeholder="Search Partner..."
+        value={partnerSearch}
+        onChange={(e) =>
+          setPartnerSearch(e.target.value)
+        }
+        style={{
+          width: "100%",
+          height: 50,
+          padding: "0 18px 0 48px",
+          borderRadius: 14,
+          border: "1px solid #E2E8F0",
+          background: "#F8FAFC",
+          outline: "none",
+          fontSize: 14,
+          boxSizing: "border-box",
+        }}
+      />
+    </div>
+
+    {/* Period */}
+
+    <div
+      style={{
+        width: 240,
+        background: "#F8FAFC",
+        border: "1px solid #E2E8F0",
+        borderRadius: 16,
+        padding: "14px 16px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          color: "#64748B",
+          textTransform: "uppercase",
+          letterSpacing: ".05em",
+          marginBottom: 8,
+        }}
+      >
+        📅 Time Period
+      </div>
+
+      <select
+        value={period}
+        onChange={(e) =>
+          setPeriod(e.target.value)
+        }
+        style={{
+          width: "100%",
+          border: "none",
+          background: "transparent",
+          outline: "none",
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
+      >
+        <option value="all">
+          All Time
+        </option>
+
+        <option value="today">
+          Today
+        </option>
+
+        <option value="week">
+          This Week
+        </option>
+
+        <option value="month">
+          This Month
+        </option>
+      </select>
+    </div>
+
+    {/* Reset */}
+
+    <button
+      onClick={() => {
+        setPartnerSearch("");
+        setPeriod("all");
+      }}
+      style={{
+        height: 50,
+        padding: "0 22px",
+        borderRadius: 14,
+        border: "1px solid #CBD5E1",
+        background: "#F8FAFC",
+        cursor: "pointer",
+        fontWeight: 600,
+        color: "#475569",
+      }}
+    >
+      ↺ Reset
+    </button>
+  </div>
+</div>
+
+       {/* TABLE */}
+
+<div
+  style={{
+    marginTop: 24,
+    border: "1px solid #E2E8F0",
+    borderRadius: 18,
+    overflow: "hidden",
+    boxShadow: "0 8px 20px rgba(15,23,42,.05)",
+  }}
+>
+  <table
+    style={{
+      width: "100%",
+      borderCollapse: "collapse",
+      tableLayout: "fixed",
+    }}
+  >
+    <thead>
+      <tr
+        style={{
+          background: "#F8FAFC",
+          borderBottom: "2px solid #E2E8F0",
+        }}
+      >
+        <th
           style={{
-            display:"grid",
-
-            gridTemplateColumns:
-              "2fr 1fr",
-
-            gap:"12px",
-
-            marginTop:"24px"
+            width: "40%",
+            padding: "18px 20px",
+            textAlign: "left",
+            fontSize: 13,
+            color: "#475569",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: ".05em",
           }}
         >
+          Partner
+        </th>
 
-          <input
-            placeholder=
-              "Search Partner"
+        <th
+          style={{
+            width: "18%",
+            padding: "18px 20px",
+            textAlign: "center",
+            fontSize: 13,
+            color: "#475569",
+            fontWeight: 700,
+            textTransform: "uppercase",
+          }}
+        >
+          Total Leads
+        </th>
 
-            value={
-              partnerSearch
-            }
+        <th
+          style={{
+            width: "18%",
+            padding: "18px 20px",
+            textAlign: "center",
+            fontSize: 13,
+            color: "#475569",
+            fontWeight: 700,
+            textTransform: "uppercase",
+          }}
+        >
+          Admissions
+        </th>
 
-            onChange={(e)=>
-              setPartnerSearch(
-                e.target.value
-              )
-            }
-          />
+        <th
+          style={{
+            width: "24%",
+            padding: "18px 20px",
+            textAlign: "center",
+            fontSize: 13,
+            color: "#475569",
+            fontWeight: 700,
+            textTransform: "uppercase",
+          }}
+        >
+          Conversion %
+        </th>
+      </tr>
+    </thead>
 
-          <select
-            value={period}
-            onChange={(e)=>
-              setPeriod(
-                e.target.value
-              )
-            }
+    <tbody>
+      {filteredHistory.map((row) => (
+        <tr
+          key={row.partner_name}
+          style={{
+            borderBottom: "1px solid #F1F5F9",
+            transition: ".2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#FAFCFF";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "#FFFFFF";
+          }}
+        >
+          <td
+            style={{
+              padding: "18px 20px",
+              fontWeight: 600,
+              color: "#0F172A",
+            }}
           >
+            {row.partner_name}
+          </td>
 
-            <option value="all">
-              All Time
-            </option>
+          <td
+            style={{
+              padding: "18px 20px",
+              textAlign: "center",
+              fontWeight: 600,
+            }}
+          >
+            {row.total_leads}
+          </td>
 
-            <option value="today">
-              Today
-            </option>
+          <td
+            style={{
+              padding: "18px 20px",
+              textAlign: "center",
+              fontWeight: 600,
+            }}
+          >
+            {row.admissions}
+          </td>
 
-            <option value="week">
-              This Week
-            </option>
+          <td
+            style={{
+              padding: "18px 20px",
+              textAlign: "center",
+            }}
+          >
+            <span
+              style={{
+                display: "inline-flex",
+                justifyContent: "center",
+                alignItems: "center",
+                minWidth: 70,
+                padding: "8px 14px",
+                borderRadius: 999,
+                background:
+                  row.conversion_percentage >= 50
+                    ? "#DCFCE7"
+                    : row.conversion_percentage >= 25
+                    ? "#DBEAFE"
+                    : "#FEF3C7",
+                color:
+                  row.conversion_percentage >= 50
+                    ? "#166534"
+                    : row.conversion_percentage >= 25
+                    ? "#1D4ED8"
+                    : "#92400E",
+                fontWeight: 700,
+                fontSize: 13,
+              }}
+            >
+              {row.conversion_percentage}%
+            </span>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
 
-            <option value="month">
-              This Month
-            </option>
 
-          </select>
-
-        </div>
-
-        {/* TABLE */}
-
-        <table
-          style={{
-            width:"100%",
-
-            marginTop:"24px",
-
-            borderCollapse:
-              "collapse"
-          }}
-        >
-
-          <thead>
-
-            <tr>
-
-              <th>
-                Partner
-              </th>
-
-              <th>
-                Total Leads
-              </th>
-
-              <th>
-                Admissions
-              </th>
-
-              <th>
-                Conversion %
-              </th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            {filteredHistory.map(
-              row => (
-
-                <tr
-                  key={
-                    row.partner_name
-                  }
-                >
-
-                  <td>
-                    {
-                      row.partner_name
-                    }
-                  </td>
-
-                  <td>
-                    {
-                      row.total_leads
-                    }
-                  </td>
-
-                  <td>
-                    {
-                      row.admissions
-                    }
-                  </td>
-
-                  <td>
-
-                    <span
-                      style={{
-                        background:
-                          row.conversion_percentage >= 50
-                            ? "#DCFCE7"
-                            : "#FEF3C7",
-
-                        color:
-                          row.conversion_percentage >= 50
-                            ? "#166534"
-                            : "#92400E",
-
-                        padding:
-                          "6px 10px",
-
-                        borderRadius:
-                          "999px",
-
-                        fontWeight:
-                          600
-                      }}
-                    >
-
-                      {
-                        row.conversion_percentage
-                      }
-                      %
-
-                    </span>
-
-                  </td>
-
-                </tr>
-
-              )
-            )}
-
-          </tbody>
-
-        </table>
+</div>
 
       </div>
 
