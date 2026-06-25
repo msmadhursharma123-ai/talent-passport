@@ -28,8 +28,48 @@ const { data, error } =
   await (supabase as any)
     .from("students")
     .insert([payload])
-      .select()
-      .single();
+    .select()
+    .single();
+
+if (!error) {
+
+  await (supabase as any)
+    .from("students_master")
+    .upsert({
+      student_id:
+        generatedStudentId,
+
+      student_name:
+        student.student_name,
+
+      student_email:
+        student.parent_email,
+
+      school_name:
+        student.school_name,
+
+      class_name:
+        student.class_name,
+
+      phone:
+        student.parent_mobile,
+
+      student_age:
+        student.student_age,
+
+      gender:
+        student.gender,
+
+      favourite_activity:
+        student.favourite_activity,
+
+      residence_city:
+        student.residence_city,
+
+      residence_area:
+        student.residence_area
+    });
+}
 
   if (error) {
   console.error(

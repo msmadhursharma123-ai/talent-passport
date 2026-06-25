@@ -707,13 +707,57 @@ export async function fetchStudentRequests(
 // ======================================
 
 export async function acceptScholarshipOffer(
-  id: string
-) {
-  return updateOfferStatus(
-    "partner_scholarship_offers",
-    id,
-    "accepted"
-  );
+  id:string
+){
+
+    const supabase =
+      getSupabaseClient() as any;
+
+    const { data } =
+      await supabase
+      .from("partner_scholarship_offers")
+      .select("*")
+      .eq("id",id)
+      .single();
+
+    await updateOfferStatus(
+      "partner_scholarship_offers",
+      id,
+      "accepted"
+    );
+
+    if(data){
+
+        await createLead({
+
+            partner_id:data.partner_id,
+
+            partner_name:data.partner_name,
+
+            student_id:data.student_id,
+
+            student_name:data.student_name,
+
+            school_name:data.school_name,
+
+            email:data.email,
+
+            phone:data.phone,
+
+            class_name:data.class_name,
+
+            request_type:"Scholarship",
+
+            lead_source:"outgoing",
+
+            status:"new_lead",
+
+            notes:""
+
+        });
+
+    }
+
 }
 
 export async function rejectScholarshipOffer(
@@ -734,11 +778,42 @@ export async function rejectScholarshipOffer(
 export async function acceptWorkshopOffer(
   id: string
 ) {
-  return updateOfferStatus(
+  const supabase = getSupabaseClient() as any;
+
+  const { data } = await supabase
+    .from("partner_workshop_offers")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  await updateOfferStatus(
     "partner_workshop_offers",
     id,
     "accepted"
   );
+
+  if (data) {
+    await createLead({
+      partner_id: data.partner_id,
+      partner_name: data.partner_name,
+
+      student_id: data.student_id,
+      student_name: data.student_name,
+      school_name: data.school_name,
+
+      email: data.email,
+      phone: data.phone,
+      class_name: data.class_name,
+
+      request_type: "Workshop",
+
+      lead_source: "outgoing",
+
+      status: "new_lead",
+
+      notes: "",
+    });
+  }
 }
 
 export async function rejectWorkshopOffer(
@@ -759,58 +834,42 @@ export async function rejectWorkshopOffer(
 export async function acceptContactOffer(
   id: string
 ) {
+  const supabase = getSupabaseClient() as any;
 
-  const supabase =
-    getSupabaseClient() as any;
+  const { data } = await supabase
+    .from("partner_contact_requests")
+    .select("*")
+    .eq("id", id)
+    .single();
 
-  if (!supabase)
-    return;
+  await updateOfferStatus(
+    "partner_contact_requests",
+    id,
+    "accepted"
+  );
 
-  const {
-    data: request
-  } =
-    await supabase
-      .from(
-        "partner_contact_requests"
-      )
-      .select("*")
-      .eq("id", id)
-      .single();
+  if (data) {
+    await createLead({
+      partner_id: data.partner_id,
+      partner_name: data.partner_name,
 
-  await supabase
-    .from(
-      "partner_contact_requests"
-    )
-    .update({
-      status: "accepted"
-    })
-    .eq("id", id);
+      student_id: data.student_id,
+      student_name: data.student_name,
+      school_name: data.school_name,
 
-  if (!request)
-    return;
+      email: data.email,
+      phone: data.phone,
+      class_name: data.class_name,
 
-  await supabase
-    .from(
-      "partner_student_leads"
-    )
-    .update({
+      request_type: "Contact",
 
-      status:
-        "contacted",
+      lead_source: "outgoing",
 
-      updated_at:
-        new Date()
-          .toISOString()
+      status: "new_lead",
 
-    })
-    .eq(
-      "partner_id",
-      request.partner_id
-    )
-    .eq(
-      "student_id",
-      request.student_id
-    );
+      notes: "",
+    });
+  }
 }
 
 export async function rejectContactOffer(
@@ -978,6 +1037,27 @@ export async function createLead(
   if (!supabase)
     return null;
 
+  // =====================================
+  // Prevent Duplicate Lead
+  // =====================================
+
+  const { data: existingLead } =
+    await supabase
+      .from("partner_student_leads")
+      .select("id")
+      .eq("partner_id", lead.partner_id)
+      .eq("student_id", lead.student_id)
+      .eq("request_type", lead.request_type)
+      .maybeSingle();
+
+  if (existingLead) {
+    return existingLead;
+  }
+
+  // =====================================
+  // Create Lead
+  // =====================================
+
   const {
     data,
     error
@@ -991,7 +1071,12 @@ export async function createLead(
       .single();
 
   if (error) {
-    console.error(error);
+
+    console.error(
+      "CREATE LEAD ERROR",
+      error
+    );
+
     return null;
   }
 
@@ -1021,21 +1106,19 @@ export async function fetchPartnerLeads(
         "partner_id",
         partnerId
       )
-      .in(
-        "status",
-        [
-          "contacted",
-          "follow_up",
-          "counselling_scheduled",
-          "counselling_done",
-          "interested",
-          "admission_completed",
-          "parent_declined",
-          "not_reachable",
-          "rejected",
-          "closed"
-        ]
-      )
+     .in("status", [
+  "new_lead",
+  "contacted",
+  "follow_up",
+  "counselling_scheduled",
+  "counselling_done",
+  "interested",
+  "admission_completed",
+  "parent_declined",
+  "not_reachable",
+  "rejected",
+  "closed"
+])
       .order(
         "created_at",
         {

@@ -17,17 +17,39 @@ const cities = [
   "Ghaziabad"
 ];
 
-const skills = [
-  "Dance",
-  "Singing",
-  "Acting",
-  "Drama",
+
+  const skills = [
   "Debate",
   "Public Speaking",
   "Creative Writing",
-  "Art & Craft",
+
+  "Dance",
+  "Music",
+  "Singing",
+
+  "Acting",
+  "Drama",
+  "Theatre",
+
   "Painting",
+  "Art & Craft",
+  "Fine Arts",
   "Music Instrument"
+];
+
+const consultationOptions = [
+  "Career Guidance",
+  "Scholarship Planning",
+  "Portfolio Review",
+  "Competition Coaching",
+  "Leadership Coaching",
+  "Public Speaking Coaching",
+  "Dance Mentoring",
+  "Music Mentoring",
+  "Acting Mentoring",
+  "Robotics Mentoring",
+  "Creative Writing Mentoring",
+  "Art Portfolio Review",
 ];
 
 export default function PartnerRegistration({
@@ -51,9 +73,11 @@ export default function PartnerRegistration({
     setMobile] =
     useState("");
 
-  const [skillFocus,
-    setSkillFocus] =
-    useState<string[]>([]);
+  const [skillFocus, setSkillFocus] = useState<string[]>([]);
+const [consultationServices, setConsultationServices] = useState<string[]>([]);
+
+const [showSkillDropdown, setShowSkillDropdown] = useState(false);
+const [showConsultationDropdown, setShowConsultationDropdown] = useState(false);
 
 const [preferredAgeFrom,
   setPreferredAgeFrom] =
@@ -67,27 +91,28 @@ const [instituteArea,
   setInstituteArea] =
   useState("");
 
-  const toggleSkill =
-    (skill: string) => {
+ const toggleSkill = (skill: string) => {
+  if (skillFocus.includes(skill)) {
+    setSkillFocus(skillFocus.filter((s) => s !== skill));
+  } else {
+    setSkillFocus([...skillFocus, skill]);
+  }
+};
 
-      if (
-        skillFocus.includes(skill)
-      ) {
-
-        setSkillFocus(
-          skillFocus.filter(
-            s => s !== skill
-          )
-        );
-
-      } else {
-
-        setSkillFocus([
-          ...skillFocus,
-          skill
-        ]);
-      }
-    };
+const toggleConsultation = (service: string) => {
+  if (consultationServices.includes(service)) {
+    setConsultationServices(
+      consultationServices.filter(
+        (s) => s !== service
+      )
+    );
+  } else {
+    setConsultationServices([
+      ...consultationServices,
+      service,
+    ]);
+  }
+}; 
 
   const handleContinue =
     async () => {
@@ -134,6 +159,9 @@ const [instituteArea,
 
     specialization:
       skillFocus,
+
+      consultation_services:
+  consultationServices,
 
     preferred_age_from:
       Number(
@@ -344,58 +372,200 @@ const [instituteArea,
 </div>
 
         <h3
-          style={{
-            marginTop: 30,
-            marginBottom: 20,
-            color: "#143B73",
-          }}
-        >
-          Skill Focus
-        </h3>
+  style={{
+    marginTop: 30,
+    marginBottom: 14,
+    color: "#143B73",
+  }}
+>
+  Skill Focus
+</h3>
 
-        <div
+<div
+  style={{
+    position: "relative",
+  }}
+>
+  <button
+    type="button"
+    onClick={() =>
+      setShowSkillDropdown(
+        !showSkillDropdown
+      )
+    }
+    style={{
+      ...inputStyle,
+      textAlign: "left",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      cursor: "pointer",
+      background: "white",
+    }}
+  >
+    <span>
+      {skillFocus.length
+        ? skillFocus.join(", ")
+        : "Select Activities"}
+    </span>
+
+    ▼
+  </button>
+
+  {showSkillDropdown && (
+    <div
+      style={{
+        position: "absolute",
+        top: "100%",
+        left: 0,
+        right: 0,
+        background: "white",
+        border: "1px solid #CBD5E1",
+        borderRadius: 14,
+        marginTop: 6,
+        maxHeight: 280,
+        overflowY: "auto",
+        zIndex: 100,
+        boxShadow:
+          "0 10px 25px rgba(0,0,0,.12)",
+      }}
+    >
+      {skills.map((skill) => (
+        <label
+          key={skill}
           style={{
             display: "flex",
-            flexWrap: "wrap",
+            alignItems: "center",
             gap: 12,
+            padding: 14,
+            cursor: "pointer",
           }}
         >
-          {skills.map(skill => (
+          <input
+            type="checkbox"
+            checked={skillFocus.includes(skill)}
+            onChange={() =>
+              toggleSkill(skill)
+            }
+          />
 
-            <button
-              key={skill}
-              type="button"
-              onClick={() =>
-                toggleSkill(skill)
+          {skill}
+        </label>
+      ))}
+    </div>
+  )}
+</div>
+
+        <h3
+  style={{
+    marginTop: 32,
+    marginBottom: 12,
+    color: "#143B73",
+  }}
+>
+  Consultation Expertise
+</h3>
+
+<h3
+  style={{
+    marginTop: 30,
+    marginBottom: 12,
+    color: "#143B73",
+  }}
+>
+  Consultation Expertise
+</h3>
+
+<p
+  style={{
+    color: "#64748B",
+    marginBottom: 12,
+    fontSize: 14,
+  }}
+>
+  Select consultation services your institute provides.
+</p>
+
+<div
+  style={{
+    position: "relative",
+  }}
+>
+  <button
+    type="button"
+    onClick={() =>
+      setShowConsultationDropdown(
+        !showConsultationDropdown
+      )
+    }
+    style={{
+      ...inputStyle,
+      textAlign: "left",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      cursor: "pointer",
+      background: "white",
+    }}
+  >
+    <span>
+      {consultationServices.length
+        ? consultationServices.join(", ")
+        : "Select Consultation Services"}
+    </span>
+
+    ▼
+  </button>
+
+  {showConsultationDropdown && (
+    <div
+      style={{
+        position: "absolute",
+        top: "100%",
+        left: 0,
+        right: 0,
+        background: "white",
+        border: "1px solid #CBD5E1",
+        borderRadius: 14,
+        marginTop: 6,
+        maxHeight: 320,
+        overflowY: "auto",
+        zIndex: 100,
+        boxShadow:
+          "0 10px 25px rgba(0,0,0,.12)",
+      }}
+    >
+      {consultationOptions.map(
+        (service) => (
+          <label
+            key={service}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: 14,
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={consultationServices.includes(
+                service
+              )}
+              onChange={() =>
+                toggleConsultation(
+                  service
+                )
               }
-              style={{
-                padding:
-                  "12px 18px",
-                borderRadius:
-                  "999px",
-                border:
-                  skillFocus.includes(skill)
-                    ? "none"
-                    : "1px solid #CBD5E1",
+            />
 
-                background:
-                  skillFocus.includes(skill)
-                    ? "#F4A623"
-                    : "white",
-
-                color:
-                  skillFocus.includes(skill)
-                    ? "white"
-                    : "#334155",
-
-                cursor:"pointer"
-              }}
-            >
-              {skill}
-            </button>
-
-          ))}
-        </div>
+            {service}
+          </label>
+        )
+      )}
+    </div>
+  )}
+</div>
 
         <button
           onClick={handleContinue}
