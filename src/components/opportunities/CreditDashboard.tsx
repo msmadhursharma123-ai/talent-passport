@@ -15,6 +15,8 @@ import {
   getStudentSkills
 } from "../../data/studentRepository";
 
+import { getRecommendedPartners } from "../../services/marketplaceService";
+
 import {
   calculateCompetitionCredits,
   calculateAchievementCredits,
@@ -59,6 +61,9 @@ useState(false);
 const [consultationTopic,
 setConsultationTopic] =
 useState("");
+
+const [loadingPartners, setLoadingPartners] =
+  useState(false);
 
 const [
 consultationDescription,
@@ -171,6 +176,39 @@ async function loadCredits() {
       timeline +
       portfolio
   );
+}
+
+async function loadRecommendedPartners(
+  category: string,
+  skill: string
+) {
+
+  setLoadingPartners(true);
+
+  try {
+
+    const partners =
+      await getRecommendedPartners(
+        category,
+        skill
+      );
+
+    setRecommendedPartners(partners);
+
+    setShowPartners(true);
+
+  } catch (error) {
+
+    console.error(error);
+
+    setRecommendedPartners([]);
+
+  } finally {
+
+    setLoadingPartners(false);
+
+  }
+
 }
 
   const [creditView, setCreditView] =
@@ -1508,21 +1546,10 @@ remainingCredits >= 0
 <button
 onClick={() => {
 
-setShowPartners(true);
-
-setRecommendedPartners(
-
-demoPartners.filter(partner =>
-
-selectedCategory === "Activity Coaching"
-
-? partner.skills.includes(selectedSkill)
-
-: true
-
-)
-
-);
+  loadRecommendedPartners(
+    selectedCategory!,
+    selectedSkill
+  );
 
 }}
 
@@ -1873,42 +1900,52 @@ marginTop:6
 </div>
 
 <div
-  style={{
-    marginBottom: 18
-  }}
+style={{
+marginBottom:18
+}}
 >
-  <div
-    style={{
-      fontWeight: 700,
-      marginBottom: 12
-    }}
-  >
-    Specializations
-  </div>
 
-  <div
-    style={{
-      display: "flex",
-      gap: 8,
-      flexWrap: "wrap"
-    }}
-  >
-    {partner.skills.map((skill: string) => (
-      <div
-        key={skill}
-        style={{
-          background: "#FFF7ED",
-          padding: "7px 14px",
-          borderRadius: 999,
-          fontSize: 13,
-          fontWeight: 600,
-          color: "#EA580C"
-        }}
-      >
-        {skill}
-      </div>
-    ))}
-  </div>
+<div
+style={{
+fontWeight:700,
+marginBottom:12
+}}
+>
+
+Specializations
+
+</div>
+
+<div
+style={{
+display:"flex",
+gap:8,
+flexWrap:"wrap"
+}}
+>
+
+{(partner.specializations ?? []).map((skill: string) => (
+
+<div
+key={skill}
+style={{
+background:"#FFF7ED",
+padding:"7px 14px",
+borderRadius:999,
+fontSize:13,
+fontWeight:600,
+color:"#EA580C"
+}}
+>
+
+{skill}
+
+</div>
+
+))}
+
+</div>
+
 </div>
 
 <div
@@ -1934,7 +1971,7 @@ color:"#64748B"
 }}
 >
 
-{partner.languages.join(" • ")}
+{(partner.languages ?? []).join(" • ")}
 
 </div>
 
@@ -1981,7 +2018,7 @@ One-on-One Consultation
 
 <button
 
-onClick={()=>
+onClick={() =>
 setSelectedPartner(partner)
 }
 
@@ -1989,8 +2026,8 @@ style={{
 
 background:
 selectedPartner?.id===partner.id
-?"#15803D"
-:"#143B73",
+? "#15803D"
+: "#143B73",
 
 color:"#FFFFFF",
 
@@ -2011,8 +2048,8 @@ fontSize:15
 >
 
 {selectedPartner?.id===partner.id
-?"✓ Selected"
-:"Select Expert"}
+? "✓ Selected"
+: "Select Expert"}
 
 </button>
 
