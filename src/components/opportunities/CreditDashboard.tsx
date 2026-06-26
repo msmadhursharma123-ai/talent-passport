@@ -18,6 +18,18 @@ import {
 import { getRecommendedPartners } from "../../services/marketplaceService";
 
 import {
+  syncStudentWallet
+} from "../../services/walletService";
+
+import {
+  getStudentWallet
+} from "../../data/walletRepository";
+
+import {
+  bookConsultation
+} from "../../services/consultationService";
+
+import {
   calculateCompetitionCredits,
   calculateAchievementCredits,
   calculatePortfolioCredits
@@ -35,6 +47,10 @@ const [achievementCredits,
 
 const [portfolioCredits,
   setPortfolioCredits] =
+  useState(0);
+
+  const [walletBalance,
+  setWalletBalance] =
   useState(0);
 
 const [totalCredits,
@@ -72,7 +88,8 @@ setConsultationDescription
 
   const consultationCost = 60;
 
-const availableCredits = totalCredits;
+const availableCredits =
+  walletBalance;
 
 const remainingCredits =
   availableCredits - consultationCost;
@@ -81,20 +98,32 @@ const remainingCredits =
   loadCredits();
 }, []);
 
+const [profile] = useState(()=>
+
+JSON.parse(
+
+localStorage.getItem(
+"studentProfile"
+)||"{}"
+
+)
+
+);
+
 async function loadCredits() {
 
-  const profile =
-    JSON.parse(
-      localStorage.getItem(
-        "studentProfile"
-      ) || "{}"
-    );
+
 
   const studentId =
     profile?.id;
 
   if (!studentId)
     return;
+
+const studentName =
+  profile?.student_name ||
+  profile?.name ||
+  "";
 
   const supabase =
     getSupabaseClient();
@@ -159,23 +188,79 @@ async function loadCredits() {
       skills.length
     );
 
-  setCompetitionCredits(
-    competition
-  );
+ const totalEarnedCredits =
 
-  setAchievementCredits(
-    timeline
-  );
+  competition +
 
-  setPortfolioCredits(
+  timeline +
+
+  portfolio;
+
+setCompetitionCredits(
+
+  competition
+
+);
+
+setAchievementCredits(
+
+  timeline
+
+);
+
+setPortfolioCredits(
+
+  portfolio
+
+);
+
+setTotalCredits(
+
+  totalEarnedCredits
+
+);
+
+/* ============================================
+   Sync Student Wallet
+============================================ */
+
+try {
+
+  await syncStudentWallet(
+
+    studentId,
+
+    competition,
+
+    timeline,
+
     portfolio
+
   );
 
-  setTotalCredits(
-    competition +
-      timeline +
-      portfolio
+  const wallet =
+
+    await getStudentWallet(
+      studentId
+    );
+
+  setWalletBalance(
+
+    wallet.available_credits
+
   );
+
+} catch (error) {
+
+  console.error(
+
+    "Wallet sync failed",
+
+    error
+
+  );
+
+}
 }
 
 async function loadRecommendedPartners(
@@ -2061,6 +2146,407 @@ fontSize:15
     </div>
   </div>
 )}
+
+{/* ============================================================
+                CONSULTATION SUMMARY
+============================================================ */}
+
+{selectedPartner && (
+
+<div
+style={{
+marginTop:40,
+background:"#FFFFFF",
+border:"1px solid #E2E8F0",
+borderRadius:28,
+padding:32
+}}
+>
+
+<div
+style={{
+display:"flex",
+justifyContent:"space-between",
+alignItems:"center",
+marginBottom:30
+}}
+>
+
+<div>
+
+<div
+style={{
+fontSize:13,
+fontWeight:700,
+letterSpacing:1,
+textTransform:"uppercase",
+color:"#EA580C"
+}}
+>
+
+CONSULTATION SUMMARY
+
+</div>
+
+<h2
+style={{
+margin:"8px 0 0"
+}}
+>
+
+Review Before Booking
+
+</h2>
+
+</div>
+
+<div
+style={{
+background:"#FFF7ED",
+padding:"10px 18px",
+borderRadius:999,
+fontWeight:700,
+color:"#EA580C"
+}}
+>
+
+{selectedPartner.credits} Credits
+
+</div>
+
+</div>
+
+<div
+style={{
+display:"grid",
+gridTemplateColumns:"repeat(2,1fr)",
+gap:20,
+marginBottom:28
+}}
+>
+
+<div>
+
+<div
+style={{
+fontSize:13,
+color:"#64748B"
+}}
+>
+
+Expert
+
+</div>
+
+<div
+style={{
+fontSize:18,
+fontWeight:700,
+marginTop:6
+}}
+>
+
+{selectedPartner.name}
+
+</div>
+
+</div>
+
+<div>
+
+<div
+style={{
+fontSize:13,
+color:"#64748B"
+}}
+>
+
+Category
+
+</div>
+
+<div
+style={{
+fontSize:18,
+fontWeight:700,
+marginTop:6
+}}
+>
+
+{selectedCategory}
+
+</div>
+
+</div>
+
+<div>
+
+<div
+style={{
+fontSize:13,
+color:"#64748B"
+}}
+>
+
+Skill
+
+</div>
+
+<div
+style={{
+fontSize:18,
+fontWeight:700,
+marginTop:6
+}}
+>
+
+{selectedSkill}
+
+</div>
+
+</div>
+
+<div>
+
+<div
+style={{
+fontSize:13,
+color:"#64748B"
+}}
+>
+
+Topic
+
+</div>
+
+<div
+style={{
+fontSize:18,
+fontWeight:700,
+marginTop:6
+}}
+>
+
+{consultationTopic}
+
+</div>
+
+</div>
+
+</div>
+
+<div
+style={{
+marginBottom:28
+}}
+>
+
+<div
+style={{
+fontSize:13,
+color:"#64748B",
+marginBottom:10
+}}
+>
+
+Description
+
+</div>
+
+<div
+style={{
+background:"#F8FAFC",
+padding:20,
+borderRadius:16,
+lineHeight:1.7,
+color:"#334155"
+}}
+>
+
+{consultationDescription}
+
+</div>
+
+</div>
+
+<div
+style={{
+display:"grid",
+gridTemplateColumns:"repeat(2,1fr)",
+gap:20,
+marginBottom:30
+}}
+>
+
+<div
+style={{
+background:"#FFF7ED",
+padding:20,
+borderRadius:16,
+border:"1px solid #FED7AA"
+}}
+>
+
+<div
+style={{
+fontSize:13,
+color:"#EA580C"
+}}
+>
+
+Consultation Cost
+
+</div>
+
+<div
+style={{
+fontSize:28,
+fontWeight:700,
+marginTop:10,
+color:"#EA580C"
+}}
+>
+
+{selectedPartner.credits}
+
+</div>
+
+</div>
+
+<div
+style={{
+background:"#F0FDF4",
+padding:20,
+borderRadius:16,
+border:"1px solid #BBF7D0"
+}}
+>
+
+<div
+style={{
+fontSize:13,
+color:"#15803D"
+}}
+>
+
+Remaining Credits
+
+</div>
+
+<div
+style={{
+fontSize:28,
+fontWeight:700,
+marginTop:10,
+color:"#15803D"
+}}
+>
+
+{availableCredits-selectedPartner.credits}
+
+</div>
+
+</div>
+
+</div>
+
+<div
+style={{
+display:"flex",
+justifyContent:"flex-end",
+gap:16
+}}
+>
+
+<button
+
+onClick={()=>{
+setSelectedPartner(null);
+}}
+
+style={{
+padding:"14px 26px",
+borderRadius:14,
+background:"#E2E8F0",
+border:"none",
+cursor:"pointer",
+fontWeight:700
+}}
+>
+
+Cancel
+
+</button>
+
+<button
+
+onClick={async()=>{
+
+try{
+
+await bookConsultation({
+
+studentId: profile?.id,
+
+partnerId:selectedPartner.id,
+
+category:selectedCategory!,
+
+skill:selectedSkill,
+
+topic:consultationTopic,
+
+description:consultationDescription,
+
+consultationCredits:selectedPartner.credits
+
+});
+
+alert("Consultation request submitted successfully.");
+
+}
+catch(error){
+
+console.error(error);
+
+alert("Unable to submit consultation request.");
+
+}
+
+}}
+
+style={{
+
+padding:"14px 32px",
+
+borderRadius:14,
+
+background:"#FF6B00",
+
+color:"#FFFFFF",
+
+border:"none",
+
+cursor:"pointer",
+
+fontWeight:700,
+
+fontSize:16
+
+}}
+
+>
+
+Book Consultation →
+
+</button>
+
+</div>
+
+</div>
+
+)}
+
 
     </div>
 </div>
