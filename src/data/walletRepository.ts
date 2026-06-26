@@ -7,23 +7,88 @@ import { getSupabaseClient } from "../supabaseClient";
 export async function getStudentWallet(
   studentId: string
 ) {
+
   const supabase = getSupabaseClient();
 
   if (!supabase) {
-    throw new Error("Supabase client not initialized");
+
+    throw new Error(
+      "Supabase client not initialized"
+    );
+
   }
 
-  const { data, error } = await (supabase as any)
+  /* ----------------------------------------
+     Try fetching existing wallet
+  ---------------------------------------- */
+
+  const {
+    data: wallet,
+    error
+  } = await (supabase as any)
+
     .from("student_wallets")
+
     .select("*")
+
     .eq("student_id", studentId)
-    .single();
+
+    .maybeSingle();
 
   if (error) {
+
     throw error;
+
   }
 
-  return data;
+  /* ----------------------------------------
+     Wallet exists
+  ---------------------------------------- */
+
+  if (wallet) {
+
+    return wallet;
+
+  }
+
+  /* ----------------------------------------
+     Create wallet automatically
+  ---------------------------------------- */
+
+  const {
+
+    data: newWallet,
+
+    error: insertError
+
+  } = await (supabase as any)
+
+    .from("student_wallets")
+
+    .insert({
+
+      student_id: studentId,
+
+      available_credits: 0,
+
+      spent_credits: 0,
+
+      lifetime_earned: 0
+
+    })
+
+    .select()
+
+    .single();
+
+  if (insertError) {
+
+    throw insertError;
+
+  }
+
+  return newWallet;
+
 }
 
 /* ============================================================

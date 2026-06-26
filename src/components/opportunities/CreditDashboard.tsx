@@ -53,6 +53,22 @@ const [portfolioCredits,
   setWalletBalance] =
   useState(0);
 
+const [bookingLoading,
+  setBookingLoading] =
+  useState(false);
+
+const [bookingSuccess,
+  setBookingSuccess] =
+  useState(false);
+
+const [bookingError,
+  setBookingError] =
+  useState("");
+
+const [bookingResult,
+  setBookingResult] =
+  useState<any>(null);
+
 const [totalCredits,
   setTotalCredits] =
   useState(0);
@@ -491,7 +507,7 @@ const demoPartners: MarketplacePartner[] = [
     
           }}
         >
-          {totalCredits}
+          {walletBalance}
         </h1>
       </div>
 
@@ -2478,42 +2494,100 @@ Cancel
 
 </button>
 
+{bookingError && (
+
+<div
+style={{
+marginBottom:20,
+padding:16,
+borderRadius:12,
+background:"#FEF2F2",
+border:"1px solid #FECACA",
+color:"#B91C1C",
+fontWeight:600
+}}
+>
+
+{bookingError}
+
+</div>
+
+)}
+
 <button
 
 onClick={async()=>{
 
+setBookingError("");
+
+setBookingLoading(true);
+
 try{
+
+const result =
 
 await bookConsultation({
 
-studentId: profile?.id,
+studentId:
+profile.id,
 
-partnerId:selectedPartner.id,
+partnerId:
+selectedPartner.id,
 
-category:selectedCategory!,
+category:
+selectedCategory!,
 
-skill:selectedSkill,
+skill:
+selectedSkill,
 
-topic:consultationTopic,
+topic:
+consultationTopic,
 
-description:consultationDescription,
+description:
+consultationDescription,
 
-consultationCredits:selectedPartner.credits
+consultationCredits:
+selectedPartner.credits
 
 });
 
-alert("Consultation request submitted successfully.");
+setBookingResult(
+result
+);
+
+setBookingSuccess(
+true
+);
+
+await loadCredits();
 
 }
-catch(error){
+catch(error:any){
 
 console.error(error);
 
-alert("Unable to submit consultation request.");
+setBookingError(
+
+error?.message ??
+
+"Unable to submit consultation request."
+
+);
+
+}
+finally{
+
+setBookingLoading(
+false
+);
 
 }
 
 }}
+
+disabled={
+bookingLoading
+}
 
 style={{
 
@@ -2527,7 +2601,15 @@ color:"#FFFFFF",
 
 border:"none",
 
-cursor:"pointer",
+cursor:
+bookingLoading
+? "not-allowed"
+: "pointer",
+
+opacity:
+bookingLoading
+? 0.7
+: 1,
 
 fontWeight:700,
 
@@ -2537,7 +2619,11 @@ fontSize:16
 
 >
 
-Book Consultation →
+{bookingLoading
+
+? "Booking..."
+
+: "Book Consultation →"}
 
 </button>
 
@@ -2547,6 +2633,258 @@ Book Consultation →
 
 )}
 
+{/* ============================================================
+                 BOOKING SUCCESS
+============================================================ */}
+
+{bookingSuccess && bookingResult && (
+
+<div
+style={{
+marginTop:40,
+background:"#F0FDF4",
+border:"1px solid #BBF7D0",
+borderRadius:28,
+padding:36
+}}
+>
+
+<div
+style={{
+textAlign:"center",
+marginBottom:32
+}}
+>
+
+<div
+style={{
+fontSize:70
+}}
+>
+
+🎉
+
+</div>
+
+<h2
+style={{
+margin:"12px 0"
+}}
+>
+
+Consultation Booked Successfully
+
+</h2>
+
+<div
+style={{
+color:"#15803D",
+fontSize:17
+}}
+>
+
+Your consultation request has been submitted.
+
+</div>
+
+</div>
+
+<div
+style={{
+display:"grid",
+gridTemplateColumns:"repeat(2,1fr)",
+gap:20,
+marginBottom:32
+}}
+>
+
+<div>
+
+<div
+style={{
+fontSize:13,
+color:"#64748B"
+}}
+>
+
+Request ID
+
+</div>
+
+<div
+style={{
+fontWeight:700,
+marginTop:6
+}}
+>
+
+{bookingResult.consultation.id}
+
+</div>
+
+</div>
+
+<div>
+
+<div
+style={{
+fontSize:13,
+color:"#64748B"
+}}
+>
+
+Status
+
+</div>
+
+<div
+style={{
+fontWeight:700,
+marginTop:6,
+color:"#EA580C"
+}}
+>
+
+Pending Approval
+
+</div>
+
+</div>
+
+<div>
+
+<div
+style={{
+fontSize:13,
+color:"#64748B"
+}}
+>
+
+Expert
+
+</div>
+
+<div
+style={{
+fontWeight:700,
+marginTop:6
+}}
+>
+
+{selectedPartner.name}
+
+</div>
+
+</div>
+
+<div>
+
+<div
+style={{
+fontSize:13,
+color:"#64748B"
+}}
+>
+
+Credits Deducted
+
+</div>
+
+<div
+style={{
+fontWeight:700,
+marginTop:6,
+color:"#DC2626"
+}}
+>
+
+{selectedPartner.credits}
+
+</div>
+
+</div>
+
+</div>
+
+<div
+style={{
+display:"flex",
+justifyContent:"center",
+gap:20
+}}
+>
+
+<button
+
+onClick={()=>{
+
+setBookingSuccess(false);
+
+setSelectedPartner(null);
+
+setConsultationTopic("");
+
+setConsultationDescription("");
+
+setSelectedSkill("");
+
+}}
+
+style={{
+
+background:"#143B73",
+
+color:"#FFFFFF",
+
+border:"none",
+
+padding:"14px 26px",
+
+borderRadius:14,
+
+cursor:"pointer",
+
+fontWeight:700
+
+}}
+
+>
+
+Book Another Consultation
+
+</button>
+
+<button
+
+style={{
+
+background:"#FF6B00",
+
+color:"#FFFFFF",
+
+border:"none",
+
+padding:"14px 26px",
+
+borderRadius:14,
+
+cursor:"pointer",
+
+fontWeight:700
+
+}}
+
+>
+
+View My Consultations
+
+</button>
+
+</div>
+
+</div>
+
+)}
 
     </div>
 </div>

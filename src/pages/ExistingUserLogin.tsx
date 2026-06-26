@@ -10,6 +10,10 @@ import {
 }
 from "../data/studentRepository";
 
+import {
+  saveStudentIdentity
+} from "../services/identityService";
+
 interface Props {
   onSuccess: () => void;
   onRegister: () => void;
@@ -68,47 +72,62 @@ console.log(
   masterStudent
 );
 
-const enrichedProfile = {
+const identity = {
 
-  ...data,
+  /* Authentication */
 
-  student_id:
+  authUserId:
+    data.id,
+
+  /* students table */
+
+  studentUuid:
+    data.id,
+
+  /* students_master table */
+
+  masterStudentId:
+    masterStudent?.id,
+
+  /* Human Readable */
+
+  studentCode:
     masterStudent?.student_id,
 
-  student_email:
-    masterStudent?.student_email,
+  /* Student Details */
 
-  school_name:
+  studentName:
+    masterStudent?.student_name ||
+    data.student_name,
+
+  schoolName:
     masterStudent?.school_name ||
     data.school_name,
 
-  class_name:
+  className:
     masterStudent?.class_name ||
     data.class_name,
 
-  phone:
-    masterStudent?.phone ||
-    data.phone ||
-    data.parent_mobile ||
-    "",
+  parentEmail:
+    masterStudent?.student_email ||
+    data.parent_email,
 
-  parent_mobile:
+  parentPhone:
     masterStudent?.phone ||
-    data.phone ||
-    data.parent_mobile ||
-    ""
+    data.parent_mobile,
+
+  email:
+    data.parent_email
+
 };
 
 console.log(
-  "ENRICHED PROFILE",
-  enrichedProfile
+  "STUDENT IDENTITY",
+  identity
 );
 
-localStorage.setItem(
-  "studentProfile",
-  JSON.stringify(
-    enrichedProfile
-  )
+saveStudentIdentity(
+  identity
 );
 
     const assessment =

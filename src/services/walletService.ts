@@ -32,17 +32,30 @@ export async function syncStudentWallet(
     lifetimeEarned -
     wallet.spent_credits;
 
-  return await updateStudentWallet(
+console.log("SYNC WALLET");
+console.log("Student ID:", studentId);
+console.log("Competition:", competitionCredits);
+console.log("Achievement:", achievementCredits);
+console.log("Portfolio:", portfolioCredits);
+console.log("Lifetime:", lifetimeEarned);
+console.log("Available:", availableCredits);
+console.log("Wallet Before:", wallet);
 
-    studentId,
+const result = await updateStudentWallet(
 
-    availableCredits,
+  studentId,
 
-    wallet.spent_credits,
+  availableCredits,
 
-    lifetimeEarned
+  wallet.spent_credits,
 
-  );
+  lifetimeEarned
+
+);
+
+console.log("Wallet After:", result);
+
+return result;
 
 }
 

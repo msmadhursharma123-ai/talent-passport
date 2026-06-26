@@ -3,6 +3,10 @@ import {
   createStudent
 } from "../data/studentRepository";
 
+import {
+  saveStudentIdentity
+} from "../services/identityService";
+
 interface Props {
   onContinue: () => void;
   onBack: () => void;
@@ -119,26 +123,22 @@ export default function StudentProfileForm({
           residenceArea
       });
 
-    if (!student) {
+   if (!student) {
 
-      alert(
-        "Unable to create student profile"
-      );
+  alert(
+    "Unable to create student profile"
+  );
 
-      return;
-    }
+  return;
+}
 
-    localStorage.setItem(
-      "student_id",
-      student.id
-    );
+/* ============================================
+   SAVE COMPLETE STUDENT IDENTITY
+============================================ */
 
-    localStorage.setItem(
-      "studentProfile",
-      JSON.stringify(student)
-    );
+saveStudentIdentity(student);
 
-    onContinue();
+onContinue();
   };
 
   return (
