@@ -4,16 +4,72 @@ import {
 } from "../data/consultationRepository";
 
 import {
+  createCreditTransaction
+} from "../data/creditTransactionRepository";
+
+import {
   deductConsultationCredits
 } from "./walletService";
 
 import {
-  createCreditTransaction
-} from "../data/creditTransactionRepository";
+  getTableIdentity
+} from "./identityService";
+
+/* ============================================================
+   CONSULTATION SERVICE
+
+   Responsibilities
+
+   • Business orchestration
+   • Wallet deduction
+   • Consultation booking
+   • Credit ledger
+
+   Never talks directly to Supabase.
+   Always consumes repositories/services.
+============================================================ */
+
+/* ============================================================
+   IDENTITY HELPER
+============================================================ */
+
+function resolveStudentId(
+  input: CreateConsultationRequestInput
+): string {
+
+  return (
+    input.studentId ??
+    getTableIdentity(
+      "consultation_requests"
+    )
+  );
+
+}
+
+/* ============================================================
+   BOOK CONSULTATION
+============================================================ */
 
 export async function bookConsultation(
   input: CreateConsultationRequestInput
 ) {
+
+  /* ============================================
+     Resolve Identity
+  ============================================ */
+
+  const studentId =
+    resolveStudentId(input);
+
+  /*
+    Future Auth
+
+    const identity =
+      requireIdentity();
+
+    Student Identity will automatically
+    come from the Identity Kernel.
+  */
 
   /* ============================================
      STEP 1
@@ -21,9 +77,13 @@ export async function bookConsultation(
   ============================================ */
 
   const walletTransaction =
+
     await deductConsultationCredits(
-      input.studentId,
+
+      studentId,
+
       input.consultationCredits
+
     );
 
   /* ============================================
@@ -32,9 +92,14 @@ export async function bookConsultation(
   ============================================ */
 
   const consultation =
-    await createConsultationRequest(
-      input
-    );
+
+    await createConsultationRequest({
+
+      ...input,
+
+      studentId
+
+    });
 
   /* ============================================
      STEP 3
@@ -43,8 +108,7 @@ export async function bookConsultation(
 
   await createCreditTransaction({
 
-    studentId:
-      input.studentId,
+    studentId,
 
     consultationRequestId:
       consultation.id,
@@ -71,7 +135,7 @@ export async function bookConsultation(
 
   /* ============================================
      STEP 4
-     Return Complete Transaction
+     Return Complete Result
   ============================================ */
 
   return {

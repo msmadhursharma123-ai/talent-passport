@@ -1,37 +1,134 @@
+/* ============================================================
+   CREDIT ENGINE
+
+   Pure Credit Calculation Engine
+
+   Responsibilities
+
+   • Competition Credits
+   • Achievement Credits
+   • Portfolio Credits
+   • Leaderboard Bonus
+
+   No Identity
+   No Repository
+   No Supabase
+============================================================ */
+
+/* ============================================================
+   CREDIT CONSTANTS
+============================================================ */
+
+const CREDIT_PER_ACTIVITY = 10;
+
+const LEADERBOARD_BONUS = {
+
+  FIRST: 50,
+
+  SECOND: 30,
+
+  THIRD: 20
+
+} as const;
+
+/* ============================================================
+   COMPETITION CREDITS
+============================================================ */
+
 export function calculateCompetitionCredits(
+
   submissionsCount: number
-) {
-  return submissionsCount * 10;
+
+): number {
+
+  return submissionsCount *
+
+    CREDIT_PER_ACTIVITY;
+
 }
+
+/* ============================================================
+   ACHIEVEMENT CREDITS
+============================================================ */
 
 export function calculateAchievementCredits(
+
   achievementsCount: number,
+
   verifiedCount: number
-) {
+
+): number {
+
   return (
-    achievementsCount * 10 +
-    verifiedCount * 10
+
+    achievementsCount *
+
+      CREDIT_PER_ACTIVITY +
+
+    verifiedCount *
+
+      CREDIT_PER_ACTIVITY
+
   );
+
 }
+
+/* ============================================================
+   PORTFOLIO CREDITS
+============================================================ */
 
 export function calculatePortfolioCredits(
+
   performanceCount: number,
+
   projectCount: number,
+
   skillCount: number
-) {
+
+): number {
+
   return (
-    performanceCount * 10 +
-    projectCount * 10 +
-    skillCount * 10
+
+    performanceCount *
+
+      CREDIT_PER_ACTIVITY +
+
+    projectCount *
+
+      CREDIT_PER_ACTIVITY +
+
+    skillCount *
+
+      CREDIT_PER_ACTIVITY
+
   );
+
 }
 
-export function calculateLeaderboardBonus(
-  globalRank?: number
-) {
-  if (globalRank === 1) return 50;
-  if (globalRank === 2) return 30;
-  if (globalRank === 3) return 20;
+/* ============================================================
+   LEADERBOARD BONUS
+============================================================ */
 
-  return 0;
+export function calculateLeaderboardBonus(
+
+  globalRank?: number
+
+): number {
+
+  switch (globalRank) {
+
+    case 1:
+      return LEADERBOARD_BONUS.FIRST;
+
+    case 2:
+      return LEADERBOARD_BONUS.SECOND;
+
+    case 3:
+      return LEADERBOARD_BONUS.THIRD;
+
+    default:
+      return 0;
+
+  }
+
 }

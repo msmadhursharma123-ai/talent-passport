@@ -1,17 +1,28 @@
 import React from "react";
 
+import {
+  requirePartnerIdentity
+} from "../../services/identityService";
+
 export default function PartnerHome() {
 
-  const profile =
-    JSON.parse(
-      localStorage.getItem(
-        "partnerProfile"
-      ) || "{}"
-    );
+/*
+|--------------------------------------------------------------------------
+| IdentityService
+|--------------------------------------------------------------------------
+|
+| PartnerHome now consumes the application's
+| central IdentityService instead of reading
+| localStorage directly.
+|
+*/
 
-  const partnerId =
-    profile.partner_id ||
-    "Not Assigned";
+const profile =
+  requirePartnerIdentity();
+
+const partnerId =
+  profile.partnerId ||
+  "Not Assigned";
 
   return (
 
@@ -58,7 +69,7 @@ export default function PartnerHome() {
             fontWeight: 500
           }}
         >
-          {profile.institute_name}
+          {profile.partnerName}
         </h2>
 
         <div
@@ -67,7 +78,7 @@ export default function PartnerHome() {
             color: "#CBD5E1"
           }}
         >
-          {profile.institute_city}
+          {profile.instituteArea}
         </div>
 
         <div
@@ -250,16 +261,14 @@ export default function PartnerHome() {
         <p>
           <strong>Mobile:</strong>
           {" "}
-          {profile.mobile_number}
+          {profile.phone}
         </p>
 
         <p>
           <strong>Skill Categories:</strong>
           {" "}
           {
-            profile.skill_focus?.join(
-              ", "
-            )
+          profile.specialization?.join(", ")
           }
         </p>
 

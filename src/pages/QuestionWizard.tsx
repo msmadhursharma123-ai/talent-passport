@@ -13,21 +13,35 @@ import {
   generatePassport
 } from "../data/passportEngine";
 interface Question {
+
   id: number;
+
   type: string;
+
   title: string;
-  options?: string[];
+
+  options?: readonly string[];
+
   min?: number;
+
   max?: number;
+
   maxSelect?: number;
+
   minSelect?: number;
+
 }
 
 interface Props {
-  questions: Question[];
+
+  questions: readonly Question[];
+
   title: string;
+
   onComplete?: () => void;
+
   onBack?: () => void;
+
 }
 
 export default function QuestionWizard({
@@ -401,25 +415,20 @@ console.log(
   studentProfile?.id
 );
 
-if (studentProfile?.id) {
-
-  await saveAssessment(
-    studentProfile.id,
-    answers,
-    scores,
-    passport
-  );
+await saveAssessment(
+  answers,
+  scores,
+  passport
+);
 
 await saveStudentDNA(
-  studentProfile,
   answers,
   scores
 );
 
-  console.log(
-    "ASSESSMENT SAVED TO SUPABASE"
-  );
-}
+console.log(
+  "ASSESSMENT SAVED TO SUPABASE"
+);
 
 onComplete?.();
   }}

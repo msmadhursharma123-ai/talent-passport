@@ -14,6 +14,10 @@ import {
   uploadAchievementFile
 } from "../../data/timelineStorage";
 
+import {
+  requireIdentity
+} from "../../services/identityService";
+
 type Achievement = {
   id: string;
   achievement_year: number;
@@ -34,14 +38,11 @@ type Achievement = {
 
 export default function TimelineV2() {
 
-  const profile = JSON.parse(
-    localStorage.getItem(
-      "studentProfile"
-    ) || "{}"
-  );
+ const studentIdentity =
+  requireIdentity();
 
-  const studentId =
-    profile?.id;
+const studentId =
+  studentIdentity.studentUuid;
 
   const [achievements,
     setAchievements] =
@@ -151,10 +152,8 @@ const [journeyScore,
     if (!studentId)
       return;
 
-    const rows =
-      await getStudentAchievements(
-        studentId
-      );
+   const rows =
+  await getStudentAchievements();
 
     const sorted =
       [...rows].sort(

@@ -1,7 +1,25 @@
 import { getSupabaseClient } from "../supabaseClient";
 
+import {
+  getTableIdentity
+} from "../services/identityService";
+
+/* ============================================================
+   REPOSITORY IDENTITY HELPERS
+============================================================ */
+
+function currentStudentId(): string {
+  return getTableIdentity("credit_transactions");
+}
+
+/* ============================================================
+   TYPES
+============================================================ */
+
 export type CreateCreditTransactionInput = {
-  studentId: string;
+
+  studentId?: string;
+
   consultationRequestId?: string | null;
 
   transactionType:
@@ -24,6 +42,7 @@ export type CreateCreditTransactionInput = {
   balanceAfter: number;
 
   remarks?: string;
+
 };
 
 /* ============================================================
@@ -37,43 +56,55 @@ export async function createCreditTransaction(
   const supabase = getSupabaseClient();
 
   if (!supabase) {
+
     throw new Error(
       "Supabase client not initialized"
     );
+
   }
 
-  const { data, error } =
-    await (supabase as any)
-      .from("credit_transactions")
-      .insert({
+  const resolvedStudentId =
+    input.studentId ??
+    currentStudentId();
 
-        student_id:
-          input.studentId,
+  const {
+    data,
+    error
+  } = await (supabase as any)
 
-        consultation_request_id:
-          input.consultationRequestId,
+    .from("credit_transactions")
 
-        transaction_type:
-          input.transactionType,
+    .insert({
 
-        transaction_category:
-          input.transactionCategory,
+      student_id:
+        resolvedStudentId,
 
-        credits:
-          input.credits,
+      consultation_request_id:
+        input.consultationRequestId,
 
-        balance_before:
-          input.balanceBefore,
+      transaction_type:
+        input.transactionType,
 
-        balance_after:
-          input.balanceAfter,
+      transaction_category:
+        input.transactionCategory,
 
-        remarks:
-          input.remarks ?? null
+      credits:
+        input.credits,
 
-      })
-      .select()
-      .single();
+      balance_before:
+        input.balanceBefore,
+
+      balance_after:
+        input.balanceAfter,
+
+      remarks:
+        input.remarks ?? null
+
+    })
+
+    .select()
+
+    .single();
 
   if (error) {
     throw error;

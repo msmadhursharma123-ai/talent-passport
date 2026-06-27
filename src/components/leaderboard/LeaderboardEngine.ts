@@ -1,6 +1,6 @@
 import {
   fetchStudentsMaster,
-  fetchTalentPassportScores,
+  fetchTalentPassportScores
 } from "../../supabaseClient";
 
 export interface LeaderboardRow {
@@ -57,6 +57,7 @@ function average(
 
   return Math.round(total / count);
 }
+
 
 // ========================================
 // OVERALL STUDENT LEADERBOARD

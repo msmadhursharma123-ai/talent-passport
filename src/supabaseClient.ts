@@ -3,6 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import {
+  requireIdentity,
+  getStudentUuid
+} from "./services/identityService";
+
 import { createClient } from '@supabase/supabase-js';
 import { Submission } from './types';
 
@@ -42,18 +47,18 @@ export const getSupabaseClient = () => {
  */
 export const submitCompetitionEntry = async (
   entry: {
-  studentName: string;
-  studentEmail: string;
-  className: string;
-  schoolName: string;
-  pathway: string;
-  eventName: string;
-  description: string;
-},
+    pathway: string;
+    eventName: string;
+    description: string;
+  },
   file: File,
   onProgress?: (percent: number) => void
 ): Promise<{ success: boolean; data?: Submission; error?: string; isMock: boolean }> => {
   try {
+
+    const identity =
+    requireIdentity();
+
     const isMock = !isSupabaseConfigured();
 
     if (isMock) {
@@ -64,8 +69,11 @@ export const submitCompetitionEntry = async (
       const newSubmission: Submission = {
         id: `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         created_at: new Date().toISOString(),
-        student_name: entry.studentName,
-        student_email: entry.studentEmail,
+      student_name:
+    identity.studentName,
+
+student_email:
+identity.parentEmail ?? "",
         pathway: entry.pathway as any,
         event_name: entry.eventName,
         video_url: mockBlobUrl,
@@ -129,21 +137,26 @@ export const submitCompetitionEntry = async (
     }
 
     if (onProgress) onProgress(80);
-const studentId =
-  entry.studentEmail
-    .toLowerCase()
-    .replace("@", "_")
-    .replace(".", "_");
+
     // 3. Save submission metadata in submissions table
 const { data, error: insertError } = await (supabase as any)
   .from('submissions')
   .insert([
     {
-      student_id: studentId,
-       student_name: entry.studentName,
-  student_email: entry.studentEmail,
-  class_name: entry.className,
-  school_name: entry.schoolName,
+     student_id:
+    getStudentUuid(),
+
+student_name:
+    identity.studentName,
+
+student_email:
+identity.parentEmail ?? "",
+
+class_name:
+    identity.className,
+
+school_name:
+    identity.schoolName,
   pathway: entry.pathway,
   event_name: entry.eventName,
   video_url: publicUrl,
@@ -166,16 +179,25 @@ const { data, error: insertError } = await (supabase as any)
 await (supabase as any)
   .from("students_master")
   .upsert({
-    student_id: studentId,
-    student_name: entry.studentName,
-    student_email: entry.studentEmail,
-    school_name: entry.schoolName,
-    class_name: entry.className
+   student_id:
+    getStudentUuid(),
+
+student_name:
+    identity.studentName,
+
+student_email:
+identity.parentEmail ?? "",
+
+school_name:
+    identity.schoolName,
+
+class_name:
+    identity.className,
   });
   const { data: existingEvents } = await (supabase as any)
   .from("student_events")
   .select("*")
-  .eq("student_id", studentId);
+  .eq("student_id", getStudentUuid());
 
 if (!existingEvents || existingEvents.length === 0) {
   const mandatoryEvents = [
@@ -201,7 +223,7 @@ if (!existingEvents || existingEvents.length === 0) {
     await (supabase as any)
       .from("student_events")
       .insert({
-        student_id: studentId,
+        student_id: getStudentUuid(),
         pathway: event.pathway,
         event_name: event.event_name,
         status: "Pending"
@@ -216,7 +238,7 @@ const updateResult = await (supabase as any)
     status: "Completed",
     submission_id: data?.[0]?.id
   })
-  .eq("student_id", studentId)
+  .eq("student_id", getStudentUuid())
   .eq("pathway", entry.pathway);
 
 console.log("UPDATE RESULT");
@@ -229,7 +251,7 @@ console.log(entry.eventName);
 const { data: completedEvents } = await supabase
   .from("student_events")
   .select("*")
-  .eq("student_id", studentId)
+  .eq("student_id", getStudentUuid())
   .eq("status", "Completed");
 
 if (completedEvents?.length === 4) {
@@ -239,7 +261,7 @@ if (completedEvents?.length === 4) {
   await (supabase as any)
     .from("talent_passports_v2")
     .upsert([{
-      student_id: studentId,
+      student_id: getStudentUuid(),
       communication_score: 0,
       creativity_score: 0,
       critical_thinking_score: 0,

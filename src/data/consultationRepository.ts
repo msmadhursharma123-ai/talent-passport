@@ -1,44 +1,96 @@
 import { getSupabaseClient } from "../supabaseClient";
 
+import {
+  getTableIdentity
+} from "../services/identityService";
+
+/* ============================================================
+   REPOSITORY IDENTITY HELPERS
+============================================================ */
+
+function currentStudentId(): string {
+  return getTableIdentity("consultation_requests");
+}
+
+/* ============================================================
+   TYPES
+============================================================ */
+
 export type CreateConsultationRequestInput = {
-  studentId: string;
+
+  studentId?: string;
+
   partnerId: string;
+
   category: string;
+
   skill: string;
+
   topic: string;
+
   description: string;
+
   consultationCredits: number;
+
 };
+
+/* ============================================================
+   CREATE CONSULTATION REQUEST
+============================================================ */
 
 export async function createConsultationRequest(
   input: CreateConsultationRequestInput
 ) {
+
   const supabase = getSupabaseClient();
 
   if (!supabase) {
-    throw new Error("Supabase client not initialized");
+    throw new Error(
+      "Supabase client not initialized"
+    );
   }
 
-  const { data, error } = await (supabase as any)
+  const resolvedStudentId =
+    input.studentId ??
+    currentStudentId();
+
+  const {
+    data,
+    error
+  } = await (supabase as any)
+
     .from("consultation_requests")
-   .insert({
-  student_id: input.studentId,
 
-  partner_id: input.partnerId,
+    .insert({
 
-  category: input.category,
+      student_id:
+        resolvedStudentId,
 
-  skill: input.skill,
+      partner_id:
+        input.partnerId,
 
-  topic: input.topic,
+      category:
+        input.category,
 
-  description: input.description,
+      skill:
+        input.skill,
 
-  consultation_credits: input.consultationCredits,
+      topic:
+        input.topic,
 
-  status: "Pending"
-})
+      description:
+        input.description,
+
+      consultation_credits:
+        input.consultationCredits,
+
+      status:
+        "Pending"
+
+    })
+
     .select()
+
     .single();
 
   if (error) {
@@ -46,4 +98,5 @@ export async function createConsultationRequest(
   }
 
   return data;
+
 }

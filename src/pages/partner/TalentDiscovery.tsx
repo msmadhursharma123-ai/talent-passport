@@ -1,37 +1,45 @@
-import React,
-{
+import React, {
   useEffect,
-  useState
-}
-from "react";
+  useState,
+} from "react";
 
 import {
+    requirePartnerIdentity,
+} from "../../services/identityService";
+
+import {
+
   fetchAllocatedStudents,
-  markLeadRequestSent,
-  fetchPartnerScholarshipOffers,
-  fetchPartnerWorkshopOffers,
-  fetchPartnerContactRequests,
-  updateOffer
-}
-from "../../data/partnerMarketplaceRepository";
 
-import {
+  fetchPartnerScholarshipOffers,
+
+  fetchPartnerWorkshopOffers,
+
+  fetchPartnerContactRequests,
+
   createScholarshipOffer,
+
   createWorkshopOffer,
+
   createContactRequest,
 
   fetchPartnerPipeline,
 
   discardScholarshipOffer,
+
   discardWorkshopOffer,
+
   discardContactRequest,
 
   resendScholarshipOffer,
-  resendWorkshopOffer,
-  resendContactRequest
 
-}
-from "../../data/partnerMarketplaceRepository";
+  resendWorkshopOffer,
+
+  resendContactRequest,
+
+  updateOffer
+
+} from "../../data/partnerMarketplaceRepository";
 
 interface StudentRecord {
 
@@ -97,20 +105,39 @@ function Card({
  );
 }
 
+
+
 export default function TalentDiscovery() {
 
-const partnerProfile =
-JSON.parse(
-  localStorage.getItem(
-    "partnerProfile"
-  ) || "{}"
-);
+  /*
+  -------------------------------------------------------
+  IdentityService
+  -------------------------------------------------------
 
-const partnerId =
-  partnerProfile.partner_id;
+  TalentDiscovery no longer accesses localStorage.
+
+  Identity is resolved once from the application's
+  central IdentityService and reused everywhere
+  in this page.
+
+  -------------------------------------------------------
+  */
+
+const partnerIdentity =
+    requirePartnerIdentity();
+
+const rawPartnerId = partnerIdentity.partnerId;
+
+if (!rawPartnerId) {
+  throw new Error(
+    "Partner identity is missing."
+  );
+}
+
+const partnerId: string = rawPartnerId;
 
 const partnerName =
-  partnerProfile.institute_name;
+  partnerIdentity.partnerName ?? "";
 
 const [selectedStudent, setSelectedStudent] =
   useState<StudentRecord | null>(null);
@@ -251,6 +278,20 @@ const [
 ] =
 useState(false);
 
+function showSuccessMessage(
+  message: string
+): void {
+
+  setOfferSuccess(message);
+
+  window.setTimeout(() => {
+
+    setOfferSuccess("");
+
+  }, 3000);
+
+}
+
 async function saveScholarship() {
 
   if (!selectedStudent) return;
@@ -305,13 +346,9 @@ partner_name:
 
   setShowScholarshipDialog(false);
 
-  setOfferSuccess(
-    "Scholarship sent successfully"
-  );
-
-  setTimeout(() => {
-    setOfferSuccess("");
-  }, 3000);
+showSuccessMessage(
+  "Scholarship sent successfully"
+);
 }
 
 async function saveWorkshop() {
@@ -368,13 +405,9 @@ partner_name:
 
   setShowWorkshopDialog(false);
 
-  setOfferSuccess(
-    "Workshop invitation sent"
-  );
-
-  setTimeout(() => {
-    setOfferSuccess("");
-  }, 3000);
+showSuccessMessage(
+  "Workshop invitation sent"
+);
 }
 
 
@@ -417,41 +450,57 @@ async function saveContactRequest() {
     return;
   }
 
- if (!selectedStudent.id) {
-  alert("Lead ID not found");
+if (!selectedStudent.id) {
+
+  alert(
+    "Lead ID not found"
+  );
+
   return;
+
 }
 
-await markLeadRequestSent(
-  selectedStudent.id
+await updateOffer(
+
+  "partner_student_leads",
+
+  selectedStudent.id,
+
+  {
+
+    contact_request_sent: true,
+
+    updated_at:
+      new Date().toISOString()
+
+  }
+
 );
 
   setContactMessage("");
 
   setShowContactDialog(false);
 
-  setOfferSuccess(
-    "Contact request sent"
-  );
-
-  await loadStudents();
-
-  setTimeout(() => {
-
-    setOfferSuccess("");
-
-  }, 3000);
+ showSuccessMessage(
+  "Contact request sent"
+);
 }
 
 
 
-  useEffect(() => {
+useEffect(() => {
 
-  loadStudents();
+  async function initializePage() {
 
-  loadPipeline();
+    await Promise.all([
+      loadStudents(),
+      loadPipeline(),
+      loadPartnerActivity()
+    ]);
 
-  loadPartnerActivity();
+  }
+
+  initializePage();
 
 }, []);
 
@@ -555,29 +604,231 @@ setFilteredStudents(
   scoreFilter
 ]);
 
-  async function loadStudents() {
+/* ============================================================
+   FILTER OPTION HELPERS
+============================================================ */
 
-  const allocatedStudents =
-    await fetchAllocatedStudents(
-      partnerId
-    );
+function getUniqueSchools(
+  students: StudentRecord[]
+): string[] {
 
-  setStudents(
-    allocatedStudents || []
+  return Array.from(
+
+    new Set(
+
+      students
+
+        .map(
+
+          student => student.school_name
+
+        )
+
+        .filter(Boolean)
+
+    )
+
   );
+
 }
 
-async function loadPipeline() {
+function getUniqueClasses(
+  students: StudentRecord[]
+): string[] {
 
-  const data =
-    await fetchPartnerPipeline(
-      partnerId
+  return Array.from(
+
+    new Set(
+
+      students
+
+        .map(
+
+          student =>
+
+            String(student.class_name)
+
+        )
+
+        .filter(Boolean)
+
+    )
+
+  );
+
+}
+
+function getUniqueEvents(
+  students: StudentRecord[]
+): string[] {
+
+  return Array.from(
+
+    new Set(
+
+      students
+
+        .map(
+
+          student => student.event_name
+
+        )
+
+        .filter(Boolean)
+
+    )
+
+  ) as string[];
+
+}
+
+/* ============================================================
+   ERROR LOGGER
+============================================================ */
+
+function logError(
+  context: string,
+  error: unknown
+): void {
+
+  console.error(
+    context,
+    error
+  );
+
+}
+
+/* ============================================================
+   LOAD ALLOCATED STUDENTS
+============================================================ */
+
+async function loadStudents(): Promise<void> {
+
+  try {
+
+    const allocatedStudents =
+
+      await fetchAllocatedStudents(
+
+        partnerId
+
+      );
+
+    setStudents(
+
+      allocatedStudents ?? []
+
     );
 
-  setPipeline(
-    data || []
-  );
+  } catch (error) {
+
+   logError(
+  "LOAD STUDENTS ERROR",
+  error
+);
+
+    setStudents([]);
+
+  }
+
 }
+
+/* ============================================================
+   LOAD PARTNER PIPELINE
+============================================================ */
+
+async function loadPipeline(): Promise<void> {
+
+  try {
+
+    const pipelineData =
+
+      await fetchPartnerPipeline(
+
+        partnerId
+
+      );
+
+    setPipeline(
+
+      pipelineData ?? []
+
+    );
+
+  } catch (error) {
+
+    logError(
+  "LOAD PIPELINE ERROR",
+  error
+);
+
+    setPipeline([]);
+
+  }
+
+}
+
+/* ============================================================
+   RESEND OFFER
+============================================================ */
+
+async function resendOffer(
+  item: any
+): Promise<void> {
+
+  switch (item.type) {
+
+    case "Scholarship":
+      await resendScholarshipOffer(item.id);
+      break;
+
+    case "Workshop":
+      await resendWorkshopOffer(item.id);
+      break;
+
+    case "Contact":
+      await resendContactRequest(item.id);
+      break;
+
+    default:
+      return;
+  }
+
+  await loadPipeline();
+}
+
+/* ============================================================
+   DISCARD OFFER
+============================================================ */
+
+async function discardOffer(
+  item: any
+): Promise<void> {
+
+  switch (item.type) {
+
+    case "Scholarship":
+      await discardScholarshipOffer(item.id);
+      break;
+
+    case "Workshop":
+      await discardWorkshopOffer(item.id);
+      break;
+
+    case "Contact":
+      await discardContactRequest(item.id);
+      break;
+
+    default:
+      return;
+  }
+
+  await loadPipeline();
+
+}
+
+
+
 
 async function saveOfferChanges() {
 
@@ -675,71 +926,93 @@ async function saveOfferChanges() {
   await loadPipeline();
 }
 
-async function
-loadPartnerActivity() {
+/* ============================================================
+   LOAD PARTNER ACTIVITY
+============================================================ */
 
-  const scholarships =
-    await fetchPartnerScholarshipOffers(
-      partnerId
+async function loadPartnerActivity(): Promise<void> {
+
+  try {
+
+    const [
+
+      scholarshipOffers,
+
+      workshopOffers,
+
+      contactRequests
+
+    ] = await Promise.all([
+
+      fetchPartnerScholarshipOffers(
+
+        partnerId
+
+      ),
+
+      fetchPartnerWorkshopOffers(
+
+        partnerId
+
+      ),
+
+      fetchPartnerContactRequests(
+
+        partnerId
+
+      )
+
+    ]);
+
+    setScholarshipOffers(
+
+      scholarshipOffers ?? []
+
     );
 
-  const workshops =
-    await fetchPartnerWorkshopOffers(
-      partnerId
+    setWorkshopOffers(
+
+      workshopOffers ?? []
+
     );
 
-  const contacts =
-    await fetchPartnerContactRequests(
-      partnerId
+    setContactRequests(
+
+      contactRequests ?? []
+
     );
 
-  setScholarshipOffers(
-    scholarships || []
-  );
+  } catch (error) {
 
-  setWorkshopOffers(
-    workshops || []
-  );
+    logError(
+      "LOAD PARTNER ACTIVITY ERROR",
+      error
+    );
 
-  setContactRequests(
-    contacts || []
-  );
+    setScholarshipOffers([]);
+
+    setWorkshopOffers([]);
+
+    setContactRequests([]);
+
 }
 
-  const schools =
-    Array.from(
-      new Set(
-        students.map(
-          s => s.school_name
-        )
-      )
-    );
+}
 
-  const classes =
-    Array.from(
-      new Set(
-        students.map(
-          s =>
-            String(
-              s.class_name
-            )
-        )
-      )
-    );
-
-    const events =
-  Array.from(
-    new Set(
-      students
-        .map(
-          s =>
-            s.event_name
-        )
-        .filter(Boolean)
-    )
+const schools =
+  getUniqueSchools(
+    students
   );
 
+const classes =
+  getUniqueClasses(
+    students
+  );
 
+const events =
+  getUniqueEvents(
+    students
+  );
 
   return (
 
@@ -1205,98 +1478,16 @@ Students move to CRM only after consent.
 </button>
 
                 <button
-                  onClick={async() => {
-
-                    if (
-                      item.type ===
-                      "Scholarship"
-                    ) {
-
-                      await resendScholarshipOffer(
-                        item.id
-                      );
-
-                    }
-
-                    if (
-                      item.type ===
-                      "Workshop"
-                    ) {
-
-                      await resendWorkshopOffer(
-                        item.id
-                      );
-
-                    }
-
-                    if (
-                      item.type ===
-                      "Contact"
-                    ) {
-
-                      await resendContactRequest(
-                        item.id
-                      );
-
-                    }
-
-                    loadPipeline();
-
-                  }}
-                >
-                  Send Again
-                </button>
+  onClick={() => resendOffer(item)}
+>
+  Send Again
+</button>
 
                 <button
                   style={{
                     color:"red"
                   }}
-                  onClick={async() => {
-
-                    const ok =
-                      window.confirm(
-                        "Discard this request?"
-                      );
-
-                    if (!ok)
-                      return;
-
-                    if (
-                      item.type ===
-                      "Scholarship"
-                    ) {
-
-                      await discardScholarshipOffer(
-                        item.id
-                      );
-
-                    }
-
-                    if (
-                      item.type ===
-                      "Workshop"
-                    ) {
-
-                      await discardWorkshopOffer(
-                        item.id
-                      );
-
-                    }
-
-                    if (
-                      item.type ===
-                      "Contact"
-                    ) {
-
-                      await discardContactRequest(
-                        item.id
-                      );
-
-                    }
-
-                    loadPipeline();
-
-                  }}
+                onClick={() => discardOffer(item)}
                 >
                   Discard
                 </button>

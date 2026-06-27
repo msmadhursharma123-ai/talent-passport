@@ -1,4 +1,44 @@
-export const studentQuestions = [
+/* ============================================================
+   STUDENT QUESTIONNAIRE
+
+   Responsibilities
+
+   • Student questionnaire definition
+   • Static configuration
+   • No Repository
+   • No Identity
+   • No Supabase
+============================================================ */
+
+export type QuestionType =
+
+  | "single"
+
+  | "multi"
+
+  | "slider";
+
+export interface StudentQuestion {
+
+  id: number;
+
+  type: QuestionType;
+
+  title: string;
+
+  options?: readonly string[];
+
+  minSelect?: number;
+
+  min?: number;
+
+  max?: number;
+
+}
+
+export const studentQuestions:
+ReadonlyArray<StudentQuestion> = [
+
   {
     id: 1,
     type: "single",
@@ -47,7 +87,6 @@ export const studentQuestions = [
       "Loves Performing",
       "Problem Solver"
     ]
-    
   },
 
   {
@@ -107,8 +146,7 @@ export const studentQuestions = [
   {
     id: 7,
     type: "slider",
-    title:
-      "How comfortable is the student while performing on stage?",
+    title: "How comfortable is the student while performing on stage?",
     min: 1,
     max: 10
   },
@@ -116,8 +154,7 @@ export const studentQuestions = [
   {
     id: 8,
     type: "slider",
-    title:
-      "How comfortable is the student making new friends?",
+    title: "How comfortable is the student making new friends?",
     min: 1,
     max: 10
   },
@@ -125,8 +162,7 @@ export const studentQuestions = [
   {
     id: 9,
     type: "single",
-    title:
-      "How often does the student participate in competitions?",
+    title: "How often does the student participate in competitions?",
     options: [
       "Never",
       "Once",
@@ -140,8 +176,7 @@ export const studentQuestions = [
     id: 10,
     type: "multi",
     minSelect: 3,
-    title:
-      "What are your goals for the student?",
+    title: "What are your goals for the student?",
     options: [
       "Build Confidence",
       "Discover Talents",
@@ -153,4 +188,5 @@ export const studentQuestions = [
       "Future Career Discovery"
     ]
   }
-];
+
+] as const;

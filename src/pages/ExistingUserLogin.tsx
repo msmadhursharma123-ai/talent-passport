@@ -41,15 +41,21 @@ export default function ExistingUserLogin({
 
     setLoading(true);
 
-    const { data }: any =
-      await supabase
-        .from("students")
-        .select("*")
-        .eq(
-          "parent_email",
-          email
-        )
-        .single();
+    const data =
+await findStudentByEmail(
+    email
+);
+
+if (!data) {
+
+    alert(
+        "No registration found. Please sign up first."
+    );
+
+    onRegister();
+
+    return;
+}
 
     if (!data) {
 
@@ -131,9 +137,7 @@ saveStudentIdentity(
 );
 
     const assessment =
-      await getLatestAssessment(
-        data.id
-      );
+  await getLatestAssessment();
 
     if (assessment) {
 

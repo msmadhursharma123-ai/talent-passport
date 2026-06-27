@@ -2,6 +2,46 @@ import {
   getSupabaseClient
 } from "../supabaseClient";
 
+import {
+
+  getTableIdentity,
+
+  requireIdentity
+
+} from "../services/identityService";
+
+/* ============================================================
+   REPOSITORY IDENTITY HELPERS
+============================================================ */
+
+function currentStudentId(): string {
+
+  return getTableIdentity(
+    "partner_scholarship_offers"
+  );
+
+}
+
+function currentPartnerId(): string {
+
+  const identity =
+    requireIdentity();
+
+  const partnerId =
+    identity.partnerId;
+
+if (!partnerId) {
+
+    throw new Error(
+        "Partner identity not available."
+    );
+
+}
+
+return partnerId;
+
+}
+
 export async function
 createScholarshipOffer(
   offer: any
@@ -14,33 +54,67 @@ createScholarshipOffer(
     return null;
   }
 
+  /* ============================================================
+     Resolve Partner Identity
+  ============================================================ */
+
+  const resolvedPartnerId =
+    offer.partner_id ??
+    currentPartnerId();
+
+  /* ============================================================
+     Build Payload
+  ============================================================ */
+
+  const payload = {
+
+    ...offer,
+
+    partner_id:
+      resolvedPartnerId
+
+  };
+
+  /* ============================================================
+     Create Scholarship Offer
+  ============================================================ */
+
   const {
+
     data,
+
     error
+
   } =
     await supabase
+
       .from(
         "partner_scholarship_offers"
       )
-      .insert([offer])
+
+      .insert([payload])
+
       .select()
+
       .single();
 
- if (error) {
+  if (error) {
 
-  console.error(
-    "SCHOLARSHIP INSERT ERROR",
-    error
-  );
+    console.error(
 
-  alert(
-    JSON.stringify(error)
-  );
+      "SCHOLARSHIP INSERT ERROR",
 
-  return null;
-}
+      error
+
+    );
+
+    throw error;
+
+
+  }
 
   return data;
+
 }
 
 export async function
@@ -55,24 +129,66 @@ createWorkshopOffer(
     return null;
   }
 
+  /* ============================================================
+     Resolve Partner Identity
+  ============================================================ */
+
+  const resolvedPartnerId =
+    offer.partner_id ??
+    currentPartnerId();
+
+  /* ============================================================
+     Build Payload
+  ============================================================ */
+
+  const payload = {
+
+    ...offer,
+
+    partner_id:
+      resolvedPartnerId
+
+  };
+
+  /* ============================================================
+     Create Workshop Offer
+  ============================================================ */
+
   const {
+
     data,
+
     error
+
   } =
     await supabase
+
       .from(
         "partner_workshop_offers"
       )
-      .insert([offer])
+
+      .insert([payload])
+
       .select()
+
       .single();
 
   if (error) {
-    console.error(error);
+
+    console.error(
+
+      "WORKSHOP INSERT ERROR",
+
+      error
+
+    );
+
     return null;
+
   }
 
   return data;
+
 }
 
 export async function
@@ -87,29 +203,71 @@ createContactRequest(
     return null;
   }
 
+  /* ============================================================
+     Resolve Partner Identity
+  ============================================================ */
+
+  const resolvedPartnerId =
+    request.partner_id ??
+    currentPartnerId();
+
+  /* ============================================================
+     Build Payload
+  ============================================================ */
+
+  const payload = {
+
+    ...request,
+
+    partner_id:
+      resolvedPartnerId
+
+  };
+
+  /* ============================================================
+     Create Contact Request
+  ============================================================ */
+
   const {
+
     data,
+
     error
+
   } =
     await supabase
+
       .from(
         "partner_contact_requests"
       )
-      .insert([request])
+
+      .insert([payload])
+
       .select()
+
       .single();
 
   if (error) {
-    console.error(error);
+
+    console.error(
+
+      "CONTACT REQUEST INSERT ERROR",
+
+      error
+
+    );
+
     return null;
+
   }
 
   return data;
+
 }
 
 export async function
 fetchStudentScholarshipOffers(
-  studentId: string
+  studentId?: string
 ) {
 
   const supabase =
@@ -118,6 +276,10 @@ fetchStudentScholarshipOffers(
   if (!supabase) {
     return [];
   }
+
+  const resolvedStudentId =
+    studentId ??
+    currentStudentId();
 
   const {
     data,
@@ -130,7 +292,7 @@ fetchStudentScholarshipOffers(
       .select("*")
       .eq(
         "student_id",
-        studentId
+        resolvedStudentId
       )
       .order(
         "created_at",
@@ -149,7 +311,7 @@ fetchStudentScholarshipOffers(
 
 export async function
 fetchStudentWorkshopOffers(
-  studentId: string
+  studentId?: string
 ) {
 
   const supabase =
@@ -158,6 +320,10 @@ fetchStudentWorkshopOffers(
   if (!supabase) {
     return [];
   }
+
+  const resolvedStudentId =
+    studentId ??
+    currentStudentId();
 
   const {
     data,
@@ -170,7 +336,7 @@ fetchStudentWorkshopOffers(
       .select("*")
       .eq(
         "student_id",
-        studentId
+        resolvedStudentId
       )
       .order(
         "created_at",
@@ -189,7 +355,7 @@ fetchStudentWorkshopOffers(
 
 export async function
 fetchStudentContactRequests(
-  studentId: string
+  studentId?: string
 ) {
 
   const supabase =
@@ -198,6 +364,10 @@ fetchStudentContactRequests(
   if (!supabase) {
     return [];
   }
+
+  const resolvedStudentId =
+    studentId ??
+    currentStudentId();
 
   const {
     data,
@@ -210,7 +380,7 @@ fetchStudentContactRequests(
       .select("*")
       .eq(
         "student_id",
-        studentId
+        resolvedStudentId
       )
       .order(
         "created_at",
@@ -227,9 +397,8 @@ fetchStudentContactRequests(
   return data || [];
 }
 
-export async function
-fetchPartnerScholarshipOffers(
-  partnerId: string
+export async function fetchPartnerScholarshipOffers(
+  partnerId?: string
 ) {
 
   const supabase =
@@ -239,94 +408,136 @@ fetchPartnerScholarshipOffers(
     return [];
   }
 
+  const resolvedPartnerId =
+    partnerId ??
+    currentPartnerId();
+
   const {
     data,
     error
   } =
     await supabase
-      .from(
-        "partner_scholarship_offers"
-      )
+
+      .from("partner_scholarship_offers")
+
       .select("*")
+
       .eq(
         "partner_id",
-        partnerId
+        resolvedPartnerId
+      )
+
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
       );
 
   if (error) {
+
     console.error(error);
+
     return [];
+
   }
 
-  return data || [];
+  return data ?? [];
+
 }
 
-export async function
-fetchPartnerWorkshopOffers(
-  partnerId: string
+export async function fetchPartnerWorkshopOffers(
+  partnerId?: string
 ) {
 
   const supabase =
     getSupabaseClient() as any;
 
-  if (!supabase) {
-    return [];
-  }
+  if (!supabase) return [];
+
+  const resolvedPartnerId =
+    partnerId ??
+    currentPartnerId();
 
   const {
     data,
     error
   } =
     await supabase
-      .from(
-        "partner_workshop_offers"
-      )
+
+      .from("partner_workshop_offers")
+
       .select("*")
+
       .eq(
         "partner_id",
-        partnerId
+        resolvedPartnerId
+      )
+
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
       );
 
   if (error) {
+
     console.error(error);
+
     return [];
+
   }
 
-  return data || [];
+  return data ?? [];
+
 }
 
-export async function
-fetchPartnerContactRequests(
-  partnerId: string
+export async function fetchPartnerContactRequests(
+  partnerId?: string
 ) {
 
   const supabase =
     getSupabaseClient() as any;
 
-  if (!supabase) {
-    return [];
-  }
+  if (!supabase) return [];
+
+  const resolvedPartnerId =
+    partnerId ??
+    currentPartnerId();
 
   const {
     data,
     error
   } =
     await supabase
-      .from(
-        "partner_contact_requests"
-      )
+
+      .from("partner_contact_requests")
+
       .select("*")
+
       .eq(
         "partner_id",
-        partnerId
+        resolvedPartnerId
+      )
+
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
       );
 
   if (error) {
+
     console.error(error);
+
     return [];
+
   }
 
-  return data || [];
+  return data ?? [];
+
 }
 
 export async function
@@ -619,7 +830,8 @@ export async function fetchPartners() {
 // STUDENT / PARENT REQUESTS
 // ======================================
 
-export async function createIncomingRequest(
+export async function
+createIncomingRequest(
   request: any
 ) {
 
@@ -630,40 +842,82 @@ export async function createIncomingRequest(
     return null;
   }
 
+  /* ============================================================
+     Resolve Student Identity
+  ============================================================ */
+
+  const resolvedStudentId =
+    request.student_id ??
+    currentStudentId();
+
+  /* ============================================================
+     Build Payload
+  ============================================================ */
+
+  const payload = {
+
+    ...request,
+
+    student_id:
+      resolvedStudentId,
+
+    status:
+      "pending",
+
+    updated_at:
+      new Date()
+        .toISOString()
+
+  };
+
+  /* ============================================================
+     Create Incoming Request
+  ============================================================ */
+
   const {
+
     data,
+
     error
+
   } =
     await supabase
+
       .from(
         "partner_incoming_requests"
       )
-      .insert([
-        {
-          ...request,
-          status: "pending",
-          updated_at:
-            new Date()
-              .toISOString()
-        }
-      ])
+
+      .insert([payload])
+
       .select()
+
       .single();
 
   if (error) {
-    console.error(error);
+
+    console.error(
+
+      "INCOMING REQUEST INSERT ERROR",
+
+      error
+
+    );
+
     return null;
+
   }
 
   return data;
+
 }
 
 // ======================================
 // MY REQUESTS
 // ======================================
 
-export async function fetchStudentRequests(
-  studentId: string
+export async function
+fetchStudentRequests(
+  studentId?: string
 ) {
 
   const supabase =
@@ -672,6 +926,10 @@ export async function fetchStudentRequests(
   if (!supabase) {
     return [];
   }
+
+  const resolvedStudentId =
+    studentId ??
+    currentStudentId();
 
   const {
     data,
@@ -684,7 +942,7 @@ export async function fetchStudentRequests(
       .select("*")
       .eq(
         "student_id",
-        studentId
+        resolvedStudentId
       )
       .order(
         "created_at",
@@ -882,9 +1140,10 @@ export async function rejectContactOffer(
   );
 }
 
-export async function createMarketplaceActivity(
+export async function
+createMarketplaceActivity(
   activity: {
-    student_id: string;
+    student_id?: string;
     activity_type: string;
     activity_title: string;
     partner_id: string;
@@ -894,57 +1153,100 @@ export async function createMarketplaceActivity(
   }
 ) {
 
-const supabase =
-  getSupabaseClient() as any;
+  const supabase =
+    getSupabaseClient() as any;
 
-  if (!supabase) return;
+  if (!supabase) {
+    return;
+  }
 
-  const { error } =
+  /* ============================================================
+     Resolve Student Identity
+  ============================================================ */
+
+  const resolvedStudentId =
+    activity.student_id ??
+    currentStudentId();
+
+  /* ============================================================
+     Build Payload
+  ============================================================ */
+
+  const payload = {
+
+    student_id:
+      resolvedStudentId,
+
+    activity_type:
+      activity.activity_type,
+
+    activity_title:
+      activity.activity_title,
+
+    partner_id:
+      activity.partner_id,
+
+    partner_name:
+      activity.partner_name,
+
+    status:
+      activity.status,
+
+    metadata:
+      activity.metadata ?? {}
+
+  };
+
+  /* ============================================================
+     Create Marketplace Activity
+  ============================================================ */
+
+  const {
+
+    error
+
+  } =
     await supabase
+
       .from(
         "student_marketplace_activity"
       )
-      .insert([
-        {
-          student_id:
-            activity.student_id,
 
-          activity_type:
-            activity.activity_type,
-
-          activity_title:
-            activity.activity_title,
-
-          partner_id:
-            activity.partner_id,
-
-          partner_name:
-            activity.partner_name,
-
-          status:
-            activity.status,
-
-          metadata:
-            activity.metadata || {}
-        }
-      ]);
+      .insert([payload]);
 
   if (error) {
-    console.error(error);
+
+    console.error(
+
+      "MARKETPLACE ACTIVITY INSERT ERROR",
+
+      error
+
+    );
+
   }
+
 }
 
-export async function fetchMarketplaceActivity(
-  studentId: string
+export async function
+fetchMarketplaceActivity(
+  studentId?: string
 ) {
 
- const supabase =
-  getSupabaseClient() as any;
+  const supabase =
+    getSupabaseClient() as any;
 
-  if (!supabase)
+  if (!supabase) {
     return [];
+  }
 
-  const { data } =
+  const resolvedStudentId =
+    studentId ??
+    currentStudentId();
+
+  const {
+    data
+  } =
     await supabase
       .from(
         "student_marketplace_activity"
@@ -952,7 +1254,7 @@ export async function fetchMarketplaceActivity(
       .select("*")
       .eq(
         "student_id",
-        studentId
+        resolvedStudentId
       )
       .order(
         "created_at",
@@ -964,32 +1266,51 @@ export async function fetchMarketplaceActivity(
   return data || [];
 }
 
-export async function
-fetchPartnerInbox(
-  partnerId: string
+export async function fetchPartnerInbox(
+  partnerId?: string
 ) {
 
   const supabase =
-    getSupabaseClient();
+    getSupabaseClient() as any;
 
   if (!supabase) return [];
 
-  const { data } =
+  const resolvedPartnerId =
+    partnerId ??
+    currentPartnerId();
+
+  const {
+    data,
+    error
+  } =
     await supabase
-      .from(
-        "partner_contact_requests"
-      )
+
+      .from("partner_inbox")
+
       .select("*")
+
       .eq(
         "partner_id",
-        partnerId
+        resolvedPartnerId
       )
+
       .order(
         "created_at",
-        { ascending: false }
+        {
+          ascending: false
+        }
       );
 
-  return data || [];
+  if (error) {
+
+    console.error(error);
+
+    return [];
+
+  }
+
+  return data ?? [];
+
 }
 
 export async function withdrawApplication(
@@ -1027,116 +1348,172 @@ export async function withdrawApplication(
 // LEAD PIPELINE
 // ======================================
 
-export async function createLead(
+export async function
+createLead(
   lead: any
 ) {
 
   const supabase =
     getSupabaseClient() as any;
 
-  if (!supabase)
+  if (!supabase) {
     return null;
-
-  // =====================================
-  // Prevent Duplicate Lead
-  // =====================================
-
-  const { data: existingLead } =
-    await supabase
-      .from("partner_student_leads")
-      .select("id")
-      .eq("partner_id", lead.partner_id)
-      .eq("student_id", lead.student_id)
-      .eq("request_type", lead.request_type)
-      .maybeSingle();
-
-  if (existingLead) {
-    return existingLead;
   }
 
-  // =====================================
-  // Create Lead
-  // =====================================
+  /* ============================================================
+     Resolve Identity
+  ============================================================ */
+
+  const resolvedStudentId =
+    lead.student_id ??
+    currentStudentId();
+
+  const resolvedPartnerId =
+    lead.partner_id ??
+    currentPartnerId();
+
+  /* ============================================================
+     Build Payload
+  ============================================================ */
+
+  const payload = {
+
+    ...lead,
+
+    student_id:
+      resolvedStudentId,
+
+    partner_id:
+      resolvedPartnerId
+
+  };
+
+  /* ============================================================
+     Prevent Duplicate Lead
+  ============================================================ */
 
   const {
-    data,
-    error
+
+    data: existingLead
+
   } =
     await supabase
+
       .from(
         "partner_student_leads"
       )
-      .insert([lead])
+
+      .select("id")
+
+      .eq(
+        "partner_id",
+        resolvedPartnerId
+      )
+
+      .eq(
+        "student_id",
+        resolvedStudentId
+      )
+
+      .eq(
+        "request_type",
+        payload.request_type
+      )
+
+      .maybeSingle();
+
+  if (existingLead) {
+
+    return existingLead;
+
+  }
+
+  /* ============================================================
+     Create Lead
+  ============================================================ */
+
+  const {
+
+    data,
+
+    error
+
+  } =
+    await supabase
+
+      .from(
+        "partner_student_leads"
+      )
+
+      .insert([payload])
+
       .select()
+
       .single();
 
   if (error) {
 
     console.error(
+
       "CREATE LEAD ERROR",
+
       error
+
     );
 
     return null;
+
   }
 
   return data;
+
 }
 
 export async function fetchPartnerLeads(
-  partnerId: string
+  partnerId?: string
 ) {
 
   const supabase =
     getSupabaseClient() as any;
 
-  if (!supabase)
-    return [];
+  if (!supabase) return [];
+
+  const resolvedPartnerId =
+    partnerId ??
+    currentPartnerId();
 
   const {
     data,
     error
   } =
     await supabase
-      .from(
-        "partner_student_leads"
-      )
+
+      .from("partner_student_leads")
+
       .select("*")
+
       .eq(
         "partner_id",
-        partnerId
+        resolvedPartnerId
       )
-     .in("status", [
-  "new_lead",
-  "contacted",
-  "follow_up",
-  "counselling_scheduled",
-  "counselling_done",
-  "interested",
-  "admission_completed",
-  "parent_declined",
-  "not_reachable",
-  "rejected",
-  "closed"
-])
+
       .order(
         "created_at",
         {
-          ascending:false
+          ascending: false
         }
       );
 
   if (error) {
 
-    console.error(
-      "FETCH LEADS ERROR",
-      error
-    );
+    console.error(error);
 
     return [];
+
   }
 
-  return data || [];
+  return data ?? [];
+
 }
 
 export async function
@@ -1531,41 +1908,53 @@ logLeadAdmission(
 }
 
 export async function fetchAllocatedStudents(
-  partnerId: string
+  partnerId?: string
 ) {
 
   const supabase =
-    getSupabaseClient();
+    getSupabaseClient() as any;
 
   if (!supabase) return [];
 
-  const { data } =
-    await (supabase as any)
+  const resolvedPartnerId =
+    partnerId ??
+    currentPartnerId();
+
+  const {
+    data,
+    error
+  } =
+    await supabase
+
       .from("partner_student_leads")
+
       .select("*")
-      .eq("partner_id", partnerId)
-      .eq("status", "allocated")
-      .order("created_at", {
-        ascending: false
-      });
 
-  return data || [];
+      .eq(
+        "partner_id",
+        resolvedPartnerId
+      )
+
+      .eq(
+        "status",
+        "Allocated"
+      )
+
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
+
+  if (error) {
+
+    console.error(error);
+
+    return [];
+
+  }
+
+  return data ?? [];
+
 }
-
-export async function markLeadRequestSent(
-  leadId: string
-) {
-
-  const supabase =
-    getSupabaseClient();
-
-  if (!supabase) return;
-
-  await (supabase as any)
-    .from("partner_student_leads")
-    .update({
-      status: "request_sent"
-    })
-    .eq("id", leadId);
-}
-

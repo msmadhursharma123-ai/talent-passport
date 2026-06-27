@@ -15,10 +15,13 @@ export type TalentArea =
 export type TalentScores = {
   [key in TalentArea]: number;
 };
-export const OPTION_MAPPING: Record<
+
+export type TalentMapping = Record<
   string,
-  Record<string, number>
-> = {
+  Partial<Record<TalentArea, number>>
+>;
+
+export const OPTION_MAPPING: TalentMapping = {
   Leader: {
     Leadership: 10,
     Collaboration: 5,

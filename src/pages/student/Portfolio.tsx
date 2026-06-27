@@ -20,6 +20,10 @@ deleteSkill,
   uploadSkillCertificate
 } from "../../data/studentRepository";
 
+import {
+    requireIdentity
+} from "../../services/identityService";
+
 type PortfolioSection =
   | "performances"
   | "projects"
@@ -60,35 +64,26 @@ useEffect(() => {
 
 async function loadPortfolio() {
 
-  const profile =
-    JSON.parse(
-      localStorage.getItem(
-        "studentProfile"
-      ) || "{}"
-    );
-
-  if (!profile?.id) return;
-
   const perf =
-    await getStudentPerformances(
-      profile.id
-    );
+    await getStudentPerformances();
 
   const proj =
-    await getStudentProjects(
-      profile.id
-    );
+    await getStudentProjects();
 
   const skill =
-    await getStudentSkills(
-      profile.id
-    );
+    await getStudentSkills();
 
-  setPerformances(perf);
+  setPerformances(
+    perf || []
+  );
 
-  setProjects(proj);
+  setProjects(
+    proj || []
+  );
 
-  setSkills(skill);
+  setSkills(
+    skill || []
+  );
 }
 
 return (
@@ -1329,90 +1324,113 @@ useState("");
   const [loading, setLoading] =
     useState(false);
 
-  async function handleSave() {
+ async function handleSave() {
 
-    try {
+  try {
 
-      setLoading(true);
+    setLoading(true);
 
-      const profile =
-        JSON.parse(
-          localStorage.getItem(
-            "studentProfile"
-          ) || "{}"
+    const identity =
+      requireIdentity();
+
+    let videoUrl = "";
+
+    if (file) {
+
+      const uploaded =
+        await uploadPerformanceVideo(
+          file
         );
 
-      if (!profile?.id) {
-
-        alert(
-          "Student not found"
-        );
-
-        return;
+      if (uploaded) {
+        videoUrl = uploaded;
       }
 
-      let videoUrl = "";
-
-      if (file) {
-
-        const uploaded =
-          await uploadPerformanceVideo(
-            file
-          );
-
-        if (uploaded)
-          videoUrl = uploaded;
-      }
-
- const performance =
-  await createPerformance({
-    student_id: profile.id,
-    title,
-    category,
-    venue,
-    performance_date:
-  performanceDate,
-    description,
-    video_url: videoUrl,
-    parent_verified: false
-  });
-
-      const otp =
-  Math.floor(
-    100000 +
-      Math.random() *
-        900000
-  ).toString();
-
-await createPerformanceOtp(
-  performance.id,
-  profile.id,
-  otp
-);
-
-alert(
-  `Parent OTP: ${otp}`
-);
-
-      alert(
-        "Performance Added"
-      );
-
-      onClose();
-
-    } catch (err) {
-
-      console.error(err);
-
-      alert(
-        "Failed to save"
-      );
-
-    } finally {
-
-      setLoading(false);
     }
+
+  const performance =
+await createPerformance({
+
+    title,
+
+    category,
+
+    venue,
+
+    performance_date:
+        performanceDate,
+
+    description,
+
+    video_url:
+        videoUrl,
+
+    parent_verified:
+        false
+
+});
+
+    if (!performance) {
+
+      throw new Error(
+        "Unable to create performance."
+      );
+
+    }
+
+    const otp =
+      Math.floor(
+        100000 +
+        Math.random() *
+        900000
+      ).toString();
+
+  await createPerformanceOtp(
+
+    performance.id,
+
+    otp
+
+);
+    console.log(
+
+      "Performance created for",
+
+      identity.studentName
+
+    );
+
+    alert(
+
+      `Parent OTP: ${otp}`
+
+    );
+
+    alert(
+
+      "Performance Added"
+
+    );
+
+    onClose();
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+
+      "Failed to save"
+
+    );
+
+  } finally {
+
+    setLoading(false);
+
   }
+
+}
 
 
   
@@ -1672,17 +1690,7 @@ function AddProjectModal({
 
       setLoading(true);
 
-      const profile =
-        JSON.parse(
-          localStorage.getItem(
-            "studentProfile"
-          ) || "{}"
-        );
-
-      if (!profile?.id) {
-        alert("Student not found");
-        return;
-      }
+     
 
       let videoUrl = "";
 
@@ -1697,15 +1705,16 @@ function AddProjectModal({
           videoUrl = uploaded;
       }
 
-     await createProject({
-  student_id: profile.id,
-  title,
-  category,
-  project_date: projectDate,
-  description,
-  project_link: projectLink,
-  project_video_url: videoUrl,
-  parent_verified: false
+await createProject({
+
+    title,
+    category,
+    project_date: projectDate,
+    description,
+    project_link: projectLink,
+    project_video_url: videoUrl,
+    parent_verified: false
+
 });
 
 
@@ -1901,17 +1910,7 @@ function AddSkillModal({
 
       setLoading(true);
 
-      const profile =
-        JSON.parse(
-          localStorage.getItem(
-            "studentProfile"
-          ) || "{}"
-        );
-
-      if (!profile?.id) {
-        alert("Student not found");
-        return;
-      }
+     
 
       let imageUrl = "";
 
@@ -1927,7 +1926,7 @@ function AddSkillModal({
       }
 
      await createSkill({
-  student_id: profile.id,
+  
   skill_name: skillName,
   organization,
   certificate_date: certificateDate,

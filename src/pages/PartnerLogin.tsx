@@ -6,6 +6,10 @@ import {
   findPartnerByEmail
 } from "../data/partnerRepository";
 
+import {
+  savePartnerIdentity
+} from "../services/identityService";
+
 interface Props {
   onSuccess: () => void;
   onBack: () => void;
@@ -25,52 +29,113 @@ export default function PartnerLogin({
     useState(false);
 
   async function
-  handleLogin() {
+handleLogin() {
 
-    if (!email) {
+  if (!email) {
 
-      alert(
-        "Please enter your email"
-      );
-
-      return;
-    }
-
-    setLoading(true);
-
-    const partner =
-      await findPartnerByEmail(
-        email
-      );
-
-    setLoading(false);
-
-    if (!partner) {
-
-      alert(
-        "Partner not found"
-      );
-
-      return;
-    }
-
-    localStorage.setItem(
-      "partnerProfile",
-      JSON.stringify(partner)
+    alert(
+      "Please enter your email"
     );
 
-    localStorage.setItem(
-      "partner_id",
-      partner.partner_id
-    );
+    return;
 
-    localStorage.setItem(
-      "userRole",
-      "partner"
-    );
-
-    onSuccess();
   }
+
+  setLoading(true);
+
+  const partner =
+    await findPartnerByEmail(
+      email
+    );
+
+  setLoading(false);
+
+  if (!partner) {
+
+    alert(
+      "Partner not found"
+    );
+
+    return;
+
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | IdentityService
+  |--------------------------------------------------------------------------
+  |
+  | Partner Identity now becomes the application's
+  | Single Source of Truth.
+  |
+  | Existing localStorage writes are intentionally preserved
+  | during migration for backward compatibility.
+  |
+  */
+
+  savePartnerIdentity({
+
+    partnerId:
+      partner.partner_id,
+
+    partnerCode:
+      partner.partner_id,
+
+    partnerName:
+      partner.partner_name,
+
+    email:
+      partner.email,
+
+    phone:
+      partner.phone,
+
+    category:
+      partner.category,
+
+    organization:
+      partner.partner_name,
+
+    role:
+      "partner",
+
+    permissions: [],
+
+    metadata: {
+      partner
+    }
+
+  });
+
+  /*
+  |--------------------------------------------------------------------------
+  | Temporary Backward Compatibility
+  |--------------------------------------------------------------------------
+  |
+  | Existing Partner pages still read directly from localStorage.
+  | These writes will be removed after all Partner pages migrate
+  | to IdentityService.
+  |
+  */
+
+  localStorage.setItem(
+    "partnerProfile",
+    JSON.stringify(partner)
+  );
+
+  localStorage.setItem(
+    "partner_id",
+    partner.partner_id
+  );
+
+  localStorage.setItem(
+    "userRole",
+    "partner"
+  );
+
+  onSuccess();
+
+}
 
   return (
     <div

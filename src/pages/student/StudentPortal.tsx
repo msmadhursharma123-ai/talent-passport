@@ -27,47 +27,47 @@ export default function StudentPortal({
   const [activeTab, setActiveTab] =
     useState<StudentTab>("dna-radar");
 
-  const renderPage = () => {
-    switch (activeTab) {
-      case "dna-radar":
-        return (
-  <TalentPassport
-    onStartDNA={
-      onStartDNA
-    }
-  />
-);
+ const currentPage = (() => {
 
-      case "homeboard":
-        return <Homeboard />;
+  switch (activeTab) {
 
-      case "timeline":
-        return <Timeline />;
+    case "dna-radar":
+      return (
+        <TalentPassport
+          onStartDNA={onStartDNA}
+        />
+      );
 
-      case "portfolio":
-        return <Portfolio />;
+    case "homeboard":
+      return <Homeboard />;
 
-      case "competitions":
-        return <Competitions />;
+    case "timeline":
+      return <Timeline />;
 
-        case "opportunities":
-  return <Opportunities />;
+    case "portfolio":
+      return <Portfolio />;
 
-  case "mauke-pe-chauka":
-  return (
-    <MaukePeChauka />
-  );
+    case "competitions":
+      return <Competitions />;
 
-      case "my-analysis":
-        return <MyAnalysis />;
+    case "opportunities":
+      return <Opportunities />;
 
-      case "growth-plan":
-        return <GrowthPlan />;
+    case "mauke-pe-chauka":
+      return <MaukePeChauka />;
 
-      default:
-        return <Homeboard />;
-    }
-  };
+    case "my-analysis":
+      return <MyAnalysis />;
+
+    case "growth-plan":
+      return <GrowthPlan />;
+
+    default:
+      return <Homeboard />;
+
+  }
+
+})();
 
   return (
     <StudentLayout
@@ -75,7 +75,7 @@ export default function StudentPortal({
       setActiveTab={setActiveTab}
       onLogout={onLogout}
     >
-      {renderPage()}
+      {currentPage}
     </StudentLayout>
   );
 }

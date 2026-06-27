@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 
 import {
-  getSupabaseClient
-} from "../../supabaseClient";
+  getStudentCompetitionCount
+} from "../../data/studentRepository";
 
 import {
   getStudentAchievements
@@ -34,6 +34,11 @@ import {
   calculateAchievementCredits,
   calculatePortfolioCredits
 } from "../../data/creditEngine";
+
+import {
+  getCurrentStudent,
+  getMasterStudentId
+} from "../../services/identityService";
 
 export default function CreditDashboard() {
 
@@ -114,70 +119,34 @@ const remainingCredits =
   loadCredits();
 }, []);
 
-const [profile] = useState(()=>
-
-JSON.parse(
-
-localStorage.getItem(
-"studentProfile"
-)||"{}"
-
-)
-
-);
+const student =
+  getCurrentStudent();
 
 async function loadCredits() {
 
+  const masterStudentId =
+    getMasterStudentId();
 
-
-  const studentId =
-    profile?.id;
-
-  if (!studentId)
+  if (!masterStudentId)
     return;
 
-const studentName =
-  profile?.student_name ||
-  profile?.name ||
-  "";
+  const studentName =
+    student?.studentName || "";
 
-  const supabase =
-    getSupabaseClient();
-
-  if (!supabase)
-    return;
-
-  const {
-    data: submissions
-  } = await supabase
-    .from("submissions")
-    .select("*")
-    .eq(
-      "student_id",
-      studentId
-    );
+const submissionCount =
+  await getStudentCompetitionCount();
 
   const achievements =
-    await getStudentAchievements(
-      studentId
-    );
+   await getStudentAchievements();
 
   const performances =
-    await getStudentPerformances(
-      studentId
-    );
+    await getStudentPerformances();
 
   const projects =
-    await getStudentProjects(
-      studentId
-    );
+   await getStudentProjects();
 
   const skills =
-    await getStudentSkills(
-      studentId
-    );
-
-   
+    await getStudentSkills();
 
   const verifiedCount =
     achievements.filter(
@@ -186,10 +155,10 @@ const studentName =
         "Verified"
     ).length;
 
-  const competition =
-    calculateCompetitionCredits(
-      submissions?.length || 0
-    );
+const competition =
+  calculateCompetitionCredits(
+    submissionCount
+  );
 
   const timeline =
     calculateAchievementCredits(
@@ -204,79 +173,71 @@ const studentName =
       skills.length
     );
 
- const totalEarnedCredits =
+  const totalEarnedCredits =
+    competition +
+    timeline +
+    portfolio;
 
-  competition +
-
-  timeline +
-
-  portfolio;
-
-setCompetitionCredits(
-
-  competition
-
-);
-
-setAchievementCredits(
-
-  timeline
-
-);
-
-setPortfolioCredits(
-
-  portfolio
-
-);
-
-setTotalCredits(
-
-  totalEarnedCredits
-
-);
-
-/* ============================================
-   Sync Student Wallet
-============================================ */
-
-try {
-
-  await syncStudentWallet(
-
-    studentId,
-
-    competition,
-
-    timeline,
-
-    portfolio
-
+  setCompetitionCredits(
+    competition
   );
 
-  const wallet =
+  setAchievementCredits(
+    timeline
+  );
 
-    await getStudentWallet(
-      studentId
+  setPortfolioCredits(
+    portfolio
+  );
+
+  setTotalCredits(
+    totalEarnedCredits
+  );
+
+  /* ============================================
+     Sync Student Wallet
+  ============================================ */
+
+  try {
+
+    await syncStudentWallet(
+
+      masterStudentId,
+
+      competition,
+
+      timeline,
+
+      portfolio
+
     );
 
-  setWalletBalance(
+    const wallet =
 
-    wallet.available_credits
+      await getStudentWallet(
 
-  );
+        masterStudentId
 
-} catch (error) {
+      );
 
-  console.error(
+    setWalletBalance(
 
-    "Wallet sync failed",
+      wallet.available_credits
 
-    error
+    );
 
-  );
+  } catch (error) {
 
-}
+    console.error(
+
+      "Wallet sync failed",
+
+      error
+
+    );
+
+  }
+
 }
 
 async function loadRecommendedPartners(
@@ -2529,7 +2490,8 @@ const result =
 await bookConsultation({
 
 studentId:
-profile.id,
+
+getMasterStudentId(),
 
 partnerId:
 selectedPartner.id,

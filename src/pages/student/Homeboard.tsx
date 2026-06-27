@@ -21,6 +21,10 @@ import {
   fetchTalentPassportScores
 } from "../../supabaseClient";
 
+import {
+  requireIdentity
+} from "../../services/identityService";
+
 export default function Homeboard() {
   const [creditView, setCreditView] =
     useState<"guidelines" | "rewards">(
@@ -57,22 +61,29 @@ async function loadPassport() {
 
 async function loadSubmissions() {
 
-  const profile = JSON.parse(
-    localStorage.getItem(
-      "studentProfile"
-    ) || "{}"
-  );
+  const studentIdentity =
+    requireIdentity();
 
   const studentId =
-    profile.parent_email
+    studentIdentity.parentEmail
       ?.toLowerCase()
       .replace("@", "_")
       .replace(/\./g, "_");
 
+  if (!studentId) {
+
+    return;
+
+  }
+
   const supabase =
     getSupabaseClient();
 
-  if (!supabase) return;
+  if (!supabase) {
+
+    return;
+
+  }
 
   const { data, error } =
     await supabase
@@ -90,8 +101,11 @@ async function loadSubmissions() {
       );
 
   if (error) {
+
     console.error(error);
+
     return;
+
   }
 
   setSubmissions(data || []);
@@ -102,18 +116,14 @@ async function loadSubmissions() {
 // CURRENT LOGGED IN STUDENT
 // ============================
 
-const profile = JSON.parse(
-  localStorage.getItem(
-    "studentProfile"
-  ) || "{}"
-);
+const studentIdentity =
+  requireIdentity();
 
 const studentId =
-  profile.parent_email
+  studentIdentity.parentEmail
     ?.toLowerCase()
-    .replace("@", "_")
-    .replace(/\./g, "_");
-
+    ?.replace("@", "_")
+    ?.replace(/\./g, "_");
 // ============================
 // STUDENT SPECIFIC SCORES
 // ============================

@@ -35,16 +35,41 @@ import {
   getFutureReadinessScore
 } from "../data/dnaInsightsEngine";
 
+import {
+  requireIdentity,
+  clearStudentIdentity
+} from "../services/identityService";
+
 interface Props {
   onStartDNA?: () => void;
 }
+
+
 
 export default function TalentPassport({
   onStartDNA
 }: Props) {
 
+  const studentIdentity =
+    requireIdentity();
+
+  const rawStudentId =
+    studentIdentity.studentUuid;
+
+  if (!rawStudentId) {
+    throw new Error(
+      "Student identity is missing."
+    );
+  }
+
+  const studentId: string =
+    rawStudentId;
+
+  const studentName =
+    studentIdentity.studentName ?? "";
+
 const handleLogout = () => {
-  localStorage.removeItem("studentProfile");
+  clearStudentIdentity();
   localStorage.removeItem("student_id");
   localStorage.removeItem("studentCalibration");
   localStorage.removeItem("talentScores");
@@ -144,17 +169,8 @@ useEffect(() => {
   const loadDNA =
     async () => {
 
-      const profile =
-        JSON.parse(
-          localStorage.getItem(
-            "studentProfile"
-          ) || "{}"
-        );
-
-      if (
-        !profile?.id
-      )
-        return;
+      if (!studentId)
+  return;
 
      const savedPassport =
   JSON.parse(
@@ -252,21 +268,15 @@ if (!passport) {
         <button
           onClick={() => {
 
-  localStorage.removeItem(
-    "studentPassport"
-  );
+  clearStudentIdentity();
 
-  localStorage.removeItem(
-    "talentScores"
-  );
+localStorage.removeItem("studentPassport");
 
-  localStorage.removeItem(
-    "studentCalibration"
-  );
+localStorage.removeItem("talentScores");
 
-  localStorage.removeItem(
-    "studentAnswers"
-  );
+localStorage.removeItem("studentCalibration");
+
+localStorage.removeItem("studentAnswers");
 
   onStartDNA?.();
 

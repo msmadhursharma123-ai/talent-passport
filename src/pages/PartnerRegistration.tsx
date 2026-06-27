@@ -4,6 +4,10 @@ import {
   createPartner
 } from "../data/partnerRepository";
 
+import {
+  savePartnerIdentity
+} from "../services/identityService";
+
 interface Props {
   onContinue: () => void;
   onBack: () => void;
@@ -115,100 +119,176 @@ const toggleConsultation = (service: string) => {
 }; 
 
   const handleContinue =
-    async () => {
+  async () => {
 
-     if (
-  !instituteName ||
-  !city ||
-  !email ||
-  !mobile ||
-  !preferredAgeFrom ||
-  !preferredAgeTo ||
-  !instituteArea
-) {
+    if (
+      !instituteName ||
+      !city ||
+      !email ||
+      !mobile ||
+      !preferredAgeFrom ||
+      !preferredAgeTo ||
+      !instituteArea
+    ) {
 
-        alert(
-          "Please complete all fields"
-        );
+      alert(
+        "Please complete all fields"
+      );
 
-        return;
+      return;
+
+    }
+
+    const partnerId =
+      email
+        .toLowerCase()
+        .replaceAll("@", "_")
+        .replaceAll(".", "_");
+
+    const partner =
+      await createPartner({
+
+        partner_id:
+          partnerId,
+
+        partner_name:
+          instituteName,
+
+        category:
+          "Institute",
+
+        email,
+
+        phone:
+          mobile,
+
+        specialization:
+          skillFocus,
+
+        consultation_services:
+          consultationServices,
+
+        preferred_age_from:
+          Number(
+            preferredAgeFrom
+          ),
+
+        preferred_age_to:
+          Number(
+            preferredAgeTo
+          ),
+
+        institute_area:
+          instituteArea,
+
+        description: "",
+
+        website: "",
+
+        status: "active"
+
+      });
+
+    if (!partner) {
+
+      alert(
+        "Unable to create partner profile"
+      );
+
+      return;
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | IdentityService
+    |--------------------------------------------------------------------------
+    |
+    | Partner Identity becomes the application's
+    | Single Source of Truth.
+    |
+    */
+
+    savePartnerIdentity({
+
+      partnerId:
+        partner.partner_id,
+
+      partnerCode:
+        partner.partner_id,
+
+      partnerName:
+        partner.partner_name,
+
+      email:
+        partner.email,
+
+      phone:
+        partner.phone,
+
+      category:
+        partner.category,
+
+      organization:
+        partner.partner_name,
+
+      specialization:
+        partner.specialization,
+
+      consultationServices:
+        partner.consultation_services,
+
+      instituteArea:
+        partner.institute_area,
+
+      preferredAgeFrom:
+        partner.preferred_age_from,
+
+      preferredAgeTo:
+        partner.preferred_age_to,
+
+      role:
+        "partner",
+
+      permissions: [],
+
+      metadata: {
+        partner
       }
 
-      const partnerId =
-        email
-          .toLowerCase()
-          .replaceAll("@","_")
-          .replaceAll(".","_");
+    });
 
-     const partner =
-  await createPartner({
+    /*
+    |--------------------------------------------------------------------------
+    | Temporary Backward Compatibility
+    |--------------------------------------------------------------------------
+    |
+    | Existing Partner pages still consume
+    | partnerProfile directly.
+    |
+    | Remove after all Partner pages migrate
+    | to IdentityService.
+    |
+    */
 
-    partner_id:
-      partnerId,
+    localStorage.setItem(
+      "partnerProfile",
+      JSON.stringify(partner)
+    );
 
-    partner_name:
-      instituteName,
+    localStorage.setItem(
+      "partner_id",
+      partner.partner_id
+    );
 
-    category:
-      "Institute",
+    localStorage.setItem(
+      "userRole",
+      "partner"
+    );
 
-    email,
+    onContinue();
 
-    phone:
-      mobile,
-
-    specialization:
-      skillFocus,
-
-      consultation_services:
-  consultationServices,
-
-    preferred_age_from:
-      Number(
-        preferredAgeFrom
-      ),
-
-    preferred_age_to:
-      Number(
-        preferredAgeTo
-      ),
-
-    institute_area:
-      instituteArea,
-
-    description: "",
-
-    website: "",
-
-    status: "active"
-  });
-
-      if (!partner) {
-
-        alert(
-          "Unable to create partner profile"
-        );
-
-        return;
-      }
-
-      localStorage.setItem(
-        "partnerProfile",
-        JSON.stringify(partner)
-      );
-
-      localStorage.setItem(
-        "partner_id",
-        partner.partner_id
-      );
-
-      localStorage.setItem(
-        "userRole",
-        "partner"
-      );
-
-      onContinue();
-    };
+  };
 
   return (
     <div

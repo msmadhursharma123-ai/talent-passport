@@ -67,13 +67,17 @@ export default function StudentProfileForm({
     setResidenceCity] =
     useState("");
 
-  const [residenceArea,
+const [residenceArea,
     setResidenceArea] =
     useState("");
 
-  const handleContinue = async () => {
+const [loading,
+    setLoading] =
+    useState(false);
 
-    if (
+ const handleContinue = async () => {
+
+  if (
       !studentName ||
       !parentEmail ||
       !parentMobile ||
@@ -83,63 +87,77 @@ export default function StudentProfileForm({
       !gender ||
       !favouriteActivity ||
       !residenceCity
-    ) {
+  ) {
+
       alert(
-        "Please complete all required fields"
+          "Please complete all required fields"
       );
+
       return;
-    }
 
-    const student =
-      await createStudent({
+  }
 
-        student_name:
-          studentName,
+  setLoading(true);
 
-        parent_email:
-          parentEmail,
+  try {
 
-        parent_mobile:
-          parentMobile,
+      const student =
+          await createStudent({
 
-        school_name:
-          schoolName,
+              student_name:
+                  studentName,
 
-        class_name:
-          className,
+              parent_email:
+                  parentEmail,
 
-        student_age:
-          Number(studentAge),
+              parent_mobile:
+                  parentMobile,
 
-        gender,
+              school_name:
+                  schoolName,
 
-        favourite_activity:
-          favouriteActivity,
+              class_name:
+                  className,
 
-        residence_city:
-          residenceCity,
+              student_age:
+                  Number(studentAge),
 
-        residence_area:
-          residenceArea
-      });
+              gender,
 
-   if (!student) {
+              favourite_activity:
+                  favouriteActivity,
 
-  alert(
-    "Unable to create student profile"
-  );
+              residence_city:
+                  residenceCity,
 
-  return;
-}
+              residence_area:
+                  residenceArea
 
-/* ============================================
-   SAVE COMPLETE STUDENT IDENTITY
-============================================ */
+          });
 
-saveStudentIdentity(student);
+      if (!student) {
 
-onContinue();
-  };
+          alert(
+              "Unable to create student profile"
+          );
+
+          return;
+
+      }
+
+      saveStudentIdentity(
+          student
+      );
+
+      onContinue();
+
+  } finally {
+
+      setLoading(false);
+
+  }
+
+};
 
   return (
     <div
@@ -334,7 +352,8 @@ onContinue();
         />
 
         <button
-          onClick={handleContinue}
+    onClick={handleContinue}
+    disabled={loading}
           style={{
             marginTop: 28,
             width: "100%",
@@ -348,7 +367,11 @@ onContinue();
             cursor: "pointer",
           }}
         >
-          Continue
+          {
+    loading
+        ? "Creating Profile..."
+        : "Continue"
+}
         </button>
 
       </div>

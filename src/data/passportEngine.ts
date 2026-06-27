@@ -1,77 +1,130 @@
+/* ============================================================
+   PASSPORT ENGINE
+
+   Pure Passport Analytics Engine
+
+   Responsibilities
+
+   • Normalize scores
+   • Generate strengths
+   • Growth areas
+   • Benchmark delta
+   • Projected scores
+
+   No Repository
+   No Identity
+   No Supabase
+============================================================ */
+
 import { TalentScores } from "./talentFramework";
+
 import {
   calculateReliability
 } from "./profileAnalyzer";
+
 import {
   BENCHMARKS,
-  PARTICIPATION_SCORE,
+  PARTICIPATION_SCORE
 } from "./frameworkV2";
 
+const HIGH_GROWTH = 15;
+const MEDIUM_GROWTH = 10;
+const LOW_GROWTH = 5;
+
+function normalizeScore(
+  value: number
+): number {
+
+  return Math.min(
+    100,
+    Math.max(
+      0,
+      Math.round((value / 60) * 100)
+    )
+  );
+
+}
+
 export interface PassportMetrics {
+
   dnaIndex: number;
+
   participationIndex: number;
 
   strengths: string[];
+
   growthAreas: string[];
 
-  projectedScores: Record<string, number>;
-  benchmarkDelta: Record<string, number>;
-  normalizedScores: Record<string, number>;
+  projectedScores:
+    Record<string, number>;
+
+  benchmarkDelta:
+    Record<string, number>;
+
+  normalizedScores:
+    Record<string, number>;
 
   reliability: number;
 
-  developmentPriorities: string[];
+  developmentPriorities:
+    string[];
+
 }
 
 export function generatePassport(
+
   scores: TalentScores,
-  answers: Record<number, any>
+
+  answers: Record<number, unknown>
+
 ): PassportMetrics {
 
   const normalizedScores:
     Record<string, number> = {};
 
   Object.entries(scores).forEach(
+
     ([area, value]) => {
 
-      const normalized =
-        Math.min(
-          100,
-          Math.max(
-            0,
-            Math.round(
-              (Number(value) / 60) * 100
-            )
-          )
+      normalizedScores[area] =
+        normalizeScore(
+          Number(value)
         );
 
-      normalizedScores[area] =
-        normalized;
     }
+
   );
 
- const participationKey =
-  String(answers[9] || "Never");
+  const participationKey =
+    String(
+      answers[9] ??
+      "Never"
+    );
 
-const participationIndex =
-  PARTICIPATION_SCORE[
-    participationKey as keyof typeof PARTICIPATION_SCORE
-  ] || 20;
+  const participationIndex =
+
+    PARTICIPATION_SCORE[
+      participationKey as keyof typeof PARTICIPATION_SCORE
+    ] ?? 20;
 
   const dnaIndex =
     Math.round(
+
       Object.values(
         normalizedScores
       ).reduce(
         (a, b) => a + b,
         0
       ) /
-        Object.keys(
-          normalizedScores
-        ).length
+
+      Object.keys(
+        normalizedScores
+      ).length
+
     );
 
   const sorted =
+
     Object.entries(
       normalizedScores
     ).sort(
@@ -83,16 +136,12 @@ const participationIndex =
   const strengths =
     sorted
       .slice(0, 3)
-      .map(
-        ([name]) => name
-      );
+      .map(([name]) => name);
 
   const growthAreas =
     sorted
       .slice(-3)
-      .map(
-        ([name]) => name
-      );
+      .map(([name]) => name);
 
   const benchmarkDelta:
     Record<string, number> = {};
@@ -100,14 +149,18 @@ const participationIndex =
   Object.entries(
     normalizedScores
   ).forEach(
+
     ([area, value]) => {
 
       benchmarkDelta[area] =
         value -
+
         (BENCHMARKS[
           area as keyof typeof BENCHMARKS
-        ] || 0);
+        ] ?? 0);
+
     }
+
   );
 
   const projectedScores:
@@ -116,38 +169,55 @@ const participationIndex =
   Object.entries(
     normalizedScores
   ).forEach(
+
     ([area, value]) => {
 
       const growth =
+
         participationIndex >= 80
-          ? 15
+
+          ? HIGH_GROWTH
+
           : participationIndex >= 60
-          ? 10
-          : 5;
+
+          ? MEDIUM_GROWTH
+
+          : LOW_GROWTH;
 
       projectedScores[area] =
         Math.min(
           100,
           value + growth
         );
+
     }
+
   );
 
-  const developmentPriorities =
-    growthAreas;
-const reliability =
-  calculateReliability(
-    answers
-  );
   return {
+
     dnaIndex,
+
     participationIndex,
+
     strengths,
+
     growthAreas,
+
     projectedScores,
+
     benchmarkDelta,
+
     normalizedScores,
-    reliability,
-    developmentPriorities,
+
+    reliability:
+      calculateReliability(
+        answers
+      ),
+
+    developmentPriorities:
+      growthAreas
+
   };
+
 }

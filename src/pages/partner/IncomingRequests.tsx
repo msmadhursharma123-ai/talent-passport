@@ -16,7 +16,23 @@ import {
 }
 from "../../supabaseClient";
 
+import {
+  requirePartnerIdentity,
+} from "../../services/identityService";
+
+
+
+
 export default function IncomingRequests() {
+
+const partnerIdentity =
+  requirePartnerIdentity();
+
+const partnerId =
+  partnerIdentity.partnerId;
+
+const partnerName =
+  partnerIdentity.partnerName ?? "";
 
   const [
     requests,
@@ -40,25 +56,18 @@ export default function IncomingRequests() {
     loadRequests();
   }, []);
 
-  async function
-  loadRequests() {
+ async function
+loadRequests() {
 
-    const profile =
-      JSON.parse(
-        localStorage.getItem(
-          "partnerProfile"
-        ) || "{}"
-      );
-
-    const data =
-      await fetchIncomingRequests(
-        profile.partner_id
-      );
-
-    setRequests(
-      data || []
+  const data =
+    await fetchIncomingRequests(
+      partnerId
     );
-  }
+
+  setRequests(
+    data || []
+  );
+}
 
   async function
   updateRequestStatus(

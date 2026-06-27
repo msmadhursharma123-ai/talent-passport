@@ -14,6 +14,11 @@ import {
 }
 from "../../data/partnerMarketplaceRepository";
 
+import {
+  requirePartnerIdentity
+}
+from "../../services/identityService";
+
 import LeadCRMDrawer from "./LeadCRMDrawer";
 
 const STATUS_OPTIONS = [
@@ -42,7 +47,35 @@ const STATUS_OPTIONS = [
 
 ];
 
+
+
 export default function LeadPipeline() {
+
+  /*
+  =======================================================
+  Resolve Partner Identity
+  =======================================================
+  */
+
+  const partnerIdentity =
+    requirePartnerIdentity();
+
+  const rawPartnerId =
+    partnerIdentity.partnerId;
+
+  if (!rawPartnerId) {
+
+    throw new Error(
+      "Partner identity is missing."
+    );
+
+  }
+
+  const partnerId: string =
+    rawPartnerId;
+
+  const partnerName =
+    partnerIdentity.partnerName ?? "";
 
   const [
     leads,
@@ -116,25 +149,7 @@ const [
 
       setLoading(true);
 
-      const profile =
-        JSON.parse(
-          localStorage.getItem(
-            "partnerProfile"
-          ) || "{}"
-        );
-
-      const partnerId =
-        profile.partner_id;
-
-console.log(
-  "CURRENT PARTNER PROFILE",
-  profile
-);
-
-console.log(
-  "CURRENT PARTNER ID",
-  partnerId
-);
+  
 
     const leadData =
   await fetchPartnerLeads(

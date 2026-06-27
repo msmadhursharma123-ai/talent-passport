@@ -1,5 +1,20 @@
-import { getSupabaseClient }
-from "../supabaseClient";
+import { getSupabaseClient } from "../supabaseClient";
+
+import {
+  requireIdentity
+} from "../services/identityService";
+
+/* ============================================================
+   REPOSITORY IDENTITY HELPERS
+============================================================ */
+
+function currentPartnerIdentity() {
+  return requireIdentity();
+}
+
+/* ============================================================
+   CREATE PARTNER
+============================================================ */
 
 export async function createPartner(
   partner: any
@@ -8,26 +23,47 @@ export async function createPartner(
   const supabase =
     getSupabaseClient();
 
-  if (!supabase)
+  if (!supabase) {
     return null;
+  }
+
+  /*
+    Future Ready
+
+    When Partner Auth is implemented,
+    partner.partner_id can automatically
+    come from Identity Kernel.
+  */
+
+const identity = currentPartnerIdentity();
+
+const partnerId =
+    partner.partner_id ??
+    identity.partnerId ??
+    "";
 
   /* =====================================
-     1. SAVE TO partner_profiles
+     SAVE TO partner_profiles
   ===================================== */
 
-  const { data, error } =
+  const {
+    data,
+    error
+  } =
     await (supabase as any)
+
       .from("partner_profiles")
+
       .insert([{
 
         partner_id:
-          partner.partner_id,
+          partnerId,
 
         institute_name:
           partner.partner_name,
 
         institute_city:
-          partner.city || "",
+          partner.city ?? "",
 
         email:
           partner.email,
@@ -36,49 +72,57 @@ export async function createPartner(
           partner.phone,
 
         skill_focus:
-          partner.specialization || []
+          partner.specialization ?? []
 
       }])
+
       .select()
+
       .single();
 
   if (error) {
 
     console.error(
+
       "CREATE PARTNER ERROR",
+
       error
+
     );
 
     return null;
+
   }
 
   /* =====================================
-     2. SAVE TO partners_master
+     SAVE TO partners_master
   ===================================== */
 
   const {
     error: masterError
   } =
     await (supabase as any)
+
       .from("partners_master")
+
       .upsert({
 
         partner_id:
-          partner.partner_id,
+          partnerId,
 
         partner_name:
           partner.partner_name,
 
         category:
-          partner.category ||
+          partner.category ??
           "Institute",
 
         description:
-          partner.description ||
+          partner.description ??
           "",
 
         website:
-          partner.website ||
+          partner.website ??
           "",
 
         email:
@@ -88,16 +132,16 @@ export async function createPartner(
           partner.phone,
 
         specialization:
-          partner.specialization || [],
+          partner.specialization ?? [],
 
         preferred_age_from:
-          partner.preferred_age_from || null,
+          partner.preferred_age_from ?? null,
 
         preferred_age_to:
-          partner.preferred_age_to || null,
+          partner.preferred_age_to ?? null,
 
         institute_area:
-          partner.institute_area || "",
+          partner.institute_area ?? "",
 
         status:
           "active"
@@ -107,27 +151,46 @@ export async function createPartner(
   if (masterError) {
 
     console.error(
+
       "PARTNERS MASTER ERROR",
+
       masterError
+
     );
+
   }
 
   return data;
+
 }
+
+/* ============================================================
+   FIND PARTNER BY EMAIL
+============================================================ */
 
 export async function findPartnerByEmail(
   email: string
 ) {
+
   const supabase =
     getSupabaseClient();
 
-  if (!supabase) return null;
+  if (!supabase) {
+    return null;
+  }
 
-  const { data, error } =
+  const {
+    data,
+    error
+  } =
     await (supabase as any)
+
       .from("partner_profiles")
+
       .select("*")
+
       .eq("email", email)
+
       .single();
 
   if (error) {
@@ -135,4 +198,5 @@ export async function findPartnerByEmail(
   }
 
   return data;
+
 }

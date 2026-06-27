@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 
 import {
   fetchAllSubmissions,
@@ -7,6 +8,596 @@ import {
   fetchTalentPassports,
   fetchDNAProfiles,
 } from "../supabaseClient";
+
+/* ============================================================
+   DASHBOARD FILTER HELPERS
+============================================================ */
+
+function getUniqueSchools(
+  students: any[]
+): string[] {
+
+  return [
+
+    "All Schools",
+
+    ...new Set(
+
+      students
+
+        .map(
+
+          student => student.school_name
+
+        )
+
+        .filter(Boolean)
+
+    )
+
+  ];
+
+}
+
+function getUniqueClasses(
+  students: any[]
+): string[] {
+
+  return [
+
+    "All Classes",
+
+    ...new Set(
+
+      students
+
+        .map(
+
+          student => student.class_name
+
+        )
+
+        .filter(Boolean)
+
+    )
+
+  ];
+
+}
+
+function filterStudents(
+
+  students: any[],
+
+  selectedSchool: string,
+
+  selectedClass: string
+
+) {
+
+  return students.filter(student => {
+
+    const schoolMatch =
+
+      selectedSchool === "All Schools" ||
+
+      student.school_name === selectedSchool;
+
+    const classMatch =
+
+      selectedClass === "All Classes" ||
+
+      student.class_name === selectedClass;
+
+    return schoolMatch && classMatch;
+
+  });
+
+}
+
+function filterSubmissions(
+
+  submissions: any[],
+
+  filteredStudents: any[]
+
+) {
+
+  const ids = new Set(
+
+    filteredStudents.map(
+
+      student => student.student_id
+
+    )
+
+  );
+
+  return submissions.filter(
+
+    submission =>
+
+      ids.has(
+
+        submission.student_id
+
+      )
+
+  );
+
+}
+
+/* ============================================================
+   DASHBOARD METRIC HELPERS
+============================================================ */
+
+function calculateDashboardMetrics(
+
+  students: any[],
+
+  submissions: any[],
+
+  passports: any[],
+
+  dnaProfiles: any[]
+
+) {
+
+  return {
+
+    totalStudents:
+      students.length,
+
+    totalSubmissions:
+      submissions.length,
+
+    totalPassports:
+      passports.length,
+
+    totalDNAProfiles:
+      dnaProfiles.length
+
+  };
+
+}
+
+/* ============================================================
+   COMPLETION HELPERS
+============================================================ */
+
+function calculateCompletionStats(
+
+  students: any[],
+
+  passports: any[]
+
+) {
+
+  const completed =
+
+    passports.length;
+
+  const pending =
+
+    Math.max(
+
+      0,
+
+      students.length -
+
+      completed
+
+    );
+
+  return {
+
+    completed,
+
+    pending
+
+  };
+
+}
+
+/* ============================================================
+   AVERAGE SCORE HELPERS
+============================================================ */
+
+function calculateAverageDNA(
+
+  dnaProfiles: any[]
+
+) {
+
+  if (!dnaProfiles.length) {
+
+    return 0;
+
+  }
+
+  const total =
+
+    dnaProfiles.reduce(
+
+      (sum, profile) =>
+
+        sum +
+
+        (profile.combined_score ?? 0),
+
+      0
+
+    );
+
+  return Math.round(
+
+    total /
+
+    dnaProfiles.length
+
+  );
+
+}
+
+function calculateAveragePassport(
+
+  passports: any[]
+
+) {
+
+  if (!passports.length) {
+
+    return 0;
+
+  }
+
+  const total =
+
+    passports.reduce(
+
+      (sum, passport) =>
+
+        sum +
+
+        (passport.combined_score ?? 0),
+
+      0
+
+    );
+
+  return Math.round(
+
+    total /
+
+    passports.length
+
+  );
+
+}
+
+/* ============================================================
+   SUMMARY METRICS
+============================================================ */
+
+function calculateSummaryMetrics(
+
+  filteredStudents: any[],
+
+  filteredSubmissions: any[]
+
+) {
+
+  const totalSchools =
+
+    new Set(
+
+      filteredStudents.map(
+
+        student => student.school_name
+
+      )
+
+    ).size;
+
+  const totalClasses =
+
+    new Set(
+
+      filteredStudents.map(
+
+        student => student.class_name
+
+      )
+
+    ).size;
+
+  const totalCompetitions =
+
+    new Set(
+
+      filteredSubmissions.map(
+
+        submission => submission.event_name
+
+      )
+
+    ).size;
+
+  const pendingEvaluations =
+
+    filteredSubmissions.filter(
+
+      submission =>
+
+        !submission.overall_score
+
+    ).length;
+
+  return {
+
+    totalStudents:
+
+      filteredStudents.length,
+
+    totalEntries:
+
+      filteredSubmissions.length,
+
+    totalSchools,
+
+    totalClasses,
+
+    totalCompetitions,
+
+    pendingEvaluations
+
+  };
+
+}
+
+/* ============================================================
+   REGISTRATION COMPLETION
+============================================================ */
+
+function calculateRegistrationStatus(
+
+  students: any[],
+
+  studentEvents: any[]
+
+) {
+
+  const completedStudents =
+
+    students.filter(student => {
+
+      const completedEvents =
+
+        studentEvents.filter(
+
+          event =>
+
+            event.student_id ===
+            student.student_id &&
+
+            event.status ===
+            "Completed"
+
+        );
+
+      return completedEvents.length >= 4;
+
+    });
+
+  const incompleteStudents =
+
+    students.filter(student => {
+
+      const completedEvents =
+
+        studentEvents.filter(
+
+          event =>
+
+            event.student_id ===
+            student.student_id &&
+
+            event.status ===
+            "Completed"
+
+        );
+
+      return completedEvents.length < 4;
+
+    });
+
+  return {
+
+    completedStudents,
+
+    incompleteStudents
+
+  };
+
+}
+
+/* ============================================================
+   TOP SCHOOL ANALYTICS
+============================================================ */
+
+function calculateTopSchools(
+
+  filteredStudents: any[]
+
+) {
+
+  const participationMap =
+    new Map<string, number>();
+
+  filteredStudents.forEach(student => {
+
+    const school =
+      student.school_name ?? "Unknown";
+
+    participationMap.set(
+
+      school,
+
+      (participationMap.get(school) ?? 0) + 1
+
+    );
+
+  });
+
+  return [...participationMap.entries()]
+
+    .map(([school, count]) => ({
+
+      school,
+
+      count
+
+    }))
+
+    .sort(
+
+      (a, b) =>
+
+        b.count - a.count
+
+    )
+
+    .slice(0, 5);
+
+}
+
+/* ============================================================
+   TOP EVENT ANALYTICS
+============================================================ */
+
+function calculateTopEvents(
+
+  filteredSubmissions: any[]
+
+) {
+
+  const eventMap =
+    new Map<string, number>();
+
+  filteredSubmissions.forEach(submission => {
+
+    const event =
+      submission.event_name ?? "Unknown";
+
+    eventMap.set(
+
+      event,
+
+      (eventMap.get(event) ?? 0) + 1
+
+    );
+
+  });
+
+  return [...eventMap.entries()]
+
+    .map(([event, count]) => ({
+
+      event,
+
+      count
+
+    }))
+
+    .sort(
+
+      (a, b) =>
+
+        b.count - a.count
+
+    )
+
+    .slice(0, 5);
+
+}
+
+/* ============================================================
+   PASSPORT & DNA ANALYTICS
+============================================================ */
+
+function calculateProfileAnalytics(
+
+  passports: any[],
+
+  dnaProfiles: any[]
+
+) {
+
+  const passportAverage =
+
+    passports.length === 0
+
+      ? 0
+
+      : Math.round(
+
+          passports.reduce(
+
+            (sum, passport) =>
+
+              sum +
+
+              (passport.overall_score ??
+
+               passport.score ??
+
+               0),
+
+            0
+
+          ) /
+
+          passports.length
+
+        );
+
+  const dnaAverage =
+
+    dnaProfiles.length === 0
+
+      ? 0
+
+      : Math.round(
+
+          dnaProfiles.reduce(
+
+            (sum, dna) =>
+
+              sum +
+
+              (dna.overall_score ??
+
+               dna.score ??
+
+               0),
+
+            0
+
+          ) /
+
+          dnaProfiles.length
+
+        );
+
+  return {
+
+    passportAverage,
+
+    dnaAverage
+
+  };
+
+}
 
 export default function AdminDashboard() {
 
@@ -41,308 +632,185 @@ export default function AdminDashboard() {
     loadData();
   }, []);
 
-  async function loadData() {
+  /* ============================================================
+   LOAD DASHBOARD DATA
+============================================================ */
 
-    const submissionsResult =
-      await fetchAllSubmissions();
+async function loadData(): Promise<void> {
 
-    const studentsResult =
-      await fetchStudentsMaster();
+  try {
 
-    const eventsResult =
-      await fetchStudentEvents();
+    const [
 
-    const passportsResult =
-      await fetchTalentPassports();
+      submissionsResult,
 
-    const dnaResult =
-      await fetchDNAProfiles();
+      studentsResult,
+
+      eventsResult,
+
+      passportsResult,
+
+      dnaResult
+
+    ] = await Promise.all([
+
+      fetchAllSubmissions(),
+
+      fetchStudentsMaster(),
+
+      fetchStudentEvents(),
+
+      fetchTalentPassports(),
+
+      fetchDNAProfiles()
+
+    ]);
 
     setSubmissions(
-      submissionsResult.submissions || []
+
+      submissionsResult?.submissions ?? []
+
     );
 
     setStudents(
-      studentsResult || []
+
+      studentsResult ?? []
+
     );
 
     setStudentEvents(
-      eventsResult || []
+
+      eventsResult ?? []
+
     );
 
     setPassports(
-      passportsResult || []
+
+      passportsResult ?? []
+
     );
 
     setDNAProfiles(
-      dnaResult || []
+
+      dnaResult ?? []
+
     );
+
+  } catch (error) {
+
+    console.error(
+
+      "ADMIN DASHBOARD LOAD ERROR",
+
+      error
+
+    );
+
+    setSubmissions([]);
+
+    setStudents([]);
+
+    setStudentEvents([]);
+
+    setPassports([]);
+
+    setDNAProfiles([]);
+
   }
 
+}
+
   const schools =
-    [
-      ...new Set(
-        students
-          .map(
-            (x) =>
-              x.school_name
-          )
-          .filter(Boolean)
-      ),
-    ];
 
-  const classes =
-    [
-      ...new Set(
-        students
-          .filter(
-            (x) =>
-              selectedSchool ===
-                "All Schools" ||
-              x.school_name ===
-                selectedSchool
-          )
-          .map(
-            (x) =>
-              x.class_name
-          )
-          .filter(Boolean)
-      ),
-    ];
+  getUniqueSchools(
 
-  const filteredStudents =
-    students.filter(
-      (student) => {
+    students
 
-        const schoolMatch =
-          selectedSchool ===
-            "All Schools" ||
-          student.school_name ===
-            selectedSchool;
+  );
 
-        const classMatch =
-          selectedClass ===
-            "All Classes" ||
-          student.class_name ===
-            selectedClass;
+const classes =
 
-        return (
-          schoolMatch &&
-          classMatch
-        );
-      }
-    );
+  getUniqueClasses(
+
+    students
+
+  );
+
+const filteredStudents =
+
+  filterStudents(
+
+    students,
+
+    selectedSchool,
+
+    selectedClass
+
+  );
 
   const filteredSubmissions =
-    submissions.filter(
-      (submission) => {
+  filterSubmissions(
+    submissions,
+    filteredStudents
+  );
 
-        const schoolMatch =
-          selectedSchool ===
-            "All Schools" ||
-          submission.school_name ===
-            selectedSchool;
+const summary =
 
-        const classMatch =
-          selectedClass ===
-            "All Classes" ||
-          submission.class_name ===
-            selectedClass;
+  calculateSummaryMetrics(
 
-        return (
-          schoolMatch &&
-          classMatch
-        );
-      }
-    );
+    filteredStudents,
 
-  const totalStudents =
-    filteredStudents.length;
+    filteredSubmissions
 
-  const totalEntries =
-    filteredSubmissions.length;
+  );
 
-  const totalSchools =
-    [
-      ...new Set(
-        filteredStudents.map(
-          (x) =>
-            x.school_name
-        )
-      ),
-    ].length;
+  const {
 
-  const totalClasses =
-    [
-      ...new Set(
-        filteredStudents.map(
-          (x) =>
-            x.class_name
-        )
-      ),
-    ].length;
+  completedStudents,
 
-  const totalCompetitions =
-    [
-      ...new Set(
-        filteredSubmissions.map(
-          (x) =>
-            x.event_name
-        )
-      ),
-    ].length;
+  incompleteStudents
 
-  const pendingEvaluations =
-    filteredSubmissions.filter(
-      (x) =>
-        !x.overall_score
-    ).length;
+} =
 
-  const completedStudents =
-    filteredStudents.filter(
-      (student) => {
+  calculateRegistrationStatus(
 
-        const events =
-          studentEvents.filter(
-            (event) =>
-              event.student_id ===
-              student.student_id
-          );
+    filteredStudents,
 
-        const completed =
-          events.filter(
-            (event) =>
-              event.status ===
-              "Completed"
-          );
+    studentEvents
 
-        return (
-          completed.length >= 4
-        );
-      }
-    );
-
-  const incompleteStudents =
-    filteredStudents.filter(
-      (student) => {
-
-        const events =
-          studentEvents.filter(
-            (event) =>
-              event.student_id ===
-              student.student_id
-          );
-
-        const completed =
-          events.filter(
-            (event) =>
-              event.status ===
-              "Completed"
-          );
-
-        return (
-          completed.length < 4
-        );
-      }
-    );
-
-  const participationMap:
-    Record<
-      string,
-      number
-    > = {};
-
-  filteredSubmissions.forEach(
-    (item) => {
-
-      const school =
-        item.school_name ||
-        "Unknown";
-
-      participationMap[
-        school
-      ] =
-        (participationMap[
-          school
-        ] || 0) + 1;
-    }
   );
 
   const topSchools =
-    Object.entries(
-      participationMap
-    )
-      .sort(
-        (a, b) =>
-          b[1] - a[1]
-      )
-      .slice(0, 5);
 
-  const eventMap:
-    Record<
-      string,
-      number
-    > = {};
+  calculateTopSchools(
 
-  filteredSubmissions.forEach(
-    (item) => {
+    filteredStudents
 
-      const event =
-        item.event_name ||
-        "Unknown";
-
-      eventMap[event] =
-        (eventMap[event] || 0) + 1;
-    }
   );
 
-  const topEvents =
-    Object.entries(
-      eventMap
-    )
-      .sort(
-        (a, b) =>
-          b[1] - a[1]
-      )
-      .slice(0, 5);
+const topEvents =
 
-  const avgDNA =
-    dnaProfiles.length
-      ? Math.round(
-          dnaProfiles.reduce(
-            (
-              sum,
-              item
-            ) =>
-              sum +
-              (
-                item.dna_index ||
-                0
-              ),
-            0
-          ) /
-            dnaProfiles.length
-        )
-      : 0;
+  calculateTopEvents(
 
-  const avgPassport =
-    passports.length
-      ? Math.round(
-          passports.reduce(
-            (
-              sum,
-              item
-            ) =>
-              sum +
-              (
-                item.combined_score ||
-                0
-              ),
-            0
-          ) /
-            passports.length
-        )
-      : 0;
+    filteredSubmissions
+
+  );
+
+ const {
+
+  passportAverage,
+
+  dnaAverage
+
+} =
+
+  calculateProfileAnalytics(
+
+    passports,
+
+    dnaProfiles
+
+  );
 
   return (
     <div
@@ -512,12 +980,12 @@ export default function AdminDashboard() {
       >
         <DashboardCard
           title="Total Students"
-          value={totalStudents}
+          value={summary.totalStudents}
         />
 
         <DashboardCard
           title="Total Entries"
-          value={totalEntries}
+          value={summary.totalEntries}
         />
 
         <DashboardCard
@@ -536,25 +1004,25 @@ export default function AdminDashboard() {
 
         <DashboardCard
           title="Total Schools"
-          value={totalSchools}
+          value={summary.totalSchools}
         />
 
         <DashboardCard
           title="Total Classes"
-          value={totalClasses}
+          value={summary.totalClasses}
         />
 
-        <DashboardCard
-          title="Competitions"
-          value={
-            totalCompetitions
-          }
-        />
+       <DashboardCard
+  title="Competitions"
+  value={
+    summary.totalCompetitions
+  }
+/>
 
         <DashboardCard
           title="Pending Evaluations"
           value={
-            pendingEvaluations
+            summary.pendingEvaluations
           }
         />
       </div>
@@ -574,28 +1042,44 @@ export default function AdminDashboard() {
           title="Top Schools"
         >
           {topSchools.map(
-            (item) => (
-              <Row
-                key={item[0]}
-                label={item[0]}
-                value={item[1]}
-              />
-            )
-          )}
+
+  item => (
+
+    <Row
+
+      key={item.school}
+
+      label={item.school}
+
+      value={item.count}
+
+    />
+
+  )
+
+)}
         </InfoCard>
 
         <InfoCard
           title="Top Events"
         >
           {topEvents.map(
-            (item) => (
-              <Row
-                key={item[0]}
-                label={item[0]}
-                value={item[1]}
-              />
-            )
-          )}
+
+  item => (
+
+    <Row
+
+      key={item.event}
+
+      label={item.event}
+
+      value={item.count}
+
+    />
+
+  )
+
+)}
         </InfoCard>
       </div>
 
@@ -615,12 +1099,12 @@ export default function AdminDashboard() {
         >
           <Row
             label="Average Passport Score"
-            value={avgPassport}
+            value={passportAverage}
           />
 
           <Row
             label="Average DNA Index"
-            value={avgDNA}
+            value={dnaAverage}
           />
 
           <Row
@@ -636,18 +1120,18 @@ export default function AdminDashboard() {
         >
           <Row
             label="Active Students"
-            value={totalStudents}
+            value={summary.totalStudents}
           />
 
           <Row
             label="Active Schools"
-            value={totalSchools}
+            value={summary.totalSchools}
           />
 
           <Row
             label="Pending Evaluations"
             value={
-              pendingEvaluations
+              summary.pendingEvaluations
             }
           />
         </InfoCard>
@@ -931,84 +1415,198 @@ const filterStyle = {
   border: "1px solid #E5E7EB",
 };
 
+/* ============================================================
+   DASHBOARD CARD
+============================================================ */
+
+interface DashboardCardProps {
+
+  title: string;
+
+  value: string | number;
+
+}
+
 function DashboardCard({
+
   title,
-  value,
-}: any) {
+
+  value
+
+}: DashboardCardProps) {
+
   return (
+
     <div
+
       style={{
+
         background: "white",
+
         borderRadius: "24px",
-        padding: "24px",
+
+        padding: "24px"
+
       }}
+
     >
+
       <div
+
         style={{
+
           color: "#64748B",
-          fontSize: "14px",
+
+          fontSize: "14px"
+
         }}
+
       >
+
         {title}
+
       </div>
 
       <div
+
         style={{
+
           fontSize: "42px",
+
           fontWeight: 700,
+
           color: "#071952",
-          marginTop: "8px",
+
+          marginTop: "8px"
+
         }}
+
       >
+
         {value}
+
       </div>
+
     </div>
+
   );
+
+}
+
+/* ============================================================
+   INFORMATION CARD
+============================================================ */
+
+
+
+interface InfoCardProps {
+
+  title: string;
+
+  children: ReactNode;
+
 }
 
 function InfoCard({
+
   title,
-  children,
-}: any) {
+
+  children
+
+}: InfoCardProps) {
+
   return (
+
     <div
+
       style={{
+
         background: "white",
+
         borderRadius: "24px",
-        padding: "24px",
+
+        padding: "24px"
+
       }}
+
     >
+
       <h2
+
         style={{
+
           marginBottom: "20px",
-          color: "#071952",
+
+          color: "#071952"
+
         }}
+
       >
+
         {title}
+
       </h2>
 
       {children}
+
     </div>
+
   );
+
+}
+
+/* ============================================================
+   INFORMATION ROW
+============================================================ */
+
+interface RowProps {
+
+  label: string;
+
+  value: string | number;
+
 }
 
 function Row({
+
   label,
-  value,
-}: any) {
+
+  value
+
+}: RowProps) {
+
   return (
+
     <div
+
       style={{
+
         display: "flex",
-        justifyContent:
-          "space-between",
+
+        justifyContent: "space-between",
+
         padding: "10px 0",
-        borderBottom:
-          "1px solid #E5E7EB",
+
+        borderBottom: "1px solid #E5E7EB"
+
       }}
+
     >
-      <span>{label}</span>
-      <strong>{value}</strong>
+
+      <span>
+
+        {label}
+
+      </span>
+
+      <strong>
+
+        {value}
+
+      </strong>
+
     </div>
+
   );
+
 }

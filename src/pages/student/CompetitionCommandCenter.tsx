@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { submitCompetitionEntry } from "../../supabaseClient";
+
+import {
+  submitCompetitionEntry
+} from "../../supabaseClient";
+
+import {
+  requireIdentity
+} from "../../services/identityService";
 
 const pathwayData = {
   Communication: {
@@ -274,18 +281,9 @@ const handleSubmit = async () => {
 
     setIsSubmitting(true);
 
-const profile = JSON.parse(
-  localStorage.getItem("studentProfile") || "{}"
-);
-
-console.log("PROFILE", profile);
 
     const result = await submitCompetitionEntry(
-      {
-  studentName: profile.student_name,
-  studentEmail: profile.parent_email,
-  className: profile.class_name,
-  schoolName: profile.school_name,
+     {
   pathway,
   eventName: selectedEvent,
   description: summary

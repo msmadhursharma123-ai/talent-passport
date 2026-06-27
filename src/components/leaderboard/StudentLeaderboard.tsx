@@ -5,6 +5,10 @@ import {
   getLeaderboardFilters,
 } from "./LeaderboardEngine";
 
+import {
+  getStudentUuid
+} from "../../services/identityService";
+
 type CompetencyCardProps = {
   title: string;
   score: number;
@@ -133,17 +137,8 @@ export default function StudentLeaderboard() {
     setLoading] =
     useState(true);
 
-  const profile = JSON.parse(
-    localStorage.getItem(
-      "studentProfile"
-    ) || "{}"
-  );
-
-  const studentId =
-    profile.parent_email
-      ?.toLowerCase()
-      ?.replace("@", "_")
-      ?.replace(/\./g, "_");
+const studentId =
+  getStudentUuid();
 
   useEffect(() => {
     loadData();

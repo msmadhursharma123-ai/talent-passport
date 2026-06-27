@@ -1,8 +1,13 @@
-import React, {
+import React,{
   useEffect,
   useMemo,
   useState
 } from "react";
+
+import {
+  requireIdentity,
+  getStudentUuid
+} from "../../services/identityService";
 
 import {
   fetchPartners,
@@ -54,15 +59,11 @@ type InboxOffer = {
 
 export default function MaukePeChauka() {
 
-  const profile =
-    JSON.parse(
-      localStorage.getItem(
-        "studentProfile"
-      ) || "{}"
-    );
+ const identity =
+  requireIdentity();
 
-  const studentId =
-    profile?.student_id || "";
+const studentId =
+  getStudentUuid();
 
   const [loading, setLoading] =
     useState(true);
@@ -321,94 +322,94 @@ const opportunityIndex =
 
     }, []);
 
-  async function handleRequest() {
+async function handleRequest() {
 
-    if (!selectedPartner)
-      return;
+  if (!selectedPartner)
+    return;
 
-console.log(
-  "STUDENT PROFILE",
-  profile
-);
+  const identity =
+    requireIdentity();
 
-console.log(
-  "PHONE VALUE",
-  profile.parent_phone,
-  profile.phone
-);
+  console.log(
+    "STUDENT IDENTITY",
+    identity
+  );
 
-    await createIncomingRequest({
+  console.log(
+    "PHONE VALUE",
+    identity.parentPhone
+  );
 
-  partner_id:
-    selectedPartner.partner_id,
+  await createIncomingRequest({
 
-  partner_name:
-    selectedPartner.institute_name,
+    partner_id:
+      selectedPartner.partner_id,
 
-  student_id:
-    profile.student_id,
+    partner_name:
+      selectedPartner.institute_name,
 
-  requester_name:
-    profile.student_name,
+    student_id:
+      getStudentUuid(),
 
-  school_name:
-    profile.school_name,
+    requester_name:
+      identity.studentName,
 
-email:
-  profile.parent_email ||
-  profile.student_email ||
-  "",
+    school_name:
+      identity.schoolName,
 
-phone:
-  profile.parent_phone ||
-  profile.phone ||
-  "",
+    email:
+      identity.parentEmail,
 
-class_name:
-  profile.class_name ||
-  "",
+    phone:
+      identity.parentPhone,
 
-  request_type:
-    requestType,
+    class_name:
+      identity.className,
 
-  request_from:
-    "student",
+    request_type:
+      requestType,
 
-  message
+    request_from:
+      "student",
 
-});
-    await createMarketplaceActivity({
+    message
 
-      student_id:
-        profile.student_id,
+  });
 
-      activity_type:
-        "request",
+  await createMarketplaceActivity({
 
-      activity_title:
-        `${requestType} Request Submitted`,
+    student_id:
+      getStudentUuid(),
 
-      partner_id:
-        selectedPartner.partner_id,
+    activity_type:
+      "request",
 
-      partner_name:
-        selectedPartner.institute_name,
+    activity_title:
+      `${requestType} Request Submitted`,
 
-      status:
-        "submitted",
+    partner_id:
+      selectedPartner.partner_id,
 
-      metadata: {
-        requestType
-      }
-    });
+    partner_name:
+      selectedPartner.institute_name,
 
-    setShowRequestDialog(
-      false
-    );
+    status:
+      "submitted",
 
-    setMessage("");
+    metadata: {
+      requestType
+    }
 
-    await loadMarketplace();
+  });
+
+  setShowRequestDialog(
+    false
+  );
+
+  setMessage("");
+
+  await loadMarketplace();
+
 }
 
 async function handleWithdraw(
@@ -431,7 +432,7 @@ async function handleWithdraw(
   await createMarketplaceActivity({
 
     student_id:
-      profile.student_id,
+      getStudentUuid(),
 
     activity_type:
       "withdrawn",
@@ -452,134 +453,138 @@ async function handleWithdraw(
   });
 
   await loadMarketplace();
+
 }
 
 
   
-  async function handleOfferAction(
-    offer: InboxOffer,
-    action:
-      "accept" | "reject"
+ async function handleOfferAction(
+  offer: InboxOffer,
+  action:
+    "accept" | "reject"
+) {
+
+  if (
+    offer.type ===
+    "Scholarship"
   ) {
 
     if (
-  offer.type ===
-  "Scholarship"
-) {
-
-  if (action === "accept") {
-
-    await acceptScholarshipOffer(
-      offer.id
-    );
-
-   
-    await createMarketplaceActivity({
-
-      student_id:
-        profile.student_id,
-
-      activity_type:
-        "offer",
-
-      activity_title:
-        "Scholarship Accepted",
-
-      partner_id:
-        "",
-
-      partner_name:
-        offer.partner_name || "",
-
-      status:
-        "accepted"
-    });
-
-  } else {
-
-    await rejectScholarshipOffer(
-      offer.id
-    );
-
-    await createMarketplaceActivity({
-
-      student_id:
-        profile.student_id,
-
-      activity_type:
-        "offer",
-
-      activity_title:
-        "Scholarship Rejected",
-
-      partner_id:
-        "",
-
-      partner_name:
-        offer.partner_name || "",
-
-      status:
-        "rejected"
-    });
-
-  }
-}
-
-    if (
-      offer.type ===
-      "Workshop"
+      action ===
+      "accept"
     ) {
 
-      if (action === "accept") {
+      await acceptScholarshipOffer(
+        offer.id
+      );
 
-  await acceptWorkshopOffer(
-    offer.id
-  );
+      await createMarketplaceActivity({
 
-  
-}
- else {
-        await rejectWorkshopOffer(
-          offer.id
-        );
-      }
+        student_id:
+          getStudentUuid(),
+
+        activity_type:
+          "offer",
+
+        activity_title:
+          "Scholarship Accepted",
+
+        partner_id:
+          "",
+
+        partner_name:
+          offer.partner_name ||
+          "",
+
+        status:
+          "accepted"
+
+      });
+
+    } else {
+
+      await rejectScholarshipOffer(
+        offer.id
+      );
+
+      await createMarketplaceActivity({
+
+        student_id:
+          getStudentUuid(),
+
+        activity_type:
+          "offer",
+
+        activity_title:
+          "Scholarship Rejected",
+
+        partner_id:
+          "",
+
+        partner_name:
+          offer.partner_name ||
+          "",
+
+        status:
+          "rejected"
+
+      });
+
     }
+
+  }
+
+  if (
+    offer.type ===
+    "Workshop"
+  ) {
 
     if (
-      offer.type ===
-      "Contact"
+      action ===
+      "accept"
     ) {
 
-     if (action === "accept") {
+      await acceptWorkshopOffer(
+        offer.id
+      );
 
-  await acceptContactOffer(
-    offer.id
-  );
+    } else {
 
-  
+      await rejectWorkshopOffer(
+        offer.id
+      );
 
-}
- else {
-        await rejectContactOffer(
-          offer.id
-        );
-      }
     }
 
-    await loadMarketplace();
   }
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          padding: 40
-        }}
-      >
-        Loading Marketplace...
-      </div>
-    );
+  if (
+    offer.type ===
+    "Contact"
+  ) {
+
+    if (
+      action ===
+      "accept"
+    ) {
+
+      await acceptContactOffer(
+        offer.id
+      );
+
+    } else {
+
+      await rejectContactOffer(
+        offer.id
+      );
+
+    }
+
   }
+
+  await loadMarketplace();
+
+}
 
   return (
 

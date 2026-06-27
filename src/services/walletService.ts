@@ -4,6 +4,40 @@ import {
   updateWalletBalance
 } from "../data/walletRepository";
 
+import {
+  getTableIdentity
+} from "./identityService";
+
+/* ============================================================
+   WALLET SERVICE
+
+   Responsibilities
+
+   • Wallet synchronization
+   • Credit deduction
+   • Wallet business rules
+
+   Never talks directly to Supabase.
+   Always consumes repositories.
+============================================================ */
+
+/* ============================================================
+   IDENTITY HELPER
+============================================================ */
+
+function resolveStudentId(
+  studentId?: string
+): string {
+
+  return (
+    studentId ??
+    getTableIdentity(
+      "student_wallets"
+    )
+  );
+
+}
+
 /* ============================================================
    SYNC STUDENT WALLET
 ============================================================ */
@@ -20,42 +54,101 @@ export async function syncStudentWallet(
 
 ) {
 
+  const resolvedStudentId =
+    resolveStudentId(studentId);
+
+  /* ============================================
+     Fetch Wallet
+  ============================================ */
+
   const wallet =
-    await getStudentWallet(studentId);
+    await getStudentWallet(
+      resolvedStudentId
+    );
+
+  /* ============================================
+     Calculate Wallet
+  ============================================ */
 
   const lifetimeEarned =
+
     competitionCredits +
+
     achievementCredits +
+
     portfolioCredits;
 
   const availableCredits =
+
     lifetimeEarned -
+
     wallet.spent_credits;
 
-console.log("SYNC WALLET");
-console.log("Student ID:", studentId);
-console.log("Competition:", competitionCredits);
-console.log("Achievement:", achievementCredits);
-console.log("Portfolio:", portfolioCredits);
-console.log("Lifetime:", lifetimeEarned);
-console.log("Available:", availableCredits);
-console.log("Wallet Before:", wallet);
+  /* ============================================
+     Debug Logging
+  ============================================ */
 
-const result = await updateStudentWallet(
+  console.log("SYNC WALLET");
 
-  studentId,
+  console.log(
+    "Student:",
+    resolvedStudentId
+  );
 
-  availableCredits,
+  console.log(
+    "Competition:",
+    competitionCredits
+  );
 
-  wallet.spent_credits,
+  console.log(
+    "Achievement:",
+    achievementCredits
+  );
 
-  lifetimeEarned
+  console.log(
+    "Portfolio:",
+    portfolioCredits
+  );
 
-);
+  console.log(
+    "Lifetime:",
+    lifetimeEarned
+  );
 
-console.log("Wallet After:", result);
+  console.log(
+    "Available:",
+    availableCredits
+  );
 
-return result;
+  console.log(
+    "Wallet Before:",
+    wallet
+  );
+
+  /* ============================================
+     Persist Wallet
+  ============================================ */
+
+  const result =
+
+    await updateStudentWallet(
+
+      resolvedStudentId,
+
+      availableCredits,
+
+      wallet.spent_credits,
+
+      lifetimeEarned
+
+    );
+
+  console.log(
+    "Wallet After:",
+    result
+  );
+
+  return result;
 
 }
 
@@ -71,11 +164,25 @@ export async function deductConsultationCredits(
 
 ) {
 
+  const resolvedStudentId =
+    resolveStudentId(studentId);
+
+  /* ============================================
+     Fetch Wallet
+  ============================================ */
+
   const wallet =
-    await getStudentWallet(studentId);
+    await getStudentWallet(
+      resolvedStudentId
+    );
+
+  /* ============================================
+     Validate Balance
+  ============================================ */
 
   if (
-    wallet.available_credits < credits
+    wallet.available_credits <
+    credits
   ) {
 
     throw new Error(
@@ -84,9 +191,19 @@ export async function deductConsultationCredits(
 
   }
 
+  /* ============================================
+     Calculate New Balance
+  ============================================ */
+
   const newAvailableBalance =
+
     wallet.available_credits -
+
     credits;
+
+  /* ============================================
+     Persist Balance
+  ============================================ */
 
   await updateWalletBalance(
 
@@ -95,6 +212,10 @@ export async function deductConsultationCredits(
     newAvailableBalance
 
   );
+
+  /* ============================================
+     Return Transaction
+  ============================================ */
 
   return {
 
