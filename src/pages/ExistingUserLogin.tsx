@@ -1,247 +1,243 @@
 import React, { useState } from "react";
-import { getSupabaseClient } from "../supabaseClient";
-import {
-  getLatestAssessment
-} from "../data/studentRepository";
 
 import {
-  findStudentByEmail,
-  findStudentMasterByEmail
-}
-from "../data/studentRepository";
-
-import {
-  saveStudentIdentity
-} from "../services/identityService";
+    signIn
+} from "../services/authenticationService";
 
 interface Props {
-  onSuccess: () => void;
-  onRegister: () => void;
-  onBack: () => void;
+    onSuccess: () => void;
+    onRegister: () => void;
+    onBack: () => void;
 }
 
 export default function ExistingUserLogin({
-  onSuccess,
-  onRegister,
-  onBack
+
+    onSuccess,
+    onRegister,
+    onBack
+
 }: Props) {
 
-  const [email, setEmail] =
-    useState("");
+    const [email, setEmail] =
+        useState("");
 
-  const [loading, setLoading] =
-    useState(false);
+    const [password, setPassword] =
+        useState("");
 
-  async function handleLogin() {
+    const [loading, setLoading] =
+        useState(false);
 
-    const supabase =
-      getSupabaseClient();
+    async function handleLogin() {
 
-    if (!supabase) return;
+        if (!email.trim()) {
 
-    setLoading(true);
+            alert("Please enter your email.");
 
-    const data =
-await findStudentByEmail(
-    email
-);
+            return;
 
-if (!data) {
+        }
 
-    alert(
-        "No registration found. Please sign up first."
+        if (!password.trim()) {
+
+            alert("Please enter your password.");
+
+            return;
+
+        }
+
+        setLoading(true);
+
+        try {
+
+            const result =
+                await signIn(
+                    email.trim(),
+                    password
+                );
+
+            if (!result.success) {
+
+                alert(
+                    result.error ??
+                    "Login failed."
+                );
+
+                return;
+
+            }
+
+            switch (
+                result.identity?.role
+            ) {
+
+                case "student":
+
+                    console.log(
+                        "Student authenticated."
+                    );
+
+                    break;
+
+                case "partner":
+
+                    console.log(
+                        "Partner authenticated."
+                    );
+
+                    break;
+
+                case "admin":
+
+                    console.log(
+                        "Admin authenticated."
+                    );
+
+                    break;
+
+                default:
+
+                    alert(
+                        "Unable to determine user role."
+                    );
+
+                    return;
+
+            }
+
+            onSuccess();
+
+        }
+
+        catch (error: any) {
+
+            alert(
+                error?.message ??
+                "Login failed."
+            );
+
+        }
+
+        finally {
+
+            setLoading(false);
+
+        }
+
+    }
+
+    return (
+
+        <div
+            style={{
+                minHeight: "100vh",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                background: "#F8F7F4",
+            }}
+        >
+
+            <div
+                style={{
+                    width: 500,
+                    background: "white",
+                    padding: 40,
+                    borderRadius: 24,
+                }}
+            >
+
+                <button
+                    onClick={onBack}
+                    style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "#143B73",
+                        fontSize: 16,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        marginBottom: 20,
+                    }}
+                >
+                    ← Back
+                </button>
+
+                <h1>
+
+                    Existing User Login
+
+                </h1>
+
+                <input
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) =>
+                        setEmail(
+                            e.target.value
+                        )
+                    }
+                    style={{
+                        width: "100%",
+                        padding: 12,
+                        marginTop: 20,
+                    }}
+                />
+
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) =>
+                        setPassword(
+                            e.target.value
+                        )
+                    }
+                    style={{
+                        width: "100%",
+                        padding: 12,
+                        marginTop: 16,
+                    }}
+                />
+
+                <button
+                    onClick={handleLogin}
+                    disabled={loading}
+                    style={{
+                        width: "100%",
+                        marginTop: 24,
+                        padding: 14,
+                        border: "none",
+                        borderRadius: 12,
+                        background: "#F4A623",
+                        color: "white",
+                        cursor: "pointer",
+                    }}
+                >
+                    {
+                        loading
+                            ? "Signing In..."
+                            : "Login"
+                    }
+                </button>
+
+                <button
+                    onClick={onRegister}
+                    style={{
+                        width: "100%",
+                        marginTop: 16,
+                        padding: 12,
+                        background: "transparent",
+                        border: "1px solid #D9D9D9",
+                        borderRadius: 12,
+                        cursor: "pointer",
+                    }}
+                >
+                    New User? Register
+                </button>
+
+            </div>
+
+        </div>
+
     );
 
-    onRegister();
-
-    return;
-}
-
-    if (!data) {
-
-      alert(
-        "No registration found. Please sign up first."
-      );
-
-      onRegister();
-
-      return;
-    }
-
-  const masterStudent =
-  await findStudentMasterByEmail(
-    email
-  );
-
-console.log(
-  "MASTER STUDENT",
-  masterStudent
-);
-
-const identity = {
-
-  /* Authentication */
-
-  authUserId:
-    data.id,
-
-  /* students table */
-
-  studentUuid:
-    data.id,
-
-  /* students_master table */
-
-  masterStudentId:
-    masterStudent?.id,
-
-  /* Human Readable */
-
-  studentCode:
-    masterStudent?.student_id,
-
-  /* Student Details */
-
-  studentName:
-    masterStudent?.student_name ||
-    data.student_name,
-
-  schoolName:
-    masterStudent?.school_name ||
-    data.school_name,
-
-  className:
-    masterStudent?.class_name ||
-    data.class_name,
-
-  parentEmail:
-    masterStudent?.student_email ||
-    data.parent_email,
-
-  parentPhone:
-    masterStudent?.phone ||
-    data.parent_mobile,
-
-  email:
-    data.parent_email
-
-};
-
-console.log(
-  "STUDENT IDENTITY",
-  identity
-);
-
-saveStudentIdentity(
-  identity
-);
-
-    const assessment =
-  await getLatestAssessment();
-
-    if (assessment) {
-
-      localStorage.setItem(
-        "studentCalibration",
-        JSON.stringify(
-          assessment.answers
-        )
-      );
-
-      localStorage.setItem(
-        "talentScores",
-        JSON.stringify(
-          assessment.scores
-        )
-      );
-
-      localStorage.setItem(
-        "studentPassport",
-        JSON.stringify(
-          assessment.passport
-        )
-      );
-    }
-
-    onSuccess();
-  }
-
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent:
-          "center",
-        alignItems: "center",
-        background:
-          "#F8F7F4",
-      }}
-    >
-      <div
-        style={{
-          width: 500,
-          background: "white",
-          padding: 40,
-          borderRadius: 24,
-        }}
-      >
-
-        <button
-          onClick={onBack}
-          style={{
-            background:
-              "transparent",
-            border: "none",
-            color: "#143B73",
-            fontSize: "16px",
-            fontWeight: 600,
-            cursor: "pointer",
-            marginBottom: "20px",
-          }}
-        >
-          ← Back
-        </button>
-
-        <h1>
-          Existing User Login
-        </h1>
-
-        <input
-          placeholder="Parent Email"
-          value={email}
-          onChange={(e) =>
-            setEmail(
-              e.target.value
-            )
-          }
-          style={{
-            width: "100%",
-            padding: 12,
-            marginTop: 20,
-          }}
-        />
-
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          style={{
-            width: "100%",
-            marginTop: 20,
-            padding: 14,
-            border: "none",
-            borderRadius: 12,
-            background:
-              "#F4A623",
-            color: "white",
-          }}
-        >
-          {loading
-            ? "Checking..."
-            : "Access Passport"}
-        </button>
-
-      </div>
-    </div>
-  );
 }

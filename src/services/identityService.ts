@@ -165,6 +165,33 @@ export interface PartnerIdentity {
 }
 
 /* ============================================================
+   Admin IDENTITY
+
+   Dedicated identity model for Admin Portal.
+
+   This intentionally remains separate from StudentIdentity and PartnerIdentity
+   while being managed by the same Identity Service.
+============================================================ */
+
+export interface AdminIdentity {
+
+    authUserId?: string;
+
+    adminId: string;
+
+    adminName: string;
+
+    email?: string;
+
+    phone?: string;
+
+    role?: string;
+
+    permissions?: string[];
+
+}
+
+/* ============================================================
    STORAGE
 ============================================================ */
 
@@ -225,6 +252,19 @@ let identityCache: StudentIdentity | null = null;
 */
 
 let partnerIdentityCache: PartnerIdentity | null = null;
+
+/*
+|--------------------------------------------------------------------------
+| Authentication Session
+|--------------------------------------------------------------------------
+|
+| This flag will be controlled by the upcoming AuthenticationService.
+| IdentityService does not authenticate users; it only tracks whether
+| an authenticated session has been initialized.
+|
+*/
+
+let authSessionInitialized = false;
 
 /* ============================================================
    MODULE → IDENTITY MAP
@@ -429,6 +469,28 @@ export function savePartnerIdentity(
 
 }
 
+
+/* ============================================================
+   SAVE ADMIN IDENTITY
+============================================================ */
+
+const ADMIN_STORAGE_KEY = "adminProfile";
+
+let adminIdentityCache: AdminIdentity | null = null;
+
+export function saveAdminIdentity(
+    identity: AdminIdentity
+) {
+
+    adminIdentityCache = identity;
+
+    localStorage.setItem(
+        ADMIN_STORAGE_KEY,
+        JSON.stringify(identity)
+    );
+
+}
+
 /* ============================================================
    GET CURRENT IDENTITY
 
@@ -505,6 +567,39 @@ export function getCurrentPartner():
     return null;
 
   }
+
+}
+
+/* ============================================================
+   GET CURRENT ADMIN
+
+   Loads from memory first.
+
+   Falls back to localStorage.
+============================================================ */
+
+export function getCurrentAdmin():
+
+AdminIdentity | null {
+
+    if (adminIdentityCache)
+        return adminIdentityCache;
+
+    const raw =
+        localStorage.getItem(
+            ADMIN_STORAGE_KEY
+        );
+
+    if (!raw)
+        return null;
+
+    const parsed =
+        JSON.parse(raw);
+
+    adminIdentityCache =
+        parsed;
+
+    return parsed;
 
 }
 
@@ -589,6 +684,28 @@ export function hasPartnerIdentity(): boolean {
 }
 
 /* ============================================================
+   AUTHENTICATION SESSION
+============================================================ */
+
+export function hasAuthSession(): boolean {
+
+  return authSessionInitialized;
+
+}
+
+export function markAuthSessionInitialized(): void {
+
+  authSessionInitialized = true;
+
+}
+
+export function clearAuthSession(): void {
+
+  authSessionInitialized = false;
+
+}
+
+/* ============================================================
    UPDATE IDENTITY
 ============================================================ */
 
@@ -639,6 +756,8 @@ export function clearStudentIdentity(): void {
 
   localStorage.removeItem(STUDENT_STORAGE_KEY);
 
+  clearAuthSession();
+
 }
 
 /* ============================================================
@@ -652,6 +771,22 @@ export function clearPartnerIdentity(): void {
   localStorage.removeItem(
     PARTNER_STORAGE_KEY
   );
+
+  clearAuthSession();
+
+}
+
+/* ============================================================
+   CLEAR ADMIN IDENTITY
+============================================================ */
+
+export function clearAdminIdentity() {
+
+    adminIdentityCache = null;
+
+    localStorage.removeItem(
+        ADMIN_STORAGE_KEY
+    );
 
 }
 
