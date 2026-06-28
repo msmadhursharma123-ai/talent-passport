@@ -59,6 +59,10 @@ export async function getStudentAchievements() {
    CREATE ACHIEVEMENT
 ============================================================ */
 
+/* ============================================================
+   CREATE ACHIEVEMENT
+============================================================ */
+
 export async function createAchievement(
   achievement: any
 ) {
@@ -70,14 +74,32 @@ export async function createAchievement(
     return null;
   }
 
-  const { data, error } =
+  /* ----------------------------------------
+     Resolve Student Identity
+  ---------------------------------------- */
+
+  const payload = {
+
+    ...achievement,
+
+    student_id:
+      getTableIdentity(
+        "student_timeline_achievements"
+      )
+
+  };
+
+  const {
+    data,
+    error
+  } =
     await (supabase as any)
 
       .from(
         "student_timeline_achievements"
       )
 
-      .insert([achievement])
+      .insert([payload])
 
       .select()
 

@@ -65,24 +65,17 @@ async function loadSubmissions() {
     requireIdentity();
 
   const studentId =
-    studentIdentity.parentEmail
-      ?.toLowerCase()
-      .replace("@", "_")
-      .replace(/\./g, "_");
+    studentIdentity.studentUuid;
 
   if (!studentId) {
-
     return;
-
   }
 
   const supabase =
     getSupabaseClient();
 
   if (!supabase) {
-
     return;
-
   }
 
   const { data, error } =
@@ -109,6 +102,7 @@ async function loadSubmissions() {
   }
 
   setSubmissions(data || []);
+
 }
 
 
