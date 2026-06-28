@@ -17,51 +17,39 @@ export default function AdminLogin({
     useState("");
 
   const handleLogin = () => {
-
-    const admins = [
+  const admins = [
   {
-    email: "msmadhursharma123@gmail.com",
-    password: "TalentPassport2026"
+    email: "admin@talentpassport.in",
+    password: "TalentPassport2026",
   },
   {
     email: "operations@talentpassport.in",
-    password: "Operations2026"
-  }
+    password: "Operations2026",
+  },
+  {
+    email: "msmadhursharma123@gmail.com",
+    password: "TalentPassport2026",
+  },
 ];
 
-const isValidAdmin =
-  admins.find(
+  const isValidAdmin = admins.find(
     (admin) =>
       admin.email === email &&
       admin.password === password
   );
 
-if (isValidAdmin) {
-
-  localStorage.setItem(
-    "userRole",
-    "admin"
-  );
-
-  onSuccess();
-
-  return;
-} {
-
-      localStorage.setItem(
-        "userRole",
-        "admin"
-      );
-
-      onSuccess();
-
-      return;
-    }
-
-    alert(
-      "Invalid Admin Credentials"
+  if (isValidAdmin) {
+    localStorage.setItem(
+      "userRole",
+      "admin"
     );
-  };
+
+    onSuccess();
+    return;
+  }
+
+  alert("Invalid Admin Credentials");
+};
 
   return (
     <div

@@ -2,8 +2,8 @@ import React from "react";
 
 import { useEffect, useState } from "react";
 import {
-  getSupabaseClient
-} from "../../supabaseClient";
+  getGrowthPlanData
+} from "../../data/passportRepository";
 
 import {
   getGrowthStage,
@@ -45,148 +45,79 @@ loadPassport();
 
 const loadPassport = async () => {
 
-try {
+  try {
 
-const profile =
-JSON.parse(
-localStorage.getItem(
-"studentProfile"
-) || "{}"
-);
+    const data =
+      await getGrowthPlanData();
 
-const studentId = profile.id;
+    if (!data)
+      return;
 
-if(!studentId) return;
+    setPassport(
+      data.passport
+    );
 
-const supabase =
-getSupabaseClient();
+    setDnaProfile(
+      data.dna
+    );
 
-if(!supabase) return;
+    const competitions =
+      data.submissions.length;
 
-const passportKey =
-profile.parent_email
-  ?.replace("@", "_")
-  .replace(/\./g, "_");
+    const projects =
+      data.projects.length;
 
-console.log("PROFILE", profile);
-console.log("PROFILE ID", profile.id);
-console.log("PARENT EMAIL", profile.parent_email);
-console.log("PASSPORT KEY", passportKey);
+    const portfolio =
+      data.assessments.length;
 
-const { data, error } =
-await supabase
-  .from("talent_passports_v2")
-  .select("*")
-  .eq("student_id", passportKey)
-  .maybeSingle();
+    const signals =
+      competitions +
+      projects +
+      portfolio +
+      (data.dna ? 1 : 0) +
+      data.evaluations.length;
 
-if (error) {
-  console.error(error);
-}
+    setAnalysisStats({
 
-setPassport(data);
+      competitions,
 
-setPassport(data);
+      projects,
 
-const [
-  submissionsResult,
-  projectsResult,
-  assessmentsResult,
-  dnaResult,
-  evaluationsResult
-] = await Promise.all([
+      portfolio,
 
-  supabase
-    .from("Submissions")
-    .select("*", { count: "exact" }),
+      signals
 
-  supabase
-    .from("student_projects")
-    .select("*", { count: "exact" }),
+    });
 
-  supabase
-    .from("student_assessments")
-    .select("*", { count: "exact" }),
+    console.log(
+      "CONNECTED PASSPORT",
+      data.passport
+    );
 
-  supabase
-    .from("student_dna_profiles")
-    .select("*", { count: "exact" }),
+    console.log(
+      "DNA PROFILE",
+      data.dna
+    );
 
-  supabase
-    .from("evaluations")
-    .select("*", { count: "exact" })
+    console.log(
+      "ANALYSIS STATS",
+      {
+        competitions,
+        projects,
+        portfolio,
+        signals
+      }
+    );
 
-]);
+  } catch (err) {
 
-const competitions =
-submissionsResult.count || 0;
+    console.error(err);
 
-const projects =
-projectsResult.count || 0;
+  } finally {
 
-const portfolio =
-assessmentsResult.count || 0;
+    setLoading(false);
 
-const signals =
-competitions +
-projects +
-portfolio +
-(dnaResult.count || 0) +
-(evaluationsResult.count || 0);
-
-setAnalysisStats({
-  competitions,
-  projects,
-  portfolio,
-  signals
-});
-
-console.log(
-  "ANALYSIS STATS",
-  {
-    competitions,
-    projects,
-    portfolio,
-    signals
   }
-);
-
-console.log(
-  "CONNECTED PASSPORT",
-  data
-);
-
-const { data:dnaData } =
-await supabase
-  .from("student_dna_profiles")
-  .select("*")
-  .eq(
-    "student_id",
-    passportKey
-  )
-  .maybeSingle();
-
-setDnaProfile(dnaData);
-
-console.log(
-  "DNA PROFILE",
-  dnaData
-);
-
-console.log("PASSPORT OBJECT", data);
-console.log("PASSPORT KEYS", Object.keys(data || {}));
-
-}
-catch(err){
-
-console.log(err);
-
-}
-finally{
-
-setLoading(false);
-
-}
 
 };
 
@@ -253,14 +184,10 @@ engineData
 
 const coachAdvice =
 getCoachAdvice(
-engineData
+  passport
 );
 
-const dnaEngine =
-getStudentDNA(
-  passport,
-  dnaProfile || {}
-);
+
 
 const studentDNA =
 getStudentDNA(

@@ -66,15 +66,8 @@ export default function AdminPortal({
 
 }: AdminPortalProps) {
 
-  const [
-
-    activeTab,
-
-    setActiveTab
-
-  ] = useState<AdminTab>(
-    "dashboard"
-  );
+const [activeTab, setActiveTab] =
+  useState<AdminTab>("dashboard");
 
   return (
 
@@ -108,36 +101,19 @@ export default function AdminPortal({
 
       <div style={navigationStyle}>
 
-        {TABS.map(tab => (
-
-          <button
-
-            key={tab.key}
-
-            onClick={() =>
-
-              setActiveTab(tab.key)
-
-            }
-
-            style={
-
-              activeTab === tab.key
-
-                ? activePill
-
-                : inactivePill
-
-            }
-
-          >
-
-            {tab.label}
-
-          </button>
-
-        ))}
-
+       {TABS.map((tab) => (
+  <button
+    key={tab.key}
+    onClick={() => setActiveTab(tab.key)}
+    style={
+      activeTab === tab.key
+        ? activePill
+        : inactivePill
+    }
+  >
+    {tab.label}
+  </button>
+))}
       </div>
 
       {/* CONTENT */}

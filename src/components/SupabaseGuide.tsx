@@ -9,7 +9,7 @@ import { isSupabaseConfigured } from '../supabaseClient';
 
 export default function SupabaseGuide() {
   const [copied, setCopied] = useState(false);
-  const isConfigured = isSupabaseConfigured();
+const isConfigured = isSupabaseConfigured();
 
   const sqlCode = `create table submissions (
   id uuid default gen_random_uuid() primary key,
@@ -24,11 +24,18 @@ export default function SupabaseGuide() {
   video_size bigint not null
 );`;
 
-  const copySql = () => {
-    navigator.clipboard.writeText(sqlCode);
+const copySql = async () => {
+  try {
+    await navigator.clipboard.writeText(sqlCode);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+
+    window.setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  } catch {
+    console.error("Unable to copy SQL.");
+  }
+};
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-slate-300 shadow-xl max-w-4xl mx-auto my-8">
@@ -86,7 +93,9 @@ export default function SupabaseGuide() {
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
-          <pre>{sqlCode}</pre>
+          <pre className="whitespace-pre-wrap">
+  {sqlCode}
+</pre>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
@@ -115,7 +124,7 @@ export default function SupabaseGuide() {
               <a
                 href="https://supabase.com/dashboard"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-850 hover:bg-slate-800 text-emerald-400 text-xs rounded-lg transition border border-slate-700"
               >
                 Supabase Dashboard
@@ -124,7 +133,7 @@ export default function SupabaseGuide() {
               <a
                 href="https://supabase.com/docs"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-850 hover:bg-slate-800 text-slate-300 text-xs rounded-lg transition border border-slate-700"
               >
                 Official Docs

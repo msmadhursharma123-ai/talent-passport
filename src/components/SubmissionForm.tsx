@@ -60,6 +60,14 @@ const [schoolName, setSchoolName] = useState("");
     }
   }, [pathway]);
 
+useEffect(() => {
+  return () => {
+    if (videoPreviewUrl) {
+      URL.revokeObjectURL(videoPreviewUrl);
+    }
+  };
+}, [videoPreviewUrl]);
+
   // Handle Drag Events
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -87,19 +95,24 @@ const [schoolName, setSchoolName] = useState("");
   };
 
   // Check file guidelines (video formats)
-  const validateAndSetVideo = (file: File) => {
-    if (!file.type.startsWith('video/')) {
-      setFormError('Please select a valid video file format (e.g. MP4, WebM, MOV).');
-      return;
-    }
-    // Limit to 200MB in simulation but let them pass
-    setFormError(null);
-    setVideoFile(file);
+const validateAndSetVideo = (file: File) => {
+  if (!file.type.startsWith("video/")) {
+    setFormError(
+      "Please select a valid video file format (e.g. MP4, WebM, MOV)."
+    );
+    return;
+  }
 
-    // Create single preview url
-    const objectUrl = URL.createObjectURL(file);
-    setVideoPreviewUrl(objectUrl);
-  };
+  if (videoPreviewUrl) {
+    URL.revokeObjectURL(videoPreviewUrl);
+  }
+
+  setFormError(null);
+  setVideoFile(file);
+
+  const objectUrl = URL.createObjectURL(file);
+  setVideoPreviewUrl(objectUrl);
+};
 
   // Navigate forward with validation
   const nextStep = () => {
@@ -134,7 +147,7 @@ const [schoolName, setSchoolName] = useState("");
   const prevStep = () => {
     setFormError(null);
     if (step > 1) {
-      setStep((step - 1) as any);
+   setStep((prev) => (prev - 1) as 1 | 2 | 3);
     }
   };
 
@@ -151,41 +164,58 @@ const [schoolName, setSchoolName] = useState("");
     setIsSubmitting(true);
     setUploadPercent(0);
 
-   const result = await onSubmit(
-  {
-   studentName,
-    studentEmail,
-    className,
-    schoolName,
-    pathway,
-    eventName,
-    description
-  },
-      videoFile,
-      (percent) => {
-        setUploadPercent(percent);
-      }
-    );
+setIsSubmitting(true);
+setUploadPercent(0);
 
-    setIsSubmitting(false);
-
-    if (result.success) {
-      setSubmitSuccess(true);
-    } else {
-      setFormError(result.error || 'Connection to Supabase storage timed out.');
+try {
+  const result = await onSubmit(
+    {
+      studentName,
+      studentEmail,
+      className,
+      schoolName,
+      pathway,
+      eventName,
+      description,
+    },
+    videoFile,
+    (percent) => {
+      setUploadPercent(percent);
     }
+  );
+
+  if (result.success) {
+    setSubmitSuccess(true);
+  } else {
+    setFormError(
+      result.error ||
+        "Connection to Supabase storage timed out."
+    );
+  }
+} catch {
+  setFormError(
+    "An unexpected error occurred while submitting your entry."
+  );
+} finally {
+  setIsSubmitting(false);
+}
   };
 
   // Quick reset
-  const handleReset = () => {
-    setStudentName('');
-    setStudentEmail('');
-    setDescription('');
-    setVideoFile(null);
-    setVideoPreviewUrl(null);
-    setStep(1);
-    setSubmitSuccess(false);
-  };
+const handleReset = () => {
+  if (videoPreviewUrl) {
+    URL.revokeObjectURL(videoPreviewUrl);
+  }
+
+  setStudentName("");
+  setStudentEmail("");
+  setDescription("");
+  setVideoFile(null);
+  setVideoPreviewUrl(null);
+  setUploadPercent(0);
+  setStep(1);
+  setSubmitSuccess(false);
+};
 
   if (submitSuccess) {
     return (

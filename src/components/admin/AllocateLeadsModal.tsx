@@ -59,19 +59,19 @@ export default function AllocateLeadsModal({
     setAllocating] =
     useState(false);
 
-  useEffect(() => {
+ useEffect(() => {
 
-    if (open) {
+  if (open) {
 
-      loadPartners();
-    }
+    void loadPartners();
+  }
 
-  }, [open]);
+}, [open]);
 
-  async function loadPartners() {
+async function loadPartners(): Promise<void> {
 
-    const supabase =
-      getSupabaseClient();
+  const supabase =
+    getSupabaseClient();
 
     if (!supabase) return;
 
@@ -90,19 +90,16 @@ export default function AllocateLeadsModal({
     );
   }
 
-  const specializations =
-    Array.from(
-      new Set(
-        partners.flatMap(
-          p =>
-            Array.isArray(
-              p.specialization
-            )
-              ? p.specialization
-              : []
-        )
+ const specializations =
+  Array.from(
+    new Set(
+      partners.flatMap((partner) =>
+        Array.isArray(partner.specialization)
+          ? partner.specialization
+          : []
       )
-    );
+    )
+  );
 
   const areas =
     Array.from(
@@ -181,9 +178,9 @@ export default function AllocateLeadsModal({
 
     ]);
 
-  async function allocateLeads() {
+async function allocateLeads(): Promise<void> {
 
-    if (!selectedPartner) {
+  if (!selectedPartner) {
 
       alert(
         "Please select a partner"
@@ -238,13 +235,12 @@ export default function AllocateLeadsModal({
         });
       }
 
-      alert(
-        `${selectedStudents.length} leads allocated successfully`
-      );
+    alert(
+  `${selectedStudents.length} leads allocated successfully`
+);
 
-      onSuccess();
-
-      onClose();
+onSuccess();
+onClose();
 
     } catch (error) {
 

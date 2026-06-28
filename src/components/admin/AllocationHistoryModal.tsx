@@ -35,24 +35,26 @@ export default function AllocationHistoryModal({
     setPeriod] =
     useState("all");
 
-  useEffect(() => {
+ useEffect(() => {
 
-    if (open) {
+  if (open) {
 
-      loadHistory();
-    }
+    void loadHistory();
 
-  }, [open]);
-
-  async function loadHistory() {
-
-    const data =
-      await fetchAllocationHistory();
-
-    setHistory(
-      data || []
-    );
   }
+
+}, [open]);
+
+async function loadHistory(): Promise<void> {
+
+  const data =
+    await fetchAllocationHistory();
+
+  setHistory(
+    data || []
+  );
+
+}
 
   const filteredHistory =
     useMemo(() => {
@@ -78,13 +80,13 @@ export default function AllocationHistoryModal({
         }
       );
 
-    }, [
+   }, [
 
-      history,
-      partnerSearch,
-      period
+  history,
 
-    ]);
+  partnerSearch
+
+]);
 
   const totalLeads =
     filteredHistory.reduce(
@@ -565,12 +567,15 @@ export default function AllocationHistoryModal({
   );
 }
 
+interface KPIProps {
+  title: string;
+  value: string | number;
+}
+
 function KPI({
-
   title,
-  value
-
-}: any) {
+  value,
+}: KPIProps) {
 
   return (
 

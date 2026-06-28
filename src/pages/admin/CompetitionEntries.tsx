@@ -78,14 +78,14 @@ export default function CompetitionEntries() {
     setEvaluationFilter] =
     useState("All");
 
-  useEffect(() => {
-    loadData();
-  }, []);
+useEffect(() => {
+  loadData();
+}, []);
 
-  async function loadData() {
+async function loadData(): Promise<void> {
 
-    const submissionsResult =
-      await fetchAllSubmissions();
+  const submissionsResult =
+    await fetchAllSubmissions();
 
     const studentsResult =
       await fetchStudentsMaster();
@@ -102,10 +102,7 @@ export default function CompetitionEntries() {
     setSubmissions(
       submissionsResult.submissions || []
     );
-console.log(
-  "ALL SUBMISSIONS",
-  submissionsResult.submissions
-);
+
 
     setStudents(
       studentsResult || []
@@ -130,10 +127,7 @@ setPassportScores(
   scoreResult || []
 );
 
-console.log(
-  "LOADED PASSPORT SCORES",
-  scoreResult
-);
+
 
   }
 
@@ -174,20 +168,7 @@ console.log(
       student.student_id
   );
 
-console.log(
-  "STUDENT",
-  student.student_name
-);
 
-console.log(
-  "MASTER ID",
-  student.student_id
-);
-
-console.log(
-  "MATCHED SUBMISSIONS",
-  studentSubmissions
-);
 
           const events =
             studentEvents.filter(
@@ -213,7 +194,7 @@ console.log(
           const completedCount =
 studentSubmissions.length;
 
-       const ALL_PATHWAYS = [
+     const ALL_PATHWAYS = [
   "Communication",
   "Creativity",
   "Thinking",
@@ -222,43 +203,7 @@ studentSubmissions.length;
 
 const normalizePathway = (
   pathway: string
-) => {
-
-  const PATHWAY_MAP: Record<
-    string,
-    string
-  > = {
-
-    "Communication":
-      "Communication",
-
-    "Creativity":
-      "Creativity",
-
-    "Creative Expression":
-      "Creativity",
-
-    "Thinking":
-      "Thinking",
-
-    "Problem Solving":
-      "Thinking",
-
-    "Critical Thinking":
-      "Thinking",
-
-    "Team Event":
-      "Team Event",
-
-    "Teamwork":
-      "Team Event",
-  };
-
-  return (
-    PATHWAY_MAP[pathway] ||
-    pathway
-  );
-};
+) => PATHWAY_MAP[pathway] ?? pathway;
 
 const submittedPathways =
   studentSubmissions.map(
@@ -300,12 +245,6 @@ const missingEvents =
                 : "Partially Evaluated";
           }
 
-console.log(
-  "FINAL STUDENT OBJECT",
-  student.student_name,
-  completedCount,
-  studentSubmissions.length
-);
 
           return {
             ...student,
@@ -1237,32 +1176,16 @@ setPassportScores(
 
 {(() => {
 
-  const studentScores =
-    passportScores.filter(
-      (s) =>
-        s.student_id ===
-        student.student_id
-    );
-<div
-  style={{
-    background: "yellow",
-    padding: "12px",
-    marginBottom: "10px",
-  }}
->
-  Scores Found:
-  {studentScores.length}
-</div>
-
-  console.log(
-    "STUDENT SCORES",
-    student.student_name,
-    studentScores
+ const studentScores =
+  passportScores.filter(
+    (s) =>
+      s.student_id ===
+      student.student_id
   );
 
-  if (
-    studentScores.length === 0
-  ) {
+if (
+  studentScores.length === 0
+) {
     return (
       <p>
         No evaluations yet

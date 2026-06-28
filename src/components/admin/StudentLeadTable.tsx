@@ -59,13 +59,16 @@ export default function StudentLeadTable({
     setStatusFilter] =
     useState("All");
 
- const schools = [
-  ...new Set(
-    students
-      .map(s => s.school_name)
-      .filter(Boolean)
-  ),
-];
+const schools = useMemo(
+  () => [
+    ...new Set(
+      students
+        .map((student) => student.school_name)
+        .filter(Boolean)
+    ),
+  ],
+  [students]
+);
 
 const classes = [
   ...new Set(
@@ -237,10 +240,10 @@ const activities = [
       return;
     }
 
-    setSelectedStudents([
-      ...selectedStudents,
-      studentId
-    ]);
+  setSelectedStudents([
+  ...selectedStudents,
+  studentId,
+]);
   }
 
   function toggleAll() {
@@ -255,11 +258,11 @@ const activities = [
       return;
     }
 
-    setSelectedStudents(
-      filteredStudents.map(
-        s => s.student_id
-      )
-    );
+ setSelectedStudents(
+  filteredStudents.map(
+    (student) => student.student_id
+  )
+);
   }
 
   return (
@@ -554,7 +557,7 @@ color: "#64748B",
             All {filter.label}
           </option>
 
-          {filter.options.map((item: any) => (
+          {filter.options.map((item: string) => (
             <option
               key={String(item)}
               value={String(item)}

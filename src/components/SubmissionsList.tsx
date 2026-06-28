@@ -3,9 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Submission, PathwayType } from '../types';
 import { Search, Filter, Video, Play, Mail, Tag, Calendar, Trash2, ArrowUpDown } from 'lucide-react';
+
+
 
 interface Props {
   submissions: Submission[];
@@ -13,6 +19,8 @@ interface Props {
   isMock: boolean;
   onClearMock?: () => void;
 }
+
+
 
 export default function SubmissionsList({ submissions, onRefresh, isMock, onClearMock }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,7 +35,9 @@ export default function SubmissionsList({ submissions, onRefresh, isMock, onClea
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+ return `${(
+  bytes / Math.pow(k, i)
+).toFixed(1)} ${sizes[i]}`;
   };
 
   // Format Date ISO
@@ -48,24 +58,63 @@ export default function SubmissionsList({ submissions, onRefresh, isMock, onClea
   };
 
   // Filter Submissions
-  const filteredSubmissions = submissions.filter((sub) => {
-    const matchesSearch =
-      sub.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sub.student_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sub.event_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sub.description.toLowerCase().includes(searchTerm.toLowerCase());
+const filteredSubmissions = useMemo(
+  () =>
+    submissions.filter((sub) => {
+      const matchesSearch =
+        sub.student_name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        sub.student_email
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        sub.event_name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        sub.description
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
 
-    const matchesPathway = selectedPathway === 'All' || sub.pathway === selectedPathway;
+      const matchesPathway =
+        selectedPathway === "All" ||
+        sub.pathway === selectedPathway;
 
-    return matchesSearch && matchesPathway;
-  });
+      return (
+        matchesSearch &&
+        matchesPathway
+      );
+    }),
+  [
+    submissions,
+    searchTerm,
+    selectedPathway,
+  ]
+);
 
   // Sort Submissions
-  const sortedSubmissions = [...filteredSubmissions].sort((a, b) => {
-    const dateA = new Date(a.created_at || '').getTime();
-    const dateB = new Date(b.created_at || '').getTime();
-    return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-  });
+const sortedSubmissions = useMemo(
+  () =>
+    [...filteredSubmissions].sort(
+      (a, b) => {
+        const dateA = new Date(
+          a.created_at || ""
+        ).getTime();
+
+        const dateB = new Date(
+          b.created_at || ""
+        ).getTime();
+
+        return sortOrder ===
+          "newest"
+          ? dateB - dateA
+          : dateA - dateB;
+      }
+    ),
+  [
+    filteredSubmissions,
+    sortOrder,
+  ]
+);
 
   // Helper to resolve specific professional color aesthetic per pathway
   const getPathwayBadgeStyles = (pathwayName: string) => {
@@ -82,6 +131,11 @@ export default function SubmissionsList({ submissions, onRefresh, isMock, onClea
         return 'bg-slate-50 text-slate-700 border-slate-150';
     }
   };
+
+  const closeVideoPreview = () => {
+  setActiveVideo(null);
+  setActiveVideoName("");
+};
 
   return (
     <div className="space-y-6">
@@ -168,7 +222,10 @@ export default function SubmissionsList({ submissions, onRefresh, isMock, onClea
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedSubmissions.map((sub, idx) => (
             <div
-              key={sub.id || idx}
+              key={
+  sub.id ??
+  `${sub.student_email}-${sub.event_name}`
+}
               className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col group justify-between"
               id={`submission-card-${sub.id || idx}`}
             >
@@ -247,10 +304,7 @@ export default function SubmissionsList({ submissions, onRefresh, isMock, onClea
                 {activeVideoName}
               </h4>
               <button
-                onClick={() => {
-                  setActiveVideo(null);
-                  setActiveVideoName('');
-                }}
+               onClick={closeVideoPreview}
                 className="text-slate-400 hover:text-slate-700 bg-slate-200/80 hover:bg-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer font-bold text-xs"
               >
                 ✕

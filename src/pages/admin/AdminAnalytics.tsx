@@ -110,16 +110,14 @@ const specializations = [
   ),
 ];
 
-  useEffect(() => {
+useEffect(() => {
+  loadData();
+}, []);
 
-    loadData();
+async function loadData(): Promise<void> {
 
-  }, []);
-
-  async function loadData() {
-
-    const supabase =
-      getSupabaseClient();
+  const supabase =
+    getSupabaseClient();
 
     if (!supabase)
       return;
@@ -196,13 +194,17 @@ const specializations = [
       ?.toLowerCase()
       .includes(partnerSearch.toLowerCase());
 
-  const matchesCategory =
-    categoryFilter === "All" ||
-    partner.category === categoryFilter;
+ const matchesCategory =
+  categoryFilter === "All" ||
+  partner.category === categoryFilter;
 
-  const matchesArea =
-    areaFilter === "All" ||
-    partner.institute_area === areaFilter;
+const matchesCity =
+  cityFilter === "All" ||
+  partner.institute_city === cityFilter;
+
+const matchesArea =
+  areaFilter === "All" ||
+  partner.institute_area === areaFilter;
 
   const matchesSpecialization =
   specializationFilter === "All" ||
@@ -221,13 +223,14 @@ const specializations = [
         Number(ageFilter.split("-")[1])
     );
 
-  return (
-    matchesSearch &&
-    matchesCategory &&
-    matchesArea &&
-    matchesSpecialization &&
-    matchesAge
-  );
+ return (
+  matchesSearch &&
+  matchesCategory &&
+  matchesCity &&
+  matchesArea &&
+  matchesSpecialization &&
+  matchesAge
+);
 });
 
   const totalSchools =
@@ -596,15 +599,10 @@ const specializations = [
               )
             }
 
-            onSuccess={() => {
-
-              loadData();
-
-              setSelectedStudents(
-                []
-              );
-
-            }}
+           onSuccess={() => {
+  void loadData();
+  setSelectedStudents([]);
+}}
 
           />
 
@@ -1279,14 +1277,7 @@ const searchStyle = {
 
 };
 
-const tableStyle = {
 
-  width:"100%",
-
-  borderCollapse:
-    "collapse" as const
-
-};
 
 const activeTabStyle = {
 

@@ -63,7 +63,7 @@ function average(
 // OVERALL STUDENT LEADERBOARD
 // ========================================
 
-export async function buildLeaderboard() {
+export async function buildLeaderboard(): Promise<LeaderboardRow[]> {
   const students: any[] =
   (await fetchStudentsMaster()) || [];
 
@@ -234,6 +234,50 @@ gap_to_top: 0,
       a.overall_score
   );
 
+const schoolRankMap = new Map<
+  string,
+  LeaderboardRow[]
+>();
+
+const classRankMap = new Map<
+  string,
+  LeaderboardRow[]
+>();
+
+for (const row of leaderboard) {
+  if (!schoolRankMap.has(row.school_name)) {
+    schoolRankMap.set(
+      row.school_name,
+      leaderboard
+        .filter(
+          (student) =>
+            student.school_name === row.school_name
+        )
+        .sort(
+          (a, b) =>
+            b.overall_score -
+            a.overall_score
+        )
+    );
+  }
+
+  if (!classRankMap.has(row.class_name)) {
+    classRankMap.set(
+      row.class_name,
+      leaderboard
+        .filter(
+          (student) =>
+            student.class_name === row.class_name
+        )
+        .sort(
+          (a, b) =>
+            b.overall_score -
+            a.overall_score
+        )
+    );
+  }
+}
+
   leaderboard.forEach(
   (
     item,
@@ -243,18 +287,8 @@ gap_to_top: 0,
     item.rank =
       index + 1;
 
-    const schoolStudents =
-      leaderboard
-        .filter(
-          (x) =>
-            x.school_name ===
-            item.school_name
-        )
-        .sort(
-          (a, b) =>
-            b.overall_score -
-            a.overall_score
-        );
+  const schoolStudents =
+  schoolRankMap.get(item.school_name) ?? [];
 
     item.school_rank =
       schoolStudents.findIndex(
@@ -263,18 +297,8 @@ gap_to_top: 0,
           item.student_id
       ) + 1;
 
-    const classStudents =
-      leaderboard
-        .filter(
-          (x) =>
-            x.class_name ===
-            item.class_name
-        )
-        .sort(
-          (a, b) =>
-            b.overall_score -
-            a.overall_score
-        );
+  const classStudents =
+  classRankMap.get(item.class_name) ?? [];
 
     item.class_rank =
       classStudents.findIndex(
@@ -299,14 +323,6 @@ gap_to_top: 0,
   }
 );
 
-console.log(
-  "LEADERBOARD RESULT",
-  JSON.stringify(
-    leaderboard,
-    null,
-    2
-  )
-);
 
   return leaderboard;
 }
@@ -317,7 +333,7 @@ console.log(
 
 export async function buildEventLeaderboard(
   eventName: string
-) {
+): Promise<EventLeaderboardRow[]> {
  const students: any[] =
   (await fetchStudentsMaster()) || [];
 
@@ -410,7 +426,11 @@ const scores: any[] =
 // UNIQUE FILTERS
 // ========================================
 
-export async function getLeaderboardFilters() {
+export async function getLeaderboardFilters(): Promise<{
+  schools: string[];
+  classes: string[];
+  events: string[];
+}> {
 
 const students: any[] =
   (await fetchStudentsMaster()) || [];

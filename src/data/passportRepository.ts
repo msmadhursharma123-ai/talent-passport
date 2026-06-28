@@ -238,3 +238,146 @@ export async function savePassport(
   }
 
 }
+
+/* ============================================================
+   GROWTH PLAN DATA
+
+   Loads every dataset required by GrowthPlan
+   using the authenticated student's identity.
+
+============================================================ */
+
+export async function getGrowthPlanData() {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase)
+    return null;
+
+  const studentId =
+    currentStudentId();
+
+  const [
+
+    passportResult,
+
+    dnaResult,
+
+    evaluationResult,
+
+    submissionResult,
+
+    projectResult,
+
+    assessmentResult
+
+  ] = await Promise.all([
+
+    (supabase as any)
+
+      .from(
+        "talent_passports_v2"
+      )
+
+      .select("*")
+
+      .eq(
+        "student_id",
+        studentId
+      )
+
+      .maybeSingle(),
+
+    (supabase as any)
+
+      .from(
+        "student_dna_profiles"
+      )
+
+      .select("*")
+
+      .eq(
+        "student_id",
+        studentId
+      )
+
+      .maybeSingle(),
+
+    (supabase as any)
+
+      .from(
+        "evaluations"
+      )
+
+      .select("*")
+
+      .eq(
+        "student_id",
+        studentId
+      ),
+
+    (supabase as any)
+
+      .from(
+        "submissions"
+      )
+
+      .select("*")
+
+      .eq(
+        "student_id",
+        studentId
+      ),
+
+    (supabase as any)
+
+      .from(
+        "student_projects"
+      )
+
+      .select("*")
+
+      .eq(
+        "student_id",
+        studentId
+      ),
+
+    (supabase as any)
+
+      .from(
+        "student_assessments"
+      )
+
+      .select("*")
+
+      .eq(
+        "student_id",
+        studentId
+      )
+
+  ]);
+
+  return {
+
+    passport:
+      passportResult.data,
+
+    dna:
+      dnaResult.data,
+
+    evaluations:
+      evaluationResult.data || [],
+
+    submissions:
+      submissionResult.data || [],
+
+    projects:
+      projectResult.data || [],
+
+    assessments:
+      assessmentResult.data || []
+
+  };
+
+}
