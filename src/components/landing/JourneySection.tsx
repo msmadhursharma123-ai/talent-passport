@@ -1,4 +1,4 @@
-import "../../Styles/journey.css";
+import "../../styles/journey.css";
 
 import SectionHeader from "../common/SectionHeader";
 

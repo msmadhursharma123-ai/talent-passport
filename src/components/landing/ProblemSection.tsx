@@ -1,4 +1,4 @@
-import "../../Styles/problemSection.css";
+import "../../styles/problemSection.css";
 import SectionHeader from "../common/SectionHeader";
 
 const todayJourney = [
