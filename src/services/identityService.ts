@@ -444,12 +444,33 @@ export function saveStudentIdentity(
   identity: StudentIdentity
 ): void {
 
-  identityCache = identity;
+  const normalized = buildIdentity(identity);
+
+  identityCache = normalized;
 
   localStorage.setItem(
-   STUDENT_STORAGE_KEY,
-    JSON.stringify(identity)
+    STUDENT_STORAGE_KEY,
+    JSON.stringify(normalized)
   );
+
+  if (import.meta.env.DEV) {
+
+    console.groupCollapsed(
+      "Identity Saved"
+    );
+
+    console.table({
+      authUserId: normalized.authUserId,
+      studentUuid: normalized.studentUuid,
+      masterStudentId: normalized.masterStudentId,
+      studentCode: normalized.studentCode,
+      studentName: normalized.studentName
+    });
+
+    console.groupEnd();
+
+  }
+
 }
 
 /* ============================================================
@@ -501,27 +522,50 @@ export function saveAdminIdentity(
 ============================================================ */
 
 export function getCurrentStudent():
-  StudentIdentity | null {
+StudentIdentity | null {
 
-  if (identityCache) {
+  if (
+    identityCache &&
+    validateIdentity(identityCache)
+  ) {
+
     return identityCache;
+
   }
 
-  const raw = localStorage.getItem(STUDENT_STORAGE_KEY);
+  const raw =
+    localStorage.getItem(
+      STUDENT_STORAGE_KEY
+    );
 
   if (!raw) {
+
     return null;
+
   }
 
   try {
 
-    const parsed: StudentIdentity = JSON.parse(raw);
+    const parsed =
+      buildIdentity(
+        JSON.parse(raw)
+      );
+
+    if (
+      !validateIdentity(parsed)
+    ) {
+
+      return null;
+
+    }
 
     identityCache = parsed;
 
     return parsed;
 
-  } catch {
+  }
+
+  catch {
 
     return null;
 
@@ -623,19 +667,20 @@ export function getIdentity():
 ============================================================ */
 
 export function requireIdentity():
-  StudentIdentity {
+StudentIdentity {
 
-  const identity = getCurrentStudent();
+  const identity =
+    getCurrentStudent();
 
-  if (!identity) {
+  if (identity) {
 
-    throw new Error(
-      "Student identity not found."
-    );
+    return identity;
 
   }
 
-  return identity;
+  throw new Error(
+    "Student identity not initialized."
+  );
 
 }
 
@@ -754,9 +799,9 @@ export function clearStudentIdentity(): void {
 
   identityCache = null;
 
-  localStorage.removeItem(STUDENT_STORAGE_KEY);
-
-  clearAuthSession();
+  localStorage.removeItem(
+    STUDENT_STORAGE_KEY
+  );
 
 }
 
@@ -797,7 +842,7 @@ export function clearAdminIdentity() {
 ============================================================ */
 
 export function refreshIdentity():
-  StudentIdentity | null {
+StudentIdentity | null {
 
   identityCache = null;
 
@@ -971,22 +1016,34 @@ export function mergeIdentity(
 /* ============================================================
    IDENTITY VALIDATION
 ============================================================ */
-
 export function validateIdentity(
   identity: StudentIdentity
 ): boolean {
 
-  return Boolean(
+    console.log("VALIDATING IDENTITY");
 
-    identity.studentUuid &&
-    identity.studentCode &&
-    identity.masterStudentId &&
-    identity.studentName
+    console.table({
 
-  );
+        studentUuid: identity.studentUuid,
+
+        studentCode: identity.studentCode,
+
+        masterStudentId: identity.masterStudentId,
+
+        studentName: identity.studentName
+
+    });
+
+    return Boolean(
+
+        identity.studentUuid &&
+        identity.studentCode &&
+        identity.masterStudentId &&
+        identity.studentName
+
+    );
 
 }
-
 /* ============================================================
    DEVELOPMENT HELPERS
 ============================================================ */

@@ -1,0 +1,993 @@
+/* ==========================================================
+   IMAGINE SECTION
+========================================================== */
+
+.imagine-section{
+
+    position:relative;
+
+    overflow:hidden;
+
+    padding:150px 0;
+
+    background:#fbfaf7;
+
+}
+
+.imagine-section::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    pointer-events:none;
+
+    background:
+
+        radial-gradient(
+            circle at 8% 18%,
+            rgba(244,168,37,.08),
+            transparent 30%
+        ),
+
+        radial-gradient(
+            circle at 92% 82%,
+            rgba(23,63,122,.05),
+            transparent 28%
+        );
+
+}
+
+/* ==========================================================
+   CONTAINER
+========================================================== */
+
+.imagine-container{
+
+    position:relative;
+
+    z-index:2;
+
+    width:min(1360px,90%);
+
+    margin:auto;
+
+}
+
+/* ==========================================================
+   TWO COLUMN LAYOUT
+========================================================== */
+
+.credential-layout{
+
+    display:grid;
+
+    grid-template-columns:44% 56%;
+
+    align-items:center;
+
+    gap:90px;
+
+    margin-top:90px;
+
+}
+
+/* ==========================================================
+   LEFT COLUMN
+========================================================== */
+
+.credential-left{
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+}
+
+.credential-tag{
+
+    display:inline-block;
+
+    width:max-content;
+
+    margin-bottom:28px;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    letter-spacing:.22em;
+
+    text-transform:uppercase;
+
+    color:#C5891A;
+
+}
+
+/* ==========================================================
+   EDITORIAL HEADING
+========================================================== */
+
+.credential-left h2{
+
+    margin:0 0 34px;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size:clamp(56px,5vw,82px);
+
+    line-height:1.02;
+
+    letter-spacing:-.04em;
+
+    font-weight:500;
+
+    color:#111827;
+
+}
+
+/* ==========================================================
+   BODY COPY
+========================================================== */
+
+.credential-left p{
+
+    margin:0 0 22px;
+
+    max-width:620px;
+
+    font-size:19px;
+
+    line-height:1.95;
+
+    color:#5F6674;
+
+}
+
+/* ==========================================================
+   OUTLINE PILL
+========================================================== */
+
+.credential-pill{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    width:max-content;
+
+    margin:22px 0 40px;
+
+    padding:12px 26px;
+
+    border-radius:999px;
+
+    border:1px solid rgba(23,63,122,.15);
+
+    background:transparent;
+
+    color:#173F7A;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    letter-spacing:.08em;
+
+    text-transform:uppercase;
+
+}
+
+/* ==========================================================
+   BENEFITS
+========================================================== */
+
+.credential-benefits{
+
+    margin:0;
+
+    padding:0;
+
+    list-style:none;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+.credential-benefits li{
+
+    display:flex;
+
+    align-items:flex-start;
+
+    gap:16px;
+
+    font-size:17px;
+
+    line-height:1.8;
+
+    color:#4B5563;
+
+}
+
+.credential-arrow{
+
+    flex-shrink:0;
+
+    color:#C5891A;
+
+    font-size:20px;
+
+    font-weight:700;
+
+    margin-top:1px;
+
+}
+
+/* ==========================================================
+   CREDENTIAL CARD
+========================================================== */
+
+.credential-card{
+
+    position:relative;
+
+    overflow:hidden;
+
+    background:#ffffff;
+
+    border-radius:36px;
+
+    padding:42px;
+
+    border:1px solid rgba(17,24,39,.08);
+
+    box-shadow:
+        0 30px 90px rgba(17,24,39,.08);
+
+}
+
+.credential-card::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,255,255,.85),
+            rgba(255,255,255,0)
+        );
+
+    pointer-events:none;
+
+}
+
+/* ==========================================================
+   WATERMARK
+========================================================== */
+
+.credential-watermark{
+
+    position:absolute;
+
+    right:-24px;
+
+    top:-34px;
+
+    font-size:180px;
+
+    font-weight:900;
+
+    line-height:1;
+
+    color:rgba(23,63,122,.035);
+
+    user-select:none;
+
+    pointer-events:none;
+
+}
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.credential-header{
+
+    position:relative;
+
+    z-index:2;
+
+}
+
+.credential-chip{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:8px 18px;
+
+    border-radius:999px;
+
+    border:1px solid rgba(197,137,26,.20);
+
+    color:#C5891A;
+
+    background:#FFFDF8;
+
+    font-size:11px;
+
+    font-weight:700;
+
+    letter-spacing:.18em;
+
+    text-transform:uppercase;
+
+    margin-bottom:20px;
+
+}
+
+.credential-header h3{
+
+    margin:0;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size:40px;
+
+    line-height:1.15;
+
+    font-weight:500;
+
+    color:#111827;
+
+}
+
+.credential-header p{
+
+    margin-top:12px;
+
+    color:#6B7280;
+
+    font-size:17px;
+
+    line-height:1.7;
+
+}
+
+/* ==========================================================
+   PASSPORT PREVIEW
+========================================================== */
+
+.credential-preview{
+
+    margin:34px 0 38px;
+
+    padding:14px;
+
+    border-radius:24px;
+
+    background:#F7F7F5;
+
+    border:1px solid rgba(17,24,39,.06);
+
+}
+
+.credential-preview img{
+
+    display:block;
+
+    width:100%;
+
+    height:auto;
+
+    border-radius:16px;
+
+    transition:
+        transform .35s ease;
+
+}
+
+.credential-card:hover .credential-preview img{
+
+    transform:scale(1.02);
+
+}
+
+/* ==========================================================
+   CREDENTIAL DETAILS
+========================================================== */
+
+.credential-details{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:2px;
+
+    margin-top:8px;
+
+}
+
+.credential-row{
+
+    display:grid;
+
+    grid-template-columns:140px 1fr;
+
+    align-items:center;
+
+    gap:20px;
+
+    padding:18px 0;
+
+    border-bottom:1px solid rgba(17,24,39,.08);
+
+}
+
+.credential-row:last-child{
+
+    border-bottom:none;
+
+}
+
+.credential-row span{
+
+    font-size:12px;
+
+    font-weight:700;
+
+    letter-spacing:.18em;
+
+    text-transform:uppercase;
+
+    color:#9CA3AF;
+
+}
+
+.credential-row strong{
+
+    font-size:16px;
+
+    font-weight:600;
+
+    line-height:1.6;
+
+    color:#111827;
+
+}
+
+/* ==========================================================
+   VERIFICATION PANEL
+========================================================== */
+
+.credential-verification{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:18px;
+
+    margin-top:34px;
+
+    padding:22px 24px;
+
+    border-radius:20px;
+
+    background:#FAFBFC;
+
+    border:1px solid rgba(17,24,39,.08);
+
+}
+
+.verification-icon{
+
+    width:58px;
+
+    height:58px;
+
+    flex-shrink:0;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:18px;
+
+    background:
+
+        linear-gradient(
+            135deg,
+            #173F7A,
+            #2E5F9E
+        );
+
+    color:#ffffff;
+
+    font-size:24px;
+
+    font-weight:800;
+
+    box-shadow:
+
+        0 18px 40px rgba(23,63,122,.20);
+
+}
+
+.verification-text{
+
+    flex:1;
+
+}
+
+.verification-text h4{
+
+    margin:0 0 6px;
+
+    font-size:20px;
+
+    font-weight:700;
+
+    color:#111827;
+
+}
+
+.verification-text p{
+
+    margin:0;
+
+    font-size:15px;
+
+    line-height:1.7;
+
+    color:#6B7280;
+
+}
+
+/* ==========================================================
+   BOTTOM QUOTE
+========================================================== */
+
+.credential-bottom{
+
+    max-width:900px;
+
+    margin:100px auto 0;
+
+    text-align:center;
+
+}
+
+.credential-bottom blockquote{
+
+    margin:0;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size:clamp(30px,3vw,44px);
+
+    line-height:1.45;
+
+    font-weight:500;
+
+    color:#111827;
+
+}
+
+.credential-bottom blockquote::before{
+
+    content:"“";
+
+    color:#C5891A;
+
+}
+
+.credential-bottom blockquote::after{
+
+    content:"”";
+
+    color:#C5891A;
+
+}
+
+/* ==========================================================
+   HOVER
+========================================================== */
+
+.credential-card{
+
+    transition:
+
+        transform .35s ease,
+
+        box-shadow .35s ease;
+
+}
+
+.credential-card:hover{
+
+    transform:translateY(-10px);
+
+    box-shadow:
+
+        0 40px 120px rgba(17,24,39,.12);
+
+}
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media (max-width:1200px){
+
+    .credential-layout{
+
+        grid-template-columns:1fr;
+
+        gap:70px;
+
+        max-width:920px;
+
+        margin-inline:auto;
+
+    }
+
+    .credential-left{
+
+        align-items:center;
+
+        text-align:center;
+
+    }
+
+    .credential-left p{
+
+        max-width:760px;
+
+    }
+
+    .credential-benefits{
+
+        width:100%;
+
+        max-width:700px;
+
+    }
+
+    .credential-pill{
+
+        margin-left:auto;
+
+        margin-right:auto;
+
+    }
+
+}
+
+@media (max-width:992px){
+
+    .imagine-section{
+
+        padding:110px 0;
+
+    }
+
+    .credential-layout{
+
+        gap:56px;
+
+        margin-top:70px;
+
+    }
+
+    .credential-left h2{
+
+        font-size:56px;
+
+    }
+
+    .credential-card{
+
+        padding:32px;
+
+    }
+
+    .credential-watermark{
+
+        font-size:140px;
+
+    }
+
+}
+
+@media (max-width:768px){
+
+    .imagine-section{
+
+        padding:80px 0;
+
+    }
+
+    .credential-layout{
+
+        gap:42px;
+
+        margin-top:60px;
+
+    }
+
+    .credential-left h2{
+
+        font-size:42px;
+
+        line-height:1.08;
+
+    }
+
+    .credential-left p{
+
+        font-size:17px;
+
+        line-height:1.8;
+
+    }
+
+    .credential-pill{
+
+        width:100%;
+
+        justify-content:center;
+
+        text-align:center;
+
+        font-size:12px;
+
+        padding:12px 18px;
+
+    }
+
+    .credential-benefits li{
+
+        font-size:16px;
+
+        justify-content:flex-start;
+
+    }
+
+    .credential-card{
+
+        padding:24px;
+
+        border-radius:28px;
+
+    }
+
+    .credential-header h3{
+
+        font-size:30px;
+
+    }
+
+    .credential-header p{
+
+        font-size:15px;
+
+    }
+
+    .credential-preview{
+
+        margin:26px 0;
+
+    }
+
+    .credential-row{
+
+        grid-template-columns:1fr;
+
+        gap:6px;
+
+        padding:16px 0;
+
+    }
+
+    .credential-row strong{
+
+        text-align:left;
+
+    }
+
+    .credential-verification{
+
+        padding:18px;
+
+        gap:14px;
+
+    }
+
+    .verification-icon{
+
+        width:48px;
+
+        height:48px;
+
+        font-size:20px;
+
+        border-radius:14px;
+
+    }
+
+    .verification-text h4{
+
+        font-size:18px;
+
+    }
+
+    .verification-text p{
+
+        font-size:14px;
+
+    }
+
+    .credential-bottom{
+
+        margin-top:70px;
+
+    }
+
+    .credential-bottom blockquote{
+
+        font-size:28px;
+
+    }
+
+}
+
+@media (max-width:480px){
+
+    .credential-left h2{
+
+        font-size:34px;
+
+    }
+
+    .credential-left p{
+
+        font-size:15px;
+
+    }
+
+    .credential-card{
+
+        padding:18px;
+
+        border-radius:22px;
+
+    }
+
+    .credential-watermark{
+
+        font-size:100px;
+
+    }
+
+    .credential-chip{
+
+        font-size:10px;
+
+        letter-spacing:.12em;
+
+    }
+
+    .credential-header h3{
+
+        font-size:24px;
+
+    }
+
+    .credential-preview{
+
+        border-radius:14px;
+
+        padding:8px;
+
+    }
+
+    .credential-preview img{
+
+        border-radius:10px;
+
+    }
+
+    .credential-bottom blockquote{
+
+        font-size:22px;
+
+    }
+
+}
+
+/* ==========================================================
+   PREMIUM ENTRANCE
+========================================================== */
+
+.credential-left{
+
+    animation:credentialFadeLeft .8s ease;
+
+}
+
+.credential-card{
+
+    animation:credentialFadeRight .8s ease;
+
+}
+
+@keyframes credentialFadeLeft{
+
+    from{
+
+        opacity:0;
+
+        transform:translateX(-40px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateX(0);
+
+    }
+
+}
+
+@keyframes credentialFadeRight{
+
+    from{
+
+        opacity:0;
+
+        transform:translateX(40px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateX(0);
+
+    }
+
+}

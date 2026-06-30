@@ -50,6 +50,12 @@ const loadPassport = async () => {
     const data =
       await getGrowthPlanData();
 
+console.log("================================");
+console.log("RAW DATA", data);
+console.log("PASSPORT", data?.passport);
+console.log("DNA", data?.dna);
+console.log("================================");
+
     if (!data)
       return;
 

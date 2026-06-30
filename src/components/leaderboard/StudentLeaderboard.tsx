@@ -6,7 +6,7 @@ import {
 } from "./LeaderboardEngine";
 
 import {
-  getStudentUuid
+  requireIdentity
 } from "../../services/identityService";
 
 type CompetencyCardProps = {
@@ -138,7 +138,7 @@ export default function StudentLeaderboard() {
     useState(true);
 
 const studentId =
-  getStudentUuid();
+  requireIdentity().studentCode;
 
   useEffect(() => {
     loadData();

@@ -57,7 +57,10 @@ export const submitCompetitionEntry = async (
   try {
 
     const identity =
-    requireIdentity();
+  requireIdentity();
+
+const studentCode =
+  identity.studentCode;
 
     const isMock = !isSupabaseConfigured();
 
@@ -140,30 +143,26 @@ identity.parentEmail ?? "",
 
     // 3. Save submission metadata in submissions table
 const { data, error: insertError } = await (supabase as any)
-  .from('submissions')
+  .from("submissions")
   .insert([
     {
-     student_id:
-    getStudentUuid(),
+      student_id: studentCode,
 
-student_name:
-    identity.studentName,
+      student_name: identity.studentName,
 
-student_email:
-identity.parentEmail ?? "",
+      student_email: identity.parentEmail ?? "",
 
-class_name:
-    identity.className,
+      class_name: identity.className,
 
-school_name:
-    identity.schoolName,
-  pathway: entry.pathway,
-  event_name: entry.eventName,
-  video_url: publicUrl,
-  description: entry.description,
-  video_name: file.name,
-  video_size: file.size,
-  transcript: entry.description,
+      school_name: identity.schoolName,
+
+      pathway: entry.pathway,
+      event_name: entry.eventName,
+      video_url: publicUrl,
+      description: entry.description,
+      video_name: file.name,
+      video_size: file.size,
+      transcript: entry.description,
     }
   ])
   .select();

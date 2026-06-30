@@ -1,0 +1,759 @@
+/* ==========================================================
+   HERO FLOATING CARDS
+   Talent Passport OS
+   ========================================================== */
+
+/* ===============================
+   MAIN STACK
+================================= */
+
+.hero-passport-stack {
+
+    position: relative;
+
+    width: 560px;
+
+    height: 680px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+}
+
+/* ===============================
+   PASSPORT CARD
+================================= */
+
+.passport-card {
+
+    position: relative;
+
+    width: 390px;
+
+    min-height: 570px;
+
+    border-radius: 34px;
+
+    padding: 34px;
+
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.18),
+            rgba(255,255,255,.08)
+        );
+
+    backdrop-filter: blur(30px);
+
+    border: 1px solid rgba(255,255,255,.15);
+
+    box-shadow:
+        0 40px 100px rgba(0,0,0,.18),
+        inset 0 1px 0 rgba(255,255,255,.15);
+
+    animation: passportFloat 8s ease-in-out infinite;
+
+}
+
+/* subtle glow */
+
+.passport-card::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(244,168,37,.22),
+            transparent 45%
+        );
+
+    pointer-events: none;
+
+}
+
+/* ===============================
+   HEADER
+================================= */
+
+.passport-top {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    margin-bottom: 32px;
+
+}
+
+.passport-title {
+
+    color: #F4A825;
+
+    font-size: 13px;
+
+    font-weight: 800;
+
+    letter-spacing: 3px;
+
+    margin-bottom: 6px;
+
+}
+
+.passport-subtitle {
+
+    color: rgba(255,255,255,.72);
+
+    font-size: 12px;
+
+    letter-spacing: 1px;
+
+    text-transform: uppercase;
+
+}
+
+.passport-badge {
+
+    padding: 8px 16px;
+
+    border-radius: 999px;
+
+    background: rgba(76,175,80,.18);
+
+    color: #7EE787;
+
+    border: 1px solid rgba(126,231,135,.35);
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    letter-spacing: 1px;
+
+}
+
+/* ===============================
+   PROFILE
+================================= */
+
+.passport-profile {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 18px;
+
+    margin-bottom: 30px;
+
+}
+
+.passport-avatar {
+
+    width: 74px;
+
+    height: 74px;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 22px;
+
+    font-weight: 700;
+
+    color: white;
+
+    background:
+        linear-gradient(
+            135deg,
+            #F4A825,
+            #F6C04B
+        );
+
+    box-shadow:
+        0 15px 35px rgba(244,168,37,.35);
+
+}
+
+.passport-profile h3 {
+
+    margin: 0;
+
+    color: white;
+
+    font-size: 28px;
+
+    font-weight: 700;
+
+}
+
+.passport-profile p {
+
+    margin-top: 6px;
+
+    color: rgba(255,255,255,.68);
+
+    font-size: 14px;
+
+}
+
+/* ===============================
+   SCORE
+================================= */
+
+.passport-score-card {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 20px;
+
+    border-radius: 24px;
+
+    margin-bottom: 34px;
+
+    background: rgba(255,255,255,.08);
+
+    border: 1px solid rgba(255,255,255,.10);
+
+}
+
+.passport-score-card span {
+
+    display: block;
+
+    color: rgba(255,255,255,.65);
+
+    font-size: 13px;
+
+    margin-bottom: 8px;
+
+}
+
+.passport-score-card strong {
+
+    color: white;
+
+    font-size: 36px;
+
+    font-weight: 800;
+
+}
+
+.score-ring {
+
+    width: 72px;
+
+    height: 72px;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    color: white;
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+    background:
+        linear-gradient(
+            135deg,
+            #F4A825,
+            #F6C04B
+        );
+
+    box-shadow:
+        0 18px 45px rgba(244,168,37,.35);
+
+}
+
+/* ===============================
+   SECTION TITLES
+================================= */
+
+.passport-section-title {
+
+    color: white;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    margin-bottom: 16px;
+
+}
+
+/* ===============================
+   SKILLS
+================================= */
+
+.passport-skills {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 12px;
+
+    margin-bottom: 28px;
+
+}
+
+.passport-skills span {
+
+    padding: 10px 16px;
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.08);
+
+    border: 1px solid rgba(255,255,255,.08);
+
+    color: white;
+
+    font-size: 13px;
+
+    transition: .3s;
+
+}
+
+.passport-skills span:hover {
+
+    background: #F4A825;
+
+    transform: translateY(-2px);
+
+}
+
+/* ===============================
+   DIVIDER
+================================= */
+
+.passport-divider {
+
+    width: 100%;
+
+    height: 1px;
+
+    margin: 26px 0;
+
+    background:
+        linear-gradient(
+            to right,
+            transparent,
+            rgba(255,255,255,.25),
+            transparent
+        );
+
+}
+
+/* ===============================
+   TALENT ECOSYSTEM GRID
+================================= */
+
+.passport-features {
+
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 14px;
+
+}
+
+.passport-feature {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 12px 14px;
+
+    border-radius: 16px;
+
+    background: rgba(255,255,255,.06);
+
+    border: 1px solid rgba(255,255,255,.08);
+
+    color: white;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    transition: .3s;
+
+}
+
+.passport-feature:hover {
+
+    background: rgba(244,168,37,.18);
+
+    transform: translateY(-2px);
+
+}
+
+.passport-feature span {
+
+    font-size: 18px;
+
+}
+
+/* ===============================
+   FOOTER
+================================= */
+
+.passport-footer {
+
+    margin-top: 28px;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
+
+.passport-footer span {
+
+    display: block;
+
+    color: rgba(255,255,255,.65);
+
+    font-size: 13px;
+
+}
+
+.passport-footer strong {
+
+    display: block;
+
+    margin-top: 6px;
+
+    color: white;
+
+    font-size: 26px;
+
+    font-weight: 800;
+
+}
+
+.passport-qr {
+
+    width: 72px;
+
+    height: 72px;
+
+    border-radius: 18px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    font-size: 18px;
+
+    font-weight: 700;
+
+    color: white;
+
+    background:
+        linear-gradient(
+            135deg,
+            #173F7A,
+            #2E5F9E
+        );
+
+    border: 2px solid rgba(255,255,255,.12);
+
+}
+
+/* ===============================
+   FLOATING CARDS
+================================= */
+
+.floating-card {
+
+    position: absolute;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 18px;
+
+    min-width: 220px;
+
+    border-radius: 22px;
+
+    background: rgba(255,255,255,.94);
+
+    backdrop-filter: blur(20px);
+
+    box-shadow:
+        0 25px 60px rgba(0,0,0,.14);
+
+    animation: floatingCard 6s ease-in-out infinite;
+
+}
+
+.floating-icon {
+
+    width: 48px;
+
+    height: 48px;
+
+    border-radius: 16px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    background:
+        linear-gradient(
+            135deg,
+            #F4A825,
+            #F6C04B
+        );
+
+    font-size: 22px;
+
+    flex-shrink: 0;
+
+}
+
+.floating-content {
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+.floating-content span {
+
+    color: #64748B;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+}
+
+.floating-content strong {
+
+    margin-top: 4px;
+
+    color: #173F7A;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+}
+
+.floating-content small {
+
+    margin-top: 6px;
+
+    color: #94A3B8;
+
+    font-size: 12px;
+
+}
+
+/* ===============================
+   CARD POSITIONS
+================================= */
+
+.achievement-card {
+
+    top: 40px;
+
+    right: -20px;
+
+}
+
+.leaderboard-card {
+
+    top: 190px;
+
+    left: -80px;
+
+    animation-delay: 1.2s;
+
+}
+
+.portfolio-card {
+
+    bottom: 120px;
+
+    right: -40px;
+
+    animation-delay: 2.4s;
+
+}
+
+.credits-card {
+
+    bottom: 20px;
+
+    left: -60px;
+
+    animation-delay: 3.6s;
+
+}
+
+.timeline-card {
+
+    top: 330px;
+
+    right: -70px;
+
+    animation-delay: 4.8s;
+
+}
+
+/* ===============================
+   ANIMATIONS
+================================= */
+
+@keyframes passportFloat {
+
+    0% {
+
+        transform: translateY(0);
+
+    }
+
+    50% {
+
+        transform: translateY(-14px);
+
+    }
+
+    100% {
+
+        transform: translateY(0);
+
+    }
+
+}
+
+@keyframes floatingCard {
+
+    0% {
+
+        transform: translateY(0);
+
+    }
+
+    50% {
+
+        transform: translateY(-10px);
+
+    }
+
+    100% {
+
+        transform: translateY(0);
+
+    }
+
+}
+
+/* ===============================
+   RESPONSIVE
+================================= */
+
+@media (max-width:1200px){
+
+.hero-passport-stack{
+
+    width:100%;
+
+    transform:scale(.9);
+
+}
+
+}
+
+@media (max-width:992px){
+
+.hero-passport-stack{
+
+    transform:scale(.82);
+
+    margin-top:60px;
+
+}
+
+.floating-card{
+
+    min-width:180px;
+
+}
+
+}
+
+@media (max-width:768px){
+
+.hero-passport-stack{
+
+    transform:scale(.72);
+
+    height:560px;
+
+}
+
+.achievement-card,
+.leaderboard-card,
+.portfolio-card,
+.credits-card,
+.timeline-card{
+
+    display:none;
+
+}
+
+.passport-card{
+
+    width:100%;
+
+    max-width:360px;
+
+}
+
+}

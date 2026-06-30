@@ -1,0 +1,380 @@
+/* ==========================================================
+   TALENT PASSPORT OS
+   GLOBAL LANDING ANIMATIONS
+========================================================== */
+
+/* ==========================================================
+   TRANSITIONS
+========================================================== */
+
+.fade-transition{
+
+    transition:all .35s cubic-bezier(.22,.61,.36,1);
+}
+
+.slow-transition{
+
+    transition:all .8s cubic-bezier(.22,.61,.36,1);
+}
+
+/* ==========================================================
+   FADE IN
+========================================================== */
+
+@keyframes fadeIn{
+
+    from{
+
+        opacity:0;
+    }
+
+    to{
+
+        opacity:1;
+    }
+
+}
+
+.fade-in{
+
+    animation:fadeIn .8s ease forwards;
+}
+
+/* ==========================================================
+   FADE UP
+========================================================== */
+
+@keyframes fadeUp{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(40px);
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+    }
+
+}
+
+.fade-up{
+
+    animation:fadeUp .9s cubic-bezier(.22,.61,.36,1) both;
+}
+
+/* ==========================================================
+   FADE DOWN
+========================================================== */
+
+@keyframes fadeDown{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(-35px);
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+    }
+
+}
+
+.fade-down{
+
+    animation:fadeDown .9s cubic-bezier(.22,.61,.36,1) both;
+}
+
+/* ==========================================================
+   SCALE IN
+========================================================== */
+
+@keyframes scaleIn{
+
+    from{
+
+        opacity:0;
+
+        transform:scale(.9);
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:scale(1);
+    }
+
+}
+
+.scale-in{
+
+    animation:scaleIn .7s ease both;
+}
+
+/* ==========================================================
+   FLOAT
+========================================================== */
+
+@keyframes float{
+
+    0%{
+
+        transform:translateY(0px);
+    }
+
+    50%{
+
+        transform:translateY(-14px);
+    }
+
+    100%{
+
+        transform:translateY(0px);
+    }
+
+}
+
+.float{
+
+    animation:float 6s ease-in-out infinite;
+}
+
+.float-slow{
+
+    animation:float 9s ease-in-out infinite;
+}
+
+.float-fast{
+
+    animation:float 4s ease-in-out infinite;
+}
+
+/* ==========================================================
+   GLOW
+========================================================== */
+
+@keyframes glow{
+
+    0%{
+
+        box-shadow:0 0 0 rgba(37,99,235,.15);
+    }
+
+    50%{
+
+        box-shadow:
+            0 0 40px rgba(37,99,235,.25);
+    }
+
+    100%{
+
+        box-shadow:0 0 0 rgba(37,99,235,.15);
+    }
+
+}
+
+.glow{
+
+    animation:glow 4s ease-in-out infinite;
+}
+
+/* ==========================================================
+   PULSE
+========================================================== */
+
+@keyframes pulse{
+
+    0%{
+
+        transform:scale(1);
+    }
+
+    50%{
+
+        transform:scale(1.03);
+    }
+
+    100%{
+
+        transform:scale(1);
+    }
+
+}
+
+.pulse{
+
+    animation:pulse 2.8s ease infinite;
+}
+
+/* ==========================================================
+   SHIMMER
+========================================================== */
+
+@keyframes shimmer{
+
+    from{
+
+        background-position:-200% center;
+    }
+
+    to{
+
+        background-position:200% center;
+    }
+
+}
+
+.shimmer{
+
+    background-size:200% auto;
+
+    animation:shimmer 5s linear infinite;
+}
+
+/* ==========================================================
+   ROTATE SLOW
+========================================================== */
+
+@keyframes rotateSlow{
+
+    from{
+
+        transform:rotate(0deg);
+    }
+
+    to{
+
+        transform:rotate(360deg);
+    }
+
+}
+
+.rotate-slow{
+
+    animation:rotateSlow 30s linear infinite;
+}
+
+/* ==========================================================
+   HOVER LIFT
+========================================================== */
+
+.hover-lift{
+
+    transition:
+
+        transform .35s cubic-bezier(.22,.61,.36,1),
+
+        box-shadow .35s cubic-bezier(.22,.61,.36,1);
+}
+
+.hover-lift:hover{
+
+    transform:
+
+        translateY(-8px);
+
+}
+
+/* ==========================================================
+   BUTTON PRESS
+========================================================== */
+
+.button-pop{
+
+    transition:
+
+        transform .25s ease;
+}
+
+.button-pop:active{
+
+    transform:
+
+        scale(.97);
+}
+
+/* ==========================================================
+   ICON BOUNCE
+========================================================== */
+
+@keyframes iconBounce{
+
+    0%{
+
+        transform:translateY(0);
+    }
+
+    50%{
+
+        transform:translateY(-4px);
+    }
+
+    100%{
+
+        transform:translateY(0);
+    }
+
+}
+
+.icon-hover:hover{
+
+    animation:iconBounce .5s ease;
+}
+
+/* ==========================================================
+   STAGGER DELAYS
+========================================================== */
+
+.delay-1{
+
+    animation-delay:.1s;
+}
+
+.delay-2{
+
+    animation-delay:.2s;
+}
+
+.delay-3{
+
+    animation-delay:.3s;
+}
+
+.delay-4{
+
+    animation-delay:.4s;
+}
+
+.delay-5{
+
+    animation-delay:.5s;
+}
+
+/* ==========================================================
+   ACCESSIBILITY
+========================================================== */
+
+@media (prefers-reduced-motion: reduce){
+
+    *,
+    *::before,
+    *::after{
+
+        animation:none !important;
+
+        transition:none !important;
+
+        scroll-behavior:auto !important;
+    }
+
+}

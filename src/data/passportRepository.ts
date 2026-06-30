@@ -1,21 +1,10 @@
 import { getSupabaseClient } from "../supabaseClient";
 
 import {
-  requireIdentity,
-  getTableIdentity
+    requireIdentity,
+    getCurrentStudent
 } from "../services/identityService";
 
-/* ============================================================
-   REPOSITORY IDENTITY HELPERS
-============================================================ */
-
-function currentStudentId(): string {
-  return getTableIdentity("student_dna_profiles");
-}
-
-function currentIdentity() {
-  return requireIdentity();
-}
 
 /* ============================================================
    SAVE PASSPORT
@@ -26,13 +15,29 @@ export async function savePassport(
   answers: any
 ) {
 
+console.log("========== SAVE PASSPORT START ==========");
+
   const supabase = getSupabaseClient();
 
   if (!supabase) return;
 
-  const identity = currentIdentity();
+ const identity = requireIdentity();
 
-  const studentId = currentStudentId();
+console.log("IDENTITY", identity);
+
+ const studentId = identity.studentUuid;
+
+  console.log("studentId =", studentId);
+
+console.log("identity =", identity);
+
+console.log("identity.studentUuid =", identity.studentUuid);
+
+console.log("identity.masterStudentId =", identity.masterStudentId);
+
+console.log("identity.studentCode =", identity.studentCode);
+
+  console.log("STUDENT ID", studentId);
 
   try {
 
@@ -75,157 +80,186 @@ export async function savePassport(
 
       );
 
-    /* ======================================================
-       SAVE DNA PROFILE
-    ====================================================== */
+   /* ======================================================
+   SAVE DNA PROFILE
+====================================================== */
 
-    const {
-      error: dnaError
-    } =
-      await (supabase as any)
+console.log("Saving DNA...");
 
-        .from(
-          "student_dna_profiles"
-        )
+console.log("========== DNA UPSERT PAYLOAD ==========");
 
-        .upsert(
+console.table({
 
-          [{
+    student_id: studentId,
 
-            student_id:
-              studentId,
+    student_name: identity.studentName,
 
-            student_name:
-              identity.studentName,
+    student_email: identity.parentEmail,
 
-            student_email:
-              identity.parentEmail,
+    school_name: identity.schoolName,
 
-            school_name:
-              identity.schoolName,
+    class_name: identity.className,
 
-            class_name:
-              identity.className,
+    dna_index: combined,
 
-            dna_index:
-              combined,
+    participation_index: 0,
 
-            participation_index:
-              0,
+    reliability: 100,
 
-            reliability:
-              100,
+    creativity_score: creativity,
 
-            creativity_score:
-              creativity,
+    communication_score: communication,
 
-            communication_score:
-              communication,
+    leadership_score: leadership,
 
-            leadership_score:
-              leadership,
+    confidence_score: confidence,
 
-            confidence_score:
-              confidence,
+    collaboration_score: collaboration,
 
-            collaboration_score:
-              collaboration,
+    critical_thinking_score: criticalThinking
 
-            critical_thinking_score:
-              criticalThinking,
+});
 
-            strengths: [],
+const {
 
-            growth_areas: [],
+    data: dnaData,
 
-            answers
+    error: dnaError
 
-          }],
+} = await (supabase as any)
 
-          {
+    .from("student_dna_profiles")
 
-            onConflict:
-              "student_id"
+    .upsert(
 
-          }
+      [{
 
-        );
+    student_id: studentId,
 
-    if (dnaError) {
+    student_name: identity.studentName,
 
-      console.error(
-        "DNA ERROR",
-        dnaError
-      );
+    student_email: identity.parentEmail,
 
-      return;
+    school_name: identity.schoolName ?? "",
 
-    }
+    class_name: identity.className ?? "",
 
-    /* ======================================================
-       SAVE PASSPORT
-    ====================================================== */
+    dna_index: combined,
 
-    const {
-      error: passportError
-    } =
-      await (supabase as any)
+    participation_index: 0,
 
-        .from(
-          "talent_passports_v2"
-        )
+    reliability: 100,
 
-        .upsert(
+    creativity_score: creativity,
 
-          [{
+    communication_score: communication,
 
-            student_id:
-              studentId,
+    leadership_score: leadership,
 
-            communication_score:
-              communication,
+    confidence_score: confidence,
 
-            creativity_score:
-              creativity,
+    collaboration_score: collaboration,
 
-            critical_thinking_score:
-              criticalThinking,
+    critical_thinking_score: criticalThinking,
 
-            team_score:
-              collaboration,
+    strengths: [],
 
-            combined_score:
-              combined,
+    growth_areas: [],
+
+    answers
+
+}],
+
+        {
+
+            onConflict: "student_id"
+
+        }
+
+    )
+
+    .select();
+
+console.log("DNA UPSERT DATA =", dnaData);
+
+console.log("DNA UPSERT ERROR =", dnaError);
+
+if (dnaError) {
+
+    console.error("========== DNA UPSERT FAILED ==========");
+
+    console.error(JSON.stringify(dnaError, null, 2));
+
+    return;
+
+}
+
+console.log("DNA UPSERT SUCCESS");
+
+  /* ======================================================
+   SAVE PASSPORT
+====================================================== */
+
+console.log("Saving Passport...");
+
+const {
+
+    data: passportData,
+
+    error: passportError
+
+} = await (supabase as any)
+
+    .from("talent_passports_v2")
+
+    .upsert(
+
+        [{
+
+            student_id: studentId,
+
+            communication_score: communication,
+
+            creativity_score: creativity,
+
+            critical_thinking_score: criticalThinking,
+
+            team_score: collaboration,
+
+            combined_score: combined,
 
             final_feedback:
-              "Generated from DNA Questionnaire"
+                "Generated from DNA Questionnaire"
 
-          }],
+        }],
 
-          {
+        {
 
-            onConflict:
-              "student_id"
+            onConflict: "student_id"
 
-          }
+        }
 
-        );
+    )
 
-    if (passportError) {
+    .select();
 
-      console.error(
-        "PASSPORT ERROR",
-        passportError
-      );
+console.log("PASSPORT UPSERT DATA =", passportData);
 
-      return;
+console.log("PASSPORT UPSERT ERROR =", passportError);
 
-    }
+console.log("STUDENT ID SAVED =", studentId);
 
-    console.log(
-      "DNA + PASSPORT SAVED"
-    );
+if (passportError) {
 
+    console.error("========== PASSPORT UPSERT FAILED ==========");
+
+    console.error(JSON.stringify(passportError, null, 2));
+
+    return;
+
+}
+
+console.log("DNA + PASSPORT SAVED");
   }
 
   catch (err) {
@@ -255,8 +289,15 @@ export async function getGrowthPlanData() {
   if (!supabase)
     return null;
 
-  const studentId =
-    currentStudentId();
+const identity = requireIdentity();
+
+const studentId =
+    identity.studentUuid;
+
+console.log(
+    "CURRENT STUDENT ID",
+    studentId
+);
 
   const [
 
@@ -272,91 +313,51 @@ export async function getGrowthPlanData() {
 
     assessmentResult
 
-  ] = await Promise.all([
+] = await Promise.all([
 
     (supabase as any)
-
-      .from(
-        "talent_passports_v2"
-      )
-
-      .select("*")
-
-      .eq(
-        "student_id",
-        studentId
-      )
-
-      .maybeSingle(),
+        .from("talent_passports_v2")
+        .select("*")
+        .eq("student_id", studentId)
+        .maybeSingle(),
 
     (supabase as any)
+        .from("student_dna_profiles")
+        .select("*")
+        .eq("student_id", studentId)
+        .maybeSingle(),
 
-      .from(
-        "student_dna_profiles"
-      )
-
-      .select("*")
-
-      .eq(
-        "student_id",
-        studentId
-      )
-
-      .maybeSingle(),
+    Promise.resolve({
+        data: [],
+        error: null
+    }),
 
     (supabase as any)
-
-      .from(
-        "evaluations"
-      )
-
-      .select("*")
-
-      .eq(
-        "student_id",
-        studentId
-      ),
+        .from("submissions")
+        .select("*")
+        .eq("student_id", studentId),
 
     (supabase as any)
-
-      .from(
-        "submissions"
-      )
-
-      .select("*")
-
-      .eq(
-        "student_id",
-        studentId
-      ),
+        .from("student_projects")
+        .select("*")
+        .eq("student_id", studentId),
 
     (supabase as any)
+        .from("student_assessments")
+        .select("*")
+        .eq("student_id", studentId)
 
-      .from(
-        "student_projects"
-      )
+]);
 
-      .select("*")
+  console.log(
+    "PASSPORT RESULT",
+    passportResult.data
+);
 
-      .eq(
-        "student_id",
-        studentId
-      ),
-
-    (supabase as any)
-
-      .from(
-        "student_assessments"
-      )
-
-      .select("*")
-
-      .eq(
-        "student_id",
-        studentId
-      )
-
-  ]);
+console.log(
+    "PASSPORT ERROR",
+    passportResult.error
+);
 
   return {
 

@@ -8,6 +8,10 @@ import {
 } from "../supabaseClient";
 
 import {
+    getGrowthPlanData
+} from "../data/passportRepository";
+
+import {
     StudentIdentity,
     buildIdentity,
     saveStudentIdentity,
@@ -68,6 +72,8 @@ AdminIdentity;
 interface StudentRow {
 
     id: string;
+
+    student_uuid: string; 
 
     auth_user_id: string | null;
 
@@ -361,7 +367,7 @@ function createStudentIdentity(
             row.student_email,
 
         studentUuid:
-            row.student_id,
+    row.student_uuid,
 
         masterStudentId:
             row.id,
@@ -419,7 +425,6 @@ export async function signIn(
             await supabase.auth.signInWithPassword({
 
                 email,
-
                 password
 
             });
@@ -429,7 +434,6 @@ export async function signIn(
             return {
 
                 success: false,
-
                 error: error.message
 
             };
@@ -444,7 +448,6 @@ export async function signIn(
             return {
 
                 success: false,
-
                 error:
                     "Authenticated user not found."
 
@@ -461,10 +464,14 @@ export async function signIn(
 
             await supabase.auth.signOut();
 
+            clearStudentIdentity();
+            clearPartnerIdentity();
+            clearAdminIdentity();
+            clearAuthSession();
+
             return {
 
                 success: false,
-
                 error:
                     "No linked profile found."
 
@@ -472,42 +479,102 @@ export async function signIn(
 
         }
 
-     switch (resolved.role) {
+        /**
+         * ==========================================
+         * Identity Kernel Rule
+         *
+         * Never clear the active identity.
+         * Only clear identities that belong
+         * to other roles.
+         * ==========================================
+         */
 
-    case "student":
+        switch (resolved.role) {
 
-        saveStudentIdentity(
-            resolved.identity
-        );
+            case "student":
 
-        break;
+                clearPartnerIdentity();
+                clearAdminIdentity();
 
-    case "partner":
+                saveStudentIdentity(
+                    resolved.identity
+                );
 
-        savePartnerIdentity(
-            resolved.identity
-        );
+                break;
 
-        break;
+            case "partner":
 
-    case "admin":
+                clearStudentIdentity();
+                clearAdminIdentity();
 
-        saveAdminIdentity(
-            resolved.identity
-        );
+                savePartnerIdentity(
+                    resolved.identity
+                );
 
-        break;
+                break;
 
-}
+            case "admin":
+
+                clearStudentIdentity();
+                clearPartnerIdentity();
+
+                saveAdminIdentity(
+                    resolved.identity
+                );
+
+                break;
+
+        }
 
         markAuthSessionInitialized();
+
+        /**
+         * Passport warm-up
+         */
+
+        if (resolved.role === "student") {
+
+            try {
+
+                const growth =
+                    await getGrowthPlanData();
+
+                if (growth?.passport) {
+
+                    localStorage.setItem(
+
+                        "studentPassport",
+
+                        JSON.stringify(
+                            growth.passport
+                        )
+
+                    );
+
+                }
+
+            }
+
+            catch (error) {
+
+                console.error(
+
+                    "Unable to restore passport.",
+
+                    error
+
+                );
+
+            }
+
+        }
 
         return {
 
             success: true,
 
             identity:
-resolved.identity
+                resolved.identity
 
         };
 
@@ -520,7 +587,9 @@ resolved.identity
             success: false,
 
             error:
+
                 error?.message ??
+
                 "Authentication failed."
 
         };
@@ -603,7 +672,8 @@ Promise<RestoreSessionResult> {
         if (!session) {
 
             clearStudentIdentity();
-
+            clearPartnerIdentity();
+            clearAdminIdentity();
             clearAuthSession();
 
             return {
@@ -617,76 +687,88 @@ Promise<RestoreSessionResult> {
 
         }
 
-      const resolved =
-    await resolveIdentity(
-        session.user.id
-    );
+        const resolved =
+            await resolveIdentity(
+                session.user.id
+            );
 
-if (!resolved) {
+        if (!resolved) {
 
-    await supabase.auth.signOut();
+            await supabase.auth.signOut();
 
-    clearStudentIdentity();
+            clearStudentIdentity();
+            clearPartnerIdentity();
+            clearAdminIdentity();
+            clearAuthSession();
 
-clearPartnerIdentity();
+            return {
 
-clearAdminIdentity();
+                success: false,
 
-clearAuthSession();
+                error:
+                    "No linked profile found."
 
-    return {
+            };
 
-        success: false,
+        }
 
-        error:
-            "No linked profile found."
+        /**
+         * Identity Kernel Rule
+         *
+         * Never leave the application
+         * in a state where ALL identities
+         * are cleared.
+         *
+         * Replace only the active identity.
+         */
 
-    };
+        switch (resolved.role) {
 
-}
+            case "student":
 
-clearStudentIdentity();
-clearPartnerIdentity();
-clearAdminIdentity();
+                clearPartnerIdentity();
+                clearAdminIdentity();
 
-switch (resolved.role) {
+                saveStudentIdentity(
+                    resolved.identity
+                );
 
-    case "student":
+                break;
 
-        saveStudentIdentity(
-            resolved.identity
-        );
+            case "partner":
 
-        break;
+                clearStudentIdentity();
+                clearAdminIdentity();
 
-    case "partner":
+                savePartnerIdentity(
+                    resolved.identity
+                );
 
-        savePartnerIdentity(
-            resolved.identity
-        );
+                break;
 
-        break;
+            case "admin":
 
-    case "admin":
+                clearStudentIdentity();
+                clearPartnerIdentity();
 
-        saveAdminIdentity(
-            resolved.identity
-        );
+                saveAdminIdentity(
+                    resolved.identity
+                );
 
-        break;
+                break;
 
-}
+        }
 
-markAuthSessionInitialized();
+        markAuthSessionInitialized();
 
-return {
+        return {
 
-    success: true,
+            success: true,
 
-identity:
-resolved.identity
+            identity:
+                resolved.identity
 
-};
+        };
 
     }
 
@@ -773,54 +855,64 @@ export function onAuthStateChange(): void {
 
     const {
         data
-    } = supabase.auth.onAuthStateChange(
-        async (
-            event,
-            session
-        ) => {
+    } =
+        supabase.auth.onAuthStateChange(
 
-            switch (event) {
+            async (
+                event,
+                session
+            ) => {
 
-                case "SIGNED_IN":
+                switch (event) {
 
-                    if (session?.user) {
+                    case "SIGNED_IN":
+
+                        /**
+                         * Session already initialized
+                         * by signIn().
+                         *
+                         * Avoid duplicate restore.
+                         */
+
+                        if (!hasAuthSession()) {
+
+                            await restoreSession();
+
+                        }
+
+                        break;
+
+                    case "TOKEN_REFRESHED":
+
+                        /**
+                         * Refresh identity silently.
+                         */
 
                         await restoreSession();
 
-                    }
+                        break;
 
-                    break;
+                    case "SIGNED_OUT":
 
-                case "TOKEN_REFRESHED":
+                        clearStudentIdentity();
 
-                    if (session?.user) {
+                        clearPartnerIdentity();
 
-                        await restoreSession();
+                        clearAdminIdentity();
 
-                    }
+                        clearAuthSession();
 
-                    break;
+                        break;
 
-                case "SIGNED_OUT":
+                    default:
 
-                  clearStudentIdentity();
+                        break;
 
-clearPartnerIdentity();
-
-clearAdminIdentity();
-
-clearAuthSession();
-
-                    break;
-
-                default:
-
-                    break;
+                }
 
             }
 
-        }
-    );
+        );
 
     authSubscription =
         data.subscription;

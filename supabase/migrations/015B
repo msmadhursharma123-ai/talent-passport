@@ -1,0 +1,35 @@
+BEGIN;
+
+------------------------------------------------------------
+-- STEP 1
+-- Drop old FK
+------------------------------------------------------------
+
+ALTER TABLE student_assessments
+DROP CONSTRAINT IF EXISTS student_assessments_student_id_fkey;
+
+------------------------------------------------------------
+-- STEP 2
+-- Update IDs
+------------------------------------------------------------
+
+UPDATE student_assessments a
+SET student_id = s.student_uuid
+FROM students s
+WHERE
+    a.student_id = s.id
+    AND a.student_id <> s.student_uuid;
+
+------------------------------------------------------------
+-- STEP 3
+-- Recreate FK
+------------------------------------------------------------
+
+ALTER TABLE student_assessments
+ADD CONSTRAINT student_assessments_student_id_fkey
+FOREIGN KEY (student_id)
+REFERENCES students(student_uuid)
+ON UPDATE CASCADE
+ON DELETE CASCADE;
+
+COMMIT;

@@ -61,37 +61,27 @@ async function loadPassport() {
 
 async function loadSubmissions() {
 
-  const studentIdentity =
-    requireIdentity();
+  const studentIdentity = requireIdentity();
 
-  const studentId =
-    studentIdentity.studentUuid;
+const studentId = studentIdentity.studentCode;
 
-  if (!studentId) {
-    return;
-  }
+if (!studentId) {
+  return;
+}
 
-  const supabase =
-    getSupabaseClient();
+const supabase = getSupabaseClient();
 
-  if (!supabase) {
-    return;
-  }
+if (!supabase) {
+  return;
+}
 
-  const { data, error } =
-    await supabase
-      .from("submissions")
-      .select("*")
-      .eq(
-        "student_id",
-        studentId
-      )
-      .order(
-        "created_at",
-        {
-          ascending: false
-        }
-      );
+const { data, error } = await supabase
+  .from("submissions")
+  .select("*")
+  .eq("student_id", studentId)
+  .order("created_at", {
+    ascending: false,
+  });
 
   if (error) {
 

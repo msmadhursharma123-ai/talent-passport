@@ -10,6 +10,11 @@ import {
 } from "../data/studentRepository";
 
 import {
+    getCurrentStudent,
+    requireIdentity
+} from "../services/identityService";
+
+import {
   generatePassport
 } from "../data/passportEngine";
 interface Question {
@@ -388,15 +393,46 @@ localStorage.setItem(
       "TALENT PASSPORT GENERATED"
     );
 
-    localStorage.setItem(
-      "studentAnswers",
-      JSON.stringify(answers)
-    );
+ localStorage.setItem(
+  "studentAnswers",
+  JSON.stringify(answers)
+);
+
+console.log("CALLING savePassport");
+
+console.log("========== BEFORE savePassport ==========");
+
+console.log(
+  "getCurrentStudent() =",
+  getCurrentStudent()
+);
+
+try {
+
+  console.log(
+    "requireIdentity() =",
+    requireIdentity()
+  );
+
+}
+
+catch (error) {
+
+  console.error(
+    "requireIdentity FAILED",
+    error
+  );
+
+}
+
+console.log("CALLING savePassport");
 
 await savePassport(
   scores,
   answers
 );
+
+console.log("savePassport FINISHED");
 
 const studentProfile =
   JSON.parse(

@@ -1,0 +1,241 @@
+/* ==========================================================
+   TALENT PASSPORT
+   LANDING DESIGN SYSTEM
+========================================================== */
+
+/* ==========================================================
+   ROOT VARIABLES
+========================================================== */
+
+:root{
+
+    /* ---------- Layout ---------- */
+
+    --landing-max-width:1240px;
+
+    --landing-section-space:88px;
+
+    --landing-card-radius:28px;
+
+    /* ---------- Typography ---------- */
+
+    --landing-title:
+        clamp(2.6rem,3.8vw,3.8rem);
+
+    --landing-copy:
+        1.08rem;
+
+    --landing-small:
+        .92rem;
+
+    /* ---------- Shadows ---------- */
+
+    --shadow-soft:
+        0 18px 50px rgba(15,23,42,.06);
+
+    --shadow-medium:
+        0 28px 70px rgba(15,23,42,.08);
+
+    --shadow-large:
+        0 45px 120px rgba(15,23,42,.12);
+
+}
+
+/* ==========================================================
+   MAIN WRAPPER
+========================================================== */
+
+.landing-shell{
+
+    position:relative;
+
+    overflow-x:hidden;
+
+    background:#ffffff;
+
+}
+
+/* ==========================================================
+   COMMON CONTAINER
+========================================================== */
+
+.landing-shell .landing-container{
+
+    width:min(
+
+        var(--landing-max-width),
+
+        92%
+
+    );
+
+    margin-inline:auto;
+
+}
+
+/* ==========================================================
+   PANEL SYSTEM
+========================================================== */
+
+.landing-shell .landing-panel{
+
+    min-height:88vh;
+
+    display:flex;
+
+    align-items:center;
+
+    padding:
+
+        var(--landing-section-space)
+
+        0;
+
+}
+
+/* ==========================================================
+   TYPOGRAPHY
+========================================================== */
+
+.landing-shell .section-title{
+
+    font-size:
+
+        var(--landing-title);
+
+}
+
+.landing-shell .section-description{
+
+    max-width:760px;
+
+    margin-inline:auto;
+
+    font-size:
+
+        var(--landing-copy);
+
+    line-height:1.85;
+
+}
+
+.landing-shell .section-eyebrow{
+
+    margin-bottom:20px;
+
+}
+
+/* ==========================================================
+   CARD SYSTEM
+========================================================== */
+
+.landing-shell .glass-card,
+
+.landing-shell .passport-card,
+
+.landing-shell .credential-card,
+
+.landing-shell .problem-column,
+
+.landing-shell .journey-card,
+
+.landing-shell .recognition-card,
+
+.landing-shell .community-card,
+
+.landing-shell .opportunity-card,
+
+.landing-shell .impact-card{
+
+    border-radius:
+
+        var(--landing-card-radius);
+
+}
+
+/* ==========================================================
+   IMAGES
+========================================================== */
+
+.landing-shell img{
+
+    max-width:100%;
+
+    display:block;
+
+}
+
+/* ==========================================================
+   DESKTOP FLOW
+========================================================== */
+
+@media(min-width:1200px){
+
+.landing-shell section{
+
+    scroll-margin-top:80px;
+
+}
+
+}
+
+/* ==========================================================
+   COMPACT VERTICAL RHYTHM
+========================================================== */
+
+.hero-section,
+.problem-section,
+.imagine-section,
+.journey-section,
+.recognition-section,
+.opportunity-section,
+.community-section,
+.impact-section{
+
+    padding-top:50px !important;
+
+    padding-bottom:50px !important;
+
+}
+
+.section-header{
+
+    margin-bottom:45px !important;
+
+}
+
+.problem-container,
+.imagine-container,
+.journey-container,
+.recognition-container,
+.opportunity-container,
+.community-container,
+.impact-container{
+
+    row-gap:28px;
+
+}
+
+.problem-column,
+.passport-card,
+.credential-card,
+.imagine-card,
+.journey-card,
+.recognition-card,
+.community-card,
+.opportunity-card,
+.impact-card{
+
+    padding:26px !important;
+
+}
+
+.passport-bottom,
+.problem-bottom-text,
+.community-bottom,
+.impact-bottom{
+
+    margin-top:45px !important;
+
+}
+

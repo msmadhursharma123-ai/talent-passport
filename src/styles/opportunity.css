@@ -1,0 +1,391 @@
+/* ==========================================================
+   OPPORTUNITY SECTION
+========================================================== */
+
+.opportunity-section{
+
+    position:relative;
+
+    overflow:hidden;
+
+    padding:150px 0;
+
+    background:
+        linear-gradient(
+            180deg,
+            #FFFFFF 0%,
+            #F8FBFF 100%
+        );
+
+}
+
+.opportunity-section::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:-250px;
+
+    right:-250px;
+
+    width:650px;
+
+    height:650px;
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(244,168,37,.08),
+            transparent 70%
+        );
+
+}
+
+.opportunity-section::after{
+
+    content:"";
+
+    position:absolute;
+
+    bottom:-300px;
+
+    left:-300px;
+
+    width:700px;
+
+    height:700px;
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(46,95,158,.08),
+            transparent 70%
+        );
+
+}
+
+/* ======================================
+   CONTAINER
+====================================== */
+
+.opportunity-container{
+
+    position:relative;
+
+    z-index:2;
+
+    width:min(1400px,92%);
+
+    margin:auto;
+
+}
+
+/* ======================================
+   GRID
+====================================== */
+
+.opportunity-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:30px;
+
+    margin-top:90px;
+
+    margin-bottom:90px;
+
+}
+
+/* ======================================
+   CARD
+====================================== */
+
+.opportunity-card{
+
+    background:white;
+
+    border-radius:30px;
+
+    padding:40px;
+
+    border:1px solid rgba(23,63,122,.08);
+
+    box-shadow:
+        0 20px 60px rgba(0,0,0,.06);
+
+    transition:.35s;
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+.opportunity-card::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+
+        linear-gradient(
+            135deg,
+            rgba(244,168,37,.05),
+            transparent
+        );
+
+    opacity:0;
+
+    transition:.35s;
+
+}
+
+.opportunity-card:hover{
+
+    transform:translateY(-10px);
+
+    box-shadow:
+
+        0 35px 80px rgba(23,63,122,.12);
+
+}
+
+.opportunity-card:hover::before{
+
+    opacity:1;
+
+}
+
+.opportunity-icon{
+
+    width:78px;
+
+    height:78px;
+
+    border-radius:22px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:34px;
+
+    margin-bottom:28px;
+
+    background:
+
+        linear-gradient(
+            135deg,
+            #173F7A,
+            #2E5F9E
+        );
+
+}
+
+.opportunity-card h3{
+
+    font-size:28px;
+
+    color:#173F7A;
+
+    margin-bottom:16px;
+
+    font-weight:800;
+
+}
+
+.opportunity-card p{
+
+    color:#677489;
+
+    font-size:17px;
+
+    line-height:1.8;
+
+}
+
+/* ======================================
+   CTA BANNER
+====================================== */
+
+.opportunity-banner{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:50px;
+
+    padding:60px;
+
+    border-radius:36px;
+
+    background:
+
+        linear-gradient(
+            135deg,
+            #173F7A,
+            #2E5F9E
+        );
+
+    color:white;
+
+    box-shadow:
+
+        0 35px 90px rgba(23,63,122,.22);
+
+}
+
+.opportunity-banner h2{
+
+    font-size:42px;
+
+    line-height:1.2;
+
+    margin-bottom:18px;
+
+    font-weight:800;
+
+}
+
+.opportunity-banner p{
+
+    font-size:18px;
+
+    line-height:1.9;
+
+    color:rgba(255,255,255,.82);
+
+    max-width:700px;
+
+}
+
+.opportunity-btn{
+
+    border:none;
+
+    outline:none;
+
+    cursor:pointer;
+
+    white-space:nowrap;
+
+    padding:18px 36px;
+
+    border-radius:999px;
+
+    background:#F4A825;
+
+    color:white;
+
+    font-size:16px;
+
+    font-weight:700;
+
+    transition:.35s;
+
+}
+
+.opportunity-btn:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:
+
+        0 18px 45px rgba(244,168,37,.35);
+
+}
+
+/* ======================================
+   RESPONSIVE
+====================================== */
+
+@media(max-width:1100px){
+
+.opportunity-grid{
+
+    grid-template-columns:repeat(2,1fr);
+
+}
+
+.opportunity-banner{
+
+    flex-direction:column;
+
+    text-align:center;
+
+}
+
+}
+
+@media(max-width:768px){
+
+.opportunity-section{
+
+    padding:100px 0;
+
+}
+
+.opportunity-grid{
+
+    grid-template-columns:1fr;
+
+}
+
+.opportunity-card{
+
+    padding:30px;
+
+}
+
+.opportunity-card h3{
+
+    font-size:22px;
+
+}
+
+.opportunity-card p{
+
+    font-size:15px;
+
+}
+
+.opportunity-banner{
+
+    padding:40px 30px;
+
+}
+
+.opportunity-banner h2{
+
+    font-size:30px;
+
+}
+
+.opportunity-banner p{
+
+    font-size:16px;
+
+}
+
+.opportunity-btn{
+
+    width:100%;
+
+}
+
+}

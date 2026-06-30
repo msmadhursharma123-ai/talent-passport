@@ -1,0 +1,306 @@
+/* ==========================================================
+   TALENT PASSPORT OS
+   GLOBAL RESPONSIVE SYSTEM
+   Landing V2
+========================================================== */
+
+/* ==========================================================
+   LARGE DESKTOP
+   1600px+
+========================================================== */
+
+@media (min-width:1600px){
+
+    .landing-container{
+
+        max-width:1500px;
+    }
+
+}
+
+/* ==========================================================
+   LAPTOP
+   1280px
+========================================================== */
+
+@media (max-width:1280px){
+
+    :root{
+
+        --section-space:100px;
+    }
+
+    .landing-container{
+
+        padding-inline:56px;
+    }
+
+    .display-title{
+
+        font-size:clamp(3.5rem,5vw,4.8rem);
+    }
+
+    .section-title{
+
+        font-size:clamp(2.6rem,4vw,3.8rem);
+    }
+
+}
+
+/* ==========================================================
+   SMALL LAPTOP
+   1100px
+========================================================== */
+
+@media (max-width:1100px){
+
+    .landing-container{
+
+        padding-inline:48px;
+    }
+
+    .landing-section{
+
+        padding-block:90px;
+    }
+
+}
+
+/* ==========================================================
+   TABLET
+========================================================== */
+
+@media (max-width:992px){
+
+    :root{
+
+        --section-space:80px;
+    }
+
+    .landing-container{
+
+        padding-inline:40px;
+    }
+
+    .display-title{
+
+        font-size:clamp(3rem,8vw,4rem);
+    }
+
+    .section-title{
+
+        font-size:clamp(2.4rem,6vw,3rem);
+    }
+
+    .section-heading{
+
+        font-size:2rem;
+    }
+
+    .section-subtitle{
+
+        font-size:1.05rem;
+
+        line-height:1.8;
+    }
+
+}
+
+/* ==========================================================
+   MOBILE LANDSCAPE
+========================================================== */
+
+@media (max-width:768px){
+
+    :root{
+
+        --section-space:70px;
+    }
+
+    .landing-container{
+
+        padding-inline:28px;
+    }
+
+    .display-title{
+
+        font-size:clamp(2.7rem,9vw,3.6rem);
+
+        line-height:1.08;
+    }
+
+    .section-title{
+
+        font-size:clamp(2rem,8vw,2.8rem);
+
+        line-height:1.12;
+    }
+
+    .section-heading{
+
+        font-size:1.75rem;
+    }
+
+    .section-subtitle{
+
+        font-size:1rem;
+    }
+
+    .premium-card{
+
+        border-radius:20px;
+    }
+
+}
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width:576px){
+
+    :root{
+
+        --section-space:60px;
+    }
+
+    .landing-container{
+
+        padding-inline:20px;
+    }
+
+    .display-title{
+
+        font-size:2.4rem;
+    }
+
+    .section-title{
+
+        font-size:2rem;
+    }
+
+    .section-heading{
+
+        font-size:1.55rem;
+    }
+
+    .section-subtitle{
+
+        font-size:.98rem;
+
+        line-height:1.75;
+    }
+
+    .premium-card{
+
+        border-radius:18px;
+    }
+
+}
+
+/* ==========================================================
+   SMALL MOBILE
+========================================================== */
+
+@media (max-width:400px){
+
+    .landing-container{
+
+        padding-inline:16px;
+    }
+
+    .display-title{
+
+        font-size:2.15rem;
+    }
+
+    .section-title{
+
+        font-size:1.8rem;
+    }
+
+    .section-heading{
+
+        font-size:1.45rem;
+    }
+
+}
+
+/* ==========================================================
+   GLOBAL RESPONSIVE HELPERS
+========================================================== */
+
+img{
+
+    max-width:100%;
+
+    height:auto;
+}
+
+video{
+
+    max-width:100%;
+
+    height:auto;
+}
+
+iframe{
+
+    max-width:100%;
+}
+
+table{
+
+    width:100%;
+}
+
+button{
+
+    touch-action:manipulation;
+}
+
+/* ==========================================================
+   MOBILE FLEX HELPERS
+========================================================== */
+
+.mobile-column{
+
+    display:flex;
+}
+
+@media(max-width:768px){
+
+    .mobile-column{
+
+        flex-direction:column;
+    }
+
+}
+
+.mobile-center{
+
+    text-align:inherit;
+}
+
+@media(max-width:768px){
+
+    .mobile-center{
+
+        text-align:center;
+    }
+
+}
+
+.mobile-full{
+
+    width:auto;
+}
+
+@media(max-width:768px){
+
+    .mobile-full{
+
+        width:100%;
+    }
+
+}

@@ -158,7 +158,7 @@ studentCode,
 
     authUserId: studentRow.id,
 
-    studentUuid: studentRow.id,
+    studentUuid: studentRow.student_uuid,
 
     masterStudentId: masterRow.id,
 
@@ -175,6 +175,20 @@ studentCode,
     parentPhone: masterRow.phone,
 
     email: studentRow.student_email
+
+});
+
+console.log("IDENTITY CREATED");
+
+console.table({
+
+  authUserId: identity.authUserId,
+
+  studentCode: identity.studentCode,
+
+  masterStudentId: identity.masterStudentId,
+
+  studentUuid: identity.studentUuid
 
 });
 
@@ -689,9 +703,7 @@ export async function getStudentProjects() {
 
   const { data, error } =
     await (supabase as any)
-      .from(
-        "student_projects"
-      )
+      .from("student_projects")
       .select("*")
       .eq(
         "student_id",
@@ -1163,8 +1175,8 @@ export async function getStudentCompetitionCount(): Promise<number> {
   if (!supabase)
     return 0;
 
-  const masterStudentId =
-    currentMasterStudentId();
+  const studentCode =
+  currentStudentCode();
 
   const {
     count,
@@ -1183,10 +1195,10 @@ export async function getStudentCompetitionCount(): Promise<number> {
       }
     )
 
-    .eq(
-      "student_id",
-      masterStudentId
-    );
+  .eq(
+  "student_id",
+  studentCode
+);
 
   if (error) {
 

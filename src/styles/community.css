@@ -1,0 +1,430 @@
+/* ==========================================================
+   COMMUNITY SECTION
+========================================================== */
+
+.community-section{
+
+    position:relative;
+
+    overflow:hidden;
+
+    padding:150px 0;
+
+    background:
+        linear-gradient(
+            180deg,
+            #F8FBFF 0%,
+            #FFFFFF 100%
+        );
+
+}
+
+.community-section::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:-220px;
+
+    left:-220px;
+
+    width:620px;
+
+    height:620px;
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(244,168,37,.08),
+            transparent 70%
+        );
+
+}
+
+.community-section::after{
+
+    content:"";
+
+    position:absolute;
+
+    bottom:-260px;
+
+    right:-260px;
+
+    width:700px;
+
+    height:700px;
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(46,95,158,.08),
+            transparent 70%
+        );
+
+}
+
+/* ==========================================
+   CONTAINER
+========================================== */
+
+.community-container{
+
+    position:relative;
+
+    z-index:2;
+
+    width:min(1450px,94%);
+
+    margin:auto;
+
+}
+
+/* ==========================================
+   GRID
+========================================== */
+
+.community-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(5,1fr);
+
+    gap:24px;
+
+    margin:90px 0;
+
+    align-items:stretch;
+
+}
+
+/* ==========================================
+   CARD
+========================================== */
+
+.community-card{
+
+    background:white;
+
+    border-radius:30px;
+
+    padding:36px 28px;
+
+    border:1px solid rgba(23,63,122,.08);
+
+    box-shadow:
+
+        0 20px 60px rgba(0,0,0,.06);
+
+    transition:.35s;
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+.community-card::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+
+        linear-gradient(
+
+            180deg,
+
+            rgba(244,168,37,.05),
+
+            transparent
+
+        );
+
+    opacity:0;
+
+    transition:.35s;
+
+}
+
+.community-card:hover{
+
+    transform:translateY(-12px);
+
+    box-shadow:
+
+        0 35px 90px rgba(23,63,122,.12);
+
+}
+
+.community-card:hover::before{
+
+    opacity:1;
+
+}
+
+/* ==========================================
+   STAGGER EFFECT
+========================================== */
+
+.community-card:nth-child(2){
+
+    margin-top:30px;
+
+}
+
+.community-card:nth-child(4){
+
+    margin-top:30px;
+
+}
+
+.community-card:nth-child(3){
+
+    transform:translateY(-20px);
+
+}
+
+.community-card:nth-child(3):hover{
+
+    transform:translateY(-32px);
+
+}
+
+/* ==========================================
+   ICON
+========================================== */
+
+.community-icon{
+
+    width:80px;
+
+    height:80px;
+
+    border-radius:24px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    margin-bottom:28px;
+
+    font-size:36px;
+
+    background:
+
+        linear-gradient(
+
+            135deg,
+
+            #173F7A,
+
+            #2E5F9E
+
+        );
+
+    box-shadow:
+
+        0 18px 45px rgba(23,63,122,.20);
+
+}
+
+/* ==========================================
+   LABEL
+========================================== */
+
+.community-label{
+
+    display:inline-block;
+
+    padding:8px 18px;
+
+    border-radius:999px;
+
+    background:rgba(244,168,37,.12);
+
+    color:#F4A825;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    letter-spacing:1px;
+
+    text-transform:uppercase;
+
+    margin-bottom:20px;
+
+}
+
+/* ==========================================
+   CONTENT
+========================================== */
+
+.community-card h3{
+
+    color:#173F7A;
+
+    font-size:24px;
+
+    line-height:1.4;
+
+    margin-bottom:18px;
+
+    font-weight:800;
+
+}
+
+.community-card p{
+
+    color:#677489;
+
+    font-size:16px;
+
+    line-height:1.9;
+
+}
+
+/* ==========================================
+   BOTTOM
+========================================== */
+
+.community-bottom{
+
+    max-width:920px;
+
+    margin:90px auto 0;
+
+    text-align:center;
+
+}
+
+.community-bottom h2{
+
+    color:#173F7A;
+
+    font-size:50px;
+
+    line-height:1.2;
+
+    font-weight:800;
+
+    margin-bottom:28px;
+
+}
+
+.community-bottom p{
+
+    color:#677489;
+
+    font-size:20px;
+
+    line-height:2;
+
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media(max-width:1300px){
+
+.community-grid{
+
+    grid-template-columns:repeat(3,1fr);
+
+}
+
+.community-card:nth-child(2),
+
+.community-card:nth-child(3),
+
+.community-card:nth-child(4){
+
+    margin-top:0;
+
+    transform:none;
+
+}
+
+.community-card:nth-child(3):hover{
+
+    transform:translateY(-12px);
+
+}
+
+}
+
+@media(max-width:900px){
+
+.community-grid{
+
+    grid-template-columns:repeat(2,1fr);
+
+}
+
+}
+
+@media(max-width:768px){
+
+.community-section{
+
+    padding:100px 0;
+
+}
+
+.community-grid{
+
+    grid-template-columns:1fr;
+
+}
+
+.community-card{
+
+    padding:30px;
+
+}
+
+.community-card h3{
+
+    font-size:22px;
+
+}
+
+.community-card p{
+
+    font-size:15px;
+
+}
+
+.community-bottom{
+
+    margin-top:70px;
+
+}
+
+.community-bottom h2{
+
+    font-size:34px;
+
+}
+
+.community-bottom p{
+
+    font-size:17px;
+
+    line-height:1.8;
+
+}
+
+}
