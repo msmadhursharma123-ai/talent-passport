@@ -45,7 +45,10 @@ from "./pages/PartnerLogin";
 import PartnerPortal
 from "./pages/partner/PartnerPortal";
 
-
+import {
+    getCurrentAdmin,
+    clearAdminIdentity
+} from "./services/identityService";
 
 const DEMO_ITEMS: Submission[] = [
   {
@@ -95,6 +98,8 @@ export default function App() {
 useState<"new" | "existing" | null>(null);
  const [activeTab, setActiveTab] =
   useState<string>("identity");
+
+const adminIdentity = getCurrentAdmin();
 
 const handleLogout = () => {
 
@@ -488,29 +493,25 @@ schoolName: string;
 
 {activeTab === "admin" && (
 
-  localStorage.getItem(
-    "userRole"
-  ) === "admin"
+  adminIdentity ? (
 
-  ? (
       <AdminPortal
         onLogout={() => {
 
-          localStorage.removeItem(
-            "userRole"
-          );
+          clearAdminIdentity();
 
-          setActiveTab(
-            "identity"
-          );
+          setActiveTab("identity");
 
         }}
       />
-    )
 
-  : <div>
-      Access Denied
-    </div>
+  ) : (
+
+      <div>
+        Access Denied
+      </div>
+
+  )
 
 )}
 
