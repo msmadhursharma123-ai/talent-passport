@@ -1,0 +1,306 @@
+/* ==========================================================
+   NATIONALS JOURNEY
+========================================================== */
+
+.nationals-section{
+
+    position:relative;
+
+    padding:150px 0;
+
+    overflow:hidden;
+
+    background:
+        linear-gradient(
+            180deg,
+            #ffffff 0%,
+            #f8fafc 100%
+        );
+
+}
+
+.nationals-section::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+
+        radial-gradient(
+            circle at top right,
+            rgba(244,168,37,.08),
+            transparent 35%
+        ),
+
+        radial-gradient(
+            circle at bottom left,
+            rgba(23,63,122,.06),
+            transparent 45%
+        );
+
+    pointer-events:none;
+
+}
+
+.nationals-container{
+
+    position:relative;
+
+    z-index:2;
+
+    width:min(1400px,92%);
+
+    margin:auto;
+
+}
+
+/* ===================================
+   HEADER
+=================================== */
+
+.nationals-header{
+
+    text-align:center;
+
+    max-width:900px;
+
+    margin:0 auto 90px;
+
+}
+
+.nationals-tag{
+
+    display:inline-flex;
+
+    padding:10px 22px;
+
+    border-radius:999px;
+
+    background:rgba(23,63,122,.08);
+
+    color:#F4A825;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    letter-spacing:2px;
+
+    margin-bottom:24px;
+
+}
+
+.nationals-header h2{
+
+    color:#173F7A;
+
+    font-size:60px;
+
+    font-weight:800;
+
+    line-height:1.08;
+
+    margin-bottom:28px;
+
+}
+
+.nationals-header p{
+
+    color:#64748B;
+
+    font-size:20px;
+
+    line-height:1.9;
+
+}
+
+/* ===================================
+   TIMELINE
+=================================== */
+
+.nationals-timeline{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:30px;
+
+}
+
+.timeline-stage{
+
+    position:relative;
+
+}
+
+.timeline-stage:not(:last-child)::after{
+
+    content:"";
+
+    position:absolute;
+
+    top:42px;
+
+    left:calc(100% - 10px);
+
+    width:40px;
+
+    height:3px;
+
+    background:
+
+        linear-gradient(
+            90deg,
+            #F4A825,
+            #173F7A
+        );
+
+}
+
+.timeline-circle{
+
+    width:84px;
+
+    height:84px;
+
+    margin:auto;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    background:
+
+        linear-gradient(
+            135deg,
+            #173F7A,
+            #2E5F9E
+        );
+
+    color:white;
+
+    font-size:28px;
+
+    font-weight:800;
+
+    box-shadow:
+
+        0 18px 45px rgba(23,63,122,.22);
+
+}
+
+.timeline-card{
+
+    margin-top:34px;
+
+    background:white;
+
+    border-radius:28px;
+
+    padding:34px;
+
+    text-align:center;
+
+    border:1px solid rgba(15,36,68,.06);
+
+    box-shadow:
+
+        0 20px 60px rgba(15,36,68,.06);
+
+    transition:.35s;
+
+}
+
+.timeline-card:hover{
+
+    transform:translateY(-8px);
+
+    box-shadow:
+
+        0 30px 70px rgba(15,36,68,.12);
+
+}
+
+.timeline-status{
+
+    display:inline-flex;
+
+    padding:8px 18px;
+
+    border-radius:999px;
+
+    background:#F4A825;
+
+    color:white;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    margin-bottom:22px;
+
+}
+
+.timeline-card h3{
+
+    color:#173F7A;
+
+    font-size:24px;
+
+    line-height:1.4;
+
+    margin-bottom:18px;
+
+}
+
+.timeline-card p{
+
+    color:#64748B;
+
+    font-size:17px;
+
+    line-height:1.8;
+
+}
+
+/* ===================================
+   MOBILE
+=================================== */
+
+@media(max-width:1100px){
+
+.nationals-timeline{
+
+    grid-template-columns:1fr;
+
+    gap:60px;
+
+}
+
+.timeline-stage::after{
+
+    display:none;
+
+}
+
+.timeline-circle{
+
+    margin-bottom:20px;
+
+}
+
+.nationals-header h2{
+
+    font-size:44px;
+
+}
+
+}

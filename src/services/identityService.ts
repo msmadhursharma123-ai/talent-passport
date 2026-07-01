@@ -126,6 +126,8 @@ export interface PartnerIdentity {
 
   partnerId: string;
 
+partnerUuid: string;
+
   partnerCode?: string;
 
   partnerName: string;

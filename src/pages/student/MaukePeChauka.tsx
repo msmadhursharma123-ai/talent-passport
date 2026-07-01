@@ -162,6 +162,29 @@ const [
   )
 ]);
 
+console.table(
+  (scholarshipOffers || []).map((x: any) => ({
+    id: x.id,
+    status: x.status,
+    title: x.offer_title
+  }))
+);
+
+console.table(
+  (workshopOffers || []).map((x: any) => ({
+    id: x.id,
+    status: x.status,
+    title: x.workshop_title
+  }))
+);
+
+console.table(
+  (contactOffers || []).map((x: any) => ({
+    id: x.id,
+    status: x.status
+  }))
+);
+
     const mergedOffers = [
 
       ...(scholarshipOffers || [])

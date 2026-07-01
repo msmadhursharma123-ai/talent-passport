@@ -112,42 +112,45 @@ loadRequests() {
         "accepted"
       );
 
+console.log("INCOMING REQUEST ACCEPT");
+console.table({
+  email: request.email,
+  phone: request.phone,
+  class_name: request.class_name,
+  partner_uuid: request.partner_uuid,
+  student_id: request.student_id,
+});
+
       const lead =
-        await createLead({
+      await createLead({
 
-          partner_id:
-            request.partner_id,
+    partner_id: request.partner_id,
 
-          partner_name:
-            request.partner_name,
+    partner_uuid: request.partner_uuid,
 
-          student_id:
-            request.student_id,
+    partner_name: request.partner_name,
 
-          student_name:
-            request.requester_name,
+    student_id: request.student_id,
 
-          school_name:
-            request.school_name,
+    student_name: request.requester_name,
 
-          email:
-            request.email,
+    school_name: request.school_name,
 
-          phone:
-            request.phone,
+    email: request.email,
 
-          request_type:
-            request.request_type,
+    phone: request.phone,
 
-          lead_source:
-            "incoming",
+    class_name: request.class_name,
 
-          status:
-            "new_lead",
+    request_type: request.request_type,
 
-          notes:
-            ""
-        });
+    lead_source: "incoming",
+
+    status: "new_lead",
+
+    notes: ""
+
+});
 
       console.log(
         "Lead Created",

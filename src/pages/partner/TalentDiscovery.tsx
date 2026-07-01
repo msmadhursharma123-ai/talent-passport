@@ -47,13 +47,22 @@ interface StudentRecord {
 
   student_id: string;
 
+  student_uuid?: string;
+
+partner_uuid?: string;
+
   student_name: string;
 
   school_name: string;
 
-  class_name: string;
+class_name: string;
 
-  event_name?: string;
+email: string;
+
+phone: string;
+
+event_name?: string;
+
   pathway?: string;
 
   communication_score?: number;
@@ -296,39 +305,59 @@ async function saveScholarship() {
 
   if (!selectedStudent) return;
 
+  const resolvedStudentId =
+    selectedStudent.student_id;
+
+  const resolvedPartnerUuid =
+    selectedStudent.partner_uuid ??
+    partnerIdentity.partnerUuid;
+
   const result =
-    await createScholarshipOffer({
+  await createScholarshipOffer({
 
-      partner_id:
-  partnerId,
+    partner_id:
+      partnerId,
 
-partner_name:
-  partnerName,
+    partner_uuid:
+      resolvedPartnerUuid,
 
-      student_id:
-        selectedStudent.student_id,
+    partner_name:
+      partnerName,
 
-      student_name:
-        selectedStudent.student_name,
+    student_id:
+      resolvedStudentId,
 
-      school_name:
-        selectedStudent.school_name,
+    student_name:
+      selectedStudent.student_name,
 
-      offer_title:
-        scholarshipTitle,
+    school_name:
+      selectedStudent.school_name,
 
-      offer_description:
-        scholarshipDescription,
+  email:
+  selectedStudent.email,
 
-      scholarship_type:
-        scholarshipType,
+    phone:
+      selectedStudent.phone,
 
-      scholarship_value:
-        scholarshipValue,
+    class_name:
+      selectedStudent.class_name,
 
-      status:
-        "pending"
-    });
+    offer_title:
+      scholarshipTitle,
+
+    offer_description:
+      scholarshipDescription,
+
+    scholarship_type:
+      scholarshipType,
+
+    scholarship_value:
+      scholarshipValue,
+
+    status:
+      "pending"
+
+  });
 
   if (!result) {
 
@@ -337,6 +366,7 @@ partner_name:
     );
 
     return;
+
   }
 
   setScholarshipTitle("");
@@ -346,48 +376,69 @@ partner_name:
 
   setShowScholarshipDialog(false);
 
-showSuccessMessage(
-  "Scholarship sent successfully"
-);
+  showSuccessMessage(
+    "Scholarship sent successfully"
+  );
+
 }
 
 async function saveWorkshop() {
 
   if (!selectedStudent) return;
 
+  const resolvedStudentId =
+    selectedStudent.student_id;
+
+  const resolvedPartnerUuid =
+    selectedStudent.partner_uuid ??
+    partnerIdentity.partnerUuid;
+
   const result =
-    await createWorkshopOffer({
+  await createWorkshopOffer({
 
-      partner_id:
-  partnerId,
+    partner_id:
+      partnerId,
 
-partner_name:
-  partnerName,
+    partner_uuid:
+      resolvedPartnerUuid,
 
-      student_id:
-        selectedStudent.student_id,
+    partner_name:
+      partnerName,
 
-      student_name:
-        selectedStudent.student_name,
+    student_id:
+      resolvedStudentId,
 
-      school_name:
-        selectedStudent.school_name,
+    student_name:
+      selectedStudent.student_name,
 
-      workshop_title:
-        workshopTitle,
+    school_name:
+      selectedStudent.school_name,
 
-      workshop_description:
-        workshopDescription,
+  email:
+  selectedStudent.email,
 
-      workshop_date:
-        workshopDate,
+    phone:
+      selectedStudent.phone,
 
-      workshop_mode:
-        workshopMode,
+    class_name:
+      selectedStudent.class_name,
 
-      status:
-        "pending"
-    });
+    workshop_title:
+      workshopTitle,
+
+    workshop_description:
+      workshopDescription,
+
+    workshop_date:
+      workshopDate,
+
+    workshop_mode:
+      workshopMode,
+
+    status:
+      "pending"
+
+  });
 
   if (!result) {
 
@@ -396,6 +447,7 @@ partner_name:
     );
 
     return;
+
   }
 
   setWorkshopTitle("");
@@ -405,41 +457,60 @@ partner_name:
 
   setShowWorkshopDialog(false);
 
-showSuccessMessage(
-  "Workshop invitation sent"
-);
-}
+  showSuccessMessage(
+    "Workshop invitation sent"
+  );
 
+}
 
 async function saveContactRequest() {
 
   if (!selectedStudent) return;
 
+  const resolvedStudentId =
+    selectedStudent.student_id;
+
+  const resolvedPartnerUuid =
+    selectedStudent.partner_uuid ??
+    partnerIdentity.partnerUuid;
+
   const result =
-    await createContactRequest({
+  await createContactRequest({
 
-      partner_id:
-        partnerId,
+    partner_id:
+      partnerId,
 
-      partner_name:
-        partnerName,
+    partner_uuid:
+      resolvedPartnerUuid,
 
-      student_id:
-        selectedStudent.student_id,
+    partner_name:
+      partnerName,
 
-      student_name:
-        selectedStudent.student_name,
+    student_id:
+      resolvedStudentId,
 
-      school_name:
-        selectedStudent.school_name,
+    student_name:
+      selectedStudent.student_name,
 
-      request_reason:
-        contactMessage,
+    school_name:
+      selectedStudent.school_name,
 
-      status:
-        "pending"
+    email:
+  selectedStudent.email,
 
-    });
+    phone:
+      selectedStudent.phone,
+
+    class_name:
+      selectedStudent.class_name,
+
+    request_reason:
+      contactMessage,
+
+    status:
+      "pending"
+
+  });
 
   if (!result) {
 
@@ -448,42 +519,44 @@ async function saveContactRequest() {
     );
 
     return;
+
   }
 
-if (!selectedStudent.id) {
+  if (!selectedStudent.id) {
 
-  alert(
-    "Lead ID not found"
+    alert(
+      "Lead ID not found"
+    );
+
+    return;
+
+  }
+
+  await updateOffer(
+
+    "partner_student_leads",
+
+    selectedStudent.id,
+
+    {
+
+      contact_request_sent: true,
+
+      updated_at:
+        new Date().toISOString()
+
+    }
+
   );
-
-  return;
-
-}
-
-await updateOffer(
-
-  "partner_student_leads",
-
-  selectedStudent.id,
-
-  {
-
-    contact_request_sent: true,
-
-    updated_at:
-      new Date().toISOString()
-
-  }
-
-);
 
   setContactMessage("");
 
   setShowContactDialog(false);
 
- showSuccessMessage(
-  "Contact request sent"
-);
+  showSuccessMessage(
+    "Contact request sent"
+  );
+
 }
 
 
@@ -1700,8 +1773,21 @@ Students move to CRM only after consent.
         }}
       >
 
-        {filteredStudents.map(
-          student => (
+console.log(
+    "FILTERED STUDENTS",
+    filteredStudents
+);
+
+        {filteredStudents.map((student, index) => {
+
+  console.log(
+    "CARD",
+    index,
+    student.id,
+    student.student_id
+  );
+
+  return (
 
             <div
               key={
@@ -1843,10 +1929,12 @@ Students move to CRM only after consent.
 
 </div>
 
-            </div>
+                        </div>
 
-          )
-        )}
+          );
+
+        })}
+
 
       </div>
 

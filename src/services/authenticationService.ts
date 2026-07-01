@@ -103,6 +103,8 @@ interface PartnerRow {
 
     id: string;
 
+partner_uuid: string;
+
     auth_user_id: string | null;
 
     partner_id: string;
@@ -266,6 +268,9 @@ async function resolveIdentity(
 
                 partnerId:
                     partner.partner_id,
+
+partnerUuid:
+    partner.partner_uuid,
 
                 partnerName:
                     partner.institute_name,

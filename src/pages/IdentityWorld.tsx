@@ -11,7 +11,9 @@ import RecognitionSection from "../components/common/RecognitionSection";
 import OpportunitySection from "../components/common/OpportunitySection";
 import CommunitySection from "../components/common/CommunitySection";
 import ImpactSection from "../components/common/ImpactSection";
-
+import FounderSection from "../components/landing/FounderSection";
+import TestimonialsSection from "../components/landing/TestimonialsSection";
+import NationalsJourneySection from "../components/landing/NationalsJourneySection";
 import LandingCTA from "../components/common/LandingCTA";
 import LandingFooter from "../components/common/LandingFooter";
 
@@ -33,7 +35,7 @@ export default function IdentityWorld({
     }}
 >
 
-    {/* ===========================
+        {/* ===========================
         NAVBAR
     =========================== */}
 
@@ -94,7 +96,17 @@ export default function IdentityWorld({
     </section>
 
     {/* ===========================
-        OPPORTUNITY
+        ROAD TO NATIONALS
+    =========================== */}
+
+    <section id="nationals">
+
+        <NationalsJourneySection />
+
+    </section>
+
+    {/* ===========================
+        OPPORTUNITIES
     =========================== */}
 
     <section id="opportunities">
@@ -124,7 +136,27 @@ export default function IdentityWorld({
     </section>
 
     {/* ===========================
-        CTA
+        FOUNDER MESSAGE
+    =========================== */}
+
+    <section id="founder">
+
+        <FounderSection />
+
+    </section>
+
+    {/* ===========================
+        TESTIMONIALS
+    =========================== */}
+
+    <section id="testimonials">
+
+        <TestimonialsSection />
+
+    </section>
+
+    {/* ===========================
+        FINAL CTA
     =========================== */}
 
     <LandingCTA
@@ -139,7 +171,7 @@ export default function IdentityWorld({
         onContinue={onContinue}
     />
 
-</main> 
+</main>
 
     );
 }

@@ -86,6 +86,38 @@
 }
 
 /* ======================================
+   HEADER
+====================================== */
+
+.opportunity-container .section-header{
+
+    max-width:900px;
+
+    margin:0 auto 60px;
+
+    text-align:center;
+
+}
+
+.opportunity-container .section-title{
+
+    max-width:850px;
+
+    margin:0 auto 26px;
+
+}
+
+.opportunity-container .section-description{
+
+    max-width:720px;
+
+    margin:0 auto;
+
+}
+
+
+
+/* ======================================
    GRID
 ====================================== */
 
@@ -97,7 +129,7 @@
 
     gap:30px;
 
-    margin-top:90px;
+    margin-top:40px;
 
     margin-bottom:90px;
 

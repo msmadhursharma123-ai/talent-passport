@@ -198,41 +198,61 @@ async function allocateLeads(): Promise<void> {
         selectedStudents
       ) {
 
+console.log(
+  "ALLOCATING STUDENT",
+  student
+);
+
+console.log({
+  id: student.id,
+ student_id:
+    student.student_uuid ?? student.student_id,
+  student_uuid: student.student_uuid,
+  auth_user_id: student.auth_user_id,
+  student_code: student.student_code,
+  email: student.student_email,
+  name: student.student_name
+});
+
         await createLead({
 
-          partner_id:
-            selectedPartner.partner_id,
+  partner_id:
+    selectedPartner.partner_id,
 
-          partner_name:
-            selectedPartner.partner_name,
+  partner_uuid:
+    selectedPartner.partner_uuid,
 
-          student_id:
-            student.student_id,
+  partner_name:
+    selectedPartner.partner_name,
 
-          student_name:
-            student.student_name,
+  student_id:
+    student.student_id,
 
-          school_name:
-            student.school_name,
+  student_name:
+    student.student_name,
 
-          email:
-            student.student_email,
+  school_name:
+    student.school_name,
 
-          phone:
-            student.phone,
+  email:
+    student.student_email,
 
-          class_name:
-            student.class_name,
+  phone:
+    student.phone,
 
-          lead_source:
-            "Admin Allocation",
+  class_name:
+    student.class_name,
 
-          request_type:
-            "Talent Discovery",
+  lead_source:
+    "Admin Allocation",
 
-          status:
-            "allocated"
-        });
+  request_type:
+    "Talent Discovery",
+
+  status:
+    "allocated"
+
+});
       }
 
     alert(

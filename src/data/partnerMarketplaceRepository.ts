@@ -6,7 +6,9 @@ import {
 
   getTableIdentity,
 
-  requireIdentity
+  requireIdentity,
+
+  requirePartnerIdentity
 
 } from "../services/identityService";
 
@@ -66,14 +68,23 @@ createScholarshipOffer(
      Build Payload
   ============================================================ */
 
-  const payload = {
+const payload = {
 
-    ...offer,
+  ...offer,
 
-    partner_id:
-      resolvedPartnerId
+  partner_id:
+    resolvedPartnerId,
 
-  };
+  email:
+    offer.email,
+
+  phone:
+    offer.phone,
+
+  class_name:
+    offer.class_name
+
+};
 
   /* ============================================================
      Create Scholarship Offer
@@ -141,14 +152,23 @@ createWorkshopOffer(
      Build Payload
   ============================================================ */
 
-  const payload = {
+const payload = {
 
-    ...offer,
+  ...offer,
 
-    partner_id:
-      resolvedPartnerId
+  partner_id:
+    resolvedPartnerId,
 
-  };
+  email:
+    offer.email,
+
+  phone:
+    offer.phone,
+
+  class_name:
+    offer.class_name
+
+};
 
   /* ============================================================
      Create Workshop Offer
@@ -215,14 +235,23 @@ createContactRequest(
      Build Payload
   ============================================================ */
 
-  const payload = {
+ const payload = {
 
-    ...request,
+  ...request,
 
-    partner_id:
-      resolvedPartnerId
+  partner_id:
+    resolvedPartnerId,
 
-  };
+  email:
+    request.email,
+
+  phone:
+    request.phone,
+
+  class_name:
+    request.class_name
+
+};
 
   /* ============================================================
      Create Contact Request
@@ -281,6 +310,11 @@ fetchStudentScholarshipOffers(
     studentId ??
     currentStudentId();
 
+    console.log(
+    "SCHOLARSHIP STUDENT ID",
+    resolvedStudentId
+);
+
   const {
     data,
     error
@@ -300,6 +334,11 @@ fetchStudentScholarshipOffers(
           ascending: false
         }
       );
+
+      console.log(
+    "SCHOLARSHIP RESULTS",
+    data
+);
 
   if (error) {
     console.error(error);
@@ -325,6 +364,11 @@ fetchStudentWorkshopOffers(
     studentId ??
     currentStudentId();
 
+console.log(
+    "WORKSHOP STUDENT ID",
+    resolvedStudentId
+);
+
   const {
     data,
     error
@@ -333,7 +377,7 @@ fetchStudentWorkshopOffers(
       .from(
         "partner_workshop_offers"
       )
-      .select("*")
+      .select("id,status,workshop_title,partner_name")
       .eq(
         "student_id",
         resolvedStudentId
@@ -344,6 +388,11 @@ fetchStudentWorkshopOffers(
           ascending: false
         }
       );
+
+console.log(
+    "WORKSHOP RESULTS",
+    data
+);
 
   if (error) {
     console.error(error);
@@ -369,6 +418,11 @@ fetchStudentContactRequests(
     studentId ??
     currentStudentId();
 
+console.log(
+    "CONTACT STUDENT ID",
+    resolvedStudentId
+);
+
   const {
     data,
     error
@@ -377,7 +431,7 @@ fetchStudentContactRequests(
       .from(
         "partner_contact_requests"
       )
-      .select("*")
+      .select("id,status,partner_name")
       .eq(
         "student_id",
         resolvedStudentId
@@ -388,6 +442,11 @@ fetchStudentContactRequests(
           ascending: false
         }
       );
+
+  console.log(
+    "CONTACT RESULTS",
+    data
+  );
 
   if (error) {
     console.error(error);
@@ -754,8 +813,7 @@ resendContactRequest(
 // STATUS UPDATE
 // ======================================
 
-export async function
-updateOfferStatus(
+export async function updateOfferStatus(
   tableName: string,
   id: string,
   status: string
@@ -764,15 +822,32 @@ updateOfferStatus(
   const supabase =
     getSupabaseClient() as any;
 
-  return supabase
-    .from(tableName)
-    .update({
+  console.log(
+    "UPDATE OFFER STATUS",
+    {
+      tableName,
+      id,
       status
-    })
-    .eq(
-      "id",
-      id
-    );
+    }
+  );
+
+  const result =
+    await supabase
+      .from(tableName)
+      .update({
+        status,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", id)
+      .select();
+
+console.log("UPDATE RESULT", {
+  data: result.data,
+  error: result.error,
+  count: result.data?.length
+});
+
+  return result;
 }
 
 export async function
@@ -977,42 +1052,57 @@ export async function acceptScholarshipOffer(
       .select("*")
       .eq("id",id)
       .single();
+console.table({
+    email: data.email,
+    phone: data.phone,
+    class_name: data.class_name,
+    student_name: data.student_name,
+    student_id: data.student_id
+});
 
-    await updateOfferStatus(
-      "partner_scholarship_offers",
-      id,
-      "accepted"
-    );
+
+   console.log(
+  "ACCEPT SCHOLARSHIP",
+  id
+);
+
+await updateOfferStatus(
+  "partner_scholarship_offers",
+  id,
+  "accepted"
+);
 
     if(data){
 
-        await createLead({
+       await createLead({
 
-            partner_id:data.partner_id,
+    partner_id: data.partner_id,
 
-            partner_name:data.partner_name,
+    partner_uuid: data.partner_uuid,
 
-            student_id:data.student_id,
+    partner_name: data.partner_name,
 
-            student_name:data.student_name,
+    student_id: data.student_id,
 
-            school_name:data.school_name,
+    student_name: data.student_name,
 
-            email:data.email,
+    school_name: data.school_name,
 
-            phone:data.phone,
+    email: data.email,
 
-            class_name:data.class_name,
+    phone: data.phone,
 
-            request_type:"Scholarship",
+    class_name: data.class_name,
 
-            lead_source:"outgoing",
+    request_type: "Scholarship",
 
-            status:"new_lead",
+    lead_source: "outgoing",
 
-            notes:""
+    status: "new_lead",
 
-        });
+    notes: ""
+
+});
 
     }
 
@@ -1043,16 +1133,23 @@ export async function acceptWorkshopOffer(
     .select("*")
     .eq("id", id)
     .single();
+console.log("SOURCE OFFER", data);
 
-  await updateOfferStatus(
-    "partner_workshop_offers",
-    id,
-    "accepted"
-  );
+  console.log(
+  "ACCEPT WORKSHOP",
+  id
+);
+
+await updateOfferStatus(
+  "partner_workshop_offers",
+  id,
+  "accepted"
+);
 
   if (data) {
     await createLead({
       partner_id: data.partner_id,
+      partner_uuid: data.partner_uuid,
       partner_name: data.partner_name,
 
       student_id: data.student_id,
@@ -1099,16 +1196,24 @@ export async function acceptContactOffer(
     .select("*")
     .eq("id", id)
     .single();
+console.log("SOURCE OFFER", data);
 
-  await updateOfferStatus(
-    "partner_contact_requests",
-    id,
-    "accepted"
-  );
+
+console.log(
+  "ACCEPT CONTACT",
+  id
+);
+
+await updateOfferStatus(
+  "partner_contact_requests",
+  id,
+  "accepted"
+);
 
   if (data) {
     await createLead({
       partner_id: data.partner_id,
+      partner_uuid: data.partner_uuid,
       partner_name: data.partner_name,
 
       student_id: data.student_id,
@@ -1372,6 +1477,9 @@ createLead(
     lead.partner_id ??
     currentPartnerId();
 
+  const resolvedPartnerUuid =
+    lead.partner_uuid;
+
   /* ============================================================
      Build Payload
   ============================================================ */
@@ -1380,57 +1488,24 @@ createLead(
 
     ...lead,
 
-    student_id:
-      resolvedStudentId,
+    student_id: resolvedStudentId,
 
-    partner_id:
-      resolvedPartnerId
+    partner_id: resolvedPartnerId,
 
-  };
+    partner_uuid: resolvedPartnerUuid
 
-  /* ============================================================
-     Prevent Duplicate Lead
-  ============================================================ */
+};
 
-  const {
-
-    data: existingLead
-
-  } =
-    await supabase
-
-      .from(
-        "partner_student_leads"
-      )
-
-      .select("id")
-
-      .eq(
-        "partner_id",
-        resolvedPartnerId
-      )
-
-      .eq(
-        "student_id",
-        resolvedStudentId
-      )
-
-      .eq(
-        "request_type",
-        payload.request_type
-      )
-
-      .maybeSingle();
-
-  if (existingLead) {
-
-    return existingLead;
-
-  }
+ 
 
   /* ============================================================
      Create Lead
   ============================================================ */
+
+console.log(
+    "CREATE LEAD PAYLOAD",
+    payload
+);
 
   const {
 
@@ -1935,10 +2010,7 @@ export async function fetchAllocatedStudents(
         resolvedPartnerId
       )
 
-      .eq(
-        "status",
-        "Allocated"
-      )
+     .in("status", ["allocated"])
 
       .order(
         "created_at",
@@ -1954,6 +2026,21 @@ export async function fetchAllocatedStudents(
     return [];
 
   }
+
+    console.log(
+    "ALLOCATED STUDENTS FROM DB",
+    data
+  );
+
+  console.log(
+    "FIRST STUDENT ID",
+    data?.[0]?.student_id
+  );
+
+  console.log(
+    "FIRST STUDENT OBJECT",
+    data?.[0]
+  );
 
   return data ?? [];
 

@@ -167,9 +167,22 @@ async function loadData(): Promise<void> {
         )
         .select("*");
 
-    setStudents(
-      studentsData || []
-    );
+   setStudents(
+
+  (studentsData || []).map((student: any) => ({
+
+    ...student,
+
+    student_id:
+      student.student_uuid ??
+      student.student_id,
+
+    student_uuid:
+      student.student_uuid
+
+  }))
+
+);
 
     setPartners(
       partnersData || []
