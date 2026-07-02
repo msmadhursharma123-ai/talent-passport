@@ -14,10 +14,10 @@ interface SlideData {
 
 const slides: SlideData[] = [
   {
-    eyebrow: "INDIA'S FIRST AI POWERED STUDENT GROWTH PLATFORM",
+    eyebrow: "INDIA'S FIRST TALENT & IDENTITY INFRASTRUCTURE PLATFORM",
     title: "One Passport.\nOne Identity.\nEndless Possibilities.",
     description:
-      "Capture every competition, project, achievement, portfolio, and skill inside one lifelong Talent Passport that grows with every student.",
+      "Capture every competition, project, achievement, portfolio and real-world experience inside one verified lifelong Talent Passport that grows with every student.",
     primaryButton: "Explore Platform",
     secondaryButton: "Enter Portal",
   },
@@ -190,7 +190,7 @@ export default function HeroSlider({
 
             <div className="hero-stat">
               <span>🪪</span>
-              <p>Passport</p>
+              <p>Verified Identity</p>
             </div>
           </div>
         </div>

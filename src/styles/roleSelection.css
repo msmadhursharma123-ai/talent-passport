@@ -1,27 +1,28 @@
 /* ==========================================================
-   ROLE SELECTION
+   ROLE SELECTION V3
 ========================================================== */
 
 .portal-page{
 
-    min-height:100vh;
-
     position:relative;
+
+    min-height:100vh;
 
     overflow:hidden;
 
     background:
         linear-gradient(
             180deg,
-            #F6FAFF 0%,
-            #FFFFFF 100%
+            #08162F 0%,
+            #10264B 40%,
+            #EEF5FF 100%
         );
 
 }
 
-/* =====================================
-   BACKGROUND
-===================================== */
+/* ==========================================================
+   HERO BACKGROUND
+========================================================== */
 
 .portal-background{
 
@@ -29,9 +30,9 @@
 
     inset:0;
 
-    pointer-events:none;
-
     overflow:hidden;
+
+    pointer-events:none;
 
 }
 
@@ -41,23 +42,27 @@
 
     position:absolute;
 
-    top:-220px;
+    width:900px;
 
-    left:-220px;
+    height:900px;
 
-    width:600px;
+    top:-380px;
 
-    height:600px;
+    left:-280px;
 
     border-radius:50%;
 
     background:
 
         radial-gradient(
-            circle,
-            rgba(244,168,37,.10),
+
+            rgba(244,168,37,.16),
+
             transparent 70%
+
         );
+
+    filter:blur(70px);
 
 }
 
@@ -67,29 +72,33 @@
 
     position:absolute;
 
-    right:-250px;
+    width:900px;
 
-    bottom:-250px;
+    height:900px;
 
-    width:700px;
+    bottom:-420px;
 
-    height:700px;
+    right:-280px;
 
     border-radius:50%;
 
     background:
 
         radial-gradient(
-            circle,
-            rgba(46,95,158,.08),
-            transparent 70%
+
+            rgba(66,126,255,.18),
+
+            transparent 72%
+
         );
+
+    filter:blur(80px);
 
 }
 
-/* =====================================
+/* ==========================================================
    CONTAINER
-===================================== */
+========================================================== */
 
 .portal-container{
 
@@ -97,33 +106,58 @@
 
     z-index:2;
 
-    width:min(1450px,94%);
+    width:min(1380px,92%);
 
     margin:auto;
 
-    padding:70px 0 120px;
+    padding:
+
+        48px
+        0
+        80px;
 
 }
 
-/* =====================================
+/* ==========================================================
    HEADER
-===================================== */
+========================================================== */
+
+.portal-header{
+
+    text-align:center;
+
+    max-width:820px;
+
+    margin:
+
+        30px auto
+        60px;
+
+}
 
 .portal-back-button{
 
-    background:none;
-
     border:none;
 
-    cursor:pointer;
+    background:none;
 
-    color:#173F7A;
+    color:#F4A825;
 
-    font-size:17px;
+    font-size:15px;
 
     font-weight:700;
 
-    margin-bottom:40px;
+    cursor:pointer;
+
+    transition:.3s;
+
+    margin-bottom:20px;
+
+}
+
+.portal-back-button:hover{
+
+    transform:translateX(-4px);
 
 }
 
@@ -131,143 +165,218 @@
 
     display:inline-flex;
 
-    padding:10px 22px;
+    align-items:center;
+
+    padding:
+
+        10px
+        22px;
 
     border-radius:999px;
 
-    background:rgba(244,168,37,.12);
+    background:
 
-    border:1px solid rgba(244,168,37,.18);
+        rgba(255,255,255,.08);
+
+    backdrop-filter:blur(16px);
+
+    border:
+
+        1px solid rgba(255,255,255,.12);
 
     color:#F4A825;
 
-    font-size:13px;
-
-    font-weight:700;
+    font-size:12px;
 
     letter-spacing:2px;
 
-    text-transform:uppercase;
+    font-weight:700;
 
-    margin-bottom:30px;
+    margin-bottom:26px;
 
 }
 
 .portal-title{
 
-    font-size:72px;
+    font-size:
 
-    color:#173F7A;
+        clamp(
+            50px,
+            5vw,
+            72px
+        );
 
-    line-height:1.05;
+    line-height:1.02;
 
-    font-weight:800;
+    color:white;
 
-    margin-bottom:24px;
+    margin-bottom:22px;
+
+    font-weight:850;
+
+    letter-spacing:-0.04em;
 
 }
 
 .portal-subtitle{
 
-    max-width:760px;
+    max-width:720px;
 
-    color:#677489;
+    margin:auto;
 
-    font-size:22px;
+    color:
 
-    line-height:1.8;
+        rgba(255,255,255,.82);
 
-    margin-bottom:70px;
+    font-size:18px;
 
-}
-
-/* =====================================
-   FEATURED
-===================================== */
-
-.featured-portal{
-
-    margin-bottom:60px;
+    line-height:1.9;
 
 }
 
-.portal-card{
-
-    position:relative;
-
-    overflow:hidden;
-
-    background:white;
-
-    border-radius:32px;
-
-    border:1px solid rgba(23,63,122,.08);
-
-    padding:36px;
-
-    box-shadow:
-
-        0 25px 70px rgba(0,0,0,.06);
-
-    transition:.35s;
-
-    cursor:pointer;
-
-}
-
-.portal-card:hover{
-
-    transform:translateY(-10px);
-
-    box-shadow:
-
-        0 35px 90px rgba(23,63,122,.12);
-
-}
-
-.portal-card.featured{
-
-    padding:50px;
-
-    background:
-
-        linear-gradient(
-            135deg,
-            #173F7A,
-            #2E5F9E
-        );
-
-    color:white;
-
-}
-
-.portal-card.featured h2,
-
-.portal-card.featured h3,
-
-.portal-card.featured p{
-
-    color:white;
-
-}
-
-/* =====================================
+/* ==========================================================
    GRID
-===================================== */
+========================================================== */
 
 .portal-grid{
 
     display:grid;
 
-    grid-template-columns:repeat(2,1fr);
+    grid-template-columns:
 
-    gap:30px;
+        repeat(
+            3,
+            1fr
+        );
+
+    gap:26px;
+
+    margin-top:50px;
 
 }
 
-/* =====================================
-   CARD TOP
-===================================== */
+/* ==========================================================
+   PORTAL CARDS
+========================================================== */
+
+.portal-card{
+
+    position:relative;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:space-between;
+
+    min-height:345px;
+
+    padding:30px;
+
+    overflow:hidden;
+
+    cursor:pointer;
+
+    border-radius:30px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.14),
+            rgba(255,255,255,.06)
+        );
+
+    backdrop-filter:blur(24px);
+
+    -webkit-backdrop-filter:blur(24px);
+
+    border:
+
+        1px solid rgba(255,255,255,.14);
+
+    box-shadow:
+
+        0 25px 60px rgba(0,0,0,.20);
+
+    transition:
+
+        transform .35s,
+
+        box-shadow .35s,
+
+        border-color .35s;
+
+}
+
+/* ==========================
+   STUDENT CARD
+========================== */
+
+.portal-card.featured{
+
+    border:
+
+        1px solid rgba(244,168,37,.45);
+
+    box-shadow:
+
+        0 28px 70px rgba(244,168,37,.22);
+
+}
+
+/* ==========================
+   HOVER
+========================== */
+
+.portal-card:hover{
+
+    transform:
+
+        translateY(-10px);
+
+    border-color:
+
+        rgba(244,168,37,.35);
+
+    box-shadow:
+
+        0 35px 80px rgba(0,0,0,.26);
+
+}
+
+/* ==========================
+   LIGHT EFFECT
+========================== */
+
+.portal-card::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+
+        linear-gradient(
+
+            135deg,
+
+            rgba(255,255,255,.10),
+
+            transparent 55%
+
+        );
+
+    opacity:.8;
+
+    pointer-events:none;
+
+}
+
+/* ==========================================================
+   TOP
+========================================================== */
 
 .portal-card-top{
 
@@ -275,19 +384,17 @@
 
     justify-content:space-between;
 
-    align-items:center;
+    align-items:flex-start;
 
-    margin-bottom:30px;
+    margin-bottom:24px;
 
 }
 
 .portal-icon{
 
-    width:82px;
+    width:72px;
 
-    height:82px;
-
-    border-radius:24px;
+    height:72px;
 
     display:flex;
 
@@ -295,67 +402,99 @@
 
     align-items:center;
 
-    font-size:38px;
+    border-radius:22px;
+
+    font-size:34px;
 
     background:
 
         linear-gradient(
+
             135deg,
+
             #173F7A,
+
             #2E5F9E
+
         );
+
+    box-shadow:
+
+        0 18px 45px rgba(23,63,122,.28);
 
 }
 
 .portal-card.featured .portal-icon{
 
-    background:white;
+    background:
+
+        linear-gradient(
+
+            135deg,
+
+            #F4A825,
+
+            #FDBA3B
+
+        );
 
 }
+
+/* ==========================================================
+   BADGES
+========================================================== */
 
 .portal-badge{
 
-    padding:10px 18px;
+    padding:
+
+        9px 16px;
 
     border-radius:999px;
 
-    background:#F4A825;
+    background:
+
+        linear-gradient(
+
+            135deg,
+
+            rgba(244,168,37,.20),
+
+            rgba(255,255,255,.12)
+
+        );
+
+    color:#FFD46A;
+
+    font-size:11px;
+
+    font-weight:700;
+
+    letter-spacing:.6px;
+
+    border:
+
+        1px solid rgba(244,168,37,.22);
+
+}
+
+.portal-card:not(.featured) .portal-badge{
 
     color:white;
 
-    font-size:13px;
+    background:
 
-    font-weight:700;
-
-}
-
-.coming-soon{
-
-    padding:8px 16px;
-
-    border-radius:999px;
-
-    background:#FFF4DD;
-
-    color:#C98000;
-
-    font-size:12px;
-
-    font-weight:700;
+        rgba(255,255,255,.08);
 
 }
-
-/* =====================================
-   CONTENT
-===================================== */
 
 .portal-card h2{
 
-    color:#173F7A;
+    color:white;
 
-    font-size:34px;
+    font-size:28px;
 
-    margin-bottom:12px;
+    margin-bottom:10px;
 
     font-weight:800;
 
@@ -363,11 +502,11 @@
 
 .portal-card h3{
 
-    color:#F4A825;
+    color:#FFD46A;
 
-    font-size:18px;
+    font-size:15px;
 
-    margin-bottom:18px;
+    margin-bottom:16px;
 
     font-weight:700;
 
@@ -375,17 +514,19 @@
 
 .portal-card p{
 
-    color:#677489;
+    color:
 
-    line-height:1.9;
+        rgba(255,255,255,.78);
 
-    font-size:16px;
+    font-size:15px;
+
+    line-height:1.75;
 
 }
 
-/* =====================================
+/* ==========================================================
    FEATURES
-===================================== */
+========================================================== */
 
 .portal-features{
 
@@ -393,229 +534,419 @@
 
     flex-wrap:wrap;
 
-    gap:12px;
+    gap:10px;
 
-    margin:30px 0;
+    margin-top:24px;
+
+    margin-bottom:26px;
 
 }
 
 .portal-features span{
 
-    padding:9px 16px;
+    padding:
+
+        8px 14px;
 
     border-radius:999px;
 
-    background:#EEF4FC;
+    background:
 
-    color:#173F7A;
+        rgba(255,255,255,.08);
 
-    font-size:13px;
+    border:
+
+        1px solid rgba(255,255,255,.10);
+
+    color:white;
+
+    font-size:12px;
 
     font-weight:600;
 
 }
 
-.portal-card.featured .portal-features span{
-
-    background:rgba(255,255,255,.12);
-
-    color:white;
-
-}
-
-/* =====================================
+/* ==========================================================
    BUTTON
-===================================== */
+========================================================== */
 
 .portal-button{
+
+    margin-top:auto;
+
+    width:100%;
 
     border:none;
 
     cursor:pointer;
 
-    padding:18px 32px;
+    padding:16px;
 
-    border-radius:999px;
+    border-radius:16px;
 
-    background:#F4A825;
-
-    color:white;
-
-    font-size:16px;
+    font-size:15px;
 
     font-weight:700;
 
-    transition:.3s;
+    color:white;
+
+    background:
+
+        linear-gradient(
+
+            135deg,
+
+            #F4A825,
+
+            #FDBA3B
+
+        );
+
+    box-shadow:
+
+        0 18px 45px rgba(244,168,37,.25);
+
+    transition:
+
+        transform .30s,
+
+        box-shadow .30s;
 
 }
 
 .portal-button:hover{
 
-    transform:translateY(-3px);
+    transform:
+
+        translateY(-4px);
+
+    box-shadow:
+
+        0 24px 60px rgba(244,168,37,.35);
 
 }
 
-/* =====================================
-   HELP
-===================================== */
+/* ==========================================================
+   DESKTOP GRID
+========================================================== */
+
+@media(min-width:1100px){
+
+.portal-card:nth-child(5){
+
+    grid-column:2;
+
+}
+
+}
+
+/* ==========================================================
+   HELP SECTION
+========================================================== */
 
 .portal-help{
 
-    margin-top:90px;
+    margin-top:60px;
 
 }
 
 .portal-help-card{
 
-    background:
+    position:relative;
 
-        linear-gradient(
-            135deg,
-            #173F7A,
-            #2E5F9E
-        );
-
-    color:white;
-
-    border-radius:36px;
-
-    padding:70px;
-
-    text-align:center;
-
-}
-
-.portal-help-card h2{
-
-    font-size:46px;
-
-    margin-bottom:24px;
-
-}
-
-.portal-help-card p{
-
-    max-width:900px;
-
-    margin:auto;
-
-    line-height:2;
-
-    color:rgba(255,255,255,.84);
-
-    font-size:19px;
-
-}
-
-.portal-help-actions{
+    overflow:hidden;
 
     display:flex;
 
-    justify-content:center;
+    justify-content:space-between;
 
-    gap:20px;
+    align-items:center;
 
-    margin-top:40px;
+    gap:50px;
+
+    padding:48px 56px;
+
+    border-radius:34px;
+
+    background:
+
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.14),
+            rgba(255,255,255,.08)
+        );
+
+    backdrop-filter:blur(28px);
+
+    -webkit-backdrop-filter:blur(28px);
+
+    border:
+
+        1px solid rgba(255,255,255,.12);
+
+    box-shadow:
+
+        0 30px 80px rgba(0,0,0,.20);
 
 }
 
-.portal-primary-btn,
+.portal-help-card::before{
 
-.portal-secondary-btn{
+    content:"";
 
-    border:none;
+    position:absolute;
 
-    cursor:pointer;
+    inset:0;
 
-    padding:18px 34px;
+    background:
+
+        linear-gradient(
+
+            135deg,
+
+            rgba(244,168,37,.10),
+
+            transparent 65%
+
+        );
+
+    pointer-events:none;
+
+}
+
+.portal-help-content{
+
+    position:relative;
+
+    z-index:2;
+
+    max-width:760px;
+
+}
+
+.portal-help-eyebrow{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    padding:8px 18px;
 
     border-radius:999px;
 
+    background:
+
+        rgba(244,168,37,.12);
+
+    border:
+
+        1px solid rgba(244,168,37,.18);
+
+    color:#FFD46A;
+
+    font-size:12px;
+
     font-weight:700;
-
-    font-size:16px;
-
-}
-
-.portal-primary-btn{
-
-    background:#F4A825;
-
-    color:white;
-
-}
-
-.portal-secondary-btn{
-
-    background:white;
-
-    color:#173F7A;
-
-}
-
-/* =====================================
-   FOOTER
-===================================== */
-
-.portal-footer{
-
-    text-align:center;
-
-    margin-top:80px;
-
-}
-
-.portal-footer-logo{
-
-    color:#173F7A;
-
-    font-size:26px;
-
-    font-weight:800;
 
     letter-spacing:2px;
 
-    margin-bottom:12px;
+    margin-bottom:22px;
 
 }
 
-.portal-footer p{
+.portal-help-content h2{
 
-    color:#677489;
+    color:white;
 
-    font-size:16px;
+    font-size:38px;
 
-}
+    margin-bottom:18px;
 
-/* =====================================
-   RESPONSIVE
-===================================== */
-
-@media(max-width:992px){
-
-.portal-grid{
-
-    grid-template-columns:1fr;
+    font-weight:800;
 
 }
 
-.portal-title{
+.portal-help-content p{
 
-    font-size:52px;
+    color:rgba(255,255,255,.82);
+
+    font-size:17px;
+
+    line-height:1.8;
 
 }
 
 .portal-help-actions{
 
+    position:relative;
+
+    z-index:2;
+
+    display:flex;
+
     flex-direction:column;
 
+    gap:16px;
+
+    min-width:280px;
+
 }
+
+/* ==========================================================
+   HELP BUTTONS
+========================================================== */
 
 .portal-primary-btn,
 
 .portal-secondary-btn{
 
     width:100%;
+
+    border:none;
+
+    cursor:pointer;
+
+    border-radius:18px;
+
+    padding:17px 28px;
+
+    font-size:15px;
+
+    font-weight:700;
+
+    transition:
+
+        transform .30s,
+
+        box-shadow .30s;
+
+}
+
+.portal-primary-btn{
+
+    color:white;
+
+    background:
+
+        linear-gradient(
+
+            135deg,
+
+            #F4A825,
+
+            #FDBA3B
+
+        );
+
+    box-shadow:
+
+        0 18px 45px rgba(244,168,37,.30);
+
+}
+
+.portal-primary-btn:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:
+
+        0 28px 60px rgba(244,168,37,.42);
+
+}
+
+.portal-secondary-btn{
+
+    color:white;
+
+    background:
+
+        rgba(255,255,255,.08);
+
+    border:
+
+        1px solid rgba(255,255,255,.14);
+
+}
+
+.portal-secondary-btn:hover{
+
+    transform:translateY(-4px);
+
+    background:
+
+        rgba(255,255,255,.12);
+
+}
+
+/* ==========================================================
+   FOOTER
+========================================================== */
+
+.portal-footer{
+
+    padding:70px 0 30px;
+
+    text-align:center;
+
+}
+
+.portal-footer-logo{
+
+    color:white;
+
+    font-size:28px;
+
+    font-weight:800;
+
+    letter-spacing:3px;
+
+    margin-bottom:18px;
+
+}
+
+.portal-footer p{
+
+    color:rgba(255,255,255,.70);
+
+    line-height:1.9;
+
+    font-size:15px;
+
+}
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media(max-width:1200px){
+
+.portal-grid{
+
+    grid-template-columns:repeat(2,1fr);
+
+}
+
+.portal-card:nth-child(5){
+
+    grid-column:auto;
+
+}
+
+.portal-help-card{
+
+    flex-direction:column;
+
+    text-align:center;
+
+    padding:42px;
+
+}
+
+.portal-help-actions{
+
+    width:100%;
+
+    max-width:420px;
 
 }
 
@@ -627,51 +958,89 @@
 
     width:92%;
 
-    padding:40px 0 80px;
+    padding:32px 0 60px;
 
 }
 
 .portal-title{
 
-    font-size:40px;
+    font-size:42px;
 
 }
 
 .portal-subtitle{
 
-    font-size:18px;
+    font-size:16px;
+
+}
+
+.portal-grid{
+
+    grid-template-columns:1fr;
+
+    gap:20px;
 
 }
 
 .portal-card{
 
-    padding:28px;
+    min-height:auto;
+
+    padding:26px;
 
 }
 
-.portal-card.featured{
+.portal-icon{
 
-    padding:36px;
+    width:64px;
 
-}
-
-.portal-help-card{
-
-    padding:40px 24px;
-
-}
-
-.portal-help-card h2{
+    height:64px;
 
     font-size:30px;
 
 }
 
-.portal-help-card p{
+.portal-card h2{
 
-    font-size:16px;
+    font-size:24px;
 
-    line-height:1.8;
+}
+
+.portal-card p{
+
+    font-size:14px;
+
+}
+
+.portal-help-card{
+
+    padding:34px 26px;
+
+}
+
+.portal-help-content h2{
+
+    font-size:28px;
+
+}
+
+.portal-help-content p{
+
+    font-size:15px;
+
+}
+
+.portal-primary-btn,
+
+.portal-secondary-btn{
+
+    width:100%;
+
+}
+
+.portal-footer{
+
+    padding:50px 0 20px;
 
 }
 
