@@ -129,6 +129,11 @@ Promise<PassportViewModel | null> {
         const growth =
             await getGrowthPlanData();
 
+            console.log("====================================");
+console.log("VIEWMODEL GROWTH DATA");
+console.log(growth);
+console.log("====================================");
+
         if (
 
             !growth ||
@@ -143,6 +148,9 @@ Promise<PassportViewModel | null> {
 
         const passport =
             growth.passport;
+
+console.log("PASSPORT RECEIVED BY VIEWMODEL");
+console.log(passport);
 
 const dna =
     growth.dna ?? {};

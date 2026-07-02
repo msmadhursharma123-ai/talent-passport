@@ -97,86 +97,102 @@ loadRequests() {
         requestId
       );
   }
+async function handleAccept(
+  request: any
+) {
 
-  async function
-  handleAccept(
-    request: any
-  ) {
+  try {
+
+    setLoading(true);
+
+    await updateRequestStatus(
+      request.id,
+      "accepted"
+    );
+
+    console.log("======================================");
+    console.log("INCOMING REQUEST ACCEPT");
+    console.log("FULL REQUEST OBJECT");
+    console.dir(request, { depth: null });
+
+    console.log("PARTNER UUID");
+    console.log(request.partner_uuid);
+
+    console.log("STUDENT ID");
+    console.log(request.student_id);
+
+    console.log("EMAIL");
+    console.log(request.email);
+
+    console.log("PHONE");
+    console.log(request.phone);
+
+    let lead;
 
     try {
 
-      setLoading(true);
+      lead = await createLead({
 
-      await updateRequestStatus(
-        request.id,
-        "accepted"
-      );
+        partner_id: request.partner_id,
 
-console.log("INCOMING REQUEST ACCEPT");
-console.table({
-  email: request.email,
-  phone: request.phone,
-  class_name: request.class_name,
-  partner_uuid: request.partner_uuid,
-  student_id: request.student_id,
-});
+        partner_uuid:
+  request.partner_uuid ??
+  partnerIdentity.partnerUuid,
 
-      const lead =
-      await createLead({
+        partner_name: request.partner_name,
 
-    partner_id: request.partner_id,
+        student_id: request.student_id,
 
-    partner_uuid: request.partner_uuid,
+        student_name: request.requester_name,
 
-    partner_name: request.partner_name,
+        school_name: request.school_name,
 
-    student_id: request.student_id,
+        email: request.email,
 
-    student_name: request.requester_name,
+        phone: request.phone,
 
-    school_name: request.school_name,
+        class_name: request.class_name,
 
-    email: request.email,
+        request_type: request.request_type,
 
-    phone: request.phone,
+        lead_source: "incoming",
 
-    class_name: request.class_name,
+        status: "new_lead",
 
-    request_type: request.request_type,
+        notes: ""
 
-    lead_source: "incoming",
+      });
 
-    status: "new_lead",
+      console.log("CREATE LEAD RETURNED");
+      console.dir(lead, { depth: null });
 
-    notes: ""
+    } catch (e) {
 
-});
-
-      console.log(
-        "Lead Created",
-        lead
-      );
-
-      alert(
-        "Lead successfully created."
-      );
-
-      await loadRequests();
-
-    } catch (error) {
-
-      console.error(error);
-
-      alert(
-        "Failed to create lead."
-      );
-
-    } finally {
-
-      setLoading(false);
+      console.error("CREATE LEAD THREW");
+      console.error(e);
 
     }
+
+    alert(
+      "Lead successfully created."
+    );
+
+    await loadRequests();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Failed to create lead."
+    );
+
+  } finally {
+
+    setLoading(false);
+
   }
+}
 
   async function
   handleReject(

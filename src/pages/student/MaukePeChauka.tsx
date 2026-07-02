@@ -353,15 +353,32 @@ async function handleRequest() {
   const identity =
     requireIdentity();
 
-  console.log(
-    "STUDENT IDENTITY",
-    identity
-  );
+console.log("====================================");
+console.log("IDENTITY OBJECT");
+console.dir(identity, { depth: null });
 
-  console.log(
-    "PHONE VALUE",
-    identity.parentPhone
-  );
+console.log("IDENTITY VALUES");
+console.table({
+  studentName: identity.studentName,
+  schoolName: identity.schoolName,
+
+  parentEmail: identity.parentEmail,
+  parentPhone: identity.parentPhone,
+
+  className: identity.className,
+});
+
+console.log("==================================");
+console.log("SELECTED PARTNER");
+console.dir(selectedPartner, { depth: null });
+
+console.log("PARTNER ID");
+console.log(selectedPartner.partner_id);
+
+console.log("PARTNER UUID");
+console.log(selectedPartner.partner_uuid);
+
+console.log("==================================");
 
   await createIncomingRequest({
 

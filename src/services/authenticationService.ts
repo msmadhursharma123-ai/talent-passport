@@ -81,9 +81,11 @@ interface StudentRow {
 
     student_name: string;
 
-    student_email: string;
+   student_email: string;
 
-    school_name: string | null;
+phone: string | null;
+
+school_name: string | null;
 
     class_name: string | null;
 
@@ -392,11 +394,11 @@ function createStudentIdentity(
         section:
             row.section ?? undefined,
 
-        parentEmail:
-            row.parent_email ?? undefined,
+parentEmail:
+    row.student_email ?? undefined,
 
-        parentPhone:
-            row.parent_phone ?? undefined,
+parentPhone:
+    row.phone ?? undefined,
 
         walletId:
             row.wallet_id ?? undefined,

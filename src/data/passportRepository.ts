@@ -218,6 +218,8 @@ const {
 
             student_id: studentId,
 
+            student_uuid: studentId,
+
             communication_score: communication,
 
             creativity_score: creativity,
@@ -291,8 +293,32 @@ export async function getGrowthPlanData() {
 
 const identity = requireIdentity();
 
+const {
+  data: { user },
+  error: authError,
+} = await supabase.auth.getUser();
+
+console.log("====================================");
+console.log("SUPABASE AUTH CHECK");
+console.log("====================================");
+
+console.log("SUPABASE USER ID =", user?.id);
+console.log("IDENTITY AUTH USER =", identity.authUserId);
+console.log("AUTH ERROR =", authError);
+
 const studentId =
     identity.studentUuid;
+
+console.log("====================================");
+console.log("PASSPORT FETCH START");
+console.log("====================================");
+
+console.table({
+    studentUuid: identity.studentUuid,
+    studentCode: identity.studentCode,
+    masterStudentId: identity.masterStudentId,
+    studentName: identity.studentName
+});
 
 console.log(
     "CURRENT STUDENT ID",
@@ -358,6 +384,15 @@ console.log(
     "PASSPORT ERROR",
     passportResult.error
 );
+
+console.log("====================================");
+console.log("DNA RESULT");
+console.log(dnaResult.data);
+
+console.log("DNA ERROR");
+console.log(dnaResult.error);
+
+console.log("====================================");
 
   return {
 

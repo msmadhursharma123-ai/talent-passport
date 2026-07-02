@@ -1507,6 +1507,32 @@ console.log(
     payload
 );
 
+console.log("================================");
+console.log("INSERTING INTO partner_student_leads");
+console.log(payload);
+
+
+const {
+  data: authData,
+  error: authError,
+} = await supabase.auth.getUser();
+
+console.log("================================");
+console.log("SUPABASE AUTH USER");
+console.log(authData.user);
+
+console.log("AUTH USER ID");
+console.log(authData.user?.id);
+
+console.log("PAYLOAD PARTNER UUID");
+console.log(payload.partner_uuid);
+
+console.log("PAYLOAD STUDENT ID");
+console.log(payload.student_id);
+
+console.log("================================");
+
+
   const {
 
     data,
@@ -1525,6 +1551,16 @@ console.log(
       .select()
 
       .single();
+
+      console.log("================================");
+console.log("INSERT RESPONSE");
+
+
+console.log("INSERT DATA");
+console.dir(data, { depth: null });
+
+console.log("INSERT ERROR");
+console.dir(error, { depth: null });
 
   if (error) {
 

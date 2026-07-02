@@ -117,6 +117,11 @@ export default function TalentPassport({
                 const model =
                     await getPassportViewModel();
 
+console.log("====================================");
+console.log("MODEL RECEIVED BY PAGE");
+console.log(model);
+console.log("====================================");
+
                 setPassportModel(model);
 
             }
