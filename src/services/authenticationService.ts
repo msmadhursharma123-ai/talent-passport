@@ -235,7 +235,7 @@ async function fetchPartnerByAuthId(
 
     if (error) {
 
-        return null;
+        return null; 
 
     }
 
@@ -347,7 +347,63 @@ partnerUuid:
 
     }
 
-    return null;
+    const session = await getCurrentSession();
+
+if (
+    session?.user?.email
+) {
+
+    console.log(
+        "No identity found. Bootstrapping student..."
+    );
+
+    const bootstrap =
+        await bootstrapStudentIdentity({
+
+            studentName:
+                session.user.user_metadata?.full_name ??
+                session.user.user_metadata?.name ??
+                "New Student",
+
+            studentEmail:
+                session.user.email,
+
+            studentCode:
+                session.user.email
+                    .replace("@", "_")
+                    .replace(/\./g, "_"),
+
+            schoolName: "",
+
+            className: ""
+
+        });
+
+    if (bootstrap.success) {
+
+        const student =
+            await fetchStudentByAuthId(
+                session.user.id
+            );
+
+        if (student) {
+
+            return {
+
+                role: "student",
+
+                identity:
+                    createStudentIdentity(student)
+
+            };
+
+        }
+
+    }
+
+}
+
+return null;
 
 }
 
@@ -487,24 +543,65 @@ export async function signIn(
                 authUser.id
             );
 
-        if (!resolved) {
+      if (!resolved) {
 
-            await supabase.auth.signOut();
+    console.log(
+        "No linked identity found. Attempting student bootstrap..."
+    );
 
-            clearStudentIdentity();
-            clearPartnerIdentity();
-            clearAdminIdentity();
-            clearAuthSession();
+    const bootstrap = await bootstrapStudentIdentity({
 
-            return {
+       studentName:
+    authUser.user_metadata?.full_name ??
+    authUser.user_metadata?.name ??
+    "New Student",
 
-                success: false,
-                error:
-                    "No linked profile found."
+studentEmail:
+    authUser.email ?? "",
 
-            };
+studentCode:
+    (authUser.email ?? "")
+        .replace("@", "_")
+        .replace(/\./g, "_"),
 
-        }
+        schoolName: "",
+
+        className: ""
+
+    });
+
+    if (bootstrap.success) {
+
+        console.log(
+            "Bootstrap successful. Restoring identity..."
+        );
+
+        return await restoreSession();
+
+    }
+
+    console.log(
+        "Bootstrap failed. Signing out."
+    );
+
+    await supabase.auth.signOut();
+
+    clearStudentIdentity();
+    clearPartnerIdentity();
+    clearAdminIdentity();
+    clearAuthSession();
+
+    return {
+
+        success: false,
+
+        error:
+            bootstrap.error ??
+            "No linked profile found."
+
+    };
+
+}
 
         /**
          * ==========================================
@@ -649,18 +746,23 @@ export async function registerStudent(
 
             });
 
-        if (error) {
+      if (error) {
 
-            return {
+    console.error(
+        "BOOTSTRAP INSERT ERROR",
+        error
+    );
 
-                success: false,
+    return {
 
-                error:
-                    error.message
+        success: false,
 
-            };
+        error:
+            error.message
 
-        }
+    };
+
+}
 
         const user =
             data.user;
@@ -692,6 +794,82 @@ export async function registerStudent(
         data.session !== null
 
 };
+
+    }
+
+    catch (error: any) {
+
+        return {
+
+            success: false,
+
+            error:
+                error?.message ??
+                "Unable to create account."
+
+        };
+
+    }
+
+}
+
+export async function registerPartner(
+    email: string,
+    password: string
+): Promise<SignUpResult> {
+
+    try {
+
+        const supabase = getClient();
+
+        const {
+            data,
+            error
+        } = await supabase.auth.signUp({
+
+            email: email.trim(),
+
+            password
+
+        });
+
+        if (error) {
+
+            return {
+
+                success: false,
+
+                error: error.message
+
+            };
+
+        }
+
+        const user = data.user;
+
+        if (!user) {
+
+            return {
+
+                success: false,
+
+                error: "Unable to create authentication account."
+
+            };
+
+        }
+
+        return {
+
+            success: true,
+
+            userId: user.id,
+
+            email: user.email ?? undefined,
+
+            sessionExists: data.session !== null
+
+        };
 
     }
 
@@ -755,42 +933,55 @@ export async function bootstrapStudentIdentity(
 
             .insert({
 
-                auth_user_id:
-                    authUser.id,
+    auth_user_id:
+        authUser.id,
 
-                student_name:
-                    student.studentName,
+    student_uuid:
+        crypto.randomUUID(),
 
-                student_email:
-                    student.studentEmail,
+    student_name:
+        student.studentName,
 
-                student_id:
-                    student.studentCode,
+    student_email:
+        student.studentEmail,
 
-                school_name:
-                    student.schoolName,
+    student_id:
+        student.studentCode,
 
-                class_name:
-                    student.className
+    school_name:
+        student.schoolName,
 
-            })
+    class_name:
+        student.className
+
+})
 
             .select()
 
             .single();
 
-        if (error) {
+      if (error) {
 
-            return {
+    console.error(
+        "BOOTSTRAP INSERT ERROR",
+        error
+    );
 
-                success: false,
+    return {
 
-                error:
-                    error.message
+        success: false,
 
-            };
+        error:
+            error.message
 
-        }
+    };
+
+}
+
+console.log(
+    "BOOTSTRAP INSERTED",
+    data
+);
 
         return {
 
@@ -1012,16 +1203,17 @@ Promise<RestoreSessionResult> {
 
 }
 
-export async function initializeAuth():
-Promise<void> {
+export async function initializeAuth(): Promise<void> {
 
-    if (hasAuthSession()) {
+    if (!hasAuthSession()) {
 
-        return;
+        await restoreSession();
 
     }
 
-    await restoreSession();
+    const supabase = getClient();
+
+    await supabase.auth.getSession();
 
 }
 

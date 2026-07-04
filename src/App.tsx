@@ -51,6 +51,13 @@ import {
     clearAdminIdentity
 } from "./services/identityService";
 
+import {
+  initializeAuth,
+  getCurrentUser,
+  getCurrentIdentity,
+  signOut
+} from "./services/authenticationService";
+
 const DEMO_ITEMS: Submission[] = [
   {
     id: "demo-1",
@@ -102,7 +109,7 @@ useState<"new" | "existing" | null>(null);
 
 const adminIdentity = getCurrentAdmin();
 
-const handleLogout = () => {
+const handleLogout = async () => {
 
   localStorage.removeItem(
     "studentProfile"
@@ -136,8 +143,91 @@ const handleLogout = () => {
 
   setUserType(null);
 
-  setActiveTab("identity");
+await signOut();
+
+setActiveTab("identity");
 };
+
+useEffect(() => {
+
+  async function initializeApplication() {
+
+    try {
+
+      await initializeAuth();
+
+      const user =
+        await getCurrentUser();
+
+      console.log(
+        "AUTH RESTORED:",
+        user
+      );
+
+if (user) {
+
+  const identity =
+    await getCurrentIdentity();
+
+  if (!identity) {
+
+    setActiveTab("identity");
+    return;
+
+  }
+
+  switch (identity.role) {
+
+    case "student": {
+
+      setSelectedRole("student");
+      setUserType("existing");
+      setActiveTab("passport");
+      break;
+
+    }
+
+    case "partner": {
+
+      setSelectedRole("partner");
+      setUserType("existing");
+      setActiveTab("partner-portal");
+      break;
+
+    }
+
+    case "admin": {
+
+      setSelectedRole("admin");
+      setActiveTab("admin");
+      break;
+
+    }
+
+    default: {
+
+      setActiveTab("identity");
+
+    }
+
+  }
+
+}
+
+    } catch (error) {
+
+      console.error(
+        "AUTH INIT ERROR:",
+        error
+      );
+
+    }
+
+  }
+
+  initializeApplication();
+
+}, []);
 
  useEffect(() => {
 
@@ -528,11 +618,13 @@ schoolName: string;
   adminIdentity ? (
 
       <AdminPortal
-        onLogout={() => {
+        onLogout={async () => {
 
           clearAdminIdentity();
 
-          setActiveTab("identity");
+           await signOut();
+
+setActiveTab("identity");
 
         }}
       />
@@ -573,7 +665,7 @@ schoolName: string;
 
   <PartnerPortal
 
-    onLogout={() => {
+  onLogout={async () => {
 
       localStorage.removeItem(
         "partnerProfile"
@@ -591,9 +683,9 @@ schoolName: string;
 
       setUserType(null);
 
-      setActiveTab(
-        "identity"
-      );
+  await signOut();
+
+setActiveTab("identity");
 
     }}
 

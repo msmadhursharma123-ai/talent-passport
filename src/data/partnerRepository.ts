@@ -33,8 +33,17 @@ export async function createPartner(
     partner.partner_id can automatically
     come from Identity Kernel.
   */
-
 const partnerId = partner.partner_id;
+
+const partnerUuid =
+  crypto.randomUUID();
+
+const {
+  data: authData
+} = await supabase.auth.getUser();
+
+const authUser =
+  authData.user;
 
   /* =====================================
      SAVE TO partner_profiles
@@ -48,10 +57,16 @@ const partnerId = partner.partner_id;
 
       .from("partner_profiles")
 
-      .insert([{
+    .insert([{
 
-        partner_id:
-          partnerId,
+  partner_id:
+    partnerId,
+
+  partner_uuid:
+    partnerUuid,
+
+  auth_user_id:
+    authUser?.id ?? null,
 
         institute_name:
           partner.partner_name,
@@ -102,7 +117,10 @@ const partnerId = partner.partner_id;
       .upsert({
 
         partner_id:
-          partnerId,
+  partnerId,
+
+  
+partner_uuid: partnerUuid,
 
         partner_name:
           partner.partner_name,

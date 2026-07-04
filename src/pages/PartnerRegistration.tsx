@@ -5,6 +5,10 @@ import {
 } from "../data/partnerRepository";
 
 import {
+  registerPartner
+} from "../services/authenticationService";
+
+import {
   savePartnerIdentity
 } from "../services/identityService";
 
@@ -70,11 +74,24 @@ export default function PartnerRegistration({
     setEmail] =
     useState("");
 
-  const [mobile,
-    setMobile] =
-    useState("");
+ const [mobile,
+  setMobile] =
+  useState("");
 
-  const [skillFocus, setSkillFocus] = useState<string[]>([]);
+const [password,
+  setPassword] =
+  useState("");
+
+const [confirmPassword,
+  setConfirmPassword] =
+  useState("");
+
+const [loading,
+  setLoading] =
+  useState(false);
+
+const [skillFocus, setSkillFocus] = useState<string[]>([]);
+
 const [consultationServices, setConsultationServices] = useState<string[]>([]);
 
 const [showSkillDropdown, setShowSkillDropdown] = useState(false);
@@ -136,6 +153,38 @@ const toggleConsultation = (service: string) => {
 
     }
 
+if (password.length < 6) {
+  alert("Password must contain at least 6 characters.");
+  return;
+}
+
+if (password !== confirmPassword) {
+  alert("Passwords do not match.");
+  return;
+}
+
+setLoading(true);
+
+
+
+try {
+
+const authResult = await registerPartner(
+  email,
+  password
+);
+
+if (!authResult.success) {
+
+  alert(
+    authResult.error ??
+    "Unable to create account."
+  );
+
+  return;
+
+}
+  
     const partnerId =
       email
         .toLowerCase()
@@ -285,9 +334,26 @@ const toggleConsultation = (service: string) => {
       "partner"
     );
 
-    onContinue();
+onContinue();
 
-  };
+}
+
+catch (error: any) {
+
+  alert(
+    error?.message ??
+    "Unable to create account."
+  );
+
+}
+
+finally {
+
+  setLoading(false);
+
+}
+
+};
 
   return (
     <div
@@ -402,6 +468,30 @@ const toggleConsultation = (service: string) => {
           }
           style={inputStyle}
         />
+
+<input
+  type="password"
+  placeholder="Password"
+  value={password}
+  onChange={(e) =>
+    setPassword(
+      e.target.value
+    )
+  }
+  style={inputStyle}
+/>
+
+<input
+  type="password"
+  placeholder="Confirm Password"
+  value={confirmPassword}
+  onChange={(e) =>
+    setConfirmPassword(
+      e.target.value
+    )
+  }
+  style={inputStyle}
+/>
 
 <input
   placeholder="Institute Area / Sector"
@@ -646,9 +736,10 @@ const toggleConsultation = (service: string) => {
   )}
 </div>
 
-        <button
-          onClick={handleContinue}
-          style={{
+       <button
+  onClick={handleContinue}
+  disabled={loading}
+  style={{
             marginTop: 40,
             width: "100%",
             padding: 20,

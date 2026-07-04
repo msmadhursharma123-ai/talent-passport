@@ -3,6 +3,8 @@ import {
     registerStudent
 } from "../services/authenticationService";
 
+import { getSupabaseClient } from "../supabaseClient";
+
 interface Props {
   onRegistrationComplete: () => void;
   onVerificationRequired: (email: string) => void;
@@ -113,6 +115,25 @@ console.log("CALLING onVerificationRequired");
 
 
 }
+
+async function handleGoogleLogin() {
+
+  const supabase = getSupabaseClient();
+
+  if (!supabase) {
+    alert("Supabase is not configured.");
+    return;
+  }
+
+  await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: window.location.origin,
+    },
+  });
+
+}
+
   return (
     <div
       style={{
@@ -222,14 +243,15 @@ console.log("CALLING onVerificationRequired");
           OR
         </div>
 
-        <button
-          disabled
-          style={secondaryButton}
-        >
-          Continue with Google
-          <br />
-          <small>(Coming in next step)</small>
-        </button>
+       <button
+  onClick={handleGoogleLogin}
+  style={{
+    ...secondaryButton,
+    cursor: "pointer"
+  }}
+>
+  Continue with Google
+</button>
 
         <div
           style={{
@@ -288,7 +310,7 @@ const secondaryButton: React.CSSProperties = {
   borderRadius: 12,
   border: "1px solid #DDD",
   background: "#FFF",
-  cursor: "not-allowed",
+  cursor: "pointer",
   color: "#666",
   fontWeight: 600,
 };
