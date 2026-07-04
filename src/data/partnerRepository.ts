@@ -7,9 +7,8 @@ import {
 /* ============================================================
    REPOSITORY IDENTITY HELPERS
 ============================================================ */
-
 function currentPartnerIdentity() {
-  return requireIdentity();
+    return null;
 }
 
 /* ============================================================
@@ -35,12 +34,7 @@ export async function createPartner(
     come from Identity Kernel.
   */
 
-const identity = currentPartnerIdentity();
-
-const partnerId =
-    partner.partner_id ??
-    identity.partnerId ??
-    "";
+const partnerId = partner.partner_id;
 
   /* =====================================
      SAVE TO partner_profiles

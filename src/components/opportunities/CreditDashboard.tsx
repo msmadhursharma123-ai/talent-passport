@@ -15,7 +15,9 @@ import {
   getStudentSkills
 } from "../../data/studentRepository";
 
-import { getRecommendedPartners } from "../../services/marketplaceService";
+import {
+  fetchConsultationPartners
+} from "../../data/partnerMarketplaceRepository";
 
 import {
   syncStudentWallet
@@ -247,15 +249,97 @@ async function loadRecommendedPartners(
 
   setLoadingPartners(true);
 
-  try {
+try {
 
-    const partners =
-      await getRecommendedPartners(
-        category,
-        skill
-      );
+  const partners =
+    await fetchConsultationPartners();
 
-    setRecommendedPartners(partners);
+  console.log("================================");
+  console.log("SELECTED CATEGORY");
+  console.log(category);
+
+  console.log("SELECTED SKILL");
+  console.log(skill);
+
+  console.log("DATABASE PARTNERS");
+  console.dir(partners, { depth: null });
+
+  console.log("================================");
+
+const filteredPartners =
+  partners.filter((partner: any) => {
+
+    console.log("---------------------------");
+
+    console.log("PARTNER");
+    console.log(partner.institute_name);
+
+    console.log("PARTNER SKILLS");
+    console.log(partner.skill_focus);
+
+    console.log("SEARCHING SKILL");
+    console.log(skill);
+
+    const partnerSkills =
+      partner.skill_focus ?? [];
+
+    const matched =
+      partnerSkills.includes(skill);
+
+    console.log("MATCH");
+    console.log(matched);
+
+    return matched;
+
+});
+
+    const mappedPartners =
+      filteredPartners.map((partner: any) => ({
+
+        id:
+          partner.partner_uuid,
+
+        partner_id:
+          partner.partner_id,
+
+        partner_uuid:
+          partner.partner_uuid,
+
+        name:
+          partner.institute_name,
+
+        city:
+          partner.institute_city,
+
+        credits:
+          60,
+
+        rating:
+          5,
+
+        verified:
+          true,
+
+        experience:
+          0,
+
+        studentsMentored:
+          0,
+
+        consultationDuration:
+          45,
+
+        specializations:
+          partner.skill_focus ?? [],
+
+        languages:
+          ["English"]
+
+      }));
+
+    setRecommendedPartners(
+      mappedPartners
+    );
 
     setShowPartners(true);
 
@@ -2494,7 +2578,7 @@ studentId:
 getMasterStudentId(),
 
 partnerId:
-selectedPartner.id,
+selectedPartner.partner_uuid,
 
 category:
 selectedCategory!,

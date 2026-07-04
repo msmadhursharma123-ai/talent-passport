@@ -15,6 +15,7 @@ import TalentPassport from "./pages/TalentPassport";
 import ExistingUserLogin from "./pages/ExistingUserLogin";
 import GrowthCenter from "./pages/GrowthCenter";
 import StudentProfileForm from "./pages/StudentProfileForm";
+import StudentRegistrationAuth from "./pages/StudentRegistrationAuth";
 import AdminLogin from "./pages/AdminLogin";
 import RoleSelection from "./pages/RoleSelection";
 import UserType from "./pages/UserType";
@@ -338,19 +339,50 @@ schoolName: string;
         return;
       }
 
-      if (type === "new") {
+   if (type === "new") {
 
-        setActiveTab(
-          "student-profile"
-        );
+    setActiveTab(
+        "student-register-auth"
+    );
 
-      } else {
+} else {
 
         setActiveTab(
           "existing-login"
         );
 
       }
+
+    }}
+  />
+)}
+
+{activeTab === "student-register-auth" && (
+  <StudentRegistrationAuth
+    onBack={() =>
+      setActiveTab("role-selection")
+    }
+
+    onLogin={() => {
+      setUserType("existing");
+      setActiveTab("existing-login");
+    }}
+
+    onRegistrationComplete={() =>
+      setActiveTab("student-profile")
+    }
+
+    onVerificationRequired={(email) => {
+
+      console.log(
+        "Verification required for:",
+        email
+      );
+
+      // Temporary:
+      // Next checkpoint will navigate to VerifyEmail.
+
+      setActiveTab("student-profile");
 
     }}
   />

@@ -8,6 +8,10 @@ import {
   savePartnerIdentity
 } from "../services/identityService";
 
+import {
+  TALENT_DOMAINS
+} from "../constants/talentDomains";
+
 interface Props {
   onContinue: () => void;
   onBack: () => void;
@@ -22,40 +26,33 @@ const cities = [
 ];
 
 
-  const skills = [
-  "Debate",
-  "Public Speaking",
-  "Creative Writing",
+const skills = Array.from(
 
-  "Dance",
-  "Music",
-  "Singing",
+  new Set([
 
-  "Acting",
-  "Drama",
-  "Theatre",
+    ...TALENT_DOMAINS.ACTIVITY_COACHING,
 
-  "Painting",
-  "Art & Craft",
-  "Fine Arts",
-  "Music Instrument"
-];
+    ...TALENT_DOMAINS.CAREER_GUIDANCE,
 
-const consultationOptions = [
-  "Career Guidance",
-  "Scholarship Planning",
-  "Portfolio Review",
-  "Competition Coaching",
-  "Leadership Coaching",
-  "Public Speaking Coaching",
-  "Dance Mentoring",
-  "Music Mentoring",
-  "Acting Mentoring",
-  "Robotics Mentoring",
-  "Creative Writing Mentoring",
-  "Art Portfolio Review",
-];
+    ...TALENT_DOMAINS.PARENT_SUPPORT
 
+  ])
+
+);
+
+const consultationOptions = Array.from(
+
+  new Set([
+
+    ...TALENT_DOMAINS.ACTIVITY_COACHING,
+
+    ...TALENT_DOMAINS.CAREER_GUIDANCE,
+
+    ...TALENT_DOMAINS.PARENT_SUPPORT
+
+  ])
+
+);
 export default function PartnerRegistration({
   onContinue,
   onBack,
@@ -209,54 +206,56 @@ const toggleConsultation = (service: string) => {
     |
     */
 
-    savePartnerIdentity({
+  savePartnerIdentity({
 
-      partnerId:
+    partnerUuid:
+        partner.partner_uuid,
+
+    partnerId:
         partner.partner_id,
 
-      partnerCode:
+    partnerCode:
         partner.partner_id,
 
-      partnerName:
+    partnerName:
         partner.partner_name,
 
-      email:
+    email:
         partner.email,
 
-      phone:
+    phone:
         partner.phone,
 
-      category:
+    category:
         partner.category,
 
-      organization:
+    organization:
         partner.partner_name,
 
-      specialization:
+    specialization:
         partner.specialization,
 
-      consultationServices:
+    consultationServices:
         partner.consultation_services,
 
-      instituteArea:
+    instituteArea:
         partner.institute_area,
 
-      preferredAgeFrom:
+    preferredAgeFrom:
         partner.preferred_age_from,
 
-      preferredAgeTo:
+    preferredAgeTo:
         partner.preferred_age_to,
 
-      role:
-        "partner",
+    role: "partner",
 
-      permissions: [],
+    permissions: [],
 
-      metadata: {
+    metadata: {
         partner
-      }
+    }
 
-    });
+});
 
     /*
     |--------------------------------------------------------------------------

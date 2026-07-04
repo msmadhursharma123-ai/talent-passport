@@ -40,6 +40,16 @@ export async function createStudent(
 const studentEmail =
   student.parent_email || "";
 
+const {
+  data: authData
+} = await supabase.auth.getUser();
+
+const authUserId =
+  authData.user?.id ?? null;
+
+console.log("AUTH USER:", authData.user);
+console.log("AUTH USER ID:", authUserId);
+
 const studentCode =
   studentEmail
     .trim()
@@ -48,44 +58,65 @@ const studentCode =
     .replace(/\./g, "_");
 
   const payload = {
+  ...student,
+  student_email: studentEmail,
+  student_id: studentCode
+};
 
-    ...student,
-
-    student_email:
-      studentEmail,
-
-   student_id:
-studentCode
-
-  };
+console.log(
+  "PAYLOAD JSON:",
+  JSON.stringify(payload, null, 2)
+);
 
   /* ============================================================
      CREATE STUDENT
   ============================================================ */
 
+console.log("AUTH USER:", await supabase.auth.getUser());
+console.log("PAYLOAD:", payload);
+
+const {
+  data: sessionData
+} = await supabase.auth.getSession();
+
+console.log("SESSION:", sessionData.session);
+console.log("ACCESS TOKEN EXISTS:", !!sessionData.session?.access_token);
+console.log("USER ID:", sessionData.session?.user?.id);
+
+const {
+    data: userCheck
+} = await supabase.auth.getUser();
+
+console.log("===== PRE INSERT USER =====");
+console.log(userCheck.user);
+console.log("===========================");
+
   const {
 
-    data: studentRow,
+  data: studentRow,
 
-    error: studentError
+  error: studentError
 
-  } = await (supabase as any)
+} = await (supabase as any)
 
-    .from("students")
+  .from("students")
 
-    .insert([payload])
+  .insert([payload])
 
-    .select()
+  .select()
 
-    .single();
+  .single();
 
-  if (studentError) {
+if (studentError) {
 
-    console.error(studentError);
+  console.error("STUDENT INSERT ERROR:", studentError);
 
-    return null;
+  return null;
 
-  }
+}
+
+console.log("✅ STUDENT INSERT SUCCESS");
+console.log(studentRow);
 
   /* ============================================================
      CREATE / UPDATE STUDENT MASTER
@@ -105,6 +136,11 @@ studentCode
 
       student_id:
 studentCode,
+
+auth_user_id:
+    authUserId,
+
+student_uuid: studentRow.student_uuid,
 
       student_name:
         student.student_name,
@@ -142,13 +178,16 @@ studentCode,
 
     .single();
 
-  if (masterError) {
+if (masterError) {
 
-    console.error(masterError);
+    console.error("MASTER UPSERT ERROR:", masterError);
 
     return null;
 
-  }
+}
+
+console.log("✅ MASTER UPSERT SUCCESS");
+console.log(masterRow);
 
   /* ============================================================
      RETURN COMPLETE IDENTITY

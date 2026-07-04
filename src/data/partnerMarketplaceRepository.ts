@@ -2081,3 +2081,62 @@ export async function fetchAllocatedStudents(
   return data ?? [];
 
 }
+
+
+/* ============================================================
+   CONSULTATION PARTNERS
+============================================================ */
+
+export async function
+fetchConsultationPartners() {
+
+  const supabase =
+    getSupabaseClient() as any;
+
+  if (!supabase) {
+    return [];
+  }
+
+  const {
+    data,
+    error
+  } = await supabase
+
+    .from("partner_profiles")
+
+    .select(`
+      partner_uuid,
+      partner_id,
+      institute_name,
+      institute_city,
+      skill_focus,
+      email,
+      mobile_number
+    `)
+
+    .eq(
+      "account_status",
+      "active"
+    )
+
+    .order(
+      "institute_name",
+      {
+        ascending: true
+      }
+    );
+
+  if (error) {
+
+    console.error(
+      "CONSULTATION PARTNERS ERROR",
+      error
+    );
+
+    return [];
+
+  }
+
+  return data ?? [];
+
+}

@@ -56,6 +56,26 @@ AdminIdentity;
 
 }
 
+export interface SignUpResult
+    extends AuthResult {
+
+    userId?: string;
+
+    email?: string;
+
+    sessionExists?: boolean;
+
+}
+
+export interface BootstrapStudentResult
+    extends AuthResult {
+
+    studentUuid?: string;
+
+    masterStudentId?: string;
+
+}
+
 export interface RestoreSessionResult
     extends AuthResult {
 
@@ -598,6 +618,203 @@ export async function signIn(
                 error?.message ??
 
                 "Authentication failed."
+
+        };
+
+    }
+
+}
+
+
+export async function registerStudent(
+    email: string,
+    password: string
+): Promise<SignUpResult> {
+
+    try {
+
+        const supabase =
+            getClient();
+
+        const {
+            data,
+            error
+        } =
+            await supabase.auth.signUp({
+
+                email:
+                    email.trim(),
+
+                password
+
+            });
+
+        if (error) {
+
+            return {
+
+                success: false,
+
+                error:
+                    error.message
+
+            };
+
+        }
+
+        const user =
+            data.user;
+
+        if (!user) {
+
+            return {
+
+                success: false,
+
+                error:
+                    "Unable to create authentication account."
+
+            };
+
+        }
+
+  return {
+
+    success: true,
+
+    userId:
+        user.id,
+
+    email:
+        user.email ?? undefined,
+
+    sessionExists:
+        data.session !== null
+
+};
+
+    }
+
+    catch (error: any) {
+
+        return {
+
+            success: false,
+
+            error:
+                error?.message ??
+                "Unable to create account."
+
+        };
+
+    }
+
+}
+
+export async function bootstrapStudentIdentity(
+    student: {
+        studentName: string;
+        studentEmail: string;
+        studentCode: string;
+        schoolName?: string;
+        className?: string;
+    }
+): Promise<BootstrapStudentResult> {
+
+    try {
+
+        const supabase = getClient();
+
+        const {
+            data: authData
+        } = await supabase.auth.getUser();
+
+        const authUser = authData.user;
+
+        if (!authUser) {
+
+            return {
+
+                success: false,
+
+                error:
+                    "Authenticated user not found."
+
+            };
+
+        }
+
+        const {
+
+            data,
+
+            error
+
+} = await (supabase as any)
+    .from("students_master")
+
+            .insert({
+
+                auth_user_id:
+                    authUser.id,
+
+                student_name:
+                    student.studentName,
+
+                student_email:
+                    student.studentEmail,
+
+                student_id:
+                    student.studentCode,
+
+                school_name:
+                    student.schoolName,
+
+                class_name:
+                    student.className
+
+            })
+
+            .select()
+
+            .single();
+
+        if (error) {
+
+            return {
+
+                success: false,
+
+                error:
+                    error.message
+
+            };
+
+        }
+
+        return {
+
+            success: true,
+
+           studentUuid: (data as any).student_uuid,
+
+            masterStudentId: (data as any).id
+
+        };
+
+    }
+
+    catch (error: any) {
+
+        return {
+
+            success: false,
+
+            error:
+
+                error?.message ??
+
+                "Unable to create student identity."
 
         };
 
