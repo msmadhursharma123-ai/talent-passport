@@ -1,0 +1,5 @@
+User-agent: *
+
+Allow: /
+
+Sitemap: https://talent-passport-xi.vercel.app/sitemap.xml
