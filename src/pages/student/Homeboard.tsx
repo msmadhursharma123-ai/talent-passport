@@ -763,202 +763,222 @@ const closeVideo = () =>
   }}
 >
 
-      {/* LEFT SIDE VIDEOS */}
+    {/* LEFT SIDE SUBMISSIONS */}
 
-     <div
+<div
   style={{
     flex: 1,
     overflowX: "auto"
   }}
 >
-        <div
-          style={{
-            display: "flex",
-            gap: 20,
-            paddingBottom: 10
-          }}
-        >
-          {submissions.map(
-            (item) => (
-              <div
-                key={item.id}
-                onClick={() =>
-                  setSelectedVideo(item)
-                }
-                style={{
-                  minWidth: 280,
-                  cursor: "pointer"
-                }}
-              >
-                <div
-                  style={{
-                    borderRadius: 18,
-                    overflow: "hidden",
-                    border:
-                      "1px solid #E2E8F0"
-                  }}
-                >
-                  <video
-                    src={item.video_url}
-                    muted
-                    preload="metadata"
-                    style={{
-                      width: "100%",
-                      height: 180,
-                      objectFit: "cover",
-                      background: "#000"
-                    }}
-                  />
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 12
-                  }}
-                >
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      fontSize: 15
-                    }}
-                  >
-                    {item.event_name}
-                  </div>
-
-                  <div
-                    style={{
-                      color: "#64748B",
-                      fontSize: 13
-                    }}
-                  >
-                    Submitted on{" "}
-                    {new Date(
-                      item.created_at
-                    ).toLocaleDateString()}
-                  </div>
-                </div>
-              </div>
-            )
-          )}
-        </div>
-      </div>
-
-      {/* RIGHT SIDE CREDIT SUMMARY */}
-
   <div
-  style={{
-    width: 260,
-    flexShrink: 0,
-    border: "1px solid #E2E8F0",
-    borderRadius: 18,
-    padding: 10,
-    background: "#FAFAFA",
-    marginTop: 0
-  }}
->
+    style={{
+      display: "flex",
+      gap: 20,
+      paddingBottom: 10
+    }}
+  >
+    {submissions.map((item) => (
+      <div
+        key={item.id}
+        style={{
+          minWidth: 320,
+          background: "#FFF",
+          border: "1px solid #E2E8F0",
+          borderRadius: 18,
+          padding: 20
+        }}
+      >
         <div
           style={{
-            fontSize: 14,
+            fontSize: 18,
             fontWeight: 700,
-            marginBottom: 16
+            marginBottom: 10
           }}
         >
-          🎓 Submission Credit Summary
+          🎭 {item.event_name}
         </div>
 
-       <div
-  style={{
-    display: "flex",
-    flexDirection: "column",
-    gap: 8
-  }}
->
-
-          <div
-            style={{
-              background: "#E8E1D6",
-              borderRadius: 14,
-              padding: 4
-            }}
-          >
-            <div
-              style={{
-                fontSize: 13
-              }}
-            >
-              Total Submissions
-            </div>
-
-            <div
-              style={{
-                fontSize: 22,
-                fontWeight: 700
-              }}
-            >
-              {totalSubmissions}
-            </div>
-          </div>
-
-          <div
-            style={{
-              background: "#DCE3EF",
-              borderRadius: 14,
-              padding: 4
-            }}
-          >
-            <div
-              style={{
-                fontSize: 13
-              }}
-            >
-              Credit Per Submission
-            </div>
-
-            <div
-              style={{
-                fontSize: 22,
-                fontWeight: 700
-              }}
-            >
-              10
-            </div>
-          </div>
-
-          <div
-            style={{
-              background: "#D9ECE6",
-              borderRadius: 14,
-              padding: 4
-            }}
-          >
-            <div
-              style={{
-                fontSize: 13
-              }}
-            >
-              Total Credits Earned
-            </div>
-
-            <div
-              style={{
-                fontSize: 22,
-                fontWeight: 700
-              }}
-            >
-              {submissionCredits}
-            </div>
-          </div>
-
+        <div
+          style={{
+            color: "#64748B",
+            fontSize: 14,
+            marginBottom: 8
+          }}
+        >
+          📅 Submitted on{" "}
+          {new Date(item.created_at).toLocaleDateString()}
         </div>
+
+        <div
+          style={{
+            color: "#64748B",
+            fontSize: 14,
+            marginBottom: 20
+          }}
+        >
+          🎬 Verified Competition Submission
+        </div>
+
+        <button
+          onClick={() => setSelectedVideo(item)}
+          style={{
+            background: "#F97316",
+            color: "#FFF",
+            border: "none",
+            borderRadius: 12,
+            padding: "12px 20px",
+            fontWeight: 700,
+            cursor: "pointer"
+          }}
+        >
+          ▶ Watch Submission
+        </button>
       </div>
+    ))}
+  </div>
+</div>
 
+     
     </div>
 
-  )}
+ )}
+
+{submissions.length > 0 && (
+
+<div
+  style={{
+    marginTop: 24,
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: 16
+  }}
+>
+
+  {/* TOTAL SUBMISSIONS */}
+
+  <div
+    style={{
+      background: "#E8E1D6",
+      borderRadius: 16,
+      border: "1px solid #E2E8F0",
+      padding: "16px 18px"
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }}
+    >
+      <div
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          color: "#64748B"
+        }}
+      >
+        📤 Total Submissions
+      </div>
+
+      <div
+        style={{
+          fontSize: 28,
+          fontWeight: 800,
+          color: "#111827"
+        }}
+      >
+        {totalSubmissions}
+      </div>
+    </div>
+  </div>
+
+  {/* CREDIT PER SUBMISSION */}
+
+  <div
+    style={{
+      background: "#DCE3EF",
+      borderRadius: 16,
+      border: "1px solid #E2E8F0",
+      padding: "16px 18px"
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }}
+    >
+      <div
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          color: "#64748B"
+        }}
+      >
+        🪙 Credits / Submission
+      </div>
+
+      <div
+        style={{
+          fontSize: 28,
+          fontWeight: 800,
+          color: "#111827"
+        }}
+      >
+        10
+      </div>
+    </div>
+  </div>
+
+  {/* TOTAL CREDITS */}
+
+  <div
+    style={{
+      background: "#D9ECE6",
+      borderRadius: 16,
+      border: "1px solid #E2E8F0",
+      padding: "16px 18px"
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }}
+    >
+      <div
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          color: "#64748B"
+        }}
+      >
+        ⭐ Total Credits Earned
+      </div>
+
+      <div
+        style={{
+          fontSize: 28,
+          fontWeight: 800,
+          color: "#111827"
+        }}
+      >
+        {submissionCredits}
+      </div>
+    </div>
+  </div>
 
 </div>
 
-      {/* GRAPH SECTION */}
+)}
+
+</div>
+
+{/* GRAPH SECTION */}
 
 <div
   style={{

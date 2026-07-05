@@ -3,7 +3,7 @@ import {
     registerStudent
 } from "../services/authenticationService";
 
-import { getSupabaseClient } from "../supabaseClient";
+
 
 interface Props {
   onRegistrationComplete: () => void;
@@ -116,23 +116,6 @@ console.log("CALLING onVerificationRequired");
 
 }
 
-async function handleGoogleLogin() {
-
-  const supabase = getSupabaseClient();
-
-  if (!supabase) {
-    alert("Supabase is not configured.");
-    return;
-  }
-
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: window.location.origin,
-    },
-  });
-
-}
 
   return (
     <div
@@ -232,26 +215,7 @@ async function handleGoogleLogin() {
             : "Create Account"}
         </button>
 
-        <div
-          style={{
-            textAlign: "center",
-            marginTop: 24,
-            marginBottom: 20,
-            color: "#999",
-          }}
-        >
-          OR
-        </div>
-
-       <button
-  onClick={handleGoogleLogin}
-  style={{
-    ...secondaryButton,
-    cursor: "pointer"
-  }}
->
-  Continue with Google
-</button>
+       
 
         <div
           style={{
@@ -304,13 +268,3 @@ const primaryButton: React.CSSProperties = {
   fontSize: 16,
 };
 
-const secondaryButton: React.CSSProperties = {
-  width: "100%",
-  padding: 16,
-  borderRadius: 12,
-  border: "1px solid #DDD",
-  background: "#FFF",
-  cursor: "pointer",
-  color: "#666",
-  fontWeight: 600,
-};

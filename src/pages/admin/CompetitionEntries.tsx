@@ -48,6 +48,9 @@ export default function CompetitionEntries() {
     setSelectedStudent] =
     useState<any>(null);
 
+const [showSubmissionVideo, setShowSubmissionVideo] =
+  useState(false);
+
   const [selectedEvent,
     setSelectedEvent] =
     useState("Communication");
@@ -807,11 +810,10 @@ const missingEvents =
 
     <button
       key={submission.id}
-      onClick={() =>
-        setSelectedEvent(
-          submission.id
-        )
-      }
+     onClick={() => {
+  setSelectedEvent(submission.id);
+  setShowSubmissionVideo(false);
+}}
       style={{
         border: "none",
         padding: "12px 18px",
@@ -966,21 +968,42 @@ const missingEvents =
   {activeSubmission.video_url}
 </div>
 
-<video
-  key={activeSubmission.id}
-  controls
-  width="100%"
-  style={{
-    borderRadius: "12px",
-  }}
->
-  <source
-    src={
-      activeSubmission.video_url
-    }
-    type="video/mp4"
-  />
-</video>
+{!showSubmissionVideo ? (
+
+  <button
+    onClick={() => setShowSubmissionVideo(true)}
+    style={{
+      background: "#F97316",
+      color: "#FFF",
+      border: "none",
+      padding: "14px 22px",
+      borderRadius: 12,
+      cursor: "pointer",
+      fontWeight: 700,
+      fontSize: 15
+    }}
+  >
+    ▶ Watch Submission Video
+  </button>
+
+) : (
+
+  <video
+    key={activeSubmission.id}
+    controls
+    preload="metadata"
+    width="100%"
+    style={{
+      borderRadius: 12
+    }}
+  >
+    <source
+      src={activeSubmission.video_url}
+      type="video/mp4"
+    />
+  </video>
+
+)}
 
                             </div>
 

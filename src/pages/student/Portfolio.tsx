@@ -583,6 +583,9 @@ async function handleDelete() {
 const [editing, setEditing] =
   useState(false);
 
+const [showVideoModal, setShowVideoModal] =
+  useState(false);
+
 const [editTitle, setEditTitle] =
   useState(item.title);
 
@@ -698,112 +701,141 @@ const [editVenue,
         marginBottom: "20px"
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent:
-            "space-between"
-        }}
-      >
-        <div>
-
-          <h3
-            style={{
-              margin: 0,
-              fontSize: "28px"
-            }}
-          >
-            {item.title}
-          </h3>
-
-          <div
-            style={{
-              marginTop: "10px",
-              color: "#F97316",
-              fontWeight: 600
-            }}
-          >
-            📍 {item.venue}
-          </div>
-
-          <p
-            style={{
-              color: "#64748B",
-              maxWidth: "700px"
-            }}
-          >
-            {item.description}
-          </p>
-
-          {item.video_url && (
-            <video
-              controls
-              style={{
-                width: "100%",
-                maxWidth: "700px",
-                borderRadius:
-                  "16px",
-                marginTop: "16px"
-              }}
-            >
-              <source
-                src={item.video_url}
-              />
-            </video>
-          )}
-
-        </div>
-
-        <div
+     <div
   style={{
     display: "flex",
-    gap: "10px",
-    alignItems: "center"
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "24px"
   }}
 >
 
+  {/* LEFT */}
+
   <div
     style={{
-      background:
-        item.parent_verified
-          ? "#DCFCE7"
-          : "#FEF3C7",
+      flex: 1
+    }}
+  >
 
-      color:
-        item.parent_verified
-          ? "#166534"
-          : "#92400E",
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        marginBottom: "10px"
+      }}
+    >
+      <div
+        style={{
+          fontSize: "30px"
+        }}
+      >
+        🎭
+      </div>
 
-      padding:
-        "8px 14px",
+      <h3
+        style={{
+          margin: 0,
+          fontSize: "24px"
+        }}
+      >
+        {item.title}
+      </h3>
+    </div>
 
-      borderRadius:
-        "999px",
+    <div
+      style={{
+        color: "#64748B",
+        marginBottom: "8px"
+      }}
+    >
+      📍 {item.venue}
+    </div>
 
+    <div
+      style={{
+        color: "#94A3B8",
+        marginBottom: "18px"
+      }}
+    >
+      {item.description}
+    </div>
+
+  
+
+  </div>
+
+  {/* RIGHT */}
+
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      flexShrink: 0
+    }}
+  >
+
+   <div
+  style={{
+    background:
+      item.parent_verified
+        ? "#DCFCE7"
+        : "#FEF3C7",
+
+    color:
+      item.parent_verified
+        ? "#166534"
+        : "#92400E",
+
+    padding: "8px 14px",
+
+    borderRadius: "999px",
+
+    fontWeight: 700,
+
+    whiteSpace: "nowrap"
+  }}
+>
+  {item.parent_verified
+    ? "🟢 Parent Verified"
+    : "🟡 Self Reported"}
+</div>
+
+{item.video_url && (
+  <button
+    onClick={() => setShowVideoModal(true)}
+    style={{
+      background: "#F97316",
+      color: "#FFF",
+      border: "none",
+      borderRadius: "10px",
+      padding: "8px 14px",
+      cursor: "pointer",
       fontWeight: 700
     }}
   >
-    {item.parent_verified
-      ? "🟢 Parent Verified"
-      : "🟡 Self Reported"}
+    ▶ Watch
+  </button>
+)}
+
+<button
+  onClick={() =>
+    setEditing(true)
+  }
+>
+  ✏ Edit
+</button>
+
+<button
+  onClick={handleDelete}
+>
+  🗑 Delete
+</button>
   </div>
 
-  <button
-    onClick={() =>
-      setEditing(true)
-    }
-  >
-    ✏️ Edit
-  </button>
-
-  <button
-    onClick={handleDelete}
-  >
-    🗑 Delete
-  </button>
-
 </div>
-      </div>
 
       {showOtpModal && (
 
@@ -880,6 +912,47 @@ const [editVenue,
         </div>
 
       )}
+
+{showVideoModal && (
+  <div
+    onClick={() =>
+      setShowVideoModal(false)
+    }
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,0.85)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 99999
+    }}
+  >
+    <div
+      onClick={(e) =>
+        e.stopPropagation()
+      }
+      style={{
+        width: "90%",
+        maxWidth: "900px"
+      }}
+    >
+      <video
+        controls
+        autoPlay
+        style={{
+          width: "100%",
+          borderRadius: "16px"
+        }}
+      >
+        <source
+          src={item.video_url}
+        />
+      </video>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
@@ -993,28 +1066,53 @@ function ProjectCard({
         {item.description}
       </p>
 
-      <div
-        style={{
-          marginTop: "16px",
-          display: "inline-block",
-          background: item.is_verified
-            ? "#DCFCE7"
-            : "#FEF3C7",
-          color: item.is_verified
-            ? "#166534"
-            : "#92400E",
-          padding: "8px 14px",
-          borderRadius: "999px"
-        }}
-      >
-        {item.is_verified
-          ? "VERIFIED"
-          : "PENDING"}
-      </div>
+      
 
-    </div>
-  );
+<div
+  style={{
+    marginTop: "16px",
+    display: "inline-block",
+    background: item.is_verified
+      ? "#DCFCE7"
+      : "#FEF3C7",
+    color: item.is_verified
+      ? "#166534"
+      : "#92400E",
+    padding: "8px 14px",
+    borderRadius: "999px"
+  }}
+>
+  {item.is_verified
+    ? "VERIFIED"
+    : "PENDING"}
+</div>
+
+{item.project_video_url && (
+  <button
+    onClick={() =>
+      window.open(
+        item.project_video_url,
+        "_blank"
+      )
+    }
+    style={{
+      marginLeft: "12px",
+      background: "#F97316",
+      color: "#FFF",
+      border: "none",
+      padding: "8px 14px",
+      borderRadius: "10px",
+      cursor: "pointer"
+    }}
+  >
+    👁 View Evidence
+  </button>
+)}
+
+</div>
+);
 }
+
 function ProjectsDrawer({
   projects,
   loadPortfolio
@@ -1046,6 +1144,17 @@ function ProjectsDrawer({
           onClick={() =>
             setShowModal(true)
           }
+         style={{
+  background: "#EEF2F7",
+  border: "none",
+  padding: "14px 20px",
+  borderRadius: "14px",
+  fontWeight: 700,
+  fontSize: "16px",
+  lineHeight: 1,
+  cursor: "pointer",
+  alignSelf: "center"
+}}
         >
           + ADD PROJECT
         </button>
@@ -1218,8 +1327,32 @@ function SkillCard({
           : "PENDING"}
       </div>
 
-    </div>
-  );
+
+
+{item.certificate_url && (
+  <button
+    onClick={() =>
+      window.open(
+        item.certificate_url,
+        "_blank"
+      )
+    }
+    style={{
+      marginLeft: "12px",
+      background: "#F97316",
+      color: "#FFF",
+      border: "none",
+      padding: "8px 14px",
+      borderRadius: "10px",
+      cursor: "pointer"
+    }}
+  >
+    👁 View Certificate
+  </button>
+)}
+
+</div>
+);
 }
 
 function SkillsDrawer({
@@ -1253,6 +1386,17 @@ function SkillsDrawer({
           onClick={() =>
             setShowModal(true)
           }
+        style={{
+  background: "#EEF2F7",
+  border: "none",
+  padding: "14px 20px",
+  borderRadius: "14px",
+  fontWeight: 700,
+  fontSize: "16px",
+  lineHeight: 1,
+  cursor: "pointer",
+  alignSelf: "center"
+}}
         >
           + ADD SKILL
         </button>
@@ -1763,9 +1907,9 @@ if (err instanceof Error) {
     >
       <div
         style={{
-          width: "820px",
+          width: "700px",
           background: "#FFF",
-          borderRadius: "30px",
+          borderRadius: "20px",
           padding: "35px"
         }}
       >
@@ -1832,16 +1976,15 @@ if (err instanceof Error) {
             }
           />
 
-          <input
-            type="file"
-            accept="video/*"
-            onChange={(e)=>
-              setFile(
-                e.target.files?.[0]
-                || null
-              )
-            }
-          />
+        <input
+    type="file"
+    accept="image/*"
+    onChange={(e)=>
+        setFile(
+            e.target.files?.[0] || null
+        )
+    }
+/>
 
         </div>
 

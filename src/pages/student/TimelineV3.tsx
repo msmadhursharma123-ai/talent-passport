@@ -586,17 +586,7 @@ award_photo_url:
       )
     ];
 
-  const gallery =
-  
-    current
-      ? [
-          current.certificate_url,
-          current.medal_photo_url,
-          current.award_photo_url
-        ].filter(
-          Boolean
-        )
-      : [];
+
 
       const filteredAchievements =
   achievements.filter(
@@ -1724,138 +1714,130 @@ function getSkillTags() {
   </div>
 
 )}
-      {/* GALLERY */}
+     {/* EVIDENCE */}
 
-      {current && (
-
-        <div
-          style={{
-            background:"#FFFFFF",
-border:"1px solid #E2E8F0",
-            borderRadius: 30,
-            padding: 30,
-            color: "white",
-            marginBottom: 30
-          }}
-        >
-
-          <h2>
-            Achievement Gallery
-          </h2>
-
-          <div
-            style={{
-              marginTop: 20
-            }}
-          >
-
-            {
-  gallery.length > 0 ? (
-
-<>
+{current && (
 
 <div
   style={{
-    color: "red",
-    fontSize: 20,
-    fontWeight: 700,
-    marginBottom: 20
+    background: "#FFFFFF",
+    border: "1px solid #E2E8F0",
+    borderRadius: 30,
+    padding: 30,
+    marginBottom: 30
   }}
 >
-  Gallery Count: {gallery.length}
-</div>
 
-    <img
-  src={
-    gallery[
-      selectedImage
-    ]
-  }
-  onClick={() =>
-  setShowImageViewer(
-    true
-  )
-}
-  alt=""
-  style={{
-    width: "100%",
-    maxHeight: 500,
-    objectFit: "cover",
-    borderRadius: 20,
-    cursor: "pointer"
-  }}
-/>
+<h2
+style={{
+marginTop:0,
+marginBottom:20,
+color:"#0F172A"
+}}
+>
+Achievement Evidence
+</h2>
 
 <div
-  style={{
-    display: "flex",
-    gap: 12,
-    marginTop: 20,
-    flexWrap: "wrap"
-  }}
+style={{
+display:"flex",
+gap:16,
+flexWrap:"wrap"
+}}
 >
 
-  {gallery.map(
-    (
-      image,
-      index
-    ) => (
+{current.certificate_url && (
 
-      <img
-        key={index}
-        src={image}
-        onClick={() =>
-          setSelectedImage(
-            index
-          )
-        }
-        style={{
-          width: 120,
-          height: 80,
-          objectFit: "cover",
-          borderRadius: 12,
-          cursor: "pointer",
-          border:
-            selectedImage ===
-            index
-              ? "3px solid #FF6B00"
-              : "2px solid transparent"
-        }}
-      />
+<button
+onClick={()=>{
+setSelectedGalleryImage(
+  current.certificate_url ?? ""
+);
+setShowGalleryModal(true);
+}}
+style={{
+background:"#F97316",
+color:"#FFF",
+border:"none",
+padding:"12px 18px",
+borderRadius:12,
+fontWeight:700,
+cursor:"pointer"
+}}
+>
+📜 View Certificate
+</button>
 
-    )
-  )}
+)}
+
+{current.medal_photo_url && (
+
+<button
+onClick={()=>{
+setSelectedGalleryImage(
+  current.medal_photo_url ?? ""
+);
+setShowGalleryModal(true);
+}}
+style={{
+background:"#2563EB",
+color:"#FFF",
+border:"none",
+padding:"12px 18px",
+borderRadius:12,
+fontWeight:700,
+cursor:"pointer"
+}}
+>
+🥇 View Medal
+</button>
+
+)}
+
+{current.award_photo_url && (
+
+<button
+onClick={()=>{
+setSelectedGalleryImage(
+  current.award_photo_url ?? ""
+);
+setShowGalleryModal(true);
+}}
+style={{
+background:"#16A34A",
+color:"#FFF",
+border:"none",
+padding:"12px 18px",
+borderRadius:12,
+fontWeight:700,
+cursor:"pointer"
+}}
+>
+🏆 View Award
+</button>
+
+)}
+
+{!current.certificate_url &&
+!current.medal_photo_url &&
+!current.award_photo_url && (
+
+<div
+style={{
+color:"#64748B",
+fontWeight:600
+}}
+>
+No evidence uploaded.
+</div>
+
+)}
 
 </div>
-</>
 
-  ) : (
+</div>
 
-    <div
-      style={{
-        height: 300,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        border:
-          "2px dashed rgba(255,255,255,.2)",
-        borderRadius: 20,
-        color: "white",
-        fontSize: 18
-      }}
-    >
-      No Achievement Evidence Uploaded Yet
-    </div>
-
-  )
-}
-            
-
-          </div>
-
-        </div>
-
-      )}
+)}
 
       {/* V4 INSIGHTS */}
 
@@ -2577,70 +2559,55 @@ border:"1px solid #E2E8F0",
         </div>
 
       )}
-{showImageViewer &&
- current &&
- gallery.length > 0 && (
+{showGalleryModal && (
 
-  <div
-    onClick={() =>
-      setShowImageViewer(
-        false
-      )
-    }
+<div
+  onClick={() => setShowGalleryModal(false)}
+  style={{
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,.92)",
+    zIndex: 99999,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 30
+  }}
+>
+
+  <img
+    src={selectedGalleryImage}
+    alt="Achievement Evidence"
     style={{
-      position: "fixed",
-      inset: 0,
-      background:
-        "rgba(0,0,0,.92)",
-      zIndex: 99999,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 30
+      maxWidth: "95%",
+      maxHeight: "90%",
+      borderRadius: 20,
+      objectFit: "contain"
+    }}
+  />
+
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      setShowGalleryModal(false);
+    }}
+    style={{
+      position: "absolute",
+      top: 20,
+      right: 20,
+      background: "#FF6B00",
+      color: "#FFF",
+      border: "none",
+      padding: "12px 18px",
+      borderRadius: 12,
+      cursor: "pointer",
+      fontWeight: 700
     }}
   >
+    ✕ Close
+  </button>
 
-<img
-  src={
-    gallery[
-      selectedImage
-    ]
-  }
-  alt=""
-  style={{
-    maxWidth: "95%",
-    maxHeight: "90%",
-    borderRadius: 20
-  }}
-/>
-
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-
-        setShowImageViewer(
-          false
-        );
-      }}
-      style={{
-        position:
-          "absolute",
-        top: 20,
-        right: 20,
-        background:
-          "#FF6B00",
-        color: "white",
-        border: "none",
-        padding:
-          "12px 18px",
-        borderRadius: 12,
-        cursor: "pointer"
-      }}
-    >
-      Close
-    </button>
-
-  </div>
+</div>
 
 )}
 <style>

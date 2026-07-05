@@ -178,14 +178,14 @@ if (user) {
 
   switch (identity.role) {
 
-    case "student": {
+  case "student": {
 
-      setSelectedRole("student");
-      setUserType("existing");
-      setActiveTab("passport");
-      break;
+  setSelectedRole("student");
+  setUserType("existing");
+  setActiveTab("passport");
+  break;
 
-    }
+}
 
     case "partner": {
 
