@@ -3,6 +3,11 @@ import { useState } from "react";
 import AdminDashboard from "../AdminDashboard";
 import CompetitionEntries from "./CompetitionEntries";
 import AdminAnalytics from "./AdminAnalytics";
+import AdminShell from "../../domains/foundation/components/admin/AdminShell";
+import AdminHeader from "../../domains/foundation/components/admin/AdminHeader";
+import AdminSidebar from "../../domains/foundation/components/admin/AdminSidebar";
+import FoundationHub
+from "../../domains/foundation/pages/FoundationHub";
 
 /* ============================================================
    ADMIN PORTAL
@@ -18,246 +23,78 @@ import AdminAnalytics from "./AdminAnalytics";
    No Supabase
 ============================================================ */
 
-type AdminTab =
-  | "dashboard"
-  | "entries"
-  | "analytics"
-  | "settings";
+import {
+  type AdminModule,
+} from "../../domains/foundation/components/admin/adminModules";
 
 interface AdminPortalProps {
-
   onLogout: () => void;
-
 }
 
-const TABS: ReadonlyArray<{
 
-  key: AdminTab;
-
-  label: string;
-
-}> = [
-
-  {
-    key: "dashboard",
-    label: "Dashboard"
-  },
-
-  {
-    key: "entries",
-    label: "Competition Entries"
-  },
-
-  {
-    key: "analytics",
-    label: "Analytics"
-  },
-
-  {
-    key: "settings",
-    label: "Settings"
-  }
-
-];
 
 export default function AdminPortal({
-
-  onLogout
-
+  onLogout,
 }: AdminPortalProps) {
+const [activeModule, setActiveModule] =
+  useState<AdminModule>("dashboard");
 
-const [activeTab, setActiveTab] =
-  useState<AdminTab>("dashboard");
+const renderModule = () => {
+  switch (activeModule) {
+    case "dashboard":
+      return <AdminDashboard />;
+
+    case "foundation":
+      return <FoundationHub />;
+
+    case "competitions":
+      return <CompetitionEntries />;
+
+    case "analytics":
+      return <AdminAnalytics />;
+
+    case "settings":
+      return (
+        <div style={settingsStyle}>
+          Platform Settings
+        </div>
+      );
+
+    default:
+      return (
+        <div style={settingsStyle}>
+          Coming Soon
+        </div>
+      );
+  }
+};
 
   return (
-
-    <div>
-
-      {/* HEADER */}
-
-      <div style={headerStyle}>
-
-        <h2 style={titleStyle}>
-
-          Admin Command Center
-
-        </h2>
-
-        <button
-
-          onClick={onLogout}
-
-          style={logoutButtonStyle}
-
-        >
-
-          Logout
-
-        </button>
-
-      </div>
-
-      {/* NAVIGATION */}
-
-      <div style={navigationStyle}>
-
-       {TABS.map((tab) => (
-  <button
-    key={tab.key}
-    onClick={() => setActiveTab(tab.key)}
-    style={
-      activeTab === tab.key
-        ? activePill
-        : inactivePill
-    }
-  >
-    {tab.label}
-  </button>
-))}
-      </div>
-
-      {/* CONTENT */}
-
-      {activeTab === "dashboard" && (
-
-        <AdminDashboard />
-
-      )}
-
-      {activeTab === "entries" && (
-
-        <CompetitionEntries />
-
-      )}
-
-      {activeTab === "analytics" && (
-
-        <AdminAnalytics />
-
-      )}
-
-      {activeTab === "settings" && (
-
-        <div style={settingsStyle}>
-
-          Settings Module
-
-        </div>
-
-      )}
-
-    </div>
-
+ <AdminShell
+  sidebar={
+    <AdminSidebar
+      activeModule={activeModule}
+      onModuleChange={setActiveModule}
+    />
+  }
+  header={
+    <AdminHeader
+      title="Talent Passport Platform"
+      subtitle="Platform Administration & Foundation Management"
+      onLogout={onLogout}
+    />
+  }
+>
+  {renderModule()}
+</AdminShell>
   );
-
 }
 
 /* ============================================================
    STYLES
 ============================================================ */
 
-const headerStyle: React.CSSProperties = {
-
-  display: "flex",
-
-  justifyContent: "space-between",
-
-  alignItems: "center",
-
-  padding: "20px 40px",
-
-  background: "white",
-
-  borderBottom: "1px solid #E5E7EB"
-
-};
-
-const titleStyle: React.CSSProperties = {
-
-  color: "#143B73",
-
-  margin: 0
-
-};
-
-const logoutButtonStyle: React.CSSProperties = {
-
-  background: "#DC2626",
-
-  color: "white",
-
-  border: "none",
-
-  padding: "12px 20px",
-
-  borderRadius: "10px",
-
-  cursor: "pointer",
-
-  fontWeight: 600
-
-};
-
-const navigationStyle: React.CSSProperties = {
-
-  display: "flex",
-
-  justifyContent: "center",
-
-  gap: "12px",
-
-  padding: "20px",
-
-  background: "#F8FAFC",
-
-  borderBottom: "1px solid #E5E7EB",
-
-  flexWrap: "wrap"
-
-};
-
 const settingsStyle: React.CSSProperties = {
-
-  padding: "40px"
-
+  padding: "40px",
 };
 
-const activePill: React.CSSProperties = {
-
-  background: "#F97316",
-
-  color: "white",
-
-  border: "none",
-
-  padding: "14px 24px",
-
-  borderRadius: "14px",
-
-  fontWeight: 700,
-
-  cursor: "pointer",
-
-  boxShadow:
-
-    "0 4px 12px rgba(249,115,22,0.30)"
-
-};
-
-const inactivePill: React.CSSProperties = {
-
-  background: "#E5E7EB",
-
-  color: "#475569",
-
-  border: "none",
-
-  padding: "14px 24px",
-
-  borderRadius: "14px",
-
-  fontWeight: 600,
-
-  cursor: "pointer"
-
-};

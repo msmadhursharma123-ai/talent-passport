@@ -742,6 +742,9 @@ async () => {
   return data || [];
 };
 
+
+
+
 export const fetchStudentEvents =
 async () => {
 
@@ -826,4 +829,140 @@ async () => {
       .select("*");
 
   return data || [];
+};
+
+export const fetchStudentRegistrationMetrics =
+async () => {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) {
+    return {
+      today: 0,
+      last7Days: 0,
+      last30Days: 0,
+    };
+  }
+
+  const today = new Date();
+
+  const todayStart = new Date(today);
+  todayStart.setHours(0, 0, 0, 0);
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(
+    sevenDaysAgo.getDate() - 7
+  );
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(
+    thirtyDaysAgo.getDate() - 30
+  );
+
+const { data, error } =
+await (supabase as any)
+  .from("students_master")
+  .select("created_at");
+
+const students =
+  (data ?? []) as any[];
+
+  if (error || !data) {
+    return {
+      today: 0,
+      last7Days: 0,
+      last30Days: 0,
+    };
+  }
+
+  return {
+
+   today: students.filter(
+      row =>
+        new Date(row.created_at) >=
+        todayStart
+    ).length,
+
+last7Days: students.filter(
+      row =>
+        new Date(row.created_at) >=
+        sevenDaysAgo
+    ).length,
+
+last30Days: students.filter(
+      row =>
+        new Date(row.created_at) >=
+        thirtyDaysAgo
+    ).length,
+
+  };
+};
+
+export const fetchCompetitionEntryMetrics =
+async () => {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) {
+    return {
+      today: 0,
+      last7Days: 0,
+      last30Days: 0,
+    };
+  }
+
+  const today = new Date();
+
+  const todayStart = new Date(today);
+  todayStart.setHours(0, 0, 0, 0);
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(
+    sevenDaysAgo.getDate() - 7
+  );
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(
+    thirtyDaysAgo.getDate() - 30
+  );
+
+  const { data, error } =
+    await (supabase as any)
+      .from("submissions")
+      .select("created_at");
+
+  const submissions =
+    (data ?? []) as any[];
+
+  if (error) {
+    return {
+      today: 0,
+      last7Days: 0,
+      last30Days: 0,
+    };
+  }
+
+  return {
+
+    today: submissions.filter(
+      row =>
+        new Date(row.created_at) >=
+        todayStart
+    ).length,
+
+    last7Days: submissions.filter(
+      row =>
+        new Date(row.created_at) >=
+        sevenDaysAgo
+    ).length,
+
+    last30Days: submissions.filter(
+      row =>
+        new Date(row.created_at) >=
+        thirtyDaysAgo
+    ).length,
+
+  };
 };
