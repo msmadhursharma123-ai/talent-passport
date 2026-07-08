@@ -12,7 +12,8 @@ import AcademicYearsHub from "./AcademicYearsHub";
 import CurriculumHub from "./CurriculumHub";
 import ClassesHub from "./ClassesHub";
 import SectionsHub from "./SectionsHub";
-
+import SubjectsHub from "./SubjectsHub";
+import ChaptersHub from "./ChaptersHub";
 
 export default function FoundationHub() {
   const [activeModule, setActiveModule] =
@@ -71,6 +72,26 @@ if (activeModule === "Classes") {
 if (activeModule === "Sections") {
   return (
     <SectionsHub
+      onBack={() =>
+        setActiveModule(null)
+      }
+    />
+  );
+}
+
+if (activeModule === "Subjects") {
+  return (
+    <SubjectsHub
+      onBack={() =>
+        setActiveModule(null)
+      }
+    />
+  );
+}
+
+if (activeModule === "Chapters") {
+  return (
+    <ChaptersHub
       onBack={() =>
         setActiveModule(null)
       }

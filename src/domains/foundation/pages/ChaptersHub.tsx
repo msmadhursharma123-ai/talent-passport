@@ -19,16 +19,17 @@ import FoundationDataTable, {
   type FoundationTableRow,
 } from "../components/management/FoundationDataTable";
 
-import SubjectDialog
-from "../components/dialogs/SubjectDialog";
+import ChapterDialog
+from "../components/dialogs/ChapterDialog";
 
-import type { Subject }
-from "../../../types/subject";
+import type {
+  Chapter,
+} from "../../../types/chapter";
 
-import useSubjectViewModel
-from "../viewmodels/SubjectViewModel";
+import useChapterViewModel
+from "../viewmodels/ChapterViewModel";
 
-interface SubjectsHubProps {
+interface ChaptersHubProps {
   onBack?: () => void;
 }
 
@@ -51,8 +52,8 @@ const filters: FoundationFilter[] = [
 
 const columns: FoundationTableColumn[] = [
   {
-    key: "subject",
-    label: "Subject",
+    key: "chapter",
+    label: "Chapter",
   },
   {
     key: "code",
@@ -75,27 +76,37 @@ const columns: FoundationTableColumn[] = [
     label: "Section",
   },
   {
+    key: "subject",
+    label: "Subject",
+  },
+  {
     key: "status",
     label: "Status",
   },
 ];
 
-export default function SubjectsHub({
+export default function ChaptersHub({
   onBack,
-}: SubjectsHubProps) {
+}: ChaptersHubProps) {
 
-  const [dialogOpen, setDialogOpen] =
+  const [
+    dialogOpen,
+    setDialogOpen,
+  ] =
     useState(false);
 
   const [
-    editingSubject,
-    setEditingSubject,
+    editingChapter,
+    setEditingChapter,
   ] =
     useState<
-      Subject | undefined
+      Chapter | undefined
     >();
 
-  const [search, setSearch] =
+  const [
+    search,
+    setSearch,
+  ] =
     useState("");
 
   const [
@@ -111,32 +122,46 @@ export default function SubjectsHub({
     useState("All");
 
   const {
-    subjects,
+
+    chapters,
+
     organizations,
+
     curriculums,
+
     classes,
+
     sections,
+
+    subjects,
+
     loading,
-    addSubject,
-    editSubject,
+
+    addChapter,
+
+    editChapter,
+
     archive,
+
     restore,
+
     remove,
+
   } =
-    useSubjectViewModel();
+    useChapterViewModel();
 
   const statistics:
     FoundationStatistic[] =
     useMemo(() => {
 
       const active =
-        subjects.filter(
+        chapters.filter(
           item =>
             item.isActive
         ).length;
 
       const archived =
-        subjects.filter(
+        chapters.filter(
           item =>
             !item.isActive
         ).length;
@@ -145,10 +170,10 @@ export default function SubjectsHub({
 
         {
           title:
-            "Subjects",
+            "Chapters",
 
           value:
-            subjects.length,
+            chapters.length,
 
           subtitle:
             "Registered",
@@ -162,7 +187,7 @@ export default function SubjectsHub({
             active,
 
           subtitle:
-            "Subjects",
+            "Chapters",
         },
 
         {
@@ -193,29 +218,29 @@ export default function SubjectsHub({
 
     }, [
 
-      subjects,
+      chapters,
 
       loading,
 
     ]);
 
-  const filteredSubjects =
+  const filteredChapters =
     useMemo(() => {
 
-      return subjects.filter(
+      return chapters.filter(
         item => {
 
           const searchMatch =
 
             search === "" ||
 
-            item.subjectName
+            item.chapterName
               .toLowerCase()
               .includes(
                 search.toLowerCase()
               ) ||
 
-            item.subjectCode
+            item.chapterCode
               .toLowerCase()
               .includes(
                 search.toLowerCase()
@@ -259,7 +284,7 @@ export default function SubjectsHub({
 
     }, [
 
-      subjects,
+      chapters,
 
       search,
 
@@ -272,37 +297,40 @@ export default function SubjectsHub({
       const rows: FoundationTableRow[] =
     useMemo(
       () =>
-        filteredSubjects.map(
-          subject => ({
-            id: subject.id,
+        filteredChapters.map(
+          chapter => ({
+            id: chapter.id,
 
             values: {
-              subject:
-                subject.subjectName,
+              chapter:
+                chapter.chapterName,
 
               code:
-                subject.subjectCode,
+                chapter.chapterCode,
 
               organization:
-                subject.organizationName,
+                chapter.organizationName,
 
               curriculum:
-                subject.curriculumName,
+                chapter.curriculumName,
 
               class:
-                subject.className,
+                chapter.className,
 
               section:
-                subject.sectionName,
+                chapter.sectionName,
+
+              subject:
+                chapter.subjectName,
 
               status:
-                subject.isActive
+                chapter.isActive
                   ? "Active"
                   : "Archived",
             },
           })
         ),
-      [filteredSubjects]
+      [filteredChapters]
     );
 
   const actions:
@@ -315,7 +343,7 @@ export default function SubjectsHub({
       onClick: row => {
 
         const record =
-          subjects.find(
+          chapters.find(
             item =>
               item.id ===
               row.id
@@ -325,7 +353,7 @@ export default function SubjectsHub({
           return;
         }
 
-        setEditingSubject(
+        setEditingChapter(
           record
         );
 
@@ -348,7 +376,7 @@ export default function SubjectsHub({
         async row => {
 
           const record =
-            subjects.find(
+            chapters.find(
               item =>
                 item.id ===
                 row.id
@@ -390,7 +418,7 @@ export default function SubjectsHub({
 
           const confirmed =
             window.confirm(
-              "Are you sure you want to permanently delete this subject?"
+              "Are you sure you want to permanently delete this chapter?"
             );
 
           if (
@@ -409,30 +437,37 @@ export default function SubjectsHub({
 
   ];
 
-  const organizationOptions =
-    useMemo(
-      () => [
+ const organizationOptions =
+  useMemo(
+    () => [
 
-        "All",
+      "All",
 
-        ...Array.from(
+      ...Array.from(
 
-          new Set(
+        new Set(
 
-            subjects.map(
+          chapters
+            .map(
               item =>
                 item.organizationName
             )
+            .filter(
+              (
+                value
+              ): value is string =>
+                value !== undefined
+            )
 
-          )
+        )
 
-        ),
+      ),
 
-      ],
+    ],
 
-      [subjects]
+    [chapters]
 
-    );
+  );
 
       return (
     <>
@@ -441,8 +476,8 @@ export default function SubjectsHub({
         <FoundationManagementHeader
           showBackButton
           onBack={onBack}
-          title="📚 Subjects"
-          subtitle="Manage subjects available within each section. Subjects become the foundation for timetable, teachers, assessments and learning plans."
+          title="📖 Chapters"
+          subtitle="Manage chapters available within each subject. Chapters organize the syllabus before Topics and Sub Topics."
           badge="Foundation"
         />
 
@@ -451,7 +486,7 @@ export default function SubjectsHub({
         />
 
         <FoundationToolbar
-          searchPlaceholder="Search subjects..."
+          searchPlaceholder="Search chapters..."
           searchValue={search}
           onSearchChange={setSearch}
           filters={[
@@ -495,10 +530,10 @@ export default function SubjectsHub({
             }
 
           }}
-          primaryActionLabel="+ Add Subject"
+          primaryActionLabel="+ Add Chapter"
           onPrimaryAction={() => {
 
-            setEditingSubject(
+            setEditingChapter(
               undefined
             );
 
@@ -517,15 +552,15 @@ export default function SubjectsHub({
 
       </div>
 
-            <SubjectDialog
+            <ChapterDialog
         open={dialogOpen}
         mode={
-          editingSubject
+          editingChapter
             ? "edit"
             : "create"
         }
-        subjectRecord={
-          editingSubject
+        chapterRecord={
+          editingChapter
         }
         organizations={
           organizations
@@ -539,11 +574,16 @@ export default function SubjectsHub({
         sections={
           sections
         }
+        subjects={
+          subjects
+        }
         onClose={() => {
 
-          setDialogOpen(false);
+          setDialogOpen(
+            false
+          );
 
-          setEditingSubject(
+          setEditingChapter(
             undefined
           );
 
@@ -554,19 +594,19 @@ export default function SubjectsHub({
             false;
 
           if (
-            editingSubject
+            editingChapter
           ) {
 
             success =
-              await editSubject(
-                editingSubject.id,
+              await editChapter(
+                editingChapter.id,
                 data
               );
 
           } else {
 
             success =
-              await addSubject(
+              await addChapter(
                 data
               );
 
@@ -580,7 +620,7 @@ export default function SubjectsHub({
               false
             );
 
-            setEditingSubject(
+            setEditingChapter(
               undefined
             );
 
