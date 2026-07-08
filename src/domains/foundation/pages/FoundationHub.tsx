@@ -14,6 +14,8 @@ import ClassesHub from "./ClassesHub";
 import SectionsHub from "./SectionsHub";
 import SubjectsHub from "./SubjectsHub";
 import ChaptersHub from "./ChaptersHub";
+import TopicsHub from "./TopicsHub";
+import SubTopicsHub from "./SubTopicsHub";
 
 export default function FoundationHub() {
   const [activeModule, setActiveModule] =
@@ -92,6 +94,26 @@ if (activeModule === "Subjects") {
 if (activeModule === "Chapters") {
   return (
     <ChaptersHub
+      onBack={() =>
+        setActiveModule(null)
+      }
+    />
+  );
+}
+
+if (activeModule === "Topics") {
+  return (
+    <TopicsHub
+      onBack={() =>
+        setActiveModule(null)
+      }
+    />
+  );
+}
+
+if (activeModule === "Sub Topics") {
+  return (
+    <SubTopicsHub
       onBack={() =>
         setActiveModule(null)
       }
