@@ -104,6 +104,124 @@ export interface StudentIdentity {
 }
 
 /* ============================================================
+   TEACHER IDENTITY
+
+   Dedicated identity model for Teacher Portal.
+
+   Managed by the central Identity Service.
+============================================================ */
+
+export interface TeacherIdentity {
+
+  /* ========================================================
+     AUTHENTICATION
+  ======================================================== */
+
+  authUserId?: string;
+
+  email?: string;
+
+  /* ========================================================
+     TEACHER DOMAIN
+  ======================================================== */
+
+  teacherUuid: string;
+
+  teacherId: string;
+
+  teacherName: string;
+
+  phone?: string;
+
+  organizationUuid?: string;
+
+  organizationName?: string;
+
+  schoolUuid?: string;
+
+  schoolName?: string;
+
+  boardUuid?: string;
+
+  department?: string;
+
+  designation?: string;
+
+  profileCompleted?: boolean;
+
+  isActive?: boolean;
+
+  /* ========================================================
+     AUTHORIZATION
+  ======================================================== */
+
+  role?: string;
+
+  permissions?: string[];
+
+  /* ========================================================
+     EXTENSIBILITY
+  ======================================================== */
+
+  metadata?: Record<string, unknown>;
+
+}
+
+/* ============================================================
+   SCHOOL IDENTITY
+
+   Dedicated identity model for School Portal.
+
+   Managed by the central Identity Service.
+============================================================ */
+
+export interface SchoolIdentity {
+
+  /* ========================================================
+     AUTHENTICATION
+  ======================================================== */
+
+  authUserId?: string;
+
+  email?: string;
+
+  /* ========================================================
+     SCHOOL DOMAIN
+  ======================================================== */
+
+  schoolUuid: string;
+
+  schoolId: string;
+
+  schoolName: string;
+
+  organizationUuid?: string;
+
+  organizationName?: string;
+
+  boardUuid?: string;
+
+  principalName?: string;
+
+  isActive?: boolean;
+
+  /* ========================================================
+     AUTHORIZATION
+  ======================================================== */
+
+  role?: string;
+
+  permissions?: string[];
+
+  /* ========================================================
+     EXTENSIBILITY
+  ======================================================== */
+
+  metadata?: Record<string, unknown>;
+
+}
+
+/* ============================================================
    PARTNER IDENTITY
 
    Dedicated identity model for Partner Portal.
@@ -209,6 +327,10 @@ export interface AdminIdentity {
 
 const STUDENT_STORAGE_KEY = "studentProfile";
 
+const TEACHER_STORAGE_KEY = "teacherProfile";
+
+const SCHOOL_STORAGE_KEY = "schoolProfile";
+
 /*
 |--------------------------------------------------------------------------
 | Partner Identity Storage
@@ -242,6 +364,10 @@ const PARTNER_STORAGE_KEY = "partnerProfile";
 */
 
 let identityCache: StudentIdentity | null = null;
+
+let teacherIdentityCache: TeacherIdentity | null = null;
+
+let schoolIdentityCache: SchoolIdentity | null = null;
 
 /*
 |--------------------------------------------------------------------------
@@ -322,7 +448,36 @@ export const IDENTITY_MAP = {
 
   admin: "masterStudentId",
 
-  master: "masterStudentId"
+  master: "masterStudentId",
+
+/* ========================================================
+   Teacher Modules
+======================================================== */
+
+teacher: "teacherUuid",
+
+teacherProfile: "teacherUuid",
+
+teacherAssignment: "teacherUuid",
+
+teacherDashboard: "teacherUuid",
+
+
+/* ========================================================
+   School Modules
+======================================================== */
+
+school: "schoolUuid",
+
+schoolDashboard: "schoolUuid",
+
+teacherManagement: "schoolUuid",
+
+studentManagement: "schoolUuid",
+
+schoolAnalytics: "schoolUuid",
+
+schoolSettings: "schoolUuid",
 
 } as const;
 
@@ -423,8 +578,27 @@ partner_scholarship_applications: "partnerId",
 
   /* Analytics */
 
-  analytics: "masterStudentId"
+  analytics: "masterStudentId",
 
+/* ========================================================
+   Teacher Domain
+======================================================== */
+
+teachers_master: "teacherUuid",
+
+teacher_profiles: "teacherUuid",
+
+teacher_assignments: "teacherUuid",
+
+
+/* ========================================================
+   School Domain
+======================================================== */
+
+schools_master: "schoolUuid",
+
+school_admins: "schoolUuid",
+  
 } as const;
 
 export type IdentityTable =
@@ -467,6 +641,90 @@ export function saveStudentIdentity(
       masterStudentId: normalized.masterStudentId,
       studentCode: normalized.studentCode,
       studentName: normalized.studentName
+    });
+
+    console.groupEnd();
+
+  }
+
+}
+
+/* ============================================================
+   SAVE TEACHER IDENTITY
+============================================================ */
+
+export function saveTeacherIdentity(
+  identity: TeacherIdentity
+): void {
+
+  const normalized = buildTeacherIdentity(identity);
+
+  teacherIdentityCache = normalized;
+
+  localStorage.setItem(
+    TEACHER_STORAGE_KEY,
+    JSON.stringify(normalized)
+  );
+
+  if (import.meta.env.DEV) {
+
+    console.groupCollapsed(
+      "Teacher Identity Saved"
+    );
+
+    console.table({
+      authUserId: normalized.authUserId,
+      teacherUuid: normalized.teacherUuid,
+      teacherId: normalized.teacherId,
+      teacherName: normalized.teacherName,
+      schoolUuid: normalized.schoolUuid
+    });
+
+    console.groupEnd();
+
+  }
+
+}
+
+/* ============================================================
+   SAVE SCHOOL IDENTITY
+============================================================ */
+
+export function saveSchoolIdentity(
+  identity: SchoolIdentity
+): void {
+
+  const normalized =
+    buildSchoolIdentity(identity);
+
+  schoolIdentityCache =
+    normalized;
+
+  localStorage.setItem(
+    SCHOOL_STORAGE_KEY,
+    JSON.stringify(normalized)
+  );
+
+  if (import.meta.env.DEV) {
+
+    console.groupCollapsed(
+      "School Identity Saved"
+    );
+
+    console.table({
+
+      authUserId:
+        normalized.authUserId,
+
+      schoolUuid:
+        normalized.schoolUuid,
+
+      schoolId:
+        normalized.schoolId,
+
+      schoolName:
+        normalized.schoolName
+
     });
 
     console.groupEnd();
@@ -562,6 +820,97 @@ StudentIdentity | null {
     }
 
     identityCache = parsed;
+
+    return parsed;
+
+  }
+
+  catch {
+
+    return null;
+
+  }
+
+}
+
+
+/* ============================================================
+   GET CURRENT TEACHER
+============================================================ */
+
+export function getCurrentTeacher():
+TeacherIdentity | null {
+
+  if (teacherIdentityCache) {
+
+    return teacherIdentityCache;
+
+  }
+
+  const raw =
+    localStorage.getItem(
+      TEACHER_STORAGE_KEY
+    );
+
+  if (!raw) {
+
+    return null;
+
+  }
+
+  try {
+
+    const parsed =
+      buildTeacherIdentity(
+        JSON.parse(raw)
+      );
+
+    teacherIdentityCache = parsed;
+
+    return parsed;
+
+  }
+
+  catch {
+
+    return null;
+
+  }
+
+}
+
+/* ============================================================
+   GET CURRENT SCHOOL
+============================================================ */
+
+export function getCurrentSchool():
+SchoolIdentity | null {
+
+  if (schoolIdentityCache) {
+
+    return schoolIdentityCache;
+
+  }
+
+  const raw =
+    localStorage.getItem(
+      SCHOOL_STORAGE_KEY
+    );
+
+  if (!raw) {
+
+    return null;
+
+  }
+
+  try {
+
+    const parsed =
+      buildSchoolIdentity(
+        JSON.parse(raw)
+      );
+
+    schoolIdentityCache = parsed;
 
     return parsed;
 
@@ -687,6 +1036,50 @@ StudentIdentity {
 }
 
 /* ============================================================
+   REQUIRE TEACHER IDENTITY
+============================================================ */
+
+export function requireTeacherIdentity():
+TeacherIdentity {
+
+  const identity =
+    getCurrentTeacher();
+
+  if (identity) {
+
+    return identity;
+
+  }
+
+  throw new Error(
+    "Teacher identity not initialized."
+  );
+
+}
+
+/* ============================================================
+   REQUIRE SCHOOL IDENTITY
+============================================================ */
+
+export function requireSchoolIdentity():
+SchoolIdentity {
+
+  const identity =
+    getCurrentSchool();
+
+  if (identity) {
+
+    return identity;
+
+  }
+
+  throw new Error(
+    "School identity not initialized."
+  );
+
+}
+
+/* ============================================================
    REQUIRE PARTNER IDENTITY
 
    Throws immediately if no Partner identity exists.
@@ -717,6 +1110,26 @@ export function requirePartnerIdentity():
 export function hasIdentity(): boolean {
 
   return getCurrentStudent() !== null;
+
+}
+
+/* ============================================================
+   HAS TEACHER IDENTITY
+============================================================ */
+
+export function hasTeacherIdentity(): boolean {
+
+  return getCurrentTeacher() !== null;
+
+}
+
+/* ============================================================
+   HAS SCHOOL IDENTITY
+============================================================ */
+
+export function hasSchoolIdentity(): boolean {
+
+  return getCurrentSchool() !== null;
 
 }
 
@@ -773,6 +1186,48 @@ export function updateStudentIdentity(
 }
 
 /* ============================================================
+   UPDATE TEACHER IDENTITY
+============================================================ */
+
+export function updateTeacherIdentity(
+  updates: Partial<TeacherIdentity>
+): void {
+
+  const current =
+    requireTeacherIdentity();
+
+  saveTeacherIdentity({
+
+    ...current,
+
+    ...updates
+
+  });
+
+}
+
+/* ============================================================
+   UPDATE SCHOOL IDENTITY
+============================================================ */
+
+export function updateSchoolIdentity(
+  updates: Partial<SchoolIdentity>
+): void {
+
+  const current =
+    requireSchoolIdentity();
+
+  saveSchoolIdentity({
+
+    ...current,
+
+    ...updates
+
+  });
+
+}
+
+/* ============================================================
    UPDATE PARTNER IDENTITY
 ============================================================ */
 
@@ -803,6 +1258,34 @@ export function clearStudentIdentity(): void {
 
   localStorage.removeItem(
     STUDENT_STORAGE_KEY
+  );
+
+}
+
+/* ============================================================
+   CLEAR TEACHER IDENTITY
+============================================================ */
+
+export function clearTeacherIdentity(): void {
+
+  teacherIdentityCache = null;
+
+  localStorage.removeItem(
+    TEACHER_STORAGE_KEY
+  );
+
+}
+
+/* ============================================================
+   CLEAR SCHOOL IDENTITY
+============================================================ */
+
+export function clearSchoolIdentity(): void {
+
+  schoolIdentityCache = null;
+
+  localStorage.removeItem(
+    SCHOOL_STORAGE_KEY
   );
 
 }
@@ -849,6 +1332,32 @@ StudentIdentity | null {
   identityCache = null;
 
   return getCurrentStudent();
+
+}
+
+/* ============================================================
+   REFRESH TEACHER IDENTITY
+============================================================ */
+
+export function refreshTeacherIdentity():
+TeacherIdentity | null {
+
+  teacherIdentityCache = null;
+
+  return getCurrentTeacher();
+
+}
+
+/* ============================================================
+   REFRESH SCHOOL IDENTITY
+============================================================ */
+
+export function refreshSchoolIdentity():
+SchoolIdentity | null {
+
+  schoolIdentityCache = null;
+
+  return getCurrentSchool();
 
 }
 
@@ -992,6 +1501,147 @@ export function buildIdentity(
 }
 
 /* ============================================================
+   BUILD TEACHER IDENTITY
+
+   Creates a fully normalized TeacherIdentity object.
+============================================================ */
+
+export function buildTeacherIdentity(
+  data: Partial<TeacherIdentity>
+): TeacherIdentity {
+
+  return {
+
+    /* ========================================================
+       AUTHENTICATION
+    ======================================================== */
+
+    authUserId:
+      data.authUserId,
+
+    email:
+      data.email,
+
+    /* ========================================================
+       TEACHER DOMAIN
+    ======================================================== */
+
+    teacherUuid:
+      data.teacherUuid ?? "",
+
+    teacherId:
+      data.teacherId ?? "",
+
+    teacherName:
+      data.teacherName ?? "",
+
+    phone:
+      data.phone,
+
+    organizationUuid:
+      data.organizationUuid,
+
+    organizationName:
+      data.organizationName,
+
+    schoolUuid:
+      data.schoolUuid,
+
+    schoolName:
+      data.schoolName,
+
+    boardUuid:
+      data.boardUuid,
+
+    department:
+      data.department,
+
+    designation:
+      data.designation,
+
+    profileCompleted:
+      data.profileCompleted ?? false,
+
+    isActive:
+      data.isActive ?? true,
+
+    /* ========================================================
+       AUTHORIZATION
+    ======================================================== */
+
+    role:
+      data.role,
+
+    permissions:
+      data.permissions ?? [],
+
+    /* ========================================================
+       EXTENSIBILITY
+    ======================================================== */
+
+    metadata:
+      data.metadata ?? {}
+
+  };
+
+}
+
+/* ============================================================
+   BUILD SCHOOL IDENTITY
+
+   Creates a fully normalized SchoolIdentity object.
+============================================================ */
+
+export function buildSchoolIdentity(
+  data: Partial<SchoolIdentity>
+): SchoolIdentity {
+
+  return {
+
+    authUserId:
+      data.authUserId,
+
+    email:
+      data.email,
+
+    schoolUuid:
+      data.schoolUuid ?? "",
+
+    schoolId:
+      data.schoolId ?? "",
+
+    schoolName:
+      data.schoolName ?? "",
+
+    organizationUuid:
+      data.organizationUuid,
+
+    organizationName:
+      data.organizationName,
+
+    boardUuid:
+      data.boardUuid,
+
+    principalName:
+      data.principalName,
+
+    isActive:
+      data.isActive ?? true,
+
+    role:
+      data.role,
+
+    permissions:
+      data.permissions ?? [],
+
+    metadata:
+      data.metadata ?? {}
+
+  };
+
+}
+
+/* ============================================================
    MERGE IDENTITY
 
    Safely merges new values into existing identity.
@@ -1064,9 +1714,59 @@ export function printIdentity(): void {
 
 }
 
+/* ============================================================
+   TEACHER DEVELOPMENT HELPERS
+============================================================ */
+
+export function printTeacherIdentity(): void {
+
+  if (import.meta.env.DEV) {
+
+    console.group("Teacher Identity");
+
+    console.table(requireTeacherIdentity());
+
+    console.groupEnd();
+
+  }
+
+}
+
+/* ============================================================
+   SCHOOL DEVELOPMENT HELPERS
+============================================================ */
+
+export function printSchoolIdentity(): void {
+
+  if (import.meta.env.DEV) {
+
+    console.group("School Identity");
+
+    console.table(requireSchoolIdentity());
+
+    console.groupEnd();
+
+  }
+
+}
+
 export function clearIdentityCache(): void {
 
   identityCache = null;
+
+}
+
+export function getTeacherIdentityCache():
+TeacherIdentity | null {
+
+  return teacherIdentityCache;
+
+}
+
+export function getSchoolIdentityCache():
+SchoolIdentity | null {
+
+  return schoolIdentityCache;
 
 }
 
@@ -1143,6 +1843,55 @@ export function hasPermission(
 }
 
 /* ============================================================
+   TEACHER HELPERS
+============================================================ */
+
+export function getTeacherProfile() {
+
+  return requireTeacherIdentity();
+
+}
+
+export function getTeacherUuid(): string {
+
+  return requireTeacherIdentity().teacherUuid;
+
+}
+
+export function getTeacherId(): string {
+
+  return requireTeacherIdentity().teacherId;
+
+}
+
+export function getTeacherName(): string {
+
+  return requireTeacherIdentity().teacherName;
+
+}
+
+export function getTeacherSchoolUuid():
+string | undefined {
+
+  return requireTeacherIdentity().schoolUuid;
+
+}
+
+export function getTeacherOrganizationUuid():
+string | undefined {
+
+  return requireTeacherIdentity().organizationUuid;
+
+}
+
+export function getTeacherBoardUuid():
+string | undefined {
+
+  return requireTeacherIdentity().boardUuid;
+
+}
+
+/* ============================================================
    IDENTITY RESOLVER
 ============================================================ */
 
@@ -1150,19 +1899,73 @@ export function getIdentityFor(
   module: IdentityModule
 ): string {
 
-  const identity = requireIdentity();
+  const field =
+    IDENTITY_MAP[module];
 
-  const field = IDENTITY_MAP[module];
+  /* ======================================================
+     STUDENT MODULES
+  ====================================================== */
 
-  const value = identity[field];
+  if (
+    field === "studentUuid" ||
+    field === "studentCode" ||
+    field === "masterStudentId"
+  ) {
 
-  if (!value) {
-    throw new Error(
-      `Identity '${field}' not found.`
-    );
+    const identity =
+      requireIdentity();
+
+    const value =
+      identity[field];
+
+    if (!value) {
+
+      throw new Error(
+        `Identity '${field}' not found.`
+      );
+
+    }
+
+    return value;
+
   }
 
-  return value;
+  /* ======================================================
+     TEACHER MODULES
+  ====================================================== */
+
+  if (
+    field === "teacherUuid"
+  ) {
+
+    const identity =
+      requireTeacherIdentity();
+
+    return identity.teacherUuid;
+
+  }
+
+  /* ======================================================
+     SCHOOL MODULES
+  ====================================================== */
+
+  if (
+    field === "schoolUuid"
+  ) {
+
+    const identity =
+      requireSchoolIdentity();
+
+    return identity.schoolUuid;
+
+  }
+
+  throw new Error(
+
+    `Unsupported identity field '${field}'.`
+
+  );
+
 }
 
 /* ============================================================
@@ -1173,28 +1976,53 @@ export function getIdentityFor(
 ============================================================ */
 
 export function getTableIdentity(
-
-    table: IdentityTable
-
+  table: IdentityTable
 ): string {
 
-    const identity = requireIdentity();
+  const field =
+    TABLE_ID_MAP[table];
 
-    const field = TABLE_ID_MAP[table];
+  switch (field) {
 
-    const value = identity[field];
+    case "studentUuid":
 
-    if (!value) {
+      return requireIdentity()
+        .studentUuid;
 
-        throw new Error(
+    case "studentCode":
 
-            `Identity '${field}' not available for table '${table}'.`
+      return requireIdentity()
+        .studentCode;
 
-        );
+    case "masterStudentId":
 
-    }
+      return requireIdentity()
+        .masterStudentId;
 
-    return value;
+    case "teacherUuid":
+
+      return requireTeacherIdentity()
+        .teacherUuid;
+
+    case "schoolUuid":
+
+      return requireSchoolIdentity()
+        .schoolUuid;
+
+    case "partnerId":
+
+      return requirePartnerIdentity()
+        .partnerId;
+
+    default:
+
+      throw new Error(
+
+        `Unsupported identity '${field}'.`
+
+      );
+
+  }
 
 }
 
@@ -1217,3 +2045,16 @@ export function getMasterStudentId(): string {
 export function isStudentLoggedIn(): boolean {
   return hasIdentity();
 }
+
+export function isTeacherLoggedIn(): boolean {
+
+  return hasTeacherIdentity();
+
+}
+
+export function isSchoolLoggedIn(): boolean {
+
+  return hasSchoolIdentity();
+
+}
+

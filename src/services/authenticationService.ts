@@ -13,25 +13,43 @@ import {
 
 import {
     StudentIdentity,
+    TeacherIdentity,
+    SchoolIdentity,
+    PartnerIdentity,
+    AdminIdentity,
+
     buildIdentity,
+    buildTeacherIdentity,
+    buildSchoolIdentity,
+
     saveStudentIdentity,
+    saveTeacherIdentity,
+    saveSchoolIdentity,
+    savePartnerIdentity,
+    saveAdminIdentity,
+
     clearStudentIdentity,
+    clearTeacherIdentity,
+    clearSchoolIdentity,
+    clearPartnerIdentity,
+    clearAdminIdentity,
+
     markAuthSessionInitialized,
     clearAuthSession,
     hasAuthSession,
+
     getCurrentStudent,
-    PartnerIdentity,
-savePartnerIdentity,
-clearPartnerIdentity,
-getCurrentPartner,
-AdminIdentity,
-saveAdminIdentity,
-clearAdminIdentity,
-getCurrentAdmin
+    getCurrentTeacher,
+    getCurrentSchool,
+    getCurrentPartner,
+    getCurrentAdmin
+
 } from "./identityService";
 
 export type AuthRole =
     | "student"
+    | "teacher"
+    | "school"
     | "partner"
     | "admin";
 
@@ -46,9 +64,13 @@ export interface AuthResult {
 export interface SignInResult
     extends AuthResult {
 
-    identity?:
+identity?:
 
 StudentIdentity |
+
+TeacherIdentity |
+
+SchoolIdentity |
 
 PartnerIdentity |
 
@@ -79,9 +101,13 @@ export interface BootstrapStudentResult
 export interface RestoreSessionResult
     extends AuthResult {
 
-    identity?:
+identity?:
 
 StudentIdentity |
+
+TeacherIdentity |
+
+SchoolIdentity |
 
 PartnerIdentity |
 
@@ -144,6 +170,66 @@ partner_uuid: string;
     last_login_at?: string | null;
 
     account_status?: string | null;
+
+}
+
+interface TeacherRow {
+
+    id: string;
+
+    teacher_uuid: string;
+
+    auth_user_id: string | null;
+
+    teacher_id: string;
+
+    full_name: string;
+
+    email: string;
+
+    phone: string | null;
+
+    organization_uuid: string | null;
+
+    organization_name: string | null;
+
+    school_uuid: string | null;
+
+    school_name: string | null;
+
+    board_uuid: string | null;
+
+    department: string | null;
+
+    designation: string | null;
+
+    profile_completed: boolean | null;
+
+    is_active: boolean | null;
+
+}
+
+interface SchoolRow {
+
+    id: string;
+
+    school_uuid: string;
+
+    auth_user_id: string | null;
+
+    school_id: string;
+
+    school_name: string;
+
+    organization_uuid: string | null;
+
+    organization_name: string | null;
+
+    board_uuid: string | null;
+
+    principal_name: string | null;
+
+    is_active: boolean | null;
 
 }
 
@@ -213,6 +299,60 @@ async function fetchStudentByAuthId(
 
 }
 
+/* ============================================================
+   FETCH TEACHER BY AUTH USER
+============================================================ */
+
+async function fetchTeacherByAuthUserId(
+    authUserId: string
+): Promise<TeacherRow | null> {
+
+    const supabase = getClient();
+
+    const {
+        data,
+        error
+    } = await supabase
+        .from("teachers_master")
+        .select("*")
+        .eq("auth_user_id", authUserId)
+        .maybeSingle();
+
+    if (error) {
+        return null;
+    }
+
+    return data;
+
+}
+
+/* ============================================================
+   FETCH SCHOOL BY AUTH USER
+============================================================ */
+
+async function fetchSchoolByAuthUserId(
+    authUserId: string
+): Promise<SchoolRow | null> {
+
+    const supabase = getClient();
+
+    const {
+        data,
+        error
+    } = await supabase
+        .from("school_admins")
+        .select("*")
+        .eq("auth_user_id", authUserId)
+        .maybeSingle();
+
+    if (error) {
+        return null;
+    }
+
+    return data;
+
+}
+
 async function fetchPartnerByAuthId(
     authUserId: string
 ): Promise<PartnerRow | null> {
@@ -251,6 +391,14 @@ async function resolveIdentity(
           identity: StudentIdentity;
       }
     | {
+          role: "teacher";
+          identity: TeacherIdentity;
+      }
+    | {
+          role: "school";
+          identity: SchoolIdentity;
+      }
+    | {
           role: "partner";
           identity: PartnerIdentity;
       }
@@ -276,6 +424,66 @@ async function resolveIdentity(
         };
 
     }
+
+    /* ============================================================
+   TEACHER
+============================================================ */
+
+const teacher =
+    await fetchTeacherByAuthUserId(
+        authUserId
+    );
+
+if (teacher) {
+
+    const identity =
+        createTeacherIdentity(
+            teacher
+        );
+
+    saveTeacherIdentity(
+        identity
+    );
+
+    return {
+
+    role: "teacher",
+
+    identity
+
+};
+
+}
+
+/* ============================================================
+   SCHOOL
+============================================================ */
+
+const school =
+    await fetchSchoolByAuthUserId(
+        authUserId
+    );
+
+if (school) {
+
+    const identity =
+        createSchoolIdentity(
+            school
+        );
+
+    saveSchoolIdentity(
+        identity
+    );
+
+    return {
+
+    role: "school",
+
+    identity
+
+};
+
+}
 
     const partner =
         await fetchPartnerByAuthId(authUserId);
@@ -491,6 +699,106 @@ parentPhone:
 
 }
 
+/* ============================================================
+   CREATE TEACHER IDENTITY
+============================================================ */
+
+function createTeacherIdentity(
+    row: TeacherRow
+): TeacherIdentity {
+
+    return buildTeacherIdentity({
+
+        authUserId:
+            row.auth_user_id ?? undefined,
+
+        email:
+            row.email,
+
+        teacherUuid:
+            row.teacher_uuid,
+
+        teacherId:
+            row.teacher_id,
+
+        teacherName:
+            row.full_name,
+
+        phone:
+            row.phone ?? undefined,
+
+        organizationUuid:
+            row.organization_uuid ?? undefined,
+
+        organizationName:
+            row.organization_name ?? undefined,
+
+        schoolUuid:
+            row.school_uuid ?? undefined,
+
+        schoolName:
+            row.school_name ?? undefined,
+
+        boardUuid:
+            row.board_uuid ?? undefined,
+
+        department:
+            row.department ?? undefined,
+
+        designation:
+            row.designation ?? undefined,
+
+        profileCompleted:
+            row.profile_completed ?? false,
+
+        isActive:
+            row.is_active ?? true
+
+    });
+
+}
+
+/* ============================================================
+   CREATE SCHOOL IDENTITY
+============================================================ */
+
+function createSchoolIdentity(
+    row: SchoolRow
+): SchoolIdentity {
+
+    return buildSchoolIdentity({
+
+        authUserId:
+            row.auth_user_id ?? undefined,
+
+        schoolUuid:
+            row.school_uuid,
+
+        schoolId:
+            row.school_id,
+
+        schoolName:
+            row.school_name,
+
+        organizationUuid:
+            row.organization_uuid ?? undefined,
+
+        organizationName:
+            row.organization_name ?? undefined,
+
+        boardUuid:
+            row.board_uuid ?? undefined,
+
+        principalName:
+            row.principal_name ?? undefined,
+
+        isActive:
+            row.is_active ?? true
+
+    });
+
+}
+
 export async function signIn(
     email: string,
     password: string
@@ -625,6 +933,32 @@ studentCode:
                 );
 
                 break;
+
+case "teacher":
+
+    clearStudentIdentity();
+    clearSchoolIdentity();
+    clearPartnerIdentity();
+    clearAdminIdentity();
+
+    saveTeacherIdentity(
+        resolved.identity
+    );
+
+    break;
+
+case "school":
+
+    clearStudentIdentity();
+    clearTeacherIdentity();
+    clearPartnerIdentity();
+    clearAdminIdentity();
+
+    saveSchoolIdentity(
+        resolved.identity
+    );
+
+    break;
 
             case "partner":
 
@@ -889,6 +1223,170 @@ export async function registerPartner(
 
 }
 
+export async function registerTeacher(
+    email: string,
+    password: string
+): Promise<SignUpResult> {
+
+    try {
+
+        const supabase =
+            getClient();
+
+        const {
+            data,
+            error
+        } = await supabase.auth.signUp({
+
+            email: email.trim(),
+
+            password
+
+        });
+
+        if (error) {
+
+            return {
+
+                success: false,
+
+                error: error.message
+
+            };
+
+        }
+
+        const user =
+            data.user;
+
+        if (!user) {
+
+            return {
+
+                success: false,
+
+                error:
+                    "Unable to create authentication account."
+
+            };
+
+        }
+
+        return {
+
+            success: true,
+
+            userId:
+                user.id,
+
+            email:
+                user.email ?? undefined,
+
+            sessionExists:
+                data.session !== null
+
+        };
+
+    }
+
+    catch (error: any) {
+
+        return {
+
+            success: false,
+
+            error:
+                error?.message ??
+                "Unable to create teacher account."
+
+        };
+
+    }
+
+}
+
+export async function registerSchool(
+    email: string,
+    password: string
+): Promise<SignUpResult> {
+
+    try {
+
+        const supabase =
+            getClient();
+
+        const {
+            data,
+            error
+        } = await supabase.auth.signUp({
+
+            email: email.trim(),
+
+            password
+
+        });
+
+        if (error) {
+
+            return {
+
+                success: false,
+
+                error: error.message
+
+            };
+
+        }
+
+        const user =
+            data.user;
+
+        if (!user) {
+
+            return {
+
+                success: false,
+
+                error:
+                    "Unable to create authentication account."
+
+            };
+
+        }
+
+        return {
+
+            success: true,
+
+            userId:
+                user.id,
+
+            email:
+                user.email ?? undefined,
+
+            sessionExists:
+                data.session !== null
+
+        };
+
+    }
+
+    catch (error: any) {
+
+        return {
+
+            success: false,
+
+            error:
+                error?.message ??
+                "Unable to create school account."
+
+        };
+
+    }
+
+}
+
 export async function bootstrapStudentIdentity(
     student: {
         studentName: string;
@@ -1023,7 +1521,11 @@ Promise<AuthResult> {
 
         await supabase.auth.signOut();
 
- clearStudentIdentity();
+clearStudentIdentity();
+
+clearTeacherIdentity();
+
+clearSchoolIdentity();
 
 clearPartnerIdentity();
 
@@ -1086,9 +1588,16 @@ Promise<RestoreSessionResult> {
 
         if (!session) {
 
-            clearStudentIdentity();
-            clearPartnerIdentity();
-            clearAdminIdentity();
+          clearStudentIdentity();
+
+clearTeacherIdentity();
+
+clearSchoolIdentity();
+
+clearPartnerIdentity();
+
+clearAdminIdentity();
+
             clearAuthSession();
 
             return {
@@ -1111,9 +1620,15 @@ Promise<RestoreSessionResult> {
 
             await supabase.auth.signOut();
 
-            clearStudentIdentity();
-            clearPartnerIdentity();
-            clearAdminIdentity();
+         clearStudentIdentity();
+
+clearTeacherIdentity();
+
+clearSchoolIdentity();
+
+clearPartnerIdentity();
+
+clearAdminIdentity();
             clearAuthSession();
 
             return {
@@ -1149,6 +1664,32 @@ Promise<RestoreSessionResult> {
                 );
 
                 break;
+
+case "teacher":
+
+    clearStudentIdentity();
+    clearSchoolIdentity();
+    clearPartnerIdentity();
+    clearAdminIdentity();
+
+    saveTeacherIdentity(
+        resolved.identity
+    );
+
+    break;
+
+case "school":
+
+    clearStudentIdentity();
+    clearTeacherIdentity();
+    clearPartnerIdentity();
+    clearAdminIdentity();
+
+    saveSchoolIdentity(
+        resolved.identity
+    );
+
+    break;
 
             case "partner":
 
@@ -1310,11 +1851,15 @@ export function onAuthStateChange(): void {
 
                     case "SIGNED_OUT":
 
-                        clearStudentIdentity();
+                      clearStudentIdentity();
 
-                        clearPartnerIdentity();
+clearTeacherIdentity();
 
-                        clearAdminIdentity();
+clearSchoolIdentity();
+
+clearPartnerIdentity();
+
+clearAdminIdentity();
 
                         clearAuthSession();
 
@@ -1361,21 +1906,77 @@ export function getCurrentIdentity() {
         getCurrentStudent();
 
     if (student) {
-
         return student;
+    }
 
+    const teacher =
+        getCurrentTeacher();
+
+    if (teacher) {
+        return teacher;
+    }
+
+    const school =
+        getCurrentSchool();
+
+    if (school) {
+        return school;
     }
 
     const partner =
         getCurrentPartner();
 
     if (partner) {
-
         return partner;
-
     }
 
     return getCurrentAdmin();
+
+}
+
+export function isTeacherAuthenticated(): boolean {
+
+    return getCurrentTeacher() !== null;
+
+}
+
+export function isSchoolAuthenticated(): boolean {
+
+    return getCurrentSchool() !== null;
+
+}
+
+export function requireTeacherIdentity(): TeacherIdentity {
+
+    const teacher =
+        getCurrentTeacher();
+
+    if (!teacher) {
+
+        throw new Error(
+            "Teacher identity not found."
+        );
+
+    }
+
+    return teacher;
+
+}
+
+export function requireSchoolIdentity(): SchoolIdentity {
+
+    const school =
+        getCurrentSchool();
+
+    if (!school) {
+
+        throw new Error(
+            "School identity not found."
+        );
+
+    }
+
+    return school;
 
 }
 

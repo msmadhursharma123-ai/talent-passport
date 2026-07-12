@@ -14,9 +14,9 @@ import ExecutiveDetailDrawer from "./ExecutiveDetailDrawer";
 
 import StudentRegistrationView from "./StudentRegistrationView";
 import CompetitionEntriesView from "./CompetitionEntriesView";
+import NewPartnersView from "./NewPartnersView";
 
 export default function ExecutiveKPIs() {
-
   const [kpis, setKpis] =
     useState<ExecutiveKPIRecord[]>([]);
 
@@ -81,6 +81,11 @@ export default function ExecutiveKPIs() {
         {selectedKPI?.id ===
           "competitionEntries" && (
           <CompetitionEntriesView />
+        )}
+
+        {selectedKPI?.id ===
+          "partners" && (
+          <NewPartnersView />
         )}
       </ExecutiveDetailDrawer>
     </>

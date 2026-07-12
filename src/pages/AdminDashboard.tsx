@@ -16,6 +16,8 @@ import {
   ExecutiveKPIs,
 } from "./admin/dashboard";
 
+import PlatformSnapshot from "./admin/dashboard/PlatformSnapshot";
+
 /* ============================================================
    DASHBOARD FILTER HELPERS
 ============================================================ */
@@ -330,15 +332,15 @@ function calculateSummaryMetrics(
 
     ).size;
 
-  const pendingEvaluations =
+const pendingEvaluationRows =
+  filteredSubmissions.filter(
+    submission =>
+      submission.overall_score === null ||
+      submission.overall_score === undefined
+  );
 
-    filteredSubmissions.filter(
-
-      submission =>
-
-        !submission.overall_score
-
-    ).length;
+const pendingEvaluations =
+  pendingEvaluationRows.length;
 
   return {
 
@@ -418,6 +420,8 @@ function calculateRegistrationStatus(
 
     });
 
+
+    
   return {
 
     completedStudents,
@@ -785,6 +789,13 @@ const summary =
 
   );
 
+const pendingEvaluationRows =
+  filteredSubmissions.filter(
+    submission =>
+      submission.overall_score === null ||
+      submission.overall_score === undefined
+  );
+
   const {
 
   completedStudents,
@@ -977,53 +988,32 @@ const topEvents =
     marginBottom: "24px",
   }}
 >
-        <DashboardCard
-          title="Total Students"
-          value={summary.totalStudents}
-        />
+<PlatformSnapshot
+  summary={{
+    totalStudents: summary.totalStudents,
+    totalEntries: summary.totalEntries,
+    totalSchools: summary.totalSchools,
+    totalClasses: summary.totalClasses,
+    competitions: summary.totalCompetitions,
+    pendingEvaluations: summary.pendingEvaluations,
+    completedRegistrations:
+      completedStudents.length,
+    incompleteRegistrations:
+      incompleteStudents.length,
+  }}
 
-        <DashboardCard
-          title="Total Entries"
-          value={summary.totalEntries}
-        />
+  students={filteredStudents}
 
-        <DashboardCard
-          title="Completed Registrations"
-          value={
-            completedStudents.length
-          }
-        />
+  submissions={filteredSubmissions}
 
-        <DashboardCard
-          title="Incomplete Registrations"
-          value={
-            incompleteStudents.length
-          }
-        />
-
-        <DashboardCard
-          title="Total Schools"
-          value={summary.totalSchools}
-        />
-
-        <DashboardCard
-          title="Total Classes"
-          value={summary.totalClasses}
-        />
-
-       <DashboardCard
-  title="Competitions"
-  value={
-    summary.totalCompetitions
+  pendingEvaluationRows={
+    pendingEvaluationRows
   }
-/>
 
-        <DashboardCard
-          title="Pending Evaluations"
-          value={
-            summary.pendingEvaluations
-          }
-        />
+  completedStudents={completedStudents}
+
+  incompleteStudents={incompleteStudents}
+/>
       </div>
 
      {/* PLATFORM INSIGHTS */}
@@ -1187,72 +1177,6 @@ interface DashboardCardProps {
   title: string;
 
   value: string | number;
-
-}
-
-function DashboardCard({
-
-  title,
-
-  value
-
-}: DashboardCardProps) {
-
-  return (
-
-    <div
-
-      style={{
-  background: "#FFFFFF",
-  borderRadius: 18,
-  padding: "18px 20px",
-  border: "1px solid #E5E7EB",
-  minHeight: 110,
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "center",
-}}
-
-    >
-
-      <div
-
-        style={{
-
-          color: "#64748B",
-
-          fontSize: 13,
-fontWeight: 500,
-
-        }}
-
-      >
-
-        {title}
-
-      </div>
-
-      <div
-
-        style={{
-
-         fontSize: 24,
-fontWeight: 700,
-          color: "#071952",
-          marginTop: 10,
-lineHeight: 1.1,
-
-        }}
-
-      >
-
-        {value}
-
-      </div>
-
-    </div>
-
-  );
 
 }
 

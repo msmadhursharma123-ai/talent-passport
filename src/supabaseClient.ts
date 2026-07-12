@@ -327,7 +327,7 @@ export const fetchAllSubmissions = async (): Promise<{ submissions: Submission[]
       throw error;
     }
 
-    const parsed: Submission[] = (data || []).map((row: any) => ({
+const parsed: Submission[] = (data || []).map((row: any) => ({
   id: row.id,
   student_id: row.student_id,
 
@@ -336,14 +336,22 @@ export const fetchAllSubmissions = async (): Promise<{ submissions: Submission[]
   student_name: row.student_name,
   student_email: row.student_email,
 
+  school_name: row.school_name,
+  class_name: row.class_name,
+
   pathway: row.pathway,
   event_name: row.event_name,
+
+  competition_name: row.competition_name,
 
   video_url: row.video_url,
   description: row.description,
 
   video_name: row.video_name || "video.mp4",
   video_size: row.video_size || 0,
+
+  overall_score: row.overall_score,
+  processing_status: row.processing_status,
 }));
 
     return { submissions: parsed, isMock: false };
@@ -478,6 +486,25 @@ if (
           ai_feedback: scores.feedback
         }
       ]);
+
+      const { error: submissionUpdateError } =
+  await (supabase as any)
+    .from("submissions")
+    .update({
+      communication_score: scores.communication,
+      confidence_score: scores.confidence,
+      leadership_score: scores.leadership,
+      critical_thinking_score: scores.critical_thinking,
+      collaboration_score: scores.collaboration,
+      overall_score: overall,
+      ai_feedback: scores.feedback,
+      processing_status: "Completed",
+    })
+    .eq("id", submission.id);
+
+if (submissionUpdateError) {
+  throw submissionUpdateError;
+}
 
 const passportInsertResult =
   await (supabase as any)
@@ -966,3 +993,110 @@ async () => {
 
   };
 };
+
+export const fetchPartnerRegistrationMetrics =
+async () => {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) {
+    return {
+      today: 0,
+      last7Days: 0,
+      last30Days: 0,
+    };
+  }
+
+  const today = new Date();
+
+  const todayStart = new Date(today);
+  todayStart.setHours(0,0,0,0);
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(
+    sevenDaysAgo.getDate() - 7
+  );
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(
+    thirtyDaysAgo.getDate() - 30
+  );
+
+  const { data, error } =
+    await (supabase as any)
+      .from("partners_master")
+      .select("created_at");
+
+  const partners =
+    (data ?? []) as any[];
+
+  if (error) {
+    return {
+      today: 0,
+      last7Days: 0,
+      last30Days: 0,
+    };
+  }
+
+  return {
+
+    today: partners.filter(
+      row =>
+        new Date(row.created_at) >=
+        todayStart
+    ).length,
+
+    last7Days: partners.filter(
+      row =>
+        new Date(row.created_at) >=
+        sevenDaysAgo
+    ).length,
+
+    last30Days: partners.filter(
+      row =>
+        new Date(row.created_at) >=
+        thirtyDaysAgo
+    ).length,
+
+  };
+};
+
+export interface PartnerExecutiveRecord {
+  id: string;
+  partner_name: string;
+  institute_city: string;
+  specialization: string;
+  status: string;
+  created_at: string;
+}
+
+export async function fetchPartnersMaster(): Promise<
+  PartnerExecutiveRecord[]
+> {
+  const supabase = getSupabaseClient();
+
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("partners_master")
+    .select(`
+      id,
+      partner_name,
+      institute_city,
+      specialization,
+      status,
+      created_at
+    `)
+    .order("created_at", {
+      ascending: false,
+    });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return (data ??
+    []) as PartnerExecutiveRecord[];
+}

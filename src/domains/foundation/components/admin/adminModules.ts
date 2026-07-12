@@ -30,7 +30,7 @@ export const ADMIN_MODULES: ReadonlyArray<AdminModuleItem> = [
   {
     key: "users",
     label: "👥 User Management",
-    enabled: false,
+    enabled: true,
   },
   {
     key: "learning",

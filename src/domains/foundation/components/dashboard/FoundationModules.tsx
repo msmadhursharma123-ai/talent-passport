@@ -21,14 +21,16 @@ const FOUNDATION_MODULES: FoundationModule[] = [
     status: "Ready",
     enabled: true,
   },
-{
-  title: "Boards",
-  description:
-    "Configure education boards including CBSE, ICSE, IB and future boards.",
-  icon: "📘",
-  status: "Ready",
-  enabled: true,
-},
+
+  {
+    title: "Boards",
+    description:
+      "Configure education boards including CBSE, ICSE, IB and future boards.",
+    icon: "📘",
+    status: "Ready",
+    enabled: true,
+  },
+
   {
     title: "Academic Years",
     description:
@@ -37,34 +39,65 @@ const FOUNDATION_MODULES: FoundationModule[] = [
     status: "Ready",
     enabled: true,
   },
+
   {
     title: "Classes",
     description:
       "Maintain platform-wide class definitions for every organization.",
     icon: "🏛",
- status: "Ready",
+    status: "Ready",
     enabled: true,
   },
+
   {
     title: "Sections",
     description:
       "Manage sections belonging to classes within organizations.",
     icon: "🧩",
-   status: "Ready",
+    status: "Ready",
     enabled: true,
   },
+
   {
     title: "Subjects",
     description:
-      "Configure all subjects available across boards and classes.",
+      "Manage academic subjects for every section.",
     icon: "📚",
-  status: "Ready",
+    status: "Ready",
     enabled: true,
   },
+
+  {
+    title: "Chapters",
+    description:
+      "Organize every subject into structured chapters that define the academic syllabus.",
+    icon: "📖",
+    status: "Ready",
+    enabled: true,
+  },
+
+  {
+    title: "Topics",
+    description:
+      "Break each chapter into measurable learning topics for instruction and assessment.",
+    icon: "📝",
+    status: "Ready",
+    enabled: true,
+  },
+
+  {
+  title: "Sub Topics",
+  description:
+    "Manage the smallest learning units under every topic. Sub Topics power lesson planning, assessments and AI learning intelligence.",
+  icon: "📖",
+  status: "Ready",
+  enabled: true,
+},
+
   {
     title: "Curriculum",
     description:
-      "Manage chapters, topics and subtopics that power the Learning Intelligence Engine.",
+      "Manage the complete academic hierarchy and learning structure across the platform.",
     icon: "🧠",
     status: "Ready",
     enabled: true,

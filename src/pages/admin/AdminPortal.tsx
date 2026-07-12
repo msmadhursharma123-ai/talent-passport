@@ -8,6 +8,8 @@ import AdminHeader from "../../domains/foundation/components/admin/AdminHeader";
 import AdminSidebar from "../../domains/foundation/components/admin/AdminSidebar";
 import FoundationHub
 from "../../domains/foundation/pages/FoundationHub";
+import PlatformAdministration
+from "../../domains/platformAdministration/pages/PlatformAdministration";
 
 /* ============================================================
    ADMIN PORTAL
@@ -47,11 +49,15 @@ const renderModule = () => {
     case "foundation":
       return <FoundationHub />;
 
+      
     case "competitions":
       return <CompetitionEntries />;
 
     case "analytics":
       return <AdminAnalytics />;
+
+case "users":
+  return <PlatformAdministration />;
 
     case "settings":
       return (

@@ -5,11 +5,12 @@ export interface ExecutiveKPIMetrics {
 }
 
 export interface ExecutiveKPIRecord {
-  id:
-    | "students"
-    | "schools"
-    | "teachers"
-    | "competitionEntries";
+id:
+  | "students"
+  | "schools"
+  | "teachers"
+  | "partners"
+  | "competitionEntries";
 
   title: string;
 
