@@ -8,6 +8,11 @@ import PlatformAdministrationRecentActivity from "../components/dashboard/Platfo
 
 import UniversalUserRegistry from "./UniversalUserRegistry";
 
+import TeacherRegistry
+from "../teacher/TeacherRegistry";
+import SchoolAdminRegistry
+from "../teacher/SchoolAdminRegistry";
+
 type PlatformAdministrationPage =
   | "dashboard"
   | "registry"
@@ -28,6 +33,18 @@ export default function PlatformAdministration() {
     );
   }
 
+if (activePage === "teachers") {
+
+    return <TeacherRegistry />;
+
+}
+
+if (activePage === "schools") {
+
+    return <SchoolAdminRegistry />;
+
+}
+
   return (
     <div style={pageStyle}>
       <PlatformAdministrationHero />
@@ -37,10 +54,26 @@ export default function PlatformAdministration() {
       <PlatformAdministrationQuickActions />
 
       <PlatformAdministrationModules
-        onOpenRegistry={() =>
-          setActivePage("registry")
-        }
-      />
+
+    onOpenRegistry={() =>
+
+        setActivePage("registry")
+
+    }
+
+    onOpenTeacherManagement={() =>
+
+        setActivePage("teachers")
+
+    }
+
+    onOpenSchoolAdministration={() =>
+
+        setActivePage("schools")
+
+    }
+
+/>
 
       <PlatformAdministrationRecentActivity />
     </div>

@@ -1,11 +1,23 @@
 import React from "react";
 
 interface Props {
-  onOpenRegistry: () => void;
+
+    onOpenRegistry: () => void;
+
+    onOpenTeacherManagement: () => void;
+
+    onOpenSchoolAdministration: () => void;
+
 }
 
 export default function PlatformAdministrationModules({
-  onOpenRegistry,
+
+    onOpenRegistry,
+
+    onOpenTeacherManagement,
+
+    onOpenSchoolAdministration
+
 }: Props) {
   return (
     <section>
@@ -23,19 +35,33 @@ export default function PlatformAdministrationModules({
           onClick={onOpenRegistry}
         />
 
-        <ModuleCard
-          icon="👨‍🏫"
-          title="Teacher Management"
-          description="Create teachers and assign organizations, classes and subjects."
-          footer="84 Teachers"
-        />
+      <ModuleCard
+
+    icon="👨‍🏫"
+
+    title="Teacher Management"
+
+    description="Create teachers and assign organizations, classes and subjects."
+
+    footer="84 Teachers"
+
+    onClick={onOpenTeacherManagement}
+
+/>
 
         <ModuleCard
-          icon="🏫"
-          title="School Administration"
-          description="Manage school administrators and organization access."
-          footer="32 Schools"
-        />
+
+    icon="🏫"
+
+    title="School Administration"
+
+    description="Manage school administrators and organization access."
+
+    footer="32 Schools"
+
+    onClick={onOpenSchoolAdministration}
+
+/>
 
         <ModuleCard
           icon="🤝"

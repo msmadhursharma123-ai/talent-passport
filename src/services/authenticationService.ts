@@ -62,19 +62,17 @@ export interface AuthResult {
 }
 
 export interface SignInResult
-    extends AuthResult {
+extends AuthResult {
 
-identity?:
+    identity?:
 
-StudentIdentity |
+    StudentIdentity |
+    TeacherIdentity |
+    SchoolIdentity |
+    PartnerIdentity |
+    AdminIdentity;
 
-TeacherIdentity |
-
-SchoolIdentity |
-
-PartnerIdentity |
-
-AdminIdentity;
+    requiresPasswordReset?: boolean;
 
 }
 
@@ -748,13 +746,19 @@ function createTeacherIdentity(
         designation:
             row.designation ?? undefined,
 
-        profileCompleted:
-            row.profile_completed ?? false,
+  profileCompleted:
+    row.profile_completed ?? false,
 
-        isActive:
-            row.is_active ?? true
+isActive:
+    row.is_active ?? true,
 
-    });
+role:
+    "teacher",
+
+permissions:
+    []
+
+});
 
 }
 
@@ -850,6 +854,58 @@ export async function signIn(
             await resolveIdentity(
                 authUser.id
             );
+
+/* ============================================================
+   SCHOOL FIRST LOGIN CHECK
+============================================================ */
+
+if (resolved?.role === "school") {
+
+    const supabase = getClient();
+
+const {
+
+    data: schoolAdmin
+
+} = await (supabase as any)
+
+    .from("school_admins")
+
+    .select("account_status,last_login_at")
+
+    .eq("auth_user_id", authUser.id)
+
+    .maybeSingle();
+
+const admin = schoolAdmin as any;
+
+  if (
+
+    admin &&
+
+    (
+
+        admin.account_status === "Temporary" ||
+
+        admin.last_login_at === null
+
+    )
+
+) {
+
+        return {
+
+            success: true,
+
+            identity: resolved.identity,
+
+            requiresPasswordReset: true
+
+        };
+
+    }
+
+}
 
       if (!resolved) {
 
@@ -1382,6 +1438,70 @@ export async function registerSchool(
                 "Unable to create school account."
 
         };
+
+    }
+
+}
+
+export async function createSchoolAdmin(
+    invitation: {
+        schoolUuid: string;
+        schoolName: string;
+        administratorName: string;
+        administratorEmail: string;
+    },
+    authUserId: string
+): Promise<boolean> {
+
+    try {
+
+        const supabase = getClient();
+
+      const { error } = await (supabase as any)
+    .from("school_admins")
+    .insert({
+
+                school_admin_uuid: crypto.randomUUID(),
+
+                school_admin_id:
+                    "SCHADM-" +
+                    Math.floor(100000 + Math.random() * 900000),
+
+                full_name:
+                    invitation.administratorName,
+
+                email:
+                    invitation.administratorEmail,
+
+                school_uuid:
+                    invitation.schoolUuid,
+
+                school_name:
+                    invitation.schoolName,
+
+                auth_user_id:
+                    authUserId,
+
+                account_status:
+                    "Active"
+
+            });
+
+        if (error) {
+
+            console.error(error);
+
+            return false;
+
+        }
+
+        return true;
+
+    } catch (error) {
+
+        console.error(error);
+
+        return false;
 
     }
 
@@ -2023,5 +2143,100 @@ Promise<SignInResult> {
 
     };
 
+}
+
+export async function updatePassword(
+    newPassword: string
+): Promise<AuthResult> {
+
+    try {
+
+        const supabase = getClient();
+
+        const { data } =
+            await supabase.auth.getUser();
+
+        const authUser = data.user;
+
+        if (!authUser) {
+
+            return {
+
+                success: false,
+
+                error: "No authenticated user."
+
+            };
+
+        }
+
+        const {
+
+            error: passwordError
+
+        } = await supabase.auth.updateUser({
+
+            password: newPassword
+
+        });
+
+        if (passwordError) {
+
+            return {
+
+                success: false,
+
+                error: passwordError.message
+
+            };
+
+        }
+
+        await (supabase as any)
+
+            .from("school_admins")
+
+            .update({
+
+                account_status: "Active",
+
+                last_login_at: new Date().toISOString()
+
+            })
+
+            .eq(
+
+                "auth_user_id",
+
+                authUser.id
+
+            );
+
+        return {
+
+            success: true
+
+        };
+
+    }
+
+    catch (error: any) {
+
+        return {
+
+            success: false,
+
+            error:
+
+                error?.message ??
+
+                "Unable to update password."
+
+        };
+
+    }
+
+
+    
 }
 

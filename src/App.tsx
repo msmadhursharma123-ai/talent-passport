@@ -58,6 +58,30 @@ import {
   signOut
 } from "./services/authenticationService";
 
+import TeacherRegistrationAuth
+from "./pages/teacher/auth/TeacherRegistrationAuth";
+
+import TeacherExistingLogin
+from "./pages/teacher/auth/TeacherExistingLogin";
+
+import TeacherVerifyEmail
+from "./pages/teacher/auth/TeacherVerifyEmail";
+
+import TeacherProfileForm
+from "./pages/teacher/auth/TeacherProfileForm";
+
+import TeacherPortal
+from "./pages/teacher/TeacherPortal";
+
+import SchoolLogin
+from "./domains/school/pages/SchoolLogin";
+
+import SchoolDashboard
+from "./domains/school/pages/SchoolDashboard";
+
+import SchoolResetPassword
+from "./domains/school/pages/SchoolResetPassword";
+
 const DEMO_ITEMS: Submission[] = [
   {
     id: "demo-1",
@@ -108,6 +132,20 @@ useState<"new" | "existing" | null>(null);
   useState<string>("identity");
 
 const adminIdentity = getCurrentAdmin();
+
+const [teacherStage, setTeacherStage] =
+useState<
+    | "register"
+    | "verify"
+    | "profile"
+    | "login"
+    | "portal"
+>(
+    "register"
+);
+
+const [teacherEmail, setTeacherEmail] =
+useState("");
 
 const handleLogout = async () => {
 
@@ -184,6 +222,20 @@ if (user) {
   setUserType("existing");
   setActiveTab("passport");
   break;
+
+}
+
+case "teacher": {
+
+    setSelectedRole("teacher");
+
+    setUserType("existing");
+
+    setTeacherStage("portal");
+
+    setActiveTab("teacher");
+
+    break;
 
 }
 
@@ -390,6 +442,16 @@ schoolName: string;
         return;
       }
 
+if (role === "school") {
+
+    setActiveTab(
+        "school-login"
+    );
+
+    return;
+
+}
+
       setActiveTab(
         "user-type"
       );
@@ -397,6 +459,8 @@ schoolName: string;
     }}
   />
 )}
+
+
 
 {activeTab === "user-type" && (
   <UserType
@@ -409,6 +473,24 @@ schoolName: string;
     onSelect={(type) => {
 
       setUserType(type);
+
+if (selectedRole === "teacher") {
+
+    if (type === "new") {
+
+        setTeacherStage("register");
+
+    } else {
+
+        setTeacherStage("login");
+
+    }
+
+    setActiveTab("teacher");
+
+    return;
+
+}
 
       if (selectedRole === "partner") {
 
@@ -555,7 +637,25 @@ schoolName: string;
 
 )}
 
+{activeTab === "school-login" && (
 
+    <SchoolLogin
+
+        onBack={()=>
+            setActiveTab("role-selection")
+        }
+
+        onSuccess={()=>
+            setActiveTab("school-dashboard")
+        }
+
+        onResetPassword={()=>
+            setActiveTab("school-reset-password")
+        }
+
+    />
+
+)}
 
 {activeTab ===
   "admin-login" && (
@@ -690,6 +790,178 @@ setActiveTab("identity");
     }}
 
   />
+
+)}
+
+{activeTab === "school-reset-password" && (
+
+    <SchoolResetPassword
+
+        onSuccess={()=>
+
+            setActiveTab(
+
+                "school-dashboard"
+
+            )
+
+        }
+
+    />
+
+)}
+
+{activeTab === "school-dashboard" && (
+
+  <SchoolDashboard
+    onLogout={async () => {
+
+        await signOut();
+
+        setSelectedRole("");
+
+        setUserType(null);
+
+        setActiveTab("identity");
+
+    }}
+/>
+
+)}
+
+{activeTab === "teacher" && (
+
+    (() => {
+
+        switch (teacherStage) {
+
+            case "register":
+
+                return (
+
+                    <TeacherRegistrationAuth
+
+                        onRegistrationComplete={() =>
+                            setTeacherStage("profile")
+                        }
+
+                        onVerificationRequired={(email) => {
+
+                            setTeacherEmail(email);
+
+                            setTeacherStage("verify");
+
+                        }}
+
+                        onLogin={() =>
+                            setTeacherStage("login")
+                        }
+
+                        onBack={() => {
+
+                            setActiveTab("user-type");
+
+                            setTeacherStage("register");
+
+                        }}
+
+                    />
+
+                );
+
+            case "verify":
+
+                return (
+
+                    <TeacherVerifyEmail
+
+                        email={teacherEmail}
+
+                        onContinue={() =>
+                            setTeacherStage("profile")
+                        }
+
+                        onBackToLogin={() =>
+                            setTeacherStage("login")
+                        }
+
+                    />
+
+                );
+
+            case "profile":
+
+                return (
+
+                    <TeacherProfileForm
+
+                        onContinue={() =>
+                            setTeacherStage("portal")
+                        }
+
+                        onBack={() =>
+                            setTeacherStage("register")
+                        }
+
+                    />
+
+                );
+
+            case "login":
+
+                return (
+
+                    <TeacherExistingLogin
+
+                        onSuccess={() =>
+                            setTeacherStage("portal")
+                        }
+
+                        onRegister={() =>
+                            setTeacherStage("register")
+                        }
+
+                        onBack={() =>
+                            setActiveTab("user-type")
+                        }
+
+                    />
+
+                );
+
+            case "portal":
+
+                return (
+
+    <TeacherPortal
+
+        onLogout={async () => {
+
+            await signOut();
+
+            setSelectedRole("");
+
+            setUserType(null);
+
+            setTeacherStage("login");
+
+            setTeacherEmail("");
+
+            setActiveTab("identity");
+
+        }}
+
+    />
+
+);
+
+            default:
+
+                return null;
+
+        }
+
+    })()
 
 )}
 

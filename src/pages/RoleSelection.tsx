@@ -48,7 +48,7 @@ export default function RoleSelection({
 
             featured: false,
 
-            available: false,
+            available: true,
 
             badge: "Enterprise Edition",
 
@@ -74,7 +74,7 @@ export default function RoleSelection({
 
             featured: false,
 
-            available: false,
+            available: true,
 
             badge: "Enterprise Edition",
 
@@ -156,19 +156,17 @@ export default function RoleSelection({
                 onSelect(role);
                 return;
 
-            case "school":
+      case "school":
 
-                alert(
-                    "School Portal is coming soon.\n\nThis module will be available as part of our Enterprise Edition."
-                );
-                return;
+    onSelect("school");
 
-            case "teacher":
+    return;
 
-                alert(
-                    "Teacher Portal is coming soon.\n\nThis module will be available as part of our Enterprise Edition."
-                );
-                return;
+           case "teacher":
+
+    onSelect("teacher");
+
+    return;
 
             default:
 

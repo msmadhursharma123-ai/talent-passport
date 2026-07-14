@@ -265,11 +265,9 @@ export default function AssignRoleDialog({
 
     }
 
-    setRole(
-
-      user.role,
-
-    );
+ setRole(
+    user?.role ?? "",
+);
 
     setReason("");
 
