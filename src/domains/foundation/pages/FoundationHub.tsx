@@ -17,6 +17,8 @@ import ChaptersHub from "./ChaptersHub";
 import TopicsHub from "./TopicsHub";
 import SubTopicsHub from "./SubTopicsHub";
 
+import AcademicExplorer from "./AcademicExplorer";
+
 export default function FoundationHub() {
   const [activeModule, setActiveModule] =
     useState<string | null>(null);
@@ -114,6 +116,16 @@ if (activeModule === "Topics") {
 if (activeModule === "Sub Topics") {
   return (
     <SubTopicsHub
+      onBack={() =>
+        setActiveModule(null)
+      }
+    />
+  );
+}
+
+if (activeModule === "Academic Explorer") {
+  return (
+    <AcademicExplorer
       onBack={() =>
         setActiveModule(null)
       }

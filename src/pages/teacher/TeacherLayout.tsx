@@ -1,88 +1,70 @@
-import React,
-{
-    useState
-}
-from "react";
+import { useState } from "react";
 
-import TeacherHeader
-from "./TeacherHeader";
+import TeacherHeader from "./TeacherHeader";
+import TeacherSidebar from "./TeacherSidebar";
 
-import TeacherSidebar
-from "./TeacherSidebar";
+import TeacherHome from "./TeacherHome";
 
-import TeacherHome
-from "./TeacherHome";
+import TeacherDailyLogPage from "../../domains/teacherIntelligence/pages/TeacherDailyLogPage";
+
+import TeachingJournalPage from "../../domains/teacherIntelligence/pages/TeachingJournalPage";
+
+import MyClassroomPage from "../../domains/teacherIntelligence/pages/MyClassroomPage";
 
 interface Props {
-
-    onLogout: () => void;
-
+  onLogout: () => void;
 }
 
 export default function TeacherLayout({
-
-    onLogout
-
+  onLogout,
 }: Props) {
+  const [activePage, setActivePage] =
+    useState("dashboard");
 
-    const [
+  return (
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        background: "#F8F7F4",
+      }}
+    >
+      <TeacherSidebar
+        activePage={activePage}
+        onNavigate={setActivePage}
+      />
 
-        activePage,
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <TeacherHeader
+          onLogout={onLogout}
+        />
 
-        setActivePage
+        {activePage ===
+          "dashboard" && (
+          <TeacherHome />
+        )}
 
-    ] = useState(
-        "home"
-    );
+        {activePage ===
+          "daily-log" && (
+          <TeacherDailyLogPage />
+        )}
 
-    return (
+        {activePage ===
+          "teaching-journal" && (
+          <TeachingJournalPage />
+        )}
 
-        <div
-            style={{
-
-                display:"flex",
-
-                height:"100vh",
-
-                background:"#F8F7F4"
-
-            }}
-        >
-
-            <TeacherSidebar
-
-                activePage={
-                    activePage
-                }
-
-                onNavigate={
-                    setActivePage
-                }
-
-            />
-
-            <div
-                style={{
-
-                    flex:1,
-
-                    display:"flex",
-
-                    flexDirection:"column"
-
-                }}
-            >
-
-                <TeacherHeader
-    onLogout={onLogout}
-/>
-
-                <TeacherHome />
-
-            </div>
-
-        </div>
-
-    );
-
+        {activePage ===
+          "my-classroom" && (
+          <MyClassroomPage />
+        )}
+      </div>
+    </div>
+  );
 }

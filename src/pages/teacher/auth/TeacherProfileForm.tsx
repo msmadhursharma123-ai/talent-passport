@@ -4,23 +4,16 @@ import { getSupabaseClient }
 from "../../../supabaseClient";
 
 import {
-
-    createTeacherProfile
-
+createTeacherProfile
 } from "../../../data/teacherRepository";
 
 import {
-
-    getSchools,
-
-    SchoolOption
-
+getSchools,
+SchoolOption
 } from "../../../data/schoolRepository";
 
 import {
-
-    useEffect
-
+useEffect
 } from "react";
 
 interface Props {
@@ -34,157 +27,132 @@ export default function TeacherProfileForm({
 }: Props) {
 
 const [teacherName, setTeacherName] =
-    useState("");
+useState("");
 
 const [teacherEmail, setTeacherEmail] =
-    useState("");
+useState("");
 
 const [teacherMobile, setTeacherMobile] =
-    useState("");
+useState("");
 
 const [
-
-    schoolUuid,
-
-    setSchoolUuid
-
+schoolUuid,
+setSchoolUuid
 ] = useState("");
 
 const [
-
-    schoolName,
-
-    setSchoolName
-
+schoolName,
+setSchoolName
 ] = useState("");
 
 const [
-
-    schools,
-
-    setSchools
-
+schools,
+setSchools
 ] = useState<SchoolOption[]>([]);
 
 const [board, setBoard] =
-    useState("");
+useState("");
 
 const [department, setDepartment] =
-    useState("");
+useState("");
 
 const [designation, setDesignation] =
-    useState("");
+useState("");
 
 const [loading, setLoading] =
-    useState(false);
+useState(false);
 
 useEffect(() => {
 
-    loadSchools();
+loadSchools();
 
-    loadAuthenticatedEmail();
+loadAuthenticatedEmail();
 
 }, []);
 
 async function loadSchools() {
 
-    const data =
+const data =
+await getSchools();
 
-        await getSchools();
-
-    setSchools(
-
-        data
-
-    );
-
-} 
-
-async function loadAuthenticatedEmail() {
-
-    const supabase =
-        getSupabaseClient();
-
-    if (!supabase)
-        return;
-
-    const {
-
-        data
-
-    } = await supabase.auth.getUser();
-
-    setTeacherEmail(
-
-        data.user?.email ?? ""
-
-    );
+setSchools(data);
 
 }
 
- const handleContinue = async () => {
+async function loadAuthenticatedEmail() {
+
+const supabase =
+getSupabaseClient();
+
+if (!supabase)
+return;
+
+const {
+data
+} = await supabase.auth.getUser();
+
+setTeacherEmail(
+data.user?.email ?? ""
+);
+
+}
+
+const handleContinue = async () => {
 
 if (
 
-    !teacherName.trim() ||
+!teacherName.trim() ||
+!teacherEmail.trim() ||
+!teacherMobile.trim() ||
+!schoolUuid ||
+!department.trim() ||
+!designation.trim()
 
-    !teacherEmail.trim() ||
+) {
 
-    !teacherMobile.trim() ||
+alert(
+"Please complete all mandatory profile details."
+);
 
-    !schoolUuid ||
+return;
 
-    !department.trim() ||
+}
 
-    !designation.trim()
+setLoading(true);
 
-){
+try {
 
-        alert(
-            "Please complete all required fields."
-        );
+const identity =
+await createTeacherProfile({
 
-        return;
+fullName:
+teacherName,
 
-    }
+email:
+teacherEmail,
 
-    setLoading(true);
+phone:
+teacherMobile,
 
-    try {
+schoolUuid,
 
+schoolName,
 
-        
-      const identity =
-    await createTeacherProfile({
+board,
 
-        fullName:
-            teacherName,
+department,
 
-        email:
-            teacherEmail,
+designation,
 
-        phone:
-            teacherMobile,
-
-        schoolUuid,
-
-        schoolName,
-
-        board,
-
-        department,
-
-        designation
-
-    });
+});
 
 if (!identity) {
 
-    alert(
-        "Unable to create teacher profile."
-    );
+alert(
+"Unable to create teacher profile."
+);
 
-    return;
+return;
 
 }
 
@@ -192,23 +160,22 @@ onContinue();
 
 return;
 
- }
+}
 
-catch (error: any) {
+catch (error:any) {
 
-    alert(
+alert(
 
-        error?.message ??
+error?.message ??
+"Unable to save teacher profile."
 
-        "Unable to save teacher profile."
-
-    );
+);
 
 }
 
 finally {
 
-    setLoading(false);
+setLoading(false);
 
 }
 
@@ -413,6 +380,7 @@ setBoard(
   style={inputStyle}
 />
 
+
         <button
     onClick={handleContinue}
     disabled={
@@ -446,6 +414,8 @@ setBoard(
     </div>
   );
 }
+
+
 
 const inputStyle = {
   width: "100%",

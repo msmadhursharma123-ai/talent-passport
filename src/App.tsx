@@ -70,6 +70,9 @@ from "./pages/teacher/auth/TeacherVerifyEmail";
 import TeacherProfileForm
 from "./pages/teacher/auth/TeacherProfileForm";
 
+import TeacherAcademicQuestionnaire
+from "./pages/teacher/auth/TeacherAcademicQuestionnaire";
+
 import TeacherPortal
 from "./pages/teacher/TeacherPortal";
 
@@ -138,6 +141,7 @@ useState<
     | "register"
     | "verify"
     | "profile"
+    | "academic"
     | "login"
     | "portal"
 >(
@@ -895,9 +899,9 @@ setActiveTab("identity");
 
                     <TeacherProfileForm
 
-                        onContinue={() =>
-                            setTeacherStage("portal")
-                        }
+                     onContinue={() =>
+setTeacherStage("academic")
+}
 
                         onBack={() =>
                             setTeacherStage("register")
@@ -906,6 +910,24 @@ setActiveTab("identity");
                     />
 
                 );
+
+case "academic":
+
+return (
+
+<TeacherAcademicQuestionnaire
+
+onContinue={() =>
+setTeacherStage("portal")
+}
+
+onBack={() =>
+setTeacherStage("profile")
+}
+
+/>
+
+);
 
             case "login":
 

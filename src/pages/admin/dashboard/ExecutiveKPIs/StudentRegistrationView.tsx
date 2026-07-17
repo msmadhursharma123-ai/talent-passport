@@ -35,11 +35,26 @@ export default function StudentRegistrationView({
     "today" | "last7Days" | "last30Days"
   >("today");
 
-  const [students, setStudents] =
-    useState<StudentRecord[]>([]);
+const [students, setStudents] =
+  useState<StudentRecord[]>([]);
 
 useEffect(() => {
-  setStudents(records);
+  async function loadStudents() {
+
+    // Platform Snapshot
+    if (records.length > 0) {
+      setStudents(records);
+      return;
+    }
+
+    // Executive KPI
+    const data =
+      await fetchStudentsMaster();
+
+    setStudents(data ?? []);
+  }
+
+  loadStudents();
 }, [records]);
 
   const [filters, setFilters] =

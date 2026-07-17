@@ -102,6 +102,16 @@ const FOUNDATION_MODULES: FoundationModule[] = [
     status: "Ready",
     enabled: true,
   },
+
+{
+    title: "Academic Explorer",
+    description:
+      "Browse the complete academic hierarchy of Talent Passport OS.",
+    icon: "🎓",
+    status: "Ready",
+    enabled: true,
+},
+
 ];
 
 export default function FoundationModules({
