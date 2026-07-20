@@ -215,118 +215,119 @@ setLogs(allLogs);
           </div>
         )}
 
-        {logs.map((log: any) => (
-          <div
-            key={log.id}
-            style={cardStyle}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent:
-                  "space-between",
-                alignItems: "center",
-                marginBottom: 20,
-                flexWrap: "wrap",
-              }}
-            >
-              <h2
-                style={{
-                  margin: 0,
-                  color: "#04122F",
-                }}
-              >
-            Class {log.className}
+       {logs.map((log: any) => (
+
+<div
+key={log.id}
+style={{
+background:"white",
+padding:"26px",
+borderRadius:"24px",
+marginBottom:"18px",
+border:"1px solid #CBD5E1",
+display:"flex",
+justifyContent:"space-between",
+alignItems:"center",
+gap:"30px",
+flexWrap:"wrap",
+}}
+>
+
+<div>
+
+<h2
+style={{
+margin:"0 0 10px 0",
+color:"#1E293B",
+fontSize:"18px",
+fontWeight:800,
+}}
+>
+Class {log.className}
+{" "}
+•
+{" "}
+Section {log.sectionName}
+{" "}
+—
+{" "}
+{log.topicName}
+</h2>
+
+
+<p
+style={{
+margin:0,
+color:"#64748B",
+fontSize:"15px",
+}}
+>
+
+Covered Pages :
+
+Page {log.pageFrom}
+{" "}
+to
+{" "}
+Page {log.pageTo}
+
 {" • "}
-{log.subjectName}
-              </h2>
 
-              <div
-                style={{
-                  background:
-                    "#DCFCE7",
-                  color: "#15803D",
-                  padding:
-                    "8px 14px",
-                  borderRadius: 12,
-                  fontWeight: 700,
-                }}
-              >
-                Survey Published
-              </div>
-            </div>
+Homework :
 
-            <p>
-              <strong>
-                Topic Covered :
-              </strong>{" "}
-             {log.topicName}
-            </p>
+<strong>
+{log.homeworkGiven ? "YES" : "NO"}
+</strong>
 
-            <p>
-              <strong>
-                Pages Covered :
-              </strong>{" "}
-           {log.pageFrom} -
-{log.pageTo}
-            </p>
+{" • "}
 
-            <p>
-              <strong>
-                Homework Assigned :
-              </strong>{" "}
-             {log.homeworkGiven
-  ? "YES"
-  : "NO"}
-            </p>
+Activity :
 
-            <p>
-              <strong>
-                Activity Conducted :
-              </strong>{" "}
-            {log.activityConducted
-  ? "YES"
-  : "NO"}
-            </p>
+<strong>
+{log.activityConducted ? "YES" : "NO"}
+</strong>
 
-            <p>
-              <strong>
-                Teacher Notes :
-              </strong>{" "}
-             {log.teacherNotes}
-            </p>
+</p>
 
-            <div
-              style={{
-                marginTop: 25,
-                background:
-                  "#FFF7ED",
-                padding: 18,
-                borderRadius: 16,
-              }}
-            >
-              <h4
-                style={{
-                  marginTop: 0,
-                  color: "#C2410C",
-                }}
-              >
-                Parent Survey Status
-              </h4>
 
-              <p
-                style={{
-                  marginBottom: 0,
-                  color: "#7C2D12",
-                }}
-              >
-                Daily lesson successfully
-                shared with parent feedback
-                surveys.
-              </p>
-            </div>
-          </div>
-        ))}
+<p
+style={{
+marginTop:"8px",
+color:"#64748B",
+fontSize:"15px",
+}}
+>
+
+Teacher Notes :
+
+<strong>
+
+{log.teacherNotes || "No Notes"}
+
+</strong>
+
+</p>
+
+</div>
+
+
+<div
+style={{
+background:"#DCFCE7",
+padding:"8px 18px",
+borderRadius:"10px",
+border:"1px solid #15803D",
+fontWeight:700,
+color:"#065F46",
+whiteSpace:"nowrap",
+}}
+>
+🟢 ACTIVE SURVEY PUBLISHED
+</div>
+
+</div>
+
+))}
       </div>
 
       <TeacherDailyLogDialog

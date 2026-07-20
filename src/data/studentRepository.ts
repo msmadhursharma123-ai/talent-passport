@@ -1252,3 +1252,44 @@ export async function getStudentCompetitionCount(): Promise<number> {
   return count ?? 0;
 
 }
+
+export async function updateStudentSection(
+  sectionName: string
+) {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase)
+    return;
+
+  const studentUuid =
+    currentStudentUuid();
+
+  const { error } =
+    await (supabase as any)
+
+      .from("students_master")
+
+      .update({
+
+        section_name:
+          sectionName
+
+      })
+
+      .eq(
+        "student_uuid",
+        studentUuid
+      );
+
+  if (error) {
+
+    console.error(
+      "SECTION SAVE ERROR",
+      error
+    );
+
+  }
+
+}

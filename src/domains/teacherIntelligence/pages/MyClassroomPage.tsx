@@ -1,4 +1,94 @@
+import { useEffect, useState } from "react";
+
+import {
+getCurrentTeacher,
+} from "../../../services/identityService";
+
+import {
+getTeacherAssignmentsByTeacher,
+} from "../repository/TeacherAssignmentRepository";
+
+import type { TeacherAssignment }
+from "../types/TeacherAssignment";
+
+import {
+getTeacherDailyLogsByAssignment,
+} from "../repository/TeacherDailyLogRepository";
+
+import type {
+TeacherDailyLog,
+} from "../types/TeacherDailyLog";
+
 export default function MyClassroomPage() {
+
+const [assignments,setAssignments] =
+useState<TeacherAssignment[]>([]);
+
+const [classes,setClasses] =
+useState<string[]>([]);
+
+const [sections,setSections] =
+useState<string[]>([]);
+
+const [subjects,setSubjects] =
+useState<string[]>([]);
+
+const [selectedClass,setSelectedClass] =
+useState("");
+
+const [selectedSection,setSelectedSection] =
+useState("");
+
+const [selectedSubject,setSelectedSubject] =
+useState("");
+
+const [selectedAssignment,
+setSelectedAssignment] =
+useState<TeacherAssignment | null>(null);
+
+const [dailyLogs,setDailyLogs] =
+useState<TeacherDailyLog[]>([]);
+
+useEffect(()=>{
+
+loadAssignments();
+
+},[]);
+
+
+async function loadAssignments(){
+
+const teacher =
+getCurrentTeacher();
+
+if(!teacher){
+return;
+}
+
+const data =
+await getTeacherAssignmentsByTeacher(
+teacher.teacherUuid
+);
+
+setAssignments(data);
+
+console.log(data);
+
+console.log(teacher.teacherUuid);
+
+const uniqueClasses = [
+
+...new Set(
+data.map(
+item=>item.className
+)
+),
+
+];
+
+setClasses(uniqueClasses);
+
+}
   return (
     <div
       style={{
@@ -55,29 +145,232 @@ export default function MyClassroomPage() {
 
       {/* FILTERS */}
 
-      <div style={cardStyle}>
-        <h2>Filters</h2>
+<div style={cardStyle}>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 18,
-            flexWrap: "wrap",
-          }}
-        >
-          <select style={dropdownStyle}>
-            <option>Select Class</option>
-          </select>
+<h2>Filters</h2>
 
-          <select style={dropdownStyle}>
-            <option>Select Subject</option>
-          </select>
+<div
+style={{
+display:"flex",
+gap:18,
+flexWrap:"wrap",
+}}
+>
 
-          <select style={dropdownStyle}>
-            <option>Select Month</option>
-          </select>
-        </div>
-      </div>
+{/* CLASS */}
+
+<select
+style={dropdownStyle}
+value={selectedClass}
+onChange={(e)=>{
+
+const value =
+e.target.value;
+
+setSelectedClass(value);
+
+const filteredSections = [
+
+...new Set(
+
+assignments
+
+.filter(
+item=>
+item.className === value
+)
+
+.map(
+item=>item.sectionName
+)
+
+),
+
+];
+
+setSections(filteredSections);
+
+setSelectedSection("");
+setSelectedSubject("");
+setSubjects([]);
+setSelectedAssignment(null);
+
+}}
+>
+
+<option value="">
+Select Class
+</option>
+
+{
+
+classes.map((item)=>(
+
+<option
+key={item}
+value={item}
+>
+Class {item}
+</option>
+
+))
+
+}
+
+</select>
+
+
+{/* SECTION */}
+
+<select
+style={dropdownStyle}
+value={selectedSection}
+onChange={(e)=>{
+
+const value =
+e.target.value;
+
+setSelectedSection(value);
+
+const filteredSubjects = [
+
+...new Set(
+
+assignments
+
+.filter(
+item=>
+
+item.className ===
+selectedClass &&
+
+item.sectionName ===
+value
+
+)
+
+.map(
+item=>item.subjectName
+)
+
+),
+
+];
+
+setSubjects(filteredSubjects);
+
+setSelectedSubject("");
+setSelectedAssignment(null);
+
+}}
+>
+
+<option value="">
+Select Section
+</option>
+
+{
+
+sections.map((item)=>(
+
+<option
+key={item}
+value={item}
+>
+Section {item}
+</option>
+
+))
+
+}
+
+</select>
+
+
+
+{/* SUBJECT */}
+
+<select
+style={dropdownStyle}
+value={selectedSubject}
+onChange={async (e)=>{
+
+const value =
+e.target.value;
+
+setSelectedSubject(value);
+
+const assignment =
+
+assignments.find(
+item=>
+
+item.className ===
+selectedClass &&
+
+item.sectionName ===
+selectedSection &&
+
+item.subjectName ===
+value
+
+);
+
+setSelectedAssignment(
+assignment ?? null
+);
+
+if (assignment) {
+
+const logs =
+
+await getTeacherDailyLogsByAssignment(
+assignment.id
+);
+
+setDailyLogs(logs);
+
+} else {
+
+setDailyLogs([]);
+
+}
+
+}}
+>
+
+<option value="">
+Select Subject
+</option>
+
+{
+
+subjects.map((item)=>(
+
+<option
+key={item}
+value={item}
+>
+{item}
+</option>
+
+))
+
+}
+
+</select>
+
+
+
+{/* MONTH */}
+
+<select style={dropdownStyle}>
+<option>July</option>
+</select>
+
+</div>
+
+</div>
 
       {/* CLASS INFO */}
 
@@ -91,126 +384,233 @@ export default function MyClassroomPage() {
           Assigned Classroom Information
         </h2>
 
-        <p>Class : 10 B</p>
-
-        <p>Subject : Physics</p>
-
-        <p>Academic Session : 2026-27</p>
-      </div>
-
-      {/* TIMELINE */}
-
-      <div
-        style={{
-          ...cardStyle,
-          marginTop: 30,
-        }}
-      >
-        <h2>
-          Monthly Teaching Timeline
-        </h2>
-
-        {Array.from({ length: 15 }).map(
-          (_, index) => (
-            <TimelineCard
-              key={index}
-              date={`${index + 1} July`}
-              topic="Parts of Speech"
-              status="Lecture Conducted"
-            />
-          )
-        )}
-      </div>
-
-      {/* MONTHLY SUMMARY */}
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(4,1fr)",
-          gap: 20,
-          marginTop: 30,
-        }}
-      >
-        <SummaryCard
-          title="Lectures"
-          value="24"
-        />
-
-        <SummaryCard
-          title="Homework"
-          value="18"
-        />
-
-        <SummaryCard
-          title="Activities"
-          value="12"
-        />
-
-        <SummaryCard
-          title="Average Response"
-          value="92%"
-        />
-      </div>
-
-      {/* TOPICS */}
-
-      <div
-        style={{
-          ...cardStyle,
-          marginTop: 30,
-        }}
-      >
-        <h2>
-          Most Taught Topics
-        </h2>
-
-        <ul>
-          <li>Fractions</li>
-          <li>Photosynthesis</li>
-          <li>Coordinate Geometry</li>
-        </ul>
-      </div>
-
-      {/* COMPLETED TOPICS */}
-
-      <div
-        style={{
-          ...cardStyle,
-          marginTop: 30,
-        }}
-      >
-        <h2>
-          Completed Topics
-        </h2>
-
-        <ul>
-          <li>Chapter 1</li>
-          <li>Chapter 2</li>
-          <li>Chapter 3</li>
-        </ul>
-      </div>
-
-      {/* PARENT FEEDBACK */}
-
-      <div
-        style={{
-          ...cardStyle,
-          marginTop: 30,
-          background: "#FFF7ED",
-        }}
-      >
-        <h2>
-          Parent Feedback Summary
-        </h2>
-
         <p>
-          Parents reported improved
-          comprehension in classroom
-          discussions during this month.
-        </p>
+
+Class :
+
+{" "}
+
+{selectedAssignment?.className ??
+"Select a Class"}
+
+</p>
+
+
+<p>
+
+Section :
+
+{" "}
+
+{selectedAssignment?.sectionName ??
+"Select a Section"}
+
+</p>
+
+
+<p>
+
+Subject :
+
+{" "}
+
+{selectedAssignment?.subjectName ??
+"Select a Subject"}
+
+</p>
+
+
+<p>
+
+Academic Session :
+
+{" "}
+
+{selectedAssignment?.academicYear ??
+"2026-2027"}
+
+</p>
+
       </div>
+
+
+{/* CLASSROOM HISTORY */}
+
+<div
+style={{
+...cardStyle,
+marginTop:30,
+}}
+>
+
+<h2>
+Classroom Teaching History
+</h2>
+
+
+<div
+style={{
+background:"#F8FAFC",
+padding:24,
+borderRadius:18,
+marginTop:20,
+}}
+>
+
+{
+
+dailyLogs.length === 0 ?
+
+(
+
+<p>
+
+No lectures have been
+published yet for this
+classroom.
+
+</p>
+
+)
+
+:
+
+(
+
+<div
+  style={{
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(340px,1fr))",
+    gap: 24,
+    marginTop: 24,
+  }}
+>
+  {dailyLogs.map((log) => (
+    <div
+      key={log.id}
+      style={{
+        background: "white",
+        border: "1px solid #E2E8F0",
+        borderRadius: 24,
+        padding: 24,
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+      }}
+    >
+      {/* TOP ROW */}
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            border: "1px solid #F97316",
+            color: "#EA580C",
+            borderRadius: 10,
+            padding: "6px 14px",
+            fontSize: 13,
+            fontWeight: 700,
+          }}
+        >
+          {log.topicName}
+        </div>
+
+        <div
+          style={{
+            fontSize: 14,
+            color: "#334155",
+            fontWeight: 600,
+          }}
+        >
+          {log.logDate.slice(0, 10)}
+        </div>
+      </div>
+
+      {/* DETAILS */}
+
+      <div
+        style={{
+          lineHeight: 1.9,
+          color: "#1E293B",
+        }}
+      >
+        <div>
+          <strong>Pages :</strong>{" "}
+          {log.pageFrom} - {log.pageTo}
+        </div>
+
+        <div>
+          <strong>Homework :</strong>{" "}
+          {log.homeworkGiven
+            ? "YES"
+            : "NO"}
+        </div>
+
+        <div>
+          <strong>Activity :</strong>{" "}
+          {log.activityConducted
+            ? "YES"
+            : "NO"}
+        </div>
+
+        <div>
+          <strong>Teacher Notes :</strong>{" "}
+          {log.teacherNotes || "--"}
+        </div>
+      </div>
+
+      {/* FOOTER */}
+
+      <div
+        style={{
+          borderTop:
+            "1px solid #E2E8F0",
+          paddingTop: 14,
+          display: "flex",
+          justifyContent:
+            "space-between",
+          alignItems: "center",
+        }}
+      >
+        <span
+          style={{
+            color: "#DC2626",
+            fontWeight: 700,
+            fontSize: 13,
+            letterSpacing: 1,
+          }}
+        >
+          DAILY CLASSROOM LOG
+        </span>
+
+        <span
+          style={{
+            color: "#059669",
+            fontWeight: 700,
+            fontSize: 13,
+          }}
+        >
+          PUBLISHED
+        </span>
+      </div>
+    </div>
+  ))}
+</div>
+
+)
+
+}
+
+</div>
+
+</div>
+    
     </div>
   );
 }

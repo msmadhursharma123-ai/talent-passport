@@ -30,6 +30,8 @@ export interface StudentQuestion {
 
   minSelect?: number;
 
+  maxSelect?: number;
+
   min?: number;
 
   max?: number;
@@ -54,17 +56,16 @@ ReadonlyArray<StudentQuestion> = [
   {
     id: 2,
     type: "single",
-    title: "Which class is the student currently studying in?",
+    title: "Which section is the student currently studying in?",
     options: [
-      "Class 4",
-      "Class 5",
-      "Class 6",
-      "Class 7",
-      "Class 8",
-      "Class 9",
-      "Class 10",
-      "Class 11",
-      "Class 12"
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H"
     ]
   },
 
@@ -72,6 +73,7 @@ ReadonlyArray<StudentQuestion> = [
     id: 3,
     type: "multi",
     minSelect: 5,
+    maxSelect: 8,
     title: "Which words best describe the student?",
     options: [
       "Creative",
@@ -93,6 +95,7 @@ ReadonlyArray<StudentQuestion> = [
     id: 4,
     type: "multi",
     minSelect: 3,
+    maxSelect: 5,
     title: "Which activities does the student genuinely enjoy?",
     options: [
       "Dance",
@@ -131,6 +134,7 @@ ReadonlyArray<StudentQuestion> = [
     id: 6,
     type: "multi",
     minSelect: 3,
+    maxSelect: 5,
     title: "Which areas would you most like to improve?",
     options: [
       "Confidence",
@@ -176,6 +180,7 @@ ReadonlyArray<StudentQuestion> = [
     id: 10,
     type: "multi",
     minSelect: 3,
+    maxSelect: 5,
     title: "What are your goals for the student?",
     options: [
       "Build Confidence",

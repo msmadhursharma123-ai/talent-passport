@@ -1,4 +1,9 @@
-import React, { useState } from "react";
+import React,
+{
+useState,
+useEffect
+}
+from "react";
 import {
   createStudent
 } from "../data/studentRepository";
@@ -6,6 +11,11 @@ import {
 import {
   saveStudentIdentity
 } from "../services/identityService";
+
+import {
+getSupabaseClient
+}
+from "../supabaseClient";
 
 interface Props {
   onContinue: () => void;
@@ -47,9 +57,17 @@ export default function StudentProfileForm({
   const [schoolName, setSchoolName] =
     useState("");
 
+
+
+const [schools,
+setSchools] =
+useState<any[]>([]);
+
   const [className, setClassName] =
     useState("");
 
+
+    
   const [parentMobile, setParentMobile] =
     useState("");
 
@@ -75,6 +93,62 @@ const [loading,
     setLoading] =
     useState(false);
 
+
+useEffect(()=>{
+
+loadSchools();
+
+loadAuthenticatedEmail();
+
+},[]);
+
+async function loadSchools(){
+
+const supabase =
+getSupabaseClient();
+
+if(!supabase){
+return;
+}
+
+const { data } =
+await supabase
+.from("schools_master")
+.select("*")
+.order(
+"school_name"
+);
+
+setSchools(data ?? []);
+
+}
+
+async function
+loadAuthenticatedEmail(){
+
+const supabase =
+getSupabaseClient();
+
+if(!supabase){
+return;
+}
+
+const result =
+await supabase.auth.getUser();
+
+console.log(result);
+
+const email =
+result.data.user?.email;
+
+if(email){
+
+setParentEmail(email);
+
+}
+
+}
+    
  const handleContinue = async () => {
 
   if (
@@ -223,16 +297,15 @@ const [loading,
           style={inputStyle}
         />
 
-        <input
-          placeholder="Parent Email"
-          value={parentEmail}
-          onChange={(e) =>
-            setParentEmail(
-              e.target.value
-            )
-          }
-          style={inputStyle}
-        />
+<input
+placeholder="Parent Email"
+value={parentEmail}
+readOnly
+style={{
+...inputStyle,
+background:"#F1F5F9",
+}}
+/>
 
         <input
           placeholder="Parent Mobile Number"
@@ -245,16 +318,38 @@ const [loading,
           style={inputStyle}
         />
 
-        <input
-          placeholder="School Name"
-          value={schoolName}
-          onChange={(e) =>
-            setSchoolName(
-              e.target.value
-            )
-          }
-          style={inputStyle}
-        />
+<select
+value={schoolName}
+onChange={(e)=>
+setSchoolName(
+e.target.value
+)
+}
+style={inputStyle}
+>
+
+<option value="">
+Select School
+</option>
+
+{
+
+schools.map((school)=>(
+
+<option
+key={school.school_uuid}
+value={school.school_name}
+>
+
+{school.school_name}
+
+</option>
+
+))
+
+}
+
+</select>
 
         <input
           placeholder="Class"

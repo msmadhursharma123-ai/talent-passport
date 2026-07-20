@@ -5,9 +5,13 @@ import { savePassport }
 from "../data/passportRepository";
 
 import {
-  saveAssessment,
-  saveStudentDNA
-} from "../data/studentRepository";
+
+saveAssessment,
+saveStudentDNA,
+updateStudentSection
+
+}
+from "../data/studentRepository";
 
 import {
     getCurrentStudent,
@@ -150,16 +154,20 @@ export default function QuestionWizard({
                   marginTop: "30px",
                 }}
               >
-                {current.type === "multi" && (
+{current.type === "multi" && (
   <p
     style={{
       color: "#ff8c00",
       marginBottom: "20px",
     }}
   >
-   Selected: {(answers[current.id] || []).length}
-{" / "}
-Minimum Required: {current.minSelect}
+Select minimum {current.minSelect} and maximum {current.maxSelect} options.
+
+    <br />
+
+    Selected:
+    {" "}
+    {(answers[current.id] || []).length}
   </p>
 )}
                 {current.options.map((option) => {
@@ -185,15 +193,25 @@ Minimum Required: {current.minSelect}
             });
           } else {
 
-  
+if (
+current.maxSelect &&
+existing.length >= current.maxSelect
+){
+alert(
+`You can select maximum ${current.maxSelect} options.`
+);
 
-  setAnswers({
-    ...answers,
-    [current.id]: [
-      ...existing,
-      option,
-    ],
-  });
+return;
+}
+
+setAnswers({
+...answers,
+[current.id]: [
+...existing,
+option,
+],
+});
+
 }
         } else {
           setAnswers({
@@ -307,14 +325,92 @@ Minimum Required: {current.minSelect}
       const currentAnswer =
         answers[current.id];
 
-      if (
-        currentAnswer === undefined ||
-        (Array.isArray(currentAnswer) &&
-          currentAnswer.length === 0)
-      ) {
-        alert("Please answer this question");
-        return;
-      }
+    if (
+currentAnswer === undefined ||
+(
+Array.isArray(currentAnswer)
+&&
+currentAnswer.length === 0
+)
+){
+
+alert(
+"Please answer this question"
+);
+
+return;
+
+}
+
+
+if(
+
+current.type === "multi"
+
+&&
+
+current.minSelect
+
+){
+
+const selected =
+currentAnswer || [];
+
+
+if(
+
+selected.length <
+
+current.minSelect
+
+){
+
+alert(
+
+`Please select at least ${current.minSelect} options.`
+
+);
+
+return;
+
+}
+
+}
+
+
+if(
+
+current.type === "multi"
+
+&&
+
+current.maxSelect
+
+){
+
+const selected =
+currentAnswer || [];
+
+
+if(
+
+selected.length >
+
+current.maxSelect
+
+){
+
+alert(
+
+`You can select maximum ${current.maxSelect} options.`
+
+);
+
+return;
+
+}
+
+}
 
       setStep(step + 1);
       return;
@@ -426,6 +522,10 @@ catch (error) {
 }
 
 console.log("CALLING savePassport");
+
+await updateStudentSection(
+  answers[2]
+);
 
 await savePassport(
   scores,

@@ -70,6 +70,14 @@ useState<any[]>([]);
   const [teacherNotes, setTeacherNotes] =
     useState("");
 
+const [conceptInput, setConceptInput] =
+useState("");
+
+const [
+conceptsCovered,
+setConceptsCovered,
+] = useState<string[]>([]);
+
 useEffect(() => {
 
 loadTeacherAssignments();
@@ -104,6 +112,7 @@ item => item.className
 ),
 
 ];
+
 
 
 // SECTIONS
@@ -156,6 +165,42 @@ uniqueSubjects
     return null;
   }
 
+function addConcept() {
+
+if (
+!conceptInput.trim()
+){
+return;
+}
+
+setConceptsCovered(
+[
+...conceptsCovered,
+conceptInput.trim(),
+]
+);
+
+setConceptInput("");
+
+}
+
+
+function removeConcept(
+index:number
+){
+
+setConceptsCovered(
+
+conceptsCovered.filter(
+
+(_,i)=>i!==index
+
+)
+
+);
+
+}
+
  async function handleSave() {
 
 const selectedAssignment =
@@ -178,13 +223,37 @@ return;
 
 }
 
+if(
+conceptsCovered.length === 0
+){
+
+alert(
+"Please add at least one concept."
+);
+
+return;
+
+}
+
 await onSave({
 
 teacher_assignment_uuid:
 selectedAssignment.id,
 
+class_name:
+selectedClass,
+
+section_name:
+selectedSection,
+
+subject_name:
+selectedSubject,
+
 topic_name:
 topicName,
+
+concepts_covered:
+conceptsCovered,
 
 page_from:
 Number(pageFrom),
@@ -454,6 +523,142 @@ setSelectedSubject("");
           setTopicName(e.target.value)
         }
       />
+
+{/* CONCEPTS COVERED TODAY */}
+
+<div
+style={{
+marginBottom:25,
+}}
+>
+
+<h3
+style={{
+marginBottom:15,
+color:"#03122E",
+}}
+>
+Concepts Covered Today *
+</h3>
+
+
+<div
+style={{
+display:"flex",
+gap:12,
+}}
+>
+
+<input
+
+style={{
+...inputStyle,
+marginBottom:0,
+flex:1,
+}}
+
+placeholder=
+"Enter concept covered today"
+
+value={conceptInput}
+
+onChange={(e)=>
+setConceptInput(
+e.target.value
+)
+}
+
+/>
+
+
+<button
+
+onClick={addConcept}
+
+style={saveButton}
+
+>
+
+Add
+
+</button>
+
+</div>
+
+
+<div
+style={{
+display:"flex",
+flexWrap:"wrap",
+gap:10,
+marginTop:15,
+}}
+>
+
+{
+
+conceptsCovered.map(
+(item,index)=>(
+
+<div
+
+key={index}
+
+style={{
+
+padding:"10px 18px",
+borderRadius:30,
+background:"#FFF7ED",
+fontWeight:700,
+color:"#C2410C",
+display:"flex",
+gap:10,
+alignItems:"center",
+
+}}
+
+>
+
+{item}
+
+
+<button
+
+onClick={()=>
+removeConcept(
+index
+)
+}
+
+style={{
+
+border:"none",
+background:"transparent",
+cursor:"pointer",
+fontWeight:700,
+color:"red",
+
+}}
+
+>
+
+x
+
+</button>
+
+
+</div>
+
+)
+
+)
+
+}
+
+
+</div>
+
+</div>
 
       {/* PAGES */}
 

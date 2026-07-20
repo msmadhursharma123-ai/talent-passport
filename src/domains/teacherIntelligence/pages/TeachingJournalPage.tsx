@@ -1,4 +1,95 @@
+import { useEffect, useState } from "react";
+
+import {
+getCurrentTeacher,
+} from "../../../services/identityService";
+
+import {
+getTeacherAssignmentsByTeacher,
+} from "../repository/TeacherAssignmentRepository";
+
+import type {
+TeacherAssignment,
+} from "../types/TeacherAssignment";
+
+import {
+getTeacherDailyLogsByAssignment,
+} from "../repository/TeacherDailyLogRepository";
+
+import type {
+TeacherDailyLog,
+} from "../types/TeacherDailyLog";
+
+
 export default function TeachingJournalPage() {
+
+    const [assignments,setAssignments] =
+useState<TeacherAssignment[]>([]);
+
+const [dailyLogs,setDailyLogs] =
+useState<TeacherDailyLog[]>([]);
+
+const [classes,setClasses] =
+useState<string[]>([]);
+
+const [sections,setSections] =
+useState<string[]>([]);
+
+const [subjects,setSubjects] =
+useState<string[]>([]);
+
+const [selectedClass,setSelectedClass] =
+useState("");
+
+const [selectedSection,setSelectedSection] =
+useState("");
+
+const [selectedSubject,setSelectedSubject] =
+useState("");
+
+const [selectedMonth,setSelectedMonth] =
+useState("July");
+
+
+useEffect(()=>{
+
+loadAssignments();
+
+},[]);
+
+
+async function loadAssignments(){
+
+const teacher =
+getCurrentTeacher();
+
+if(!teacher){
+return;
+}
+
+const data =
+
+await getTeacherAssignmentsByTeacher(
+teacher.teacherUuid
+);
+
+setAssignments(data);
+
+const uniqueClasses = [
+
+...new Set(
+data.map(
+item=>item.className
+)
+
+),
+
+];
+
+setClasses(uniqueClasses);
+
+}
+
   return (
     <div
       style={{
@@ -65,23 +156,244 @@ export default function TeachingJournalPage() {
             flexWrap: "wrap",
           }}
         >
-          <select style={dropdownStyle}>
-            <option>
-              Select Class
-            </option>
-          </select>
+        {/* CLASS */}
 
-          <select style={dropdownStyle}>
-            <option>
-              Select Month
-            </option>
-          </select>
+<select
+style={dropdownStyle}
+value={selectedClass}
+onChange={(e)=>{
 
-          <select style={dropdownStyle}>
-            <option>
-              Select Week
-            </option>
-          </select>
+const value =
+e.target.value;
+
+setSelectedClass(value);
+
+const filteredSections = [
+
+...new Set(
+
+assignments
+
+.filter(
+item=>
+item.className === value
+)
+
+.map(
+item=>item.sectionName
+)
+
+),
+
+];
+
+setSections(filteredSections);
+
+setSelectedSection("");
+
+setSelectedSubject("");
+
+setSubjects([]);
+
+setDailyLogs([]);
+
+setSelectedMonth("July");
+}}
+>
+
+<option value="">
+Select Class
+</option>
+
+{
+
+classes.map((item)=>(
+
+<option
+key={item}
+value={item}
+>
+
+Class {item}
+
+</option>
+
+))
+
+}
+
+</select>
+
+
+{/* SECTION */}
+
+<select
+style={dropdownStyle}
+value={selectedSection}
+onChange={(e)=>{
+
+const value =
+e.target.value;
+
+setSelectedSection(value);
+
+const filteredSubjects = [
+
+...new Set(
+
+assignments
+
+.filter(
+item=>
+
+item.className ===
+selectedClass &&
+
+item.sectionName ===
+value
+
+)
+
+.map(
+item=>item.subjectName
+)
+
+),
+
+];
+
+setSubjects(filteredSubjects);
+
+setSelectedSubject("");
+setDailyLogs([]);
+
+}}
+>
+
+<option value="">
+Select Section
+</option>
+
+{
+
+sections.map((item)=>(
+
+<option
+key={item}
+value={item}
+>
+
+Section {item}
+
+</option>
+
+))
+
+}
+
+</select>
+
+
+{/* SUBJECT */}
+
+<select
+style={dropdownStyle}
+value={selectedSubject}
+onChange={async (e)=>{
+
+const value =
+e.target.value;
+
+setSelectedSubject(value);
+
+const assignment =
+
+assignments.find(
+item=>
+
+item.className ===
+selectedClass &&
+
+item.sectionName ===
+selectedSection &&
+
+item.subjectName ===
+value
+
+);
+
+
+if(assignment && assignment.id){
+
+const logs =
+
+await getTeacherDailyLogsByAssignment(
+assignment.id
+);
+
+setDailyLogs(logs);
+
+}else{
+
+setDailyLogs([]);
+
+}
+
+}}
+>
+
+<option value="">
+Select Subject
+</option>
+
+{
+
+subjects.map((item)=>(
+
+<option
+key={item}
+value={item}
+>
+
+{item}
+
+</option>
+
+))
+
+}
+
+</select>
+
+
+{/* MONTH */}
+
+<select
+style={dropdownStyle}
+value={selectedMonth}
+onChange={(e)=>{
+
+setSelectedMonth(
+e.target.value
+);
+
+}}
+>
+
+<option>January</option>
+<option>February</option>
+<option>March</option>
+<option>April</option>
+<option>May</option>
+<option>June</option>
+<option>July</option>
+<option>August</option>
+<option>September</option>
+<option>October</option>
+<option>November</option>
+<option>December</option>
+
+</select>
         </div>
       </div>
 
@@ -114,125 +426,169 @@ export default function TeachingJournalPage() {
         </div>
       </div>
 
-      {/* CLASS HEALTH */}
+     {/* MONTHLY SUMMARY */}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(3,1fr)",
-          gap: 20,
-          marginTop: 30,
-        }}
-      >
-        <AnalyticsCard
-          title="Comprehension"
-          value="92%"
-        />
+<div
+style={{
+display:"grid",
+gridTemplateColumns:"repeat(4,1fr)",
+gap:20,
+marginTop:30,
+}}
+>
 
-        <AnalyticsCard
-          title="Engagement"
-          value="88%"
-        />
+<AnalyticsCard
+title="Total Lectures"
+value={String(dailyLogs.length)}
+/>
 
-        <AnalyticsCard
-          title="Satisfaction"
-          value="94%"
-        />
-      </div>
+<AnalyticsCard
+title="Homework Given"
+value={String(
+
+dailyLogs.filter(
+log=>log.homeworkGiven
+).length
+
+)}
+/>
+
+<AnalyticsCard
+title="Activities Conducted"
+value={String(
+
+dailyLogs.filter(
+log=>log.activityConducted
+).length
+
+)}
+/>
+
+<AnalyticsCard
+title="Topics Covered"
+value={String(
+
+new Set(
+dailyLogs.map(
+log=>log.topicName
+)
+).size
+
+)}
+/>
+
+</div>
 
       {/* MONTHLY INSIGHTS */}
 
-      <div
-        style={{
-          ...cardStyle,
-          marginTop: 30,
-        }}
-      >
-        <h2>
-          Monthly Insights
-        </h2>
+<div
+style={{
+...cardStyle,
+marginTop:30,
+}}
+>
 
-        <ul
-          style={{
-            lineHeight: 2,
-          }}
-        >
-          <li>
-            Most Difficult Topic :
-            Photosynthesis
-          </li>
+<h2>
+Monthly Teaching Insights
+</h2>
 
-          <li>
-            Most Common Doubt :
-            Coordinate Geometry
-          </li>
 
-          <li>
-            Best Performing Lesson :
-            Fractions
-          </li>
+{
 
-          <li>
-            Lowest Engagement Lesson :
-            Algebra
-          </li>
-        </ul>
-      </div>
+dailyLogs.length === 0 ?
 
-      {/* WEEKLY ANALYTICS */}
+(
 
-      <div
-        style={{
-          ...cardStyle,
-          marginTop: 30,
-        }}
-      >
-        <h2>
-          Weekly Analytics
-        </h2>
+<p>
 
-        <WeeklyCard
-          week="Week 1"
-          score="89%"
-        />
+No lecture records found
+for the selected classroom.
 
-        <WeeklyCard
-          week="Week 2"
-          score="91%"
-        />
+</p>
 
-        <WeeklyCard
-          week="Week 3"
-          score="95%"
-        />
+)
 
-        <WeeklyCard
-          week="Week 4"
-          score="86%"
-        />
-      </div>
+:
 
-      {/* AI RECOMMENDATION */}
+(
 
-      <div
-        style={{
-          ...cardStyle,
-          marginTop: 30,
-          background: "#FFF7ED",
-        }}
-      >
-        <h2>
-          Tomorrow's Teaching Recommendation
-        </h2>
+<ul
+style={{
+lineHeight:2,
+}}
+>
 
-        <p>
-          Revise Photosynthesis for
-          the first 10 minutes before
-          introducing the next topic.
-        </p>
-      </div>
-    </div>
+{
+
+dailyLogs.map((log)=>(
+
+<li key={log.id}>
+
+{log.logDate}
+
+{" - "}
+
+{log.topicName}
+
+</li>
+
+))
+
+}
+
+</ul>
+
+)
+
+}
+
+</div>
+
+    {/* ADVANCED ANALYTICS */}
+
+<div
+style={{
+...cardStyle,
+marginTop:30,
+background:"#FFF7ED",
+}}
+>
+
+<h2>
+Upcoming Classroom Analytics
+</h2>
+
+
+<ul
+style={{
+lineHeight:2,
+}}
+>
+
+<li>
+Student Comprehension Analytics
+</li>
+
+<li>
+Parent Feedback Intelligence
+</li>
+
+<li>
+AI Teaching Recommendations
+</li>
+
+<li>
+Engagement Analytics Engine
+</li>
+
+<li>
+Classroom Performance Insights
+</li>
+
+</ul>
+
+</div>
+   </div>
   );
 }
 

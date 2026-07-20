@@ -1,6 +1,6 @@
 export interface TeacherAssignment {
 
-  id?: string;
+id: string;
 
   teacherUuid: string;
 

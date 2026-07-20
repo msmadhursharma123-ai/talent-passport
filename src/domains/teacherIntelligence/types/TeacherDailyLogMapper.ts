@@ -9,17 +9,20 @@ export function mapTeacherDailyLog(
     teacherAssignmentUuid:
       data.teacher_assignment_uuid ?? "",
 
-      className:
-data.class_name ?? "",
+    className:
+      data.class_name ?? "",
 
-sectionName:
-data.section_name ?? "",
+    sectionName:
+      data.section_name ?? "",
 
-subjectName:
-data.subject_name ?? "",
+    subjectName:
+      data.subject_name ?? "",
 
     topicName:
       data.topic_name ?? "",
+
+    conceptsCovered:
+      data.concepts_covered ?? [],
 
     pageFrom:
       data.page_from ?? null,

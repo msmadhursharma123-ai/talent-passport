@@ -1,26 +1,33 @@
 export interface TeacherDailyLog {
 
-id:string;
+  id: string;
 
-teacherAssignmentUuid:string;
+  teacherAssignmentUuid: string;
 
-className:string;
-sectionName:string;
-subjectName:string;
+  className: string;
 
-topicName:string;
+  sectionName: string;
 
-pageFrom:number | null;
-pageTo:number | null;
+  subjectName: string;
 
-homeworkGiven:boolean;
-activityConducted:boolean;
+  topicName: string;
 
-teacherNotes:string;
+  conceptsCovered: string[];
 
-logDate:string;
+  pageFrom: number | null;
 
-createdAt:string;
-updatedAt:string;
+  pageTo: number | null;
+
+  homeworkGiven: boolean;
+
+  activityConducted: boolean;
+
+  teacherNotes: string;
+
+  logDate: string;
+
+  createdAt: string;
+
+  updatedAt: string;
 
 }
