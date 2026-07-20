@@ -67,6 +67,45 @@ export async function getTeacherDailyLogsByAssignment(
   return (data ?? []).map(mapTeacherDailyLog);
 }
 
+export async function getTodaysTeacherDailyLogsByAssignment(
+teacherAssignmentUuid: string
+): Promise<TeacherDailyLog[]> {
+
+const supabase = getSupabaseClient();
+
+if (!supabase) {
+return [];
+}
+
+const today = new Date()
+.toISOString()
+.split("T")[0];
+
+const { data, error } = await supabase
+.from(TABLE_NAME)
+.select("*")
+.eq(
+"teacher_assignment_uuid",
+teacherAssignmentUuid
+)
+.eq(
+"log_date",
+today
+)
+.order("created_at", {
+ascending: false,
+});
+
+if (error) {
+throw error;
+}
+
+return (data ?? []).map(
+mapTeacherDailyLog
+);
+
+}
+
 /*
 =========================================================
 CREATE DAILY LOG

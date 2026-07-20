@@ -6,6 +6,7 @@ import {
   createTeacherDailyLog,
   updateTeacherDailyLog,
   deleteTeacherDailyLog,
+  getTodaysTeacherDailyLogsByAssignment
 } from "../repository/TeacherDailyLogRepository";
 
 
@@ -54,4 +55,14 @@ export async function removeTeacherDailyLog(
   return await deleteTeacherDailyLog(
     id
   );
+}
+
+export async function loadTodaysTeacherLogsByAssignment(
+  teacherAssignmentUuid: string
+) {
+
+  return await getTodaysTeacherDailyLogsByAssignment(
+    teacherAssignmentUuid
+  );
+
 }

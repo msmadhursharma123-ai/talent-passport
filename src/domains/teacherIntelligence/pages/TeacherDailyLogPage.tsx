@@ -14,7 +14,7 @@ getTeacherAssignmentsByTeacher,
 } from "../repository/TeacherAssignmentRepository";
 
 import {
-loadTeacherLogsByAssignment,
+loadTodaysTeacherLogsByAssignment,
 } from "../viewmodels/TeacherDailyLogViewModel";
 
 export default function TeacherDailyLogPage() {
@@ -58,9 +58,9 @@ if (!assignment.id) {
 }
 
 const logs =
-  await loadTeacherLogsByAssignment(
-    assignment.id
-  );
+await loadTodaysTeacherLogsByAssignment(
+assignment.id
+);
 
 
 allLogs.push(...logs);
