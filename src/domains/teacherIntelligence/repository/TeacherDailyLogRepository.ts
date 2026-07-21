@@ -56,9 +56,12 @@ export async function getTeacherDailyLogsByAssignment(
       "teacher_assignment_uuid",
       teacherAssignmentUuid
     )
-    .order("log_date", {
-      ascending: false,
-    });
+  .order(
+"created_at",
+{
+ascending:false
+}
+)
 
   if (error) {
     throw error;

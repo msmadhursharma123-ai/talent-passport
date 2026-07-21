@@ -43,13 +43,7 @@ setUnderstandingLevel,
 
 
 
-const [
 
-conceptInput,
-
-setConceptInput,
-
-] = useState("");
 
 
 
@@ -61,7 +55,22 @@ setConceptsNotUnderstood,
 
 ] = useState<string[]>([]);
 
+const [
 
+somethingElse,
+
+setSomethingElse,
+
+] = useState(false);
+
+
+const [
+
+somethingElseText,
+
+setSomethingElseText,
+
+] = useState("");
 
 const [
 
@@ -138,55 +147,6 @@ async function loadSubmittedFeedback() {
 
 }
 
-function addConcept(){
-
-if(
-
-conceptInput.trim().length===0
-
-){
-
-return;
-
-}
-
-
-setConceptsNotUnderstood(
-
-[
-
-...conceptsNotUnderstood,
-
-conceptInput.trim()
-
-]
-
-);
-
-
-setConceptInput("");
-
-}
-
-
-
-function removeConcept(
-
-index:number
-
-){
-
-setConceptsNotUnderstood(
-
-conceptsNotUnderstood.filter(
-
-(_,i)=>i!==index
-
-)
-
-);
-
-}
 
 async function submitFeedback(
 
@@ -219,18 +179,21 @@ return;
 if(
 
 understandingLevel !==
-
 "I completely understood."
 
 &&
 
-conceptsNotUnderstood.length===0
+conceptsNotUnderstood.length === 0
+
+&&
+
+!somethingElse
 
 ){
 
 alert(
 
-"Please add at least one difficult concept."
+"Please select at least one difficult concept."
 
 );
 
@@ -238,6 +201,40 @@ return;
 
 }
 
+let finalAdditionalNote =
+
+additionalNote;
+
+
+if(
+
+somethingElse
+
+&&
+
+somethingElseText.trim()
+
+){
+
+finalAdditionalNote =
+
+`${
+
+additionalNote
+
+}
+
+${
+additionalNote.trim()
+? "\n\n"
+: ""
+}
+
+Additional Learning Gap:
+
+${somethingElseText}`;
+
+}
 
 
 await submitStudentDailyFeedback(
@@ -260,10 +257,8 @@ understandingLevel,
 
 conceptsNotUnderstood,
 
-additionalNote.trim().length > 0
-
-? additionalNote
-
+finalAdditionalNote.trim().length > 0
+? finalAdditionalNote
 : null
 
 );
@@ -303,11 +298,15 @@ setExpandedCard(null);
 
 setUnderstandingLevel("");
 
-setConceptInput("");
+
 
 setConceptsNotUnderstood([]);
 
 setAdditionalNote("");
+
+setSomethingElse(false);
+
+setSomethingElseText("");
 
 }
 
@@ -364,6 +363,30 @@ setAdditionalNote("");
         <h2 className="mt-3 text-xl font-bold text-slate-900">
           {log.topic_name ?? "Topic Not Available"}
         </h2>
+
+<div className="mt-4 rounded-xl bg-blue-50 p-4">
+
+  <p className="font-semibold text-slate-800">
+
+    Your Teacher Covered Today
+
+  </p>
+
+  <ul className="mt-3 list-disc pl-6 space-y-1">
+
+    {(log.concepts_covered ?? []).map(
+      (concept: string) => (
+
+        <li key={concept}>
+          {concept}
+        </li>
+
+      )
+    )}
+
+  </ul>
+
+</div>
 
         <div className="mt-3 space-y-1 text-sm text-slate-600">
           <p>
@@ -486,11 +509,15 @@ setAdditionalNote("");
 
         setUnderstandingLevel("");
 
-        setConceptInput("");
+      
 
         setConceptsNotUnderstood([]);
 
         setAdditionalNote("");
+
+setSomethingElse(false);
+
+setSomethingElseText("");
 
       }}
 
@@ -561,137 +588,214 @@ setAdditionalNote("");
         </div>
 
 
-        {
+      {
 
-          understandingLevel !== "" &&
+understandingLevel !== ""
 
-          understandingLevel !==
+&&
 
-          "I completely understood."
+understandingLevel !==
 
-          && (
+"I completely understood."
 
-            <>
+&& (
 
-              <div className="mt-6">
+<>
 
-                <p className="font-semibold">
+<div className="mt-6">
 
-                  Which concepts were difficult today?
+<p className="font-semibold">
 
-                </p>
+Which concepts were difficult today?
+
+</p>
+
+<div className="mt-4 space-y-3">
+
+{
+
+(log.concepts_covered ?? []).map(
+
+(concept:string)=>(
+
+<label
+
+key={concept}
+
+className="flex items-center gap-3"
+
+>
+
+<input
+
+type="checkbox"
+
+checked={
+
+conceptsNotUnderstood.includes(
+
+concept
+
+)
+
+}
+
+onChange={(event)=>{
+
+if(event.target.checked){
+
+setConceptsNotUnderstood([
+
+...conceptsNotUnderstood,
+
+concept
+
+]);
+
+}else{
+
+setConceptsNotUnderstood(
+
+conceptsNotUnderstood.filter(
+
+(item)=>
+
+item !== concept
+
+)
+
+);
+
+}
+
+}}
+
+/>
+
+<span>
+
+{concept}
+
+</span>
+
+</label>
+
+))
+
+}
 
 
-                <div className="mt-3 flex gap-2">
+<label
 
-                  <input
+className="flex items-center gap-3"
 
-                    value={conceptInput}
+>
 
-                    onChange={(e)=>
-                      setConceptInput(
-                        e.target.value
-                      )
-                    }
+<input
 
-                    placeholder="Example : Sign Convention"
+type="checkbox"
 
-                    className="flex-1 rounded-xl border p-3"
+checked={somethingElse}
 
-                  />
+onChange={(event)=>
 
+setSomethingElse(
 
-                  <button
+event.target.checked
 
-                    onClick={addConcept}
+)
 
-                    className="rounded-xl bg-orange-500 px-4 text-white"
+}
 
-                  >
+/>
 
-                    Add
+<span>
 
-                  </button>
+Something Else
 
-                </div>
+</span>
 
+</label>
 
-                <div className="mt-4 flex flex-wrap gap-2">
+</div>
 
-                  {
-
-                    conceptsNotUnderstood.map(
-                      (item,index)=>(
-
-                        <div
-
-                          key={index}
-
-                          className="rounded-full bg-white px-4 py-2"
-
-                        >
-
-                          {item}
-
-                          <button
-
-                            onClick={()=>
-                              removeConcept(index)
-                            }
-
-                            className="ml-3 text-red-600"
-
-                          >
-
-                            x
-
-                          </button>
-
-                        </div>
-
-                      )
-                    )
-
-                  }
-
-                </div>
-
-              </div>
+</div>
 
 
-              <div className="mt-6">
+{
 
-                <p className="font-semibold">
+somethingElse && (
 
-                  Additional Notes (Optional)
+<div className="mt-5">
 
-                </p>
+<p className="font-semibold">
 
-                <textarea
+Please tell us what else was difficult.
 
-                  rows={3}
+</p>
 
-                  value={additionalNote}
+<textarea
 
-                  onChange={(e)=>
+rows={3}
 
-                    setAdditionalNote(
-                      e.target.value
-                    )
+value={somethingElseText}
 
-                  }
+onChange={(e)=>
 
-                  className="mt-2 w-full rounded-xl border p-3"
+setSomethingElseText(
 
-                />
+e.target.value
 
-              </div>
+)
 
-            </>
+}
 
-          )
+className="mt-2 w-full rounded-xl border p-3"
 
-        }
+/>
+
+</div>
+
+)
+
+}
+
+
+<div className="mt-6">
+
+<p className="font-semibold">
+
+Additional Notes (Optional)
+
+</p>
+
+<textarea
+
+rows={3}
+
+value={additionalNote}
+
+onChange={(e)=>
+
+setAdditionalNote(
+
+e.target.value
+
+)
+
+}
+
+className="mt-2 w-full rounded-xl border p-3"
+
+/>
+
+</div>
+
+</>
+
+)
+
+}
 
 
 
@@ -705,11 +809,15 @@ setAdditionalNote("");
 
               setUnderstandingLevel("");
 
-              setConceptInput("");
+              
 
               setConceptsNotUnderstood([]);
 
               setAdditionalNote("");
+
+setSomethingElse(false);
+
+setSomethingElseText("");
 
             }}
 

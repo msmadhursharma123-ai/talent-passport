@@ -5,17 +5,197 @@ import {
   StudentFeedbackRow,
 } from "../types/TeacherFeedbackModels";
 
+function normalizeText(
+text:string
+){
+
+return text
+.trim()
+.toLowerCase();
+
+}
+
+function getConceptKeywords(
+concept:string
+){
+
+return normalizeText(concept)
+.split(" ")
+.filter(Boolean);
+
+}
+
+function buildConceptMatchingEngine(
+
+teacherConcepts:string[],
+
+studentResponses:string[]
+
+){
+
+const conceptMap =
+
+new Map<string,number>();
 
 
-export async function getClassroomFeedbackRadar(
-  className: string,
-  sectionName: string
+for(
+
+const teacherConcept of teacherConcepts
+
+){
+
+const normalizedTeacherConcept =
+
+normalizeText(
+teacherConcept
+);
+
+
+let count = 0;
+
+
+for(
+
+const response of studentResponses
+
+){
+
+const normalizedResponse =
+
+normalizeText(
+response
+);
+
+
+// LEVEL 1 + LEVEL 2
+
+if(
+
+normalizedResponse.includes(
+normalizedTeacherConcept
+)
+
+){
+
+count++;
+
+continue;
+
+}
+
+
+// LEVEL 3
+
+const keywords =
+
+getConceptKeywords(
+teacherConcept
+);
+
+
+const keywordMatched =
+
+keywords.some(
+
+(keyword)=>
+
+normalizedResponse.includes(
+keyword
+)
+
+);
+
+
+if(
+
+keywordMatched
+
+){
+
+count++;
+
+}
+
+}
+
+
+if(count > 0){
+
+conceptMap.set(
+
+teacherConcept,
+
+count
+
+);
+
+}
+
+
+}
+
+console.log(
+"TEACHER CONCEPTS"
+);
+
+console.table(
+teacherConcepts
+);
+
+
+console.log(
+"STUDENT RESPONSES"
+);
+
+console.table(
+studentResponses
+);
+
+
+console.log(
+"CONCEPT MATCHES"
+);
+
+console.table(
+Array.from(
+conceptMap.entries()
+)
+);
+
+return Array.from(
+
+conceptMap.entries()
+
+)
+
+.sort(
+
+(a,b)=>
+
+b[1] - a[1]
+
+)
+
+.slice(0,2)
+
+.map(
+
+([concept,count])=>({
+
+concept,
+count,
+
+})
+
+);
+
+}
+
+async function buildFeedbackRadar(
+  classroomFeedback: StudentFeedbackRow[]
 ): Promise<ClassroomFeedbackRadar> {
-  const classroomFeedback =
-    await getClassroomFeedbackRows(
-      className,
-      sectionName
-    );
+
+  // WE WILL BUILD THIS IN THE NEXT STEPS.
 
 const supabase = getSupabaseClient();
 
@@ -60,79 +240,85 @@ item.understanding_level ===
 
 ).length;
 
-/****************************************
+const dailyLogUuid =
 
-COMMON DIFFICULT CONCEPTS
+classroomFeedback[0]?.daily_log_uuid;
 
-****************************************/
 
-const conceptMap =
 
-new Map<string,number>();
+const teacherConcepts:string[] = [];
 
+if(dailyLogUuid){
+
+const { data: teacherLog } =
+
+await (supabase as any)
+
+.from(
+"teacher_daily_logs"
+)
+
+.select(
+"concepts_covered"
+)
+
+.eq(
+"id",
+dailyLogUuid
+)
+
+.single();
+
+teacherConcepts.push(
+...(teacherLog?.concepts_covered ?? [])
+);
+
+}
+
+const studentResponses:string[] = [];
 
 for(
 
-const row of classroomFeedback
+const item of classroomFeedback
 
 ){
 
 const concepts =
 
-row.concepts_not_understood ?? [];
+item.concepts_not_understood ?? [];
 
 
-for(
+studentResponses.push(
+...concepts
+);
 
-const concept of concepts
+
+if(
+
+item.additional_note?.trim()
 
 ){
 
-const count =
-
-conceptMap.get(concept) ?? 0;
-
-
-conceptMap.set(
-
-concept,
-
-count + 1
-
+studentResponses.push(
+item.additional_note
 );
 
 }
 
 }
 
+/****************************************
 
+COMMON DIFFICULT CONCEPTS
+
+****************************************/
 const commonConcepts =
 
-Array.from(
+buildConceptMatchingEngine(
 
-conceptMap.entries()
+teacherConcepts,
 
-)
-
-.sort(
-
-(a,b)=>
-
-b[1] - a[1]
-
-)
-
-.slice(0,5)
-
-.map(
-
-([concept,count])=>({
-
-concept,
-
-count,
-
-})
+studentResponses
 
 );
 
@@ -163,78 +349,95 @@ attentionStudents.map(
 
 );
 
-
-const { data : students } =
+const { data: students } =
 
 await (supabase as any)
-
 .from("students_master")
-
 .select(
-
 "student_uuid,student_name"
-
 )
-
 .in(
-
 "student_uuid",
-
 studentUuids
-
 );
-
 
 const studentNameMap =
 
 new Map<string,string>();
 
-
-students?.forEach(
-
-(student:any)=>{
+students?.forEach((student:any)=>{
 
 studentNameMap.set(
-
 student.student_uuid,
-
 student.student_name
+);
 
+});
+
+console.log("STUDENT NAME MAP");
+
+console.log(studentNameMap);
+
+const groupedStudents = new Map();
+
+for (const item of attentionStudents) {
+
+const studentName =
+studentNameMap.get(item.student_uuid) ??
+"Student";
+
+
+if (!groupedStudents.has(item.student_uuid)) {
+
+groupedStudents.set(
+item.student_uuid,
+{
+studentName,
+understandingLevel:
+item.understanding_level,
+concepts: [],
+}
 );
 
 }
 
+
+const student =
+groupedStudents.get(
+item.student_uuid
 );
 
 
+const concepts =
+item.concepts_not_understood ?? [];
+
+
+student.concepts.push(
+...concepts
+);
+
+}
+
+
 const studentsRequiringAttention =
+Array.from(
+groupedStudents.values()
+);
 
-attentionStudents.map(
+console.log(
+"FINAL STUDENTS REQUIRING ATTENTION"
+);
 
-(item)=>({
+console.table(
+studentsRequiringAttention
+);
 
-studentName:
+console.log(
+"STUDENTS REQUIRING ATTENTION"
+);
 
-studentNameMap.get(
-
-item.student_uuid
-
-) ?? "Student",
-
-topicName:
-
-item.topic_name,
-
-understandingLevel:
-
-item.understanding_level,
-
-concepts:
-
-item.concepts_not_understood,
-
-})
-
+console.table(
+studentsRequiringAttention
 );
 
 /****************************************
@@ -336,19 +539,21 @@ commonConcepts.length === 0
 
 :
 
-`Spend the first few minutes revising ${
+commonConcepts.length === 1
 
+?
+
+`Most students struggled with ${
+commonConcepts[0].concept
+}. Please revise this concept before beginning tomorrow's lecture.`
+
+:
+
+`Most students struggled with ${
 commonConcepts
-
-.map(
-
-(item)=>item.concept
-
-)
-
-.join(", ")
-
-} before beginning tomorrow's lecture.`;
+.map((item)=>item.concept)
+.join(" and ")
+}. Please spend the first few minutes revising these concepts before beginning tomorrow's lecture.`;
   
   /*
       FINAL RESPONSE
@@ -380,6 +585,26 @@ teachingRecommendation,
 
   return radar;
 }
+
+
+export async function getClassroomFeedbackRadar(
+  className: string,
+  sectionName: string
+): Promise<ClassroomFeedbackRadar> {
+
+  const classroomFeedback =
+    await getClassroomFeedbackRows(
+      className,
+      sectionName
+    );
+
+  return await buildFeedbackRadar(
+    classroomFeedback
+  );
+
+}
+
+
 
 export async function getClassroomFeedbackRows(
   className: string,
@@ -416,4 +641,69 @@ export async function getClassroomFeedbackRows(
   console.table(data);
 
   return data ?? [];
+}
+
+export async function getLectureFeedbackRows(
+  dailyLogUuid: string
+): Promise<StudentFeedbackRow[]> {
+
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await (supabase as any)
+
+    .from("student_daily_feedback")
+
+    .select("*")
+
+    .eq(
+      "daily_log_uuid",
+      dailyLogUuid
+    );
+
+  if (error) {
+    throw error;
+  }
+
+console.log(
+    "DAILY LOG UUID RECEIVED"
+);
+
+console.log(
+    dailyLogUuid
+);
+
+console.log(
+    "LECTURE FEEDBACK ROWS"
+);
+
+console.table(
+    data
+);
+
+  return data ?? [];
+
+}
+
+export async function getLectureFeedbackRadar(
+  dailyLogUuid: string
+): Promise<ClassroomFeedbackRadar> {
+
+  const lectureFeedback =
+
+    await getLectureFeedbackRows(
+      dailyLogUuid
+    );
+
+  console.log(
+    "LECTURE FEEDBACK"
+  );
+
+  console.table(
+    lectureFeedback
+  );
+
+  return await buildFeedbackRadar(
+    lectureFeedback
+  );
+
 }

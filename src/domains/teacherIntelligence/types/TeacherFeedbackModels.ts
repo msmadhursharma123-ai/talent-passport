@@ -82,6 +82,7 @@ subject_name:string;
 
 topic_name:string;
 
+daily_log_uuid:string;
 
 understanding_level:string;
 

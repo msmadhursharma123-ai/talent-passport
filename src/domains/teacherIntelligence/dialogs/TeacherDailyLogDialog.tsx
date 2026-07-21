@@ -224,11 +224,11 @@ return;
 }
 
 if(
-conceptsCovered.length === 0
+conceptsCovered.length < 3
 ){
 
 alert(
-"Please add at least one concept."
+"Please add at least 3 concepts or subtopics covered in today's lecture."
 );
 
 return;
@@ -534,12 +534,27 @@ marginBottom:25,
 
 <h3
 style={{
-marginBottom:15,
+marginBottom:10,
 color:"#03122E",
 }}
 >
-Concepts Covered Today *
+Subtopics / Concepts Covered Today *
 </h3>
+
+<p
+style={{
+marginTop:0,
+marginBottom:18,
+lineHeight:1.7,
+color:"#64748B",
+fontSize:14,
+}}
+>
+
+Please add at least 3 concepts,
+headings or subtopics covered in today's lecture.
+
+</p>
 
 
 <div
@@ -558,7 +573,7 @@ flex:1,
 }}
 
 placeholder=
-"Enter concept covered today"
+"Enter subtopic or concept covered today"
 
 value={conceptInput}
 

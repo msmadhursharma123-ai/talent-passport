@@ -23,10 +23,9 @@ TeacherDailyLog,
 
 
 import {
-
-getClassroomFeedbackRadar,
-
-} from "../../domains/teacherIntelligence/repository/TeacherFeedbackAnalyticsRepository";
+getLectureFeedbackRadar,
+}
+from "../../domains/teacherIntelligence/repository/TeacherFeedbackAnalyticsRepository";
 
 export default function TeacherHome() {
 
@@ -35,6 +34,14 @@ useState<TeacherAssignment[]>([]);
 
 const [dailyLogs,setDailyLogs] =
 useState<TeacherDailyLog[]>([]);
+
+const [
+
+selectedLecture,
+
+setSelectedLecture,
+
+] = useState<TeacherDailyLog | null>(null);
 
 const [selectedAssignmentId,
 setSelectedAssignmentId] =
@@ -165,13 +172,16 @@ setSelectedAssignment(
 assignment ?? null
 );
 
+setSelectedLecture(null);
 
-if(
+setClassroomRadar(null);
+
+if (
 
 assignment &&
 assignment.id
 
-){
+) {
 
 const logs =
 
@@ -181,22 +191,60 @@ assignment.id
 
 setDailyLogs(logs);
 
-const radar =
 
-await getClassroomFeedbackRadar(
 
-assignment.className,
-assignment.sectionName
+if (
 
+logs.length > 0
+
+) {
+
+const latestLog =
+logs[0];
+
+console.log(
+    "LATEST DAILY LOG"
 );
 
-console.log("CLASSROOM RADAR");
+console.log(
+    latestLog
+);
 
-console.log(radar);
 
-setClassroomRadar(radar);
+
+setSelectedLecture(
+latestLog
+);
+
+
+
+const radar =
+
+await getLectureFeedbackRadar(
+latestLog.id
+);
+
+console.log(
+    "LECTURE RADAR"
+);
+
+console.log(
+    radar
+);
+
+setClassroomRadar(
+radar
+);
 
 }else{
+
+setSelectedLecture(null);
+
+setClassroomRadar(null);
+
+}
+
+} else {
 
 setDailyLogs([]);
 
@@ -238,12 +286,45 @@ Section {item.sectionName}
 
       </div>
 
+{
+
+selectedLecture && (
+
+<div
+style={cardStyle}
+>
+
+<p>
+
+LATEST CLASSROOM INTELLIGENCE
+
+</p>
+
+<h2>
+
+{selectedLecture.topicName}
+
+</h2>
+
+<p>
+
+Topic currently being analysed
+from the most recent teacher daily log.
+
+</p>
+
+</div>
+
+)
+
+}
 
 {/* CLASSROOM HEALTH SCORE */}
 
 {classroomRadar && (
 
 <>
+
 
 <div
 style={{
@@ -357,6 +438,9 @@ classroomRadar.didNotUnderstand
 
 </div>
 
+{
+classroomRadar.commonConcepts.length > 0 && (
+
 <div
 style={{
 ...cardStyle,
@@ -370,10 +454,10 @@ Most Difficult Concepts Today
 
 </h2>
 
-
 {
-
-classroomRadar.commonConcepts.map(
+classroomRadar.commonConcepts
+.slice(0,2)
+.map(
 (item:any,index:number)=>(
 
 <div
@@ -385,7 +469,7 @@ marginTop:18,
 
 <h3>
 
-{item.concept}
+{index + 1}. {item.concept}
 
 </h3>
 
@@ -399,10 +483,12 @@ student(s)
 </div>
 
 ))
-
 }
 
 </div>
+
+)
+}
 
 {/* STUDENTS REQUIRING ATTENTION */}
 
@@ -465,18 +551,6 @@ color:"#04122F",
 
 </h2>
 
-
-<h3>
-
-Topic Requiring Revision
-
-</h3>
-
-<p>
-
-{student.topicName}
-
-</p>
 
 
 <h3>
@@ -563,52 +637,6 @@ lineHeight:1.8,
 >
 
 {classroomRadar.teachingRecommendation}
-
-</p>
-
-</div>
-
-
-{/* CLASSROOM INFORMATION */}
-
-<div
-style={{
-...cardStyle,
-marginTop:30,
-}}
->
-
-<h2>
-
-Classroom Information
-
-</h2>
-
-<p>
-
-Class : {selectedAssignment?.className ?? "--"}
-
-</p>
-
-<p>
-
-Section : {selectedAssignment?.sectionName ?? "--"}
-
-</p>
-
-<p>
-
-Last Daily Log Submitted :
-
-{
-
-dailyLogs.length > 0
-
-? dailyLogs[0].logDate
-
-: "No Lecture Published"
-
-}
 
 </p>
 
