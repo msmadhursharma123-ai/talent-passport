@@ -19,6 +19,8 @@ import type {
 TeacherDailyLog,
 } from "../types/TeacherDailyLog";
 
+
+
 export default function MyClassroomPage() {
 
 const [assignments,setAssignments] =
@@ -48,6 +50,21 @@ useState<TeacherAssignment | null>(null);
 
 const [dailyLogs,setDailyLogs] =
 useState<TeacherDailyLog[]>([]);
+
+const sortedLogs =
+
+[...dailyLogs].sort(
+(a,b)=>
+new Date(a.logDate).getTime() -
+new Date(b.logDate).getTime()
+);
+
+
+const latestLog =
+
+sortedLogs[
+sortedLogs.length - 1
+];
 
 useEffect(()=>{
 
@@ -100,52 +117,67 @@ setClasses(uniqueClasses);
       {/* HEADER */}
 
       <div
-        style={{
-          background: "#04122F",
-          borderRadius: 28,
-          padding: 30,
-          color: "white",
-          marginBottom: 28,
-        }}
-      >
-        <p
-          style={{
-            margin: 0,
-            color: "#F59E0B",
-            fontWeight: 700,
-            letterSpacing: 2,
-            fontSize: 13,
-          }}
-        >
-          CLASSROOM HISTORY ENGINE
-        </p>
+style={{
+background:"#04122F",
+padding:40,
+borderRadius:28,
+marginBottom:24,
+position:"relative",
+}}
+>
 
-        <h1
-          style={{
-            marginTop: 12,
-            marginBottom: 12,
-            fontSize: 34,
-          }}
-        >
-          MY CLASSROOM
-        </h1>
+<p
+style={{
+color:"#F59E0B",
+fontWeight:700,
+letterSpacing:2,
+fontSize:13,
+marginBottom:8,
+}}
+>
 
-        <p
-          style={{
-            margin: 0,
-            color: "#D1D5DB",
-            lineHeight: 1.8,
-          }}
-        >
-          Review your complete classroom
-          teaching history across the
-          academic session.
-        </p>
-      </div>
+MY CLASSROOM
+
+</p>
+
+
+<h1
+style={{
+color:"white",
+fontSize:48,
+margin:0,
+}}
+>
+
+CLASSROOM OVERVIEW
+
+</h1>
+
+
+<p
+style={{
+color:"#E5E7EB",
+marginTop:10,
+fontSize:18,
+}}
+>
+
+View your class details and teaching history in a calendar format.
+
+</p>
+
+</div>
 
       {/* FILTERS */}
 
-<div style={cardStyle}>
+<div style={{
+
+background:"white",
+padding:28,
+borderRadius:28,
+boxShadow:"0px 10px 30px rgba(0,0,0,0.05)",
+
+}}>
 
 <h2>Filters</h2>
 
@@ -372,67 +404,107 @@ value={item}
 
 </div>
 
-      {/* CLASS INFO */}
+     {/* CLASS INFO */}
 
-      <div
-        style={{
-          ...cardStyle,
-          marginTop: 30,
-        }}
-      >
-        <h2>
-          Assigned Classroom Information
-        </h2>
+<div
+style={{
+...cardStyle,
+marginTop:30,
+}}
+>
 
-        <p>
+<h2
+style={{
+fontSize:"24px",
+fontWeight:600,
+color:"#04122F",
+marginBottom:12,
+}}
+>
 
-Class :
+Assigned Classroom Information
 
-{" "}
-
-{selectedAssignment?.className ??
-"Select a Class"}
-
-</p>
-
-
-<p>
-
-Section :
-
-{" "}
-
-{selectedAssignment?.sectionName ??
-"Select a Section"}
-
-</p>
+</h2>
 
 
-<p>
+<div
+style={{
 
-Subject :
+display:"grid",
 
-{" "}
+gridTemplateColumns:
+"repeat(4,1fr)",
 
-{selectedAssignment?.subjectName ??
-"Select a Subject"}
+gap:30,
 
-</p>
+marginTop:30,
+
+}}
+>
+
+<InfoCard
+
+title="Class"
+
+value={
+
+selectedAssignment?.className ??
+
+"Not Selected"
+
+}
+
+/>
 
 
-<p>
+<InfoCard
 
-Academic Session :
+title="Section"
 
-{" "}
+value={
 
-{selectedAssignment?.academicYear ??
-"2026-2027"}
+selectedAssignment?.sectionName ??
 
-</p>
+"Not Selected"
 
-      </div>
+}
 
+/>
+
+
+<InfoCard
+
+title="Subject"
+
+value={
+
+selectedAssignment?.subjectName ??
+
+"Not Selected"
+
+}
+
+/>
+
+
+<InfoCard
+
+title="Academic Session"
+
+value={
+
+selectedAssignment?.academicYear ??
+
+"2026-2027"
+
+}
+
+/>
+
+
+</div>
+
+</div>
 
 {/* CLASSROOM HISTORY */}
 
@@ -443,167 +515,300 @@ marginTop:30,
 }}
 >
 
-<h2>
-Classroom Teaching History
+<h2
+style={{
+fontSize:"24px",
+fontWeight:600,
+color:"#04122F",
+marginBottom:12,
+}}
+>
+
+Classroom Teaching Calendar
+
 </h2>
 
+<p
+style={{
+marginTop:0,
+color:"#64748B",
+fontSize:"16px",
+fontWeight:500,
+}}
+>
+
+View all topics taught during the month.
+
+</p>
+
+
+{/* WEEK DAYS */}
 
 <div
 style={{
-background:"#F8FAFC",
-padding:24,
-borderRadius:18,
-marginTop:20,
+display:"grid",
+gridTemplateColumns:"repeat(7,1fr)",
+gap:12,
+marginTop:30,
+marginBottom:15,
 }}
 >
 
 {
 
-dailyLogs.length === 0 ?
+["MON","TUE","WED","THU","FRI","SAT","SUN"]
 
-(
+.map((day)=>(
 
-<p>
+<div
+key={day}
+style={{
+textAlign:"center",
+fontWeight:800,
+fontSize:18,
+letterSpacing:1,
+color:"#334155",
+textTransform:"uppercase",
+}}
+>
 
-No lectures have been
-published yet for this
-classroom.
+{day}
+
+</div>
+
+))
+
+}
+
+</div>
+
+
+
+{/* CALENDAR */}
+
+<div
+style={{
+display:"grid",
+gridTemplateColumns:"repeat(7,1fr)",
+gap:12,
+}}
+>
+
+{
+
+Array.from({length:31}).map((_,index)=>{
+
+const day = index + 1;
+
+const log = dailyLogs.find((item)=>{
+
+
+return (
+
+new Date(item.logDate).getDate()
+
+=== day
+
+);
+
+});
+
+
+if(!log){
+
+return(
+
+<div
+key={day}
+style={emptyCalendarBox}
+>
+
+<div
+style={{
+fontWeight:700,
+fontSize:18,
+}}
+>
+
+{day}
+
+</div>
+
+
+<p
+style={{
+marginTop:25,
+fontSize:13,
+color:"#CA8A04",
+fontWeight:600,
+}}
+>
+
+No Topic Published
 
 </p>
 
-)
-
-:
-
-(
-
-<div
-  style={{
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit,minmax(340px,1fr))",
-    gap: 24,
-    marginTop: 24,
-  }}
->
-  {dailyLogs.map((log) => (
-    <div
-      key={log.id}
-      style={{
-        background: "white",
-        border: "1px solid #E2E8F0",
-        borderRadius: 24,
-        padding: 24,
-        display: "flex",
-        flexDirection: "column",
-        gap: 14,
-      }}
-    >
-      {/* TOP ROW */}
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <div
-          style={{
-            border: "1px solid #F97316",
-            color: "#EA580C",
-            borderRadius: 10,
-            padding: "6px 14px",
-            fontSize: 13,
-            fontWeight: 700,
-          }}
-        >
-          {log.topicName}
-        </div>
-
-        <div
-          style={{
-            fontSize: 14,
-            color: "#334155",
-            fontWeight: 600,
-          }}
-        >
-          {log.logDate.slice(0, 10)}
-        </div>
-      </div>
-
-      {/* DETAILS */}
-
-      <div
-        style={{
-          lineHeight: 1.9,
-          color: "#1E293B",
-        }}
-      >
-        <div>
-          <strong>Pages :</strong>{" "}
-          {log.pageFrom} - {log.pageTo}
-        </div>
-
-        <div>
-          <strong>Homework :</strong>{" "}
-          {log.homeworkGiven
-            ? "YES"
-            : "NO"}
-        </div>
-
-        <div>
-          <strong>Activity :</strong>{" "}
-          {log.activityConducted
-            ? "YES"
-            : "NO"}
-        </div>
-
-        <div>
-          <strong>Teacher Notes :</strong>{" "}
-          {log.teacherNotes || "--"}
-        </div>
-      </div>
-
-      {/* FOOTER */}
-
-      <div
-        style={{
-          borderTop:
-            "1px solid #E2E8F0",
-          paddingTop: 14,
-          display: "flex",
-          justifyContent:
-            "space-between",
-          alignItems: "center",
-        }}
-      >
-        <span
-          style={{
-            color: "#DC2626",
-            fontWeight: 700,
-            fontSize: 13,
-            letterSpacing: 1,
-          }}
-        >
-          DAILY CLASSROOM LOG
-        </span>
-
-        <span
-          style={{
-            color: "#059669",
-            fontWeight: 700,
-            fontSize: 13,
-          }}
-        >
-          PUBLISHED
-        </span>
-      </div>
-    </div>
-  ))}
 </div>
 
-)
+);
+
+}
+
+
+
+return(
+
+<div
+key={day}
+style={{
+
+...calendarLectureBox,
+
+background:
+
+log.id === latestLog?.id
+
+? "#FFF7ED"
+
+: "#F7FFF8",
+
+}}
+>
+
+<div
+style={{
+display:"flex",
+justifyContent:"space-between",
+alignItems:"center",
+}}
+>
+
+<div
+style={{
+fontWeight:700,
+fontSize:18,
+}}
+>
+{day}
+</div>
+
+</div>
+
+
+<div
+style={{
+
+display:"inline-flex",
+
+alignItems:"center",
+
+padding:"8px 14px",
+
+borderRadius:14,
+
+background:
+
+log.id === latestLog?.id
+? "#FFF7ED"
+: "#DCFCE7",
+
+color:
+
+log.id === latestLog?.id
+? "#EA580C"
+: "#15803D",
+
+fontWeight:700,
+
+fontSize:13,
+
+marginTop:16,
+
+marginBottom:12,
+
+boxShadow:
+"0px 2px 6px rgba(0,0,0,0.04)",
+
+}}
+>
+
+{log.topicName}
+
+</div>
+
+
+<p
+style={{
+
+marginTop:5,
+
+marginBottom:10,
+
+fontSize:13,
+
+fontWeight:600,
+
+color:"#475569",
+
+}}
+>
+
+Pages :
+{" "}
+
+{log.pageFrom} - {log.pageTo}
+
+</p>
+
+<div
+style={{
+
+display:"flex",
+
+justifyContent:"space-between",
+
+marginTop:16,
+
+fontSize:13,
+
+color:"#475569",
+
+}}
+>
+
+<div>
+
+Homework :
+{" "}
+<strong>
+
+{log.homeworkGiven ? "Yes" : "No"}
+
+</strong>
+
+</div>
+
+
+<div>
+
+Activity :
+{" "}
+<strong>
+
+{log.activityConducted ? "Yes" : "No"}
+
+</strong>
+
+</div>
+
+</div>
+
+
+</div>
+
+);
+
+})
 
 }
 
@@ -611,6 +816,80 @@ classroom.
 
 </div>
     
+{/* MONTHLY SUMMARY */}
+
+<div
+style={{
+...cardStyle,
+marginTop:30,
+}}
+>
+
+<h2
+style={{
+fontSize:"24px",
+fontWeight:600,
+color:"#04122F",
+marginBottom:12,
+}}
+>
+
+Monthly Classroom Summary
+
+</h2>
+
+
+<div
+style={{
+display:"grid",
+gridTemplateColumns:
+"repeat(4,1fr)",
+gap:20,
+marginTop:30,
+}}
+>
+
+<SummaryCard
+title="Total Lectures"
+value={String(dailyLogs.length)}
+/>
+
+
+<SummaryCard
+title="Homework Days"
+value={String(
+
+dailyLogs.filter(
+item=>
+item.homeworkGiven
+).length
+
+)}
+/>
+
+
+<SummaryCard
+title=" Activity Days"
+value={String(
+
+dailyLogs.filter(
+item=>
+item.activityConducted
+).length
+
+)}
+/>
+
+
+<SummaryCard
+title="Completed Topics"
+value={String(dailyLogs.length)}
+/>
+
+</div>
+
+</div>
+
     </div>
   );
 }
@@ -638,24 +917,221 @@ function TimelineCard(props: any) {
 
 /* ------------------------------------------------ */
 
-function SummaryCard(props: any) {
-  return (
-    <div style={cardStyle}>
-      <h1>{props.value}</h1>
+function SummaryCard(props:any){
 
-      <p>{props.title}</p>
-    </div>
-  );
+return(
+
+<div
+style={{
+...cardStyle,
+padding:25,
+background:"#ecf0de",
+
+border:"1px solid #DBEAFE",
+}}
+>
+
+<h1
+style={{
+margin:0,
+fontSize:48,
+color:"#64748B",
+}}
+>
+
+{props.value}
+
+</h1>
+
+
+<p
+style={{
+marginTop:12,
+fontWeight:600,
+color:"#475569",
+}}
+>
+
+{props.title}
+
+</p>
+
+</div>
+
+);
+
 }
 
 /* ------------------------------------------------ */
 
+function Legend(props:any){
+
+return(
+
+<div
+style={{
+
+display:"flex",
+
+alignItems:"center",
+
+gap:10,
+
+}}
+>
+
+<div
+style={{
+
+width:18,
+
+height:18,
+
+borderRadius:"50%",
+
+background:props.color,
+
+border:
+"1px solid #CBD5E1",
+
+}}
+/>
+
+
+<span
+style={{
+
+fontWeight:600,
+
+color:"#334155",
+
+}}
+>
+
+{props.label}
+
+</span>
+
+</div>
+
+);
+
+}
+
+/* ------------------------------------------------ */
+
+function InfoCard(props:any){
+
+return(
+
+<div
+style={{
+
+padding:20,
+
+borderRadius:18,
+
+background:"#ecf0de",
+
+border:
+"1px solid #BFDBFE",
+
+}}
+>
+
+<p
+style={{
+
+margin:0,
+
+fontSize:14,
+
+fontWeight:600,
+
+color:"#64748B",
+
+}}
+>
+
+{props.title}
+
+</p>
+
+
+<h2
+style={{
+
+marginTop:12,
+marginBottom:0,
+
+color:"#64748B",
+
+fontSize:30,
+
+}}
+>
+
+{props.value}
+
+</h2>
+
+
+</div>
+
+);
+
+}
+
 const cardStyle = {
-  background: "white",
-  padding: 30,
-  borderRadius: 24,
-  boxShadow:
-    "0px 10px 25px rgba(0,0,0,0.05)",
+
+background:"white",
+
+padding:32,
+
+borderRadius:28,
+
+boxShadow:
+"0px 10px 30px rgba(0,0,0,0.05)",
+
+} as const;
+
+const calendarLectureBox = {
+
+background:"#FFFFFF",
+
+border:"1px solid #E2E8F0",
+
+borderRadius:24,
+
+padding:18,
+
+minHeight:180,
+
+boxShadow:
+"0px 4px 15px rgba(0,0,0,0.04)",
+
+} as const;
+
+
+
+const emptyCalendarBox = {
+
+background:"#FFFDF3",
+
+border:"1px solid #FDE68A",
+
+borderRadius:24,
+
+padding:18,
+
+minHeight:150,
+
+display:"flex",
+
+flexDirection:"column" as const,
+
+alignItems:"center",
+
 } as const;
 
 const dropdownStyle = {

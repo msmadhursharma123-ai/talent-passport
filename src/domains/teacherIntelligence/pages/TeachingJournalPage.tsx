@@ -20,6 +20,13 @@ import type {
 TeacherDailyLog,
 } from "../types/TeacherDailyLog";
 
+import {
+
+getMonthlyComprehensionData,
+
+}
+
+from "../repository/TeachingJournalRepository";
 
 export default function TeachingJournalPage() {
 
@@ -50,6 +57,13 @@ useState("");
 const [selectedMonth,setSelectedMonth] =
 useState("July");
 
+const [
+
+monthlyFeedback,
+
+setMonthlyFeedback
+
+] = useState<any[]>([]);
 
 useEffect(()=>{
 
@@ -89,6 +103,353 @@ item=>item.className
 setClasses(uniqueClasses);
 
 }
+
+function getDayColor(
+
+day:number
+
+){
+
+const log =
+
+dailyLogs.find((item)=>{
+
+const lectureDay =
+
+new Date(
+
+item.logDate
+
+).getDate();
+
+
+return lectureDay === day;
+
+});
+
+
+if(!log){
+
+return "#F3F4F6"; // no lecture
+
+}
+
+
+const feedback =
+
+monthlyFeedback.filter(
+
+(item)=>
+
+item.daily_log_uuid ===
+
+log.id
+
+);
+
+
+if(
+
+feedback.length === 0
+
+){
+
+return "#DBEAFE"; // feedback pending
+
+}
+
+
+const complete =
+
+feedback.filter(
+
+(item)=>
+
+item.understanding_level ===
+
+"I completely understood."
+
+).length;
+
+
+const partial =
+
+feedback.filter(
+
+(item)=>
+
+item.understanding_level ===
+
+"I partially understood."
+
+).length;
+
+
+const difficult =
+
+feedback.filter(
+
+(item)=>
+
+item.understanding_level ===
+
+"I didn't understand."
+
+).length;
+
+
+
+if(
+
+complete >= partial &&
+
+complete >= difficult
+
+){
+
+return "#DCFCE7"; // understood
+
+}
+
+
+if(
+
+partial >= complete &&
+
+partial >= difficult
+
+){
+
+return "#FEF3C7"; // partial
+
+}
+
+
+return "#FEE2E2"; // difficult
+
+
+}
+
+function getDotColor(
+
+day:number
+
+){
+
+const color =
+
+getDayColor(day);
+
+
+if(color === "#DCFCE7")
+return "#22C55E";
+
+
+if(color === "#FEF3C7")
+return "#F59E0B";
+
+
+if(color === "#FEE2E2")
+return "#EF4444";
+
+
+if(color === "#DBEAFE")
+return "#2563EB";
+
+
+return "#9CA3AF";
+
+}
+
+function getClassroomHealthScore(
+day:number
+){
+
+const log = dailyLogs.find((item)=>{
+
+const lectureDay =
+
+new Date(item.logDate).getDate();
+
+return lectureDay === day;
+
+});
+
+if(!log){
+return null;
+}
+
+const feedback = monthlyFeedback.filter(
+
+(item)=>
+
+item.daily_log_uuid === log.id
+
+);
+
+if(feedback.length === 0){
+return null;
+}
+
+const complete = feedback.filter(
+
+(item)=>
+
+item.understanding_level ===
+"I completely understood."
+
+).length;
+
+
+const partial = feedback.filter(
+
+(item)=>
+
+item.understanding_level ===
+"I partially understood."
+
+).length;
+
+
+const totalStudents =
+
+feedback.length;
+
+
+const score =
+
+Math.round(
+
+(
+
+(
+
+complete +
+
+(partial * 0.5)
+
+)
+
+/
+
+totalStudents
+
+) * 100
+
+);
+
+return score;
+
+}
+
+function getMonthSummary(){
+
+let green = 0;
+
+let yellow = 0;
+
+let red = 0;
+
+let blue = 0;
+
+
+for(
+
+let i=1;
+
+i<=31;
+
+i++
+
+){
+
+const color =
+
+getDayColor(i);
+
+
+if(color === "#DCFCE7") green++;
+
+if(color === "#FEF3C7") yellow++;
+
+if(color === "#FEE2E2") red++;
+
+if(color === "#DBEAFE") blue++;
+
+}
+
+return{
+
+green,
+yellow,
+red,
+blue,
+
+};
+
+}
+
+function getAverageScoreByColor(
+
+targetColor:string
+
+){
+
+let totalScore = 0;
+
+let count = 0;
+
+
+for(
+
+let i=1;
+
+i<=31;
+
+i++
+
+){
+
+if(
+
+getDayColor(i) === targetColor
+
+){
+
+const score =
+
+getClassroomHealthScore(i);
+
+
+if(score !== null){
+
+totalScore += score;
+
+count++;
+
+}
+
+}
+
+}
+
+
+if(count === 0){
+
+return 0;
+
+}
+
+
+return Math.round(
+
+totalScore / count
+
+);
+
+}
+
+const summary = getMonthSummary();
 
   return (
     <div
@@ -196,6 +557,8 @@ setSelectedSubject("");
 setSubjects([]);
 
 setDailyLogs([]);
+
+
 
 setSelectedMonth("July");
 }}
@@ -333,9 +696,29 @@ assignment.id
 
 setDailyLogs(logs);
 
+const feedback =
+
+await getMonthlyComprehensionData(
+
+logs
+
+.filter(log=>log.id)
+
+.map(log=>log.id!)
+
+);
+
+
+setMonthlyFeedback(
+
+feedback
+
+);
+
 }else{
 
 setDailyLogs([]);
+setMonthlyFeedback([]);
 
 }
 
@@ -380,267 +763,445 @@ e.target.value
 }}
 >
 
-<option>January</option>
-<option>February</option>
-<option>March</option>
-<option>April</option>
-<option>May</option>
-<option>June</option>
-<option>July</option>
-<option>August</option>
-<option>September</option>
-<option>October</option>
-<option>November</option>
-<option>December</option>
+<option>January 2026</option>
+<option>February 2026</option>
+<option>March 2026</option>
+<option>April 2026</option>
+<option>May 2026</option>
+<option>June 2026</option>
+<option>July 2026</option>
+<option>August 2026</option>
+<option>September 2026</option>
+<option>October 2026</option>
+<option>November 2026</option>
+<option>December 2026</option>
 
 </select>
         </div>
       </div>
 
-      {/* MONTHLY CALENDAR */}
+{/* MONTHLY CALENDAR */}
 
-      <div style={cardStyle}>
-        <h2>
-          Monthly Classroom Calendar
-        </h2>
+<div style={cardStyle}>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(7,1fr)",
-            gap: 12,
-            marginTop: 20,
-          }}
-        >
-          {Array.from({ length: 31 }).map(
-            (_, index) => (
-              <div
-                key={index}
-                style={calendarBox}
-              >
-                {index + 1}
-              </div>
-            )
-          )}
-        </div>
-      </div>
+<h2>
+Monthly Classroom Calendar
+</h2>
 
-     {/* MONTHLY SUMMARY */}
+<p
+style={{
+marginTop:8,
+color:"#64748B",
+}}
+>
+Your classroom comprehension heatmap for the month.
+</p>
+
+<div
+
+style={{
+
+display:"grid",
+
+gridTemplateColumns:"repeat(7,1fr)",
+
+gap:12,
+
+marginTop:30,
+
+marginBottom:15,
+
+}}
+
+>
+
+{
+
+["MON","TUE","WED","THU","FRI","SAT","SUN"]
+
+.map((day)=>(
+
+<div
+
+key={day}
+
+style={{
+
+textAlign:"center",
+
+fontWeight:700,
+
+fontSize:13,
+
+color:"#64748B",
+
+}}
+
+>
+
+{day}
+
+</div>
+
+))
+
+}
+
+</div>
+
+<div
+
+style={{
+
+display:"grid",
+
+gridTemplateColumns:"repeat(7,1fr)",
+
+gap:12,
+
+}}
+
+>
+
+{
+
+Array.from({length:31}).map((_,index)=>{
+
+const day = index + 1;
+
+return(
+
+<div
+
+key={day}
+
+style={{
+
+...calendarBox,
+
+background:getDayColor(day),
+
+}}
+
+>
+
+<div
+style={{
+fontSize:18,
+fontWeight:700,
+}}
+>
+
+{day}
+
+</div>
+
+
+{
+
+getClassroomHealthScore(day) && (
+
+<div
+style={{
+fontSize:13,
+fontWeight:700,
+marginTop:4,
+color:"#04122F",
+}}
+>
+
+{getClassroomHealthScore(day)}%
+
+</div>
+
+)
+
+}
+
+
+<div
+
+style={{
+
+marginTop:5,
+
+width:8,
+
+height:8,
+
+borderRadius:"50%",
+
+background:
+
+getDotColor(day),
+
+}}
+
+ />
+
+</div>
+
+);
+
+})
+
+}
+
+</div>
+
+
+{/* LEGEND SECTION */}
+
+<div
+
+style={{
+
+display:"flex",
+gap:24,
+marginTop:28,
+flexWrap:"wrap",
+
+}}
+
+>
+
+<Legend
+color="#DCFCE7"
+label="Most Students Understood"
+/>
+
+<Legend
+color="#FEF3C7"
+label="Partially Understood"
+/>
+
+<Legend
+color="#FEE2E2"
+label="Students Struggled"
+/>
+
+<Legend
+color="#DBEAFE"
+label="Feedback Pending"
+/>
+
+<Legend
+color="#F3F4F6"
+label="No Lecture Conducted"
+/>
+
+</div>
+
+</div>
+
+ {/* MONTHLY SUMMARY */}
 
 <div
 style={{
 display:"grid",
-gridTemplateColumns:"repeat(4,1fr)",
+gridTemplateColumns:
+"repeat(4,1fr)",
 gap:20,
 marginTop:30,
 }}
 >
 
 <AnalyticsCard
-title="Total Lectures"
-value={String(dailyLogs.length)}
+
+title="Excellent Days"
+value={String(summary.green)}
+description={`Average Score : ${getAverageScoreByColor("#DCFCE7")}%`}
+background="#F0FDF4"
+color="#16A34A"
+
 />
+
 
 <AnalyticsCard
-title="Homework Given"
-value={String(
 
-dailyLogs.filter(
-log=>log.homeworkGiven
-).length
+title="Average Days"
+value={String(summary.yellow)}
+description={`Average Score : ${getAverageScoreByColor("#FEF3C7")}%`}
+background="#FEFCE8"
+color="#CA8A04"
 
-)}
 />
+
 
 <AnalyticsCard
-title="Activities Conducted"
-value={String(
 
-dailyLogs.filter(
-log=>log.activityConducted
-).length
+title="Needs Support"
+value={String(summary.red)}
+description={`Average Score : ${getAverageScoreByColor("#FEE2E2")}%`}
+background="#FEF2F2"
+color="#DC2626"
 
-)}
 />
+
 
 <AnalyticsCard
-title="Topics Covered"
-value={String(
 
-new Set(
-dailyLogs.map(
-log=>log.topicName
-)
-).size
+title="Feedback Pending"
+value={String(summary.blue)}
+description="Feedback not yet submitted."
+background="#EFF6FF"
+color="#2563EB"
 
-)}
 />
-
-</div>
-
-      {/* MONTHLY INSIGHTS */}
 
 <div
+
 style={{
-...cardStyle,
+
 marginTop:30,
+
+textAlign:"center",
+
+color:"#64748B",
+
+fontSize:14,
+
 }}
+
 >
 
-<h2>
-Monthly Teaching Insights
-</h2>
-
-
-{
-
-dailyLogs.length === 0 ?
-
-(
-
-<p>
-
-No lecture records found
-for the selected classroom.
-
-</p>
-
-)
-
-:
-
-(
-
-<ul
-style={{
-lineHeight:2,
-}}
->
-
-{
-
-dailyLogs.map((log)=>(
-
-<li key={log.id}>
-
-{log.logDate}
-
-{" - "}
-
-{log.topicName}
-
-</li>
-
-))
-
-}
-
-</ul>
-
-)
-
-}
+Calendar reflects classroom comprehension based on student feedback for the selected month.
 
 </div>
 
-    {/* ADVANCED ANALYTICS */}
-
-<div
-style={{
-...cardStyle,
-marginTop:30,
-background:"#FFF7ED",
-}}
->
-
-<h2>
-Upcoming Classroom Analytics
-</h2>
-
-
-<ul
-style={{
-lineHeight:2,
-}}
->
-
-<li>
-Student Comprehension Analytics
-</li>
-
-<li>
-Parent Feedback Intelligence
-</li>
-
-<li>
-AI Teaching Recommendations
-</li>
-
-<li>
-Engagement Analytics Engine
-</li>
-
-<li>
-Classroom Performance Insights
-</li>
-
-</ul>
-
 </div>
+
    </div>
   );
 }
 
 /* -------------------------------- */
 
-function AnalyticsCard(props: any) {
-  return (
-    <div style={cardStyle}>
-      <h1
-        style={{
-          margin: 0,
-          color: "#04122F",
-        }}
-      >
-        {props.value}
-      </h1>
+function Legend(props:any){
 
-      <p>
-        {props.title}
-      </p>
-    </div>
-  );
+return(
+
+<div
+
+style={{
+
+display:"flex",
+
+alignItems:"center",
+
+gap:10,
+
+}}
+
+>
+
+<div
+
+style={{
+
+width:16,
+height:16,
+
+borderRadius:"50%",
+
+background:props.color,
+
+border:"1px solid #CBD5E1",
+
+}}
+
+ />
+
+<span>
+
+{props.label}
+
+</span>
+
+</div>
+
+);
+
 }
+
+function AnalyticsCard(props:any){
+
+return(
+
+<div
+
+style={{
+
+...cardStyle,
+
+padding:30,
+
+background:props.background,
+
+}}
+
+>
+
+<h1
+
+style={{
+
+margin:0,
+
+fontSize:48,
+
+color:props.color,
+
+}}
+
+>
+
+{props.value}
+
+</h1>
+
+
+<h3
+
+style={{
+
+marginTop:15,
+
+marginBottom:5,
+
+}}
+
+>
+
+{props.title}
+
+</h3>
+
+
+<p
+
+style={{
+
+margin:0,
+
+color:"#64748B",
+
+}}
+
+>
+
+{props.description}
+
+</p>
+
+</div>
+
+);
+
+}
+
 
 /* -------------------------------- */
-
-function WeeklyCard(props: any) {
-  return (
-    <div
-      style={{
-        background: "#F8FAFC",
-        padding: 18,
-        borderRadius: 16,
-        marginBottom: 14,
-      }}
-    >
-      <h3
-        style={{
-          marginTop: 0,
-        }}
-      >
-        {props.week}
-      </h3>
-
-      <p>
-        Average Response :
-        {" "}
-        {props.score}
-      </p>
-    </div>
-  );
-}
 
 /* -------------------------------- */
 
@@ -665,9 +1226,27 @@ const dropdownStyle = {
 /* -------------------------------- */
 
 const calendarBox = {
-  background: "#F8FAFC",
-  padding: 18,
-  borderRadius: 14,
-  textAlign: "center" as const,
-  fontWeight: 700,
-};
+
+padding:18,
+
+height:70,
+
+borderRadius:16,
+
+display:"flex",
+
+flexDirection:"column",
+
+justifyContent:"center",
+
+alignItems:"center",
+
+cursor:"pointer",
+
+boxShadow:
+"0px 4px 15px rgba(0,0,0,0.04)",
+
+border:
+"1px solid rgba(0,0,0,0.04)",
+
+} as const;
