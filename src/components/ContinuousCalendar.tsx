@@ -13,10 +13,55 @@ import {
 getStudentMonthlyLectureLogs,
 } from "../data/studentGrowthPlanRepository";
 
+const calendarLectureBox = {
+
+background:"#F7FFF8",
+
+border:
+"1px solid #BBF7D0",
+
+borderRadius:24,
+
+padding:18,
+
+minHeight:180,
+
+boxShadow:
+"0px 4px 15px rgba(34,197,94,0.06)"
+
+} as const;
+
+
+
+const emptyCalendarBox = {
+
+background:"#FFFDF3",
+
+border:"1px solid #FDE68A",
+
+borderRadius:24,
+
+padding:18,
+
+minHeight:150,
+
+display:"flex",
+
+flexDirection:"column" as const,
+
+alignItems:"center",
+
+} as const;
+
+
 export default function ContinuousCalendar() {
 
-  const [selectedSubject, setSelectedSubject] =
-    useState("All Subjects");
+const identity =
+requireIdentity();
+
+const [selectedSubject,setSelectedSubject]
+=
+useState("");
 
   const [selectedMonth, setSelectedMonth] =
     useState("July");
@@ -33,11 +78,35 @@ export default function ContinuousCalendar() {
 const [subjects, setSubjects] =
 useState<string[]>([]);
 
+const [
+
+selectedDayTopics,
+
+setSelectedDayTopics
+
+]
+
+=
+
+useState<any[]>([]);
+
+
+const [
+
+showTopicsModal,
+
+setShowTopicsModal
+
+]
+
+=
+
+useState(false);
+
 const [lectureLogs,setLectureLogs]
 =
 useState<any[]>([]);
 
-  const lectureCalendar: any[] = [];
 
 useEffect(() => {
 
@@ -66,10 +135,7 @@ lectureLogs.filter((log)=>{
 
 if(
 
-selectedSubject !==
-"All Subjects"
-
-&&
+selectedSubject &&
 
 log.subject_name !==
 selectedSubject
@@ -270,10 +336,34 @@ b.log_date
 
 );
 
-function loadSubjects() {
+console.log(filteredLogs);
 
-  const identity =
-    requireIdentity();
+const totalDays = new Date(
+
+2026,
+
+new Date(
+`${selectedMonth} 1, 2026`
+).getMonth() + 1,
+
+0
+
+).getDate();
+
+const subjectTeacher =
+
+filteredLogs.find(
+(item) =>
+item.subject_name === selectedSubject
+);
+
+
+const teacherName =
+
+subjectTeacher?.teacher_name ??
+"Not Available";
+
+function loadSubjects() {
 
   if (!identity.className) {
     return;
@@ -284,9 +374,15 @@ function loadSubjects() {
       identity.className
     );
 
-  setSubjects(
-    subjectList
-  );
+setSubjects(subjectList);
+
+if(subjectList.length > 0){
+
+setSelectedSubject(
+subjectList[0]
+);
+
+}
 
 }
 
@@ -313,14 +409,16 @@ function loadSubjects() {
       Subject
     </p>
 
-    <select
+<select
       value={selectedSubject}
       onChange={(e) =>
         setSelectedSubject(e.target.value)
       }
       className="rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-white outline-none"
-    >
+>
+
       {subjects.map((subject) => (
+
         <option
           key={subject}
           value={subject}
@@ -328,8 +426,10 @@ function loadSubjects() {
         >
           {subject}
         </option>
+
       ))}
-    </select>
+
+</select>
   </div>
 
 
@@ -481,120 +581,280 @@ function loadSubjects() {
           Assigned Subject Facilitator
         </h2>
 
-        <div className="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-6">
-          <h3 className="text-lg font-bold text-slate-800">
-            Teacher information will appear here.
-          </h3>
+      <div
+className="
+mt-5
+rounded-3xl
+p-8
+"
+style={{
 
-          <p className="mt-2 text-slate-500">
-            Subject teacher details will automatically populate once
-            classroom mapping is completed.
-          </p>
-        </div>
+background:"#ECF0DE",
+
+border:
+"1px solid #BFDBFE"
+
+}}
+>
+
+<h2
+style={{
+fontSize:"26px",
+fontWeight:700,
+color:"#04122F"
+}}
+>
+{teacherName}
+</h2>
+
+<p
+style={{
+fontWeight:600,
+color:"#64748B"
+}}
+>
+{selectedSubject} Subject Facilitator
+</p>
+
+<p>
+
+Academic Session
+2026-2027
+
+</p>
+
+</div>
       </div>
 
-      {/* Calendar */}
+     {/* CONTINUOUS CLASSROOM CALENDAR */}
 
-      <div className="rounded-3xl bg-white p-8 shadow-sm">
-        <h2 className="text-xl font-bold uppercase text-slate-800">
-          Continuous Classroom Diary Calendar
-        </h2>
+<div
+style={{
+background:"white",
+padding:32,
+borderRadius:28,
+marginTop:30,
+}}
+>
 
-        <div className="mt-6 grid grid
-grid-cols-1
-md:grid-cols-2
-xl:grid-cols-4
-gap-5">
-          {filteredLogs.length === 0 ? (
-            <div className="col-span-full rounded-2xl border border-dashed border-gray-300 p-10 text-center">
-              <h3 className="text-2xl font-bold text-slate-800">
-                No Lecture Calendar Available Yet
-              </h3>
+<h2
+style={{
+fontSize:"24px",
+fontWeight:600,
+color:"#04122F",
+marginBottom:12,
+}}
+>
 
-              <p className="mt-4 text-slate-500">
-                Your teachers have not yet submitted classroom lecture
-                logs for the selected month.
-              </p>
+Continuous Classroom Calendar
 
-              <p className="mt-2 text-slate-500">
-                Once available, you will be able to review topics
-                covered, syllabus completion and daily learning logs.
-              </p>
-            </div>
-          ) : (
-            <>
+</h2>
+
+
+<p
+style={{
+marginTop:0,
+color:"#64748B",
+fontSize:"16px",
+fontWeight:500,
+}}
+>
+
+View all lectures conducted during the selected month.
+
+</p>
+
+
+{/* WEEK DAYS */}
+
+<div
+style={{
+display:"grid",
+gridTemplateColumns:"repeat(7,1fr)",
+gap:12,
+marginTop:30,
+marginBottom:15,
+}}
+>
 
 {
 
-filteredLogs.map((log)=>(
+["MON","TUE","WED","THU","FRI","SAT","SUN"]
+
+.map((day)=>(
+
+<div
+key={day}
+style={{
+textAlign:"center",
+fontWeight:800,
+fontSize:18,
+letterSpacing:1,
+color:"#334155",
+textTransform:"uppercase",
+}}
+>
+
+{day}
+
+</div>
+
+))
+
+}
+
+</div>
 
 
 <div
-key={log.id}
-className="rounded-3xl border border-gray-200 bg-slate-50 p-5 shadow-sm"
+style={{
+display:"grid",
+gridTemplateColumns:"repeat(7,1fr)",
+gap:12,
+}}
 >
 
-<div className="text-xs font-bold uppercase text-orange-500">
+{
 
-{log.log_date}
+Array.from({ length: totalDays }).map((_,index)=>{
+
+const day = index + 1;
+
+
+const logsForDay =
+
+filteredLogs.filter((item)=>{
+
+const currentDate =
+new Date(item.log_date);
+
+return(
+
+currentDate.getDate() === day
+
+);
+
+});
+
+
+const visibleTopics =
+logsForDay.slice(0,1);
+
+
+const remainingTopics =
+logsForDay.length - 1;
+
+
+
+if(logsForDay.length===0){
+
+return(
+
+<div
+key={day}
+style={emptyCalendarBox}
+>
+
+<div
+style={{
+fontWeight:700,
+fontSize:18,
+}}
+>
+
+{day}
 
 </div>
 
 
-<div className="mt-3 inline-flex rounded-xl bg-white px-3 py-1 text-xs font-bold">
+<p
+style={{
+marginTop:25,
+fontSize:13,
+color:"#CA8A04",
+fontWeight:600,
+}}
+>
 
-{log.subject_name}
-
-</div>
-
-
-<h3 className="mt-4 text-lg font-bold">
-
-{log.topic_name}
-
-</h3>
-
-
-<p className="mt-3 text-sm text-slate-500">
-
-Teacher :
-{log.teacher_name}
+No Lecture Conducted
 
 </p>
 
+</div>
 
-<p className="mt-2 text-sm">
+);
 
-Page :
+}
 
-{log.page_from}
+
+
+return(
+
+<div
+key={day}
+style={calendarLectureBox}
+>
+
+<div
+style={{
+fontWeight:700,
+fontSize:18,
+marginBottom:12,
+}}
+>
+
+{day}
+
+</div>
+
+
+{
+
+visibleTopics.map((topic)=>(
+
+<div key={topic.id}>
+
+
+<div
+style={{
+
+display:"inline-flex",
+padding:"8px 14px",
+borderRadius:14,
+background:"#DCFCE7",
+color:"#15803D",
+fontWeight:700,
+fontSize:13,
+marginBottom:12,
+
+}}
+>
+
+{topic.topic_name}
+
+</div>
+
+
+<p
+style={{
+marginTop:0,
+marginBottom:14,
+fontSize:13,
+fontWeight:600,
+color:"#475569",
+}}
+>
+
+Pages :
+
+{topic.page_from}
 
 -
 
-{log.page_to}
+{topic.page_to}
 
 </p>
 
-
-<p className="mt-2 text-sm">
-
-Homework :
-
-{log.homework_given
-?
-"Yes"
-:
-"No"
-}
-
-</p>
-
-
-<p className="mt-2 text-sm text-slate-500">
-
-{log.teacher_notes}
-
-</p>
 
 </div>
 
@@ -603,26 +863,375 @@ Homework :
 }
 
 
-</>
-          )}
-        </div>
-      </div>
 
-      {/* Features */}
+{
 
-      <div className="rounded-3xl bg-white p-8 shadow-sm">
-        <h2 className="text-xl font-bold uppercase text-slate-800">
-          Upcoming Classroom Intelligence Features
-        </h2>
+remainingTopics > 0 && (
 
-        <ul className="mt-5 space-y-3 text-slate-600">
-          <li>• Topic Coverage Tracking</li>
-          <li>• Lecture Completion Timeline</li>
-          <li>• Daily Doubt Diary</li>
-          <li>• Syllabus Alignment Tracker</li>
-          <li>• Teacher Learning Insights</li>
-        </ul>
-      </div>
-    </div>
-  );
+
+
+<div
+
+onClick={()=>{
+
+setSelectedDayTopics(
+logsForDay
+);
+
+setShowTopicsModal(
+true
+);
+
+}}
+
+style={{
+
+marginTop:10,
+marginBottom:14,
+padding:"8px 12px",
+borderRadius:12,
+background:"#EFF6FF",
+color:"#2563EB",
+fontSize:13,
+fontWeight:700,
+cursor:"pointer",
+display:"inline-block",
+
+}}
+
+>
+
+View All Topics
+({logsForDay.length})
+→
+
+</div>
+
+)
+
+}
+
+
+
+<div
+style={{
+fontSize:13,
+color:"#475569",
+}}
+>
+
+Homework :
+
+<strong>
+
+{
+
+logsForDay.some(
+item=>item.homework_given
+)
+
+?
+
+"Yes"
+
+:
+
+"No"
+
+}
+
+</strong>
+
+</div>
+
+
+</div>
+
+);
+
+})
+
+}
+
+</div>
+
+</div>
+
+{
+
+showTopicsModal && (
+
+<div
+
+style={{
+
+position:"fixed",
+top:0,
+left:0,
+right:0,
+bottom:0,
+
+background:"rgba(0,0,0,0.45)",
+
+display:"flex",
+justifyContent:"center",
+alignItems:"center",
+
+zIndex:9999,
+
+}}
+
+>
+
+<div
+
+style={{
+
+background:"white",
+width:"700px",
+maxHeight:"80vh",
+
+overflowY:"auto",
+
+borderRadius:30,
+padding:35,
+
+boxShadow:
+"0px 25px 50px rgba(0,0,0,0.2)",
+
+}}
+
+>
+
+<div
+
+style={{
+
+background:"#04122F",
+
+padding:28,
+
+borderRadius:22,
+
+marginBottom:30,
+
+}}
+
+>
+
+<p
+
+style={{
+
+color:"#F59E0B",
+
+fontWeight:700,
+
+letterSpacing:1.5,
+
+marginTop:0,
+
+}}
+
+>
+
+CLASSROOM TEACHING HISTORY
+
+</p>
+
+
+<h1
+
+style={{
+
+color:"white",
+
+marginTop:10,
+
+marginBottom:10,
+
+}}
+
+>
+
+TOPICS COVERED
+
+</h1>
+
+
+<p
+
+style={{
+
+color:"#E5E7EB",
+
+marginBottom:0,
+
+}}
+
+>
+
+{selectedDayTopics.length}
+
+Topics were covered during this lecture day.
+
+</p>
+
+
+</div>
+
+
+{
+
+selectedDayTopics.map((topic,index)=>(
+
+<div
+
+key={topic.id}
+
+style={{
+
+background:"#F8FAFC",
+
+padding:24,
+
+borderRadius:18,
+
+marginBottom:20,
+
+border:"1px solid #E2E8F0",
+
+}}
+
+>
+
+<h3
+style={{
+
+color:"#04122F",
+
+marginBottom:18,
+
+fontSize:22,
+
+}}
+>
+
+{index+1}. {topic.topic_name}
+
+</h3>
+
+
+<p>
+
+Pages :
+
+{topic.page_from}
+
+-
+
+{topic.page_to}
+
+</p>
+
+
+<p>
+
+Homework :
+
+{" "}
+
+{topic.homework_given
+? "Yes"
+: "No"}
+
+</p>
+
+
+<p>
+
+Activity :
+
+{" "}
+
+{topic.activity_conducted
+? "Yes"
+: "No"}
+
+</p>
+
+
+{
+
+topic.teacher_notes && (
+
+<p>
+
+Teacher Notes :
+
+{" "}
+
+{topic.teacher_notes}
+
+</p>
+
+)
+
+}
+
+
+</div>
+
+))
+
+}
+
+
+<button
+
+onClick={()=>{
+
+setShowTopicsModal(false);
+
+}}
+
+style={{
+
+padding:"16px 30px",
+
+background:"#F59E0B",
+
+color:"#04122F",
+
+border:"none",
+
+borderRadius:16,
+
+cursor:"pointer",
+
+fontWeight:700,
+
+fontSize:15,
+
+}}
+
+>
+
+CLOSE TOPICS
+
+</button>
+
+
+</div>
+
+</div>
+
+)
+
+}
+
+</div>
+
+);
+
 }

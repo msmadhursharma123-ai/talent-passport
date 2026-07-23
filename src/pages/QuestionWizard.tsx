@@ -288,22 +288,24 @@ option,
               marginTop: "60px",
             }}
           >
-            <button
+<button
   onClick={() => {
 
     if (step === 0) {
 
-      onBack?.();
+      alert(
+        "Your profile has already been saved. Please complete your questionnaire to continue."
+      );
 
       return;
+
     }
 
     setStep(step - 1);
 
   }}
   style={{
-    padding:
-      "14px 30px",
+    padding: "14px 30px",
     borderRadius: "12px",
     border: "none",
     cursor: "pointer",

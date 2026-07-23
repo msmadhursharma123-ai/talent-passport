@@ -201,3 +201,33 @@ saveTeacherIdentity(
 return identity;
 
 }
+
+export async function doesTeacherProfileExist(
+authUserId:string
+):Promise<boolean>{
+
+const supabase =
+getSupabaseClient();
+
+if(!supabase){
+return false;
+}
+
+const {
+
+data
+
+} = await supabase
+
+.from("teachers_master")
+
+.select("id")
+
+.eq("auth_user_id",authUserId)
+
+.maybeSingle();
+
+
+return !!data;
+
+}

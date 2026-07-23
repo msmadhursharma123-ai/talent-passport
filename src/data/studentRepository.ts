@@ -1293,3 +1293,44 @@ export async function updateStudentSection(
   }
 
 }
+
+export async function doesStudentProfileExist(
+  authUserId: string
+) {
+
+  const supabase = getSupabaseClient();
+
+  if (!supabase) {
+    return false;
+  }
+
+  const { data } = await (supabase as any)
+    .from("students_master")
+    .select("id")
+    .eq("auth_user_id", authUserId)
+    .maybeSingle();
+
+  return !!data;
+
+}
+
+
+export async function isQuestionnaireCompleted(
+  studentUuid: string
+) {
+
+  const supabase = getSupabaseClient();
+
+  if (!supabase) {
+    return false;
+  }
+
+  const { data } = await (supabase as any)
+    .from("student_assessments")
+    .select("id")
+    .eq("student_id", studentUuid)
+    .maybeSingle();
+
+  return !!data;
+
+}

@@ -104,9 +104,23 @@ assignment.isActive,
 },
 ]);
 
+
+
   if (error) {
-    throw error;
-  }
+
+if (
+error.code === "23505"
+){
+
+throw new Error(
+"This classroom has already been assigned to another teacher."
+);
+
+}
+
+throw error;
+
+}
 
   return true;
 }
@@ -126,6 +140,49 @@ export async function updateTeacherAssignment(
   if (!supabase) {
     throw new Error("Supabase not configured.");
   }
+
+const { data: existingAssignment } = await supabase
+.from(TABLE_NAME)
+.select("id")
+.eq(
+    "school_uuid",
+    assignment.schoolUuid
+)
+.eq(
+    "academic_year",
+    assignment.academicYear
+)
+.eq(
+    "class_name",
+    assignment.className
+)
+.eq(
+    "section_name",
+    assignment.sectionName
+)
+.eq(
+    "subject_name",
+    assignment.subjectName
+)
+.maybeSingle();
+
+
+if (existingAssignment) {
+
+throw new Error(
+
+`A teacher profile already exists for:
+
+School
+Class ${assignment.className}
+Section ${assignment.sectionName}
+Subject ${assignment.subjectName}
+
+Please select another classroom assignment.`
+
+);
+
+}
 
   const { error } = await supabase
     .from(TABLE_NAME)

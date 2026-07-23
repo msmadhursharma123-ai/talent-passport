@@ -60,12 +60,39 @@ export default function StudentRegistrationAuth({
 
 if (!result.success) {
 
-  alert(
-    result.error ??
-    "Unable to create account."
-  );
+const errorMessage =
+result.error ?? "";
 
-  return;
+if (
+
+errorMessage
+.toLowerCase()
+.includes("already")
+
+||
+
+errorMessage
+.toLowerCase()
+.includes("exists")
+
+){
+
+alert(
+
+"This email is already registered.\n\nPlease login from the Existing User Login screen."
+
+);
+
+return;
+
+}
+
+alert(
+result.error ??
+"Unable to create account."
+);
+
+return;
 
 }
 

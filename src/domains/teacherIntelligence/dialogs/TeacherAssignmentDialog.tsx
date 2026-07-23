@@ -76,19 +76,35 @@ export default function TeacherAssignmentDialog({
     return null;
   }
 
-  const handleSave = async () => {
-    await onSave({
-      teacherUuid,
-      schoolUuid,
-      className,
-      sectionName,
-      subjectName,
-      academicYear,
-      isActive,
-    });
+const handleSave = async () => {
 
-    onClose();
-  };
+try{
+
+await onSave({
+
+teacherUuid,
+schoolUuid,
+className,
+sectionName,
+subjectName,
+academicYear,
+isActive,
+
+});
+
+onClose();
+
+}
+
+catch(error:any){
+
+alert(
+error.message
+);
+
+}
+
+};
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

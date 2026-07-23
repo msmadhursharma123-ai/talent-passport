@@ -46,6 +46,15 @@ import {
 
 } from "./identityService";
 
+import {
+
+doesStudentProfileExist,
+isQuestionnaireCompleted
+
+}
+
+from "../data/studentRepository";
+
 export type AuthRole =
     | "student"
     | "teacher"

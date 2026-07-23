@@ -5,6 +5,11 @@ import {
   StudentFeedbackRow,
 } from "../types/TeacherFeedbackModels";
 
+import {
+getTeacherAssignmentsByTeacher,
+}
+from "./TeacherAssignmentRepository";
+
 function normalizeText(
 text:string
 ){
@@ -244,7 +249,11 @@ const dailyLogUuid =
 
 classroomFeedback[0]?.daily_log_uuid;
 
+const className =
+classroomFeedback[0]?.class_name;
 
+const sectionName =
+classroomFeedback[0]?.section_name;
 
 const teacherConcepts:string[] = [];
 
@@ -442,13 +451,105 @@ studentsRequiringAttention
 
 /****************************************
 
+TOTAL STUDENTS
+
+****************************************/
+
+let totalStudentsInClass = 0;
+
+let pendingStudents:any[] = [];
+
+if(
+
+className &&
+sectionName
+
+){
+
+const {
+
+data:allStudents
+
+} = await (supabase as any)
+
+.from("students_master")
+
+.select(
+"student_uuid,student_name"
+)
+
+.eq(
+"class_name",
+className
+)
+
+.eq(
+"section_name",
+sectionName
+);
+
+
+totalStudentsInClass =
+
+allStudents?.length ?? 0;
+
+
+/****************************************
+
+PENDING STUDENTS
+
+****************************************/
+
+
+const submittedStudentUuids =
+
+classroomFeedback.map(
+
+(item)=>item.student_uuid
+
+);
+
+
+pendingStudents =
+
+(allStudents ?? []).filter(
+
+(student:any)=>{
+
+return !submittedStudentUuids.includes(
+
+student.student_uuid
+
+);
+
+}
+
+);
+
+console.log(
+"PENDING STUDENTS"
+);
+
+console.table(
+pendingStudents
+);
+
+}
+
+
+const pendingStudentsCount =
+
+pendingStudents.length;
+
+/****************************************
+
 CLASSROOM HEALTH SCORE
 
 ****************************************/
 
 const totalStudents =
 
-classroomFeedback.length;
+totalStudentsInClass;
 
 
 const healthScore =
@@ -574,6 +675,15 @@ commonConcepts,
 studentsRequiringAttention,
 
 teachingRecommendation,
+
+
+// NEW
+
+totalStudents,
+
+pendingStudentsCount,
+
+pendingStudents,
 
 };
 
@@ -705,5 +815,247 @@ export async function getLectureFeedbackRadar(
   return await buildFeedbackRadar(
     lectureFeedback
   );
+
+}
+
+export async function getStudentsAtRisk(
+
+className:string,
+sectionName:string
+
+){
+
+const supabase =
+getSupabaseClient();
+
+const {
+
+data:feedbacks
+
+} = await (supabase as any)
+
+.from("student_daily_feedback")
+
+.select("*")
+
+.eq(
+"class_name",
+className
+)
+
+.eq(
+"section_name",
+sectionName
+);
+
+console.log("STUDENTS AT RISK FEEDBACKS");
+
+console.table(feedbacks);
+
+if(!feedbacks){
+
+return {
+
+veryCritical:[],
+critical:[],
+moderate:[],
+
+};
+
+}
+
+const groupedStudents =
+new Map();
+
+feedbacks.forEach((item:any)=>{
+
+if(
+
+!groupedStudents.has(
+item.student_uuid
+)
+
+){
+
+groupedStudents.set(
+
+item.student_uuid,
+
+[]
+
+);
+
+}
+
+groupedStudents
+.get(item.student_uuid)
+.push(item);
+
+});
+
+console.log(
+"GROUPED STUDENTS"
+);
+
+console.log(
+groupedStudents
+);
+
+const veryCritical:any[] = [];
+
+const critical:any[] = [];
+
+const moderate:any[] = [];
+
+
+
+for(
+
+const [
+
+studentUuid,
+responses
+
+]
+
+of groupedStudents
+
+){
+
+console.log(
+"CURRENT STUDENT UUID"
+);
+
+console.log(
+studentUuid
+);
+
+console.log(
+"ALL RESPONSES"
+);
+
+console.table(
+responses
+);
+
+responses.sort(
+
+(a:any,b:any)=>
+
+new Date(b.created_at).getTime()
+
+-
+
+new Date(a.created_at).getTime()
+
+);
+
+const lastThree =
+
+responses
+.slice(0,3)
+.map(
+(item:any)=>
+item.understanding_level
+);
+
+
+if(
+
+lastThree.length < 3
+
+){
+
+continue;
+
+}
+
+const studentName =
+
+responses[0].student_name ??
+"Student";
+
+
+
+const didntCount =
+
+lastThree.filter(
+
+(level:string)=>
+
+level ===
+"I didn't understand."
+
+).length;
+
+
+
+const partialCount =
+
+lastThree.filter(
+
+(level:string)=>
+
+level ===
+"I partially understood."
+
+).length;
+
+
+
+if(
+
+didntCount === 3
+
+){
+
+veryCritical.push(
+
+studentName
+
+);
+
+}
+
+
+else if(
+
+didntCount === 2 &&
+partialCount === 1
+
+){
+
+critical.push(
+
+studentName
+
+);
+
+}
+
+
+else if(
+
+partialCount === 3
+
+){
+
+moderate.push(
+
+studentName
+
+);
+
+}
+
+}
+
+return{
+
+veryCritical,
+critical,
+moderate,
+
+};
 
 }

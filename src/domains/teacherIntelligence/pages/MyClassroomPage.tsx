@@ -19,7 +19,13 @@ import type {
 TeacherDailyLog,
 } from "../types/TeacherDailyLog";
 
+import {
 
+getStudentsAtRisk
+
+}
+
+from "../repository/TeacherFeedbackAnalyticsRepository";
 
 export default function MyClassroomPage() {
 
@@ -44,12 +50,60 @@ useState("");
 const [selectedSubject,setSelectedSubject] =
 useState("");
 
+const [selectedMonth,setSelectedMonth] =
+useState("July 2026");
+
 const [selectedAssignment,
 setSelectedAssignment] =
 useState<TeacherAssignment | null>(null);
 
 const [dailyLogs,setDailyLogs] =
 useState<TeacherDailyLog[]>([]);
+
+const [
+
+studentsAtRisk,
+
+setStudentsAtRisk
+
+] = useState<{
+
+veryCritical:string[];
+
+critical:string[];
+
+moderate:string[];
+
+}>({
+
+veryCritical:[],
+
+critical:[],
+
+moderate:[],
+
+});
+
+const [selectedDayTopics,setSelectedDayTopics] =
+useState<TeacherDailyLog[]>([]);
+
+const [showTopicsModal,setShowTopicsModal] =
+useState(false);
+
+const academicMonths = [
+
+"July 2026",
+"August 2026",
+"September 2026",
+"October 2026",
+"November 2026",
+"December 2026",
+"January 2027",
+"February 2027",
+"March 2027",
+"April 2027",
+
+];
 
 const sortedLogs =
 
@@ -65,6 +119,21 @@ const latestLog =
 sortedLogs[
 sortedLogs.length - 1
 ];
+
+const daysInMonthMap = {
+
+"July 2026":31,
+"August 2026":31,
+"September 2026":30,
+"October 2026":31,
+"November 2026":30,
+"December 2026":31,
+"January 2027":31,
+"February 2027":28,
+"March 2027":31,
+"April 2027":30,
+
+};
 
 useEffect(()=>{
 
@@ -362,6 +431,20 @@ assignment.id
 
 setDailyLogs(logs);
 
+const riskData =
+
+await getStudentsAtRisk(
+
+selectedClass,
+selectedSection
+
+);
+
+setStudentsAtRisk(
+riskData
+);
+
+
 } else {
 
 setDailyLogs([]);
@@ -396,8 +479,39 @@ value={item}
 
 {/* MONTH */}
 
-<select style={dropdownStyle}>
-<option>July</option>
+<select
+
+style={dropdownStyle}
+
+value={selectedMonth}
+
+onChange={(e)=>{
+
+setSelectedMonth(
+e.target.value
+);
+
+}}
+
+>
+
+{
+
+academicMonths.map((month)=>(
+
+<option
+key={month}
+value={month}
+>
+
+{month}
+
+</option>
+
+))
+
+}
+
 </select>
 
 </div>
@@ -596,25 +710,62 @@ gap:12,
 
 {
 
-Array.from({length:31}).map((_,index)=>{
+Array.from({
+
+length:
+
+daysInMonthMap[
+selectedMonth as keyof typeof daysInMonthMap
+]
+
+}).map((_,index)=>{
 
 const day = index + 1;
 
-const log = dailyLogs.find((item)=>{
+
+const logsForDay =
+
+dailyLogs.filter((item)=>{
+
+const currentDate =
+new Date(item.logDate);
+
+const selectedMonthName =
+selectedMonth.split(" ")[0];
+
+const selectedYear =
+selectedMonth.split(" ")[1];
 
 
-return (
+return(
 
-new Date(item.logDate).getDate()
+currentDate.getDate() === day &&
 
-=== day
+currentDate.toLocaleString(
+"default",
+{month:"long"}
+) === selectedMonthName &&
+
+String(
+currentDate.getFullYear()
+) === selectedYear
 
 );
 
 });
 
 
-if(!log){
+const visibleTopics =
+
+logsForDay.slice(0,1);
+
+
+const remainingTopics =
+
+logsForDay.length - 1;
+
+
+if(logsForDay.length === 0){
 
 return(
 
@@ -644,7 +795,7 @@ fontWeight:600,
 }}
 >
 
-No Topic Published
+No Lecture Conducted
 
 </p>
 
@@ -655,7 +806,6 @@ No Topic Published
 }
 
 
-
 return(
 
 <div
@@ -664,43 +814,41 @@ style={{
 
 ...calendarLectureBox,
 
-background:
-
-log.id === latestLog?.id
-
-? "#FFF7ED"
-
-: "#F7FFF8",
+background:"#F7FFF8",
 
 }}
 >
 
-<div
-style={{
-display:"flex",
-justifyContent:"space-between",
-alignItems:"center",
-}}
->
 
 <div
 style={{
+
 fontWeight:700,
+
 fontSize:18,
+
+marginBottom:12,
+
 }}
 >
+
 {day}
-</div>
 
 </div>
 
+
+{
+
+visibleTopics.map((topic)=>(
+
+<div
+key={topic.id}
+>
 
 <div
 style={{
 
 display:"inline-flex",
-
-alignItems:"center",
 
 padding:"8px 14px",
 
@@ -708,13 +856,13 @@ borderRadius:14,
 
 background:
 
-log.id === latestLog?.id
+topic.id === latestLog?.id
 ? "#FFF7ED"
 : "#DCFCE7",
 
 color:
 
-log.id === latestLog?.id
+topic.id === latestLog?.id
 ? "#EA580C"
 : "#15803D",
 
@@ -722,17 +870,12 @@ fontWeight:700,
 
 fontSize:13,
 
-marginTop:16,
-
 marginBottom:12,
-
-boxShadow:
-"0px 2px 6px rgba(0,0,0,0.04)",
 
 }}
 >
 
-{log.topicName}
+{topic.topicName}
 
 </div>
 
@@ -740,9 +883,9 @@ boxShadow:
 <p
 style={{
 
-marginTop:5,
+marginTop:0,
 
-marginBottom:10,
+marginBottom:14,
 
 fontSize:13,
 
@@ -754,11 +897,66 @@ color:"#475569",
 >
 
 Pages :
+
 {" "}
 
-{log.pageFrom} - {log.pageTo}
+{topic.pageFrom}
+
+-
+
+{topic.pageTo}
 
 </p>
+
+
+</div>
+
+))
+
+}
+
+
+
+{
+
+remainingTopics > 0 && (
+
+<div
+
+onClick={()=>{
+
+setSelectedDayTopics(logsForDay);
+
+setShowTopicsModal(true);
+
+}}
+
+style={{
+
+marginTop:10,
+marginBottom:14,
+padding:"8px 12px",
+borderRadius:12,
+background:"#EFF6FF",
+color:"#2563EB",
+fontSize:13,
+fontWeight:700,
+display:"inline-block",
+cursor:"pointer",
+
+}}
+
+>
+
+View All Topics ({logsForDay.length}) →
+
+</div>
+
+)
+
+}
+
+
 
 <div
 style={{
@@ -767,7 +965,7 @@ display:"flex",
 
 justifyContent:"space-between",
 
-marginTop:16,
+marginTop:14,
 
 fontSize:13,
 
@@ -779,10 +977,22 @@ color:"#475569",
 <div>
 
 Homework :
+
 {" "}
+
 <strong>
 
-{log.homeworkGiven ? "Yes" : "No"}
+{
+
+logsForDay.some(
+item=>item.homeworkGiven
+)
+
+? "Yes"
+
+: "No"
+
+}
 
 </strong>
 
@@ -792,14 +1002,27 @@ Homework :
 <div>
 
 Activity :
+
 {" "}
+
 <strong>
 
-{log.activityConducted ? "Yes" : "No"}
+{
+
+logsForDay.some(
+item=>item.activityConducted
+)
+
+? "Yes"
+
+: "No"
+
+}
 
 </strong>
 
 </div>
+
 
 </div>
 
@@ -816,6 +1039,279 @@ Activity :
 
 </div>
     
+{
+
+showTopicsModal && (
+
+<div
+
+style={{
+
+position:"fixed",
+top:0,
+left:0,
+right:0,
+bottom:0,
+
+background:"rgba(0,0,0,0.45)",
+
+display:"flex",
+justifyContent:"center",
+alignItems:"center",
+
+zIndex:9999,
+
+}}
+
+>
+
+<div
+
+style={{
+
+background:"white",
+width:"700px",
+maxHeight:"80vh",
+
+overflowY:"auto",
+
+borderRadius:30,
+padding:35,
+
+boxShadow:
+"0px 25px 50px rgba(0,0,0,0.2)",
+
+}}
+
+>
+
+<div
+
+style={{
+
+background:"#04122F",
+
+padding:28,
+
+borderRadius:22,
+
+marginBottom:30,
+
+}}
+
+>
+
+<p
+
+style={{
+
+color:"#F59E0B",
+
+fontWeight:700,
+
+letterSpacing:1.5,
+
+marginTop:0,
+
+}}
+
+>
+
+CLASSROOM TEACHING HISTORY
+
+</p>
+
+
+<h1
+
+style={{
+
+color:"white",
+
+marginTop:10,
+
+marginBottom:10,
+
+}}
+
+>
+
+TOPICS TAUGHT TODAY
+
+</h1>
+
+
+<p
+
+style={{
+
+color:"#E5E7EB",
+
+marginBottom:0,
+
+}}
+
+>
+
+{selectedDayTopics.length}
+
+Topics were covered during this lecture day.
+
+</p>
+
+
+</div>
+
+
+{
+
+selectedDayTopics.map((topic,index)=>(
+
+<div
+
+key={topic.id}
+
+style={{
+
+background:"#F8FAFC",
+
+padding:24,
+
+borderRadius:18,
+
+marginBottom:20,
+
+border:"1px solid #E2E8F0",
+
+}}
+
+>
+
+<h3
+style={{
+
+color:"#04122F",
+
+marginBottom:18,
+
+fontSize:22,
+
+}}
+>
+
+{index+1}. {topic.topicName}
+
+</h3>
+
+
+<p>
+
+Pages :
+
+{topic.pageFrom}
+
+-
+
+{topic.pageTo}
+
+</p>
+
+
+<p>
+
+Homework :
+
+{" "}
+
+{topic.homeworkGiven
+? "Yes"
+: "No"}
+
+</p>
+
+
+<p>
+
+Activity :
+
+{" "}
+
+{topic.activityConducted
+? "Yes"
+: "No"}
+
+</p>
+
+
+{
+
+topic.teacherNotes && (
+
+<p>
+
+Teacher Notes :
+
+{" "}
+
+{topic.teacherNotes}
+
+</p>
+
+)
+
+}
+
+
+</div>
+
+))
+
+}
+
+
+<button
+
+onClick={()=>{
+
+setShowTopicsModal(false);
+
+}}
+
+style={{
+
+padding:"16px 30px",
+
+background:"#F59E0B",
+
+color:"#04122F",
+
+border:"none",
+
+borderRadius:16,
+
+cursor:"pointer",
+
+fontWeight:700,
+
+fontSize:15,
+
+}}
+
+>
+
+CLOSE TOPICS
+
+</button>
+
+
+</div>
+
+</div>
+
+)
+
+}
+
 {/* MONTHLY SUMMARY */}
 
 <div
@@ -890,9 +1386,167 @@ value={String(dailyLogs.length)}
 
 </div>
 
+{/* STUDENTS AT RISK */}
+
+<div
+
+style={{
+
+...cardStyle,
+
+marginTop:30,
+
+}}
+
+>
+
+<h2>
+
+Students At Risk
+
+</h2>
+
+<p
+style={{
+color:"#64748B",
+marginBottom:24,
+}}
+>
+
+Identify students requiring immediate academic support.
+
+</p>
+
+
+
+<div
+
+style={{
+
+display:"grid",
+
+gridTemplateColumns:
+"repeat(3,1fr)",
+
+gap:20,
+
+}}
+
+>
+
+<RiskCard
+
+title="Very Critical"
+
+count={
+studentsAtRisk.
+veryCritical.length
+}
+
+students={
+studentsAtRisk.
+veryCritical
+}
+
+background="#FEF2F2"
+
+/>
+
+
+<RiskCard
+
+title="Critical"
+
+count={
+studentsAtRisk.
+critical.length
+}
+
+students={
+studentsAtRisk.
+critical
+}
+
+background="#FFF7ED"
+
+/>
+
+
+<RiskCard
+
+title="Moderate"
+
+count={
+studentsAtRisk.
+moderate.length
+}
+
+students={
+studentsAtRisk.
+moderate
+}
+
+background="#FEFCE8"
+
+/>
+
+</div>
+
+<div
+style={{
+marginTop:30,
+display:"grid",
+gridTemplateColumns:"repeat(3,1fr)",
+gap:20,
+}}
+>
+
+<div>
+<h3 style={{marginBottom:8}}>
+Very Critical
+</h3>
+
+<p style={{color:"#64748B"}}>
+3 consecutive "I didn't understand."
+responses.
+</p>
+</div>
+
+
+<div>
+<h3 style={{marginBottom:8}}>
+Critical
+</h3>
+
+<p style={{color:"#64748B"}}>
+2 "I didn't understand." and
+1 "I partially understood."
+response.
+</p>
+</div>
+
+
+<div>
+<h3 style={{marginBottom:8}}>
+Moderate
+</h3>
+
+<p style={{color:"#64748B"}}>
+3 consecutive "I partially understood."
+responses.
+</p>
+</div>
+
+</div>
+
+</div>
+
+
+
     </div>
   );
 }
+
 
 /* ------------------------------------------------ */
 
@@ -961,6 +1615,114 @@ color:"#475569",
 );
 
 }
+
+
+function RiskCard(props:any){
+
+return(
+
+<div
+
+style={{
+
+background:
+props.background,
+
+borderRadius:20,
+
+minHeight:220,
+
+overflowY:"auto",
+
+}}
+
+>
+
+<div
+style={{
+
+padding:"16px 18px",
+
+background:"rgba(255,255,255,0.55)",
+
+borderTopLeftRadius:20,
+
+borderTopRightRadius:20,
+
+borderBottom:"1px solid rgba(0,0,0,0.08)",
+
+}}
+>
+
+<h3
+style={{
+margin:0,
+}}
+>
+{props.title}
+</h3>
+
+<p
+style={{
+marginTop:6,
+marginBottom:0,
+fontWeight:700,
+}}
+>
+{props.count} Students
+</p>
+
+</div>
+
+
+<div
+style={{
+padding:18,
+}}
+>
+
+{
+
+props.students.map(
+
+(name:string)=>(
+
+<div
+
+key={name}
+
+style={{
+
+padding:"10px 14px",
+
+background:"white",
+
+borderRadius:12,
+
+marginBottom:10,
+
+fontWeight:600,
+
+}}
+
+>
+
+{name}
+
+</div>
+
+))
+
+}
+
+</div>
+
+</div>
+
+);
+
+}
+
 
 /* ------------------------------------------------ */
 

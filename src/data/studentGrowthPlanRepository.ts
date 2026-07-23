@@ -210,14 +210,6 @@ for (const log of logs ?? []) {
     continue;
 
   }
-console.log("ASSIGNMENT");
-console.log(assignment);
-
-console.log("CURRENT ASSIGNMENT");
-console.log(assignment);
-
-console.log("TEACHER UUID");
-console.log(assignment.teacher_uuid);
 
 
 
@@ -232,17 +224,6 @@ const {
     assignment.teacher_uuid
   );
 
-console.log("TEACHER QUERY RESULT");
-console.log(teacher);
-
-console.log("TEACHER QUERY ERROR");
-console.log(teacherError);
-
-console.log("TEACHER DATA");
-console.log(teacher);
-
-console.log("TEACHER ERROR");
-console.log(teacherError);
 
 enrichedLogs.push({
 
@@ -255,8 +236,6 @@ teacher?.[0]?.full_name ??
 });
 
 }
-console.log("LECTURE LOGS");
-console.log(logs);
 
 return enrichedLogs;
 

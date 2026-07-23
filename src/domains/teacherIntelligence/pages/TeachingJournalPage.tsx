@@ -28,6 +28,11 @@ getMonthlyComprehensionData,
 
 from "../repository/TeachingJournalRepository";
 
+import {
+getOverallClassroomComparison,
+}
+from "../repository/TeachingJournalRepository";
+
 export default function TeachingJournalPage() {
 
     const [assignments,setAssignments] =
@@ -59,11 +64,36 @@ useState("July");
 
 const [
 
+overallClassroomComparison,
+
+setOverallClassroomComparison,
+
+] = useState<any[]>([]);
+
+const [
+
 monthlyFeedback,
 
 setMonthlyFeedback
 
 ] = useState<any[]>([]);
+
+const loadOverallClassroomComparison =
+async ()=>{
+
+const data =
+
+await getOverallClassroomComparison(
+
+selectedMonth.split(" ")[0]
+
+);
+
+setOverallClassroomComparison(
+data
+);
+
+};
 
 useEffect(()=>{
 
@@ -71,6 +101,117 @@ loadAssignments();
 
 },[]);
 
+
+useEffect(()=>{
+
+loadOverallClassroomComparison();
+
+},[selectedMonth]);
+
+useEffect(()=>{
+
+loadSelectedClassroomData();
+
+},[
+
+selectedClass,
+selectedSection,
+selectedSubject,
+selectedMonth,
+
+]);
+
+const loadSelectedClassroomData =
+
+async ()=>{
+
+
+if(
+
+!selectedClass ||
+!selectedSection ||
+!selectedSubject
+
+){
+
+return;
+
+}
+
+
+const assignment =
+
+assignments.find(
+item=>
+
+item.className ===
+selectedClass &&
+
+item.sectionName ===
+selectedSection &&
+
+item.subjectName ===
+selectedSubject
+
+);
+
+
+if(!assignment){
+
+return;
+
+}
+
+
+const logs =
+
+await getTeacherDailyLogsByAssignment(
+assignment.id
+);
+
+
+const filteredLogs =
+
+logs.filter((log)=>{
+
+const monthYear =
+
+new Date(log.logDate)
+.toLocaleString(
+"default",
+{
+month:"long",
+year:"numeric",
+}
+);
+
+return monthYear === selectedMonth;
+
+});
+
+
+setDailyLogs(
+filteredLogs
+);
+
+
+const feedback =
+
+await getMonthlyComprehensionData(
+
+filteredLogs.map(
+(log)=>log.id!
+)
+
+);
+
+
+setMonthlyFeedback(
+feedback
+);
+
+
+};
 
 async function loadAssignments(){
 
@@ -689,30 +830,49 @@ value
 if(assignment && assignment.id){
 
 const logs =
-
 await getTeacherDailyLogsByAssignment(
 assignment.id
 );
 
-setDailyLogs(logs);
+
+// MONTH FILTER
+
+const filteredLogs =
+
+logs.filter((log)=>{
+
+const monthYear =
+
+new Date(log.logDate)
+.toLocaleString(
+"default",
+{
+month:"long",
+year:"numeric",
+}
+);
+
+return monthYear === selectedMonth;
+
+});
+
+
+setDailyLogs(filteredLogs);
+
 
 const feedback =
 
 await getMonthlyComprehensionData(
 
-logs
-
-.filter(log=>log.id)
-
-.map(log=>log.id!)
+filteredLogs.map(
+(log)=>log.id!
+)
 
 );
 
 
 setMonthlyFeedback(
-
 feedback
-
 );
 
 }else{
@@ -1071,6 +1231,174 @@ Calendar reflects classroom comprehension based on student feedback for the sele
 
 </div>
 
+{/* BEYOND THE CLASSROOM */}
+
+<div
+style={{
+...cardStyle,
+marginTop:30,
+}}
+>
+
+<p
+style={{
+margin:0,
+fontSize:13,
+fontWeight:700,
+letterSpacing:2,
+color:"#F59E0B",
+}}
+>
+
+BEYOND THE CLASSROOM
+
+</p>
+
+
+<h2
+style={{
+marginTop:12,
+marginBottom:10,
+}}
+>
+
+Overall Classroom Performance Comparison
+
+</h2>
+
+
+<p
+style={{
+marginBottom:25,
+color:"#64748B",
+}}
+>
+
+Compare all classrooms taught by you during the selected month.
+
+</p>
+
+
+{/* HEADER ROW */}
+
+<div
+style={{
+display:"grid",
+gridTemplateColumns:
+
+`220px repeat(${overallClassroomComparison.length},1fr)`,
+
+gap:4,
+}}
+>
+
+<div />
+
+{
+
+overallClassroomComparison.map(
+(item:any)=>(
+
+<div
+key={item.classroom}
+style={{
+background:"#04122F",
+padding:18,
+borderRadius:14,
+color:"white",
+fontWeight:700,
+textAlign:"center",
+}}
+>
+
+{item.classroom}
+
+</div>
+
+))
+
+}
+
+</div>
+
+
+<ComparisonRow
+
+title="Average Student Understanding %"
+
+data={
+
+overallClassroomComparison.map(
+
+(item:any)=>
+
+`${item.averageHealthScore}%`
+
+)
+
+}
+
+/>
+
+
+<ComparisonRow
+
+title="Average Doubt %"
+
+data={
+
+overallClassroomComparison.map(
+
+(item:any)=>
+
+`${item.averageDoubtPercentage}%`
+
+)
+
+}
+
+/>
+
+
+<ComparisonRow
+
+title="Average Feedback %"
+
+data={
+
+overallClassroomComparison.map(
+
+(item:any)=>
+
+`${item.averageFeedbackPercentage}%`
+
+)
+
+}
+
+/>
+
+
+<ComparisonRow
+
+title="Low Understanding Student %"
+
+data={
+
+overallClassroomComparison.map(
+
+(item:any)=>
+
+String(item.studentsAtRisk)
+
+)
+
+}
+
+/>
+
+</div>
+
    </div>
   );
 }
@@ -1250,3 +1578,64 @@ border:
 "1px solid rgba(0,0,0,0.04)",
 
 } as const;
+
+function ComparisonRow(props:any){
+
+return(
+
+<div
+style={{
+display:"grid",
+gridTemplateColumns:
+
+`220px repeat(${props.data.length},1fr)`,
+
+gap:4,
+marginTop:4,
+}}
+>
+
+<div
+style={{
+background:"#FFF7ED",
+padding:18,
+borderRadius:14,
+fontWeight:700,
+}}
+>
+
+{props.title}
+
+</div>
+
+
+{
+
+props.data.map(
+
+(item:string,index:number)=>(
+
+<div
+key={index}
+style={{
+background:"#F8FAFC",
+padding:18,
+borderRadius:14,
+fontWeight:700,
+textAlign:"center",
+}}
+>
+
+{item}
+
+</div>
+
+))
+
+}
+
+</div>
+
+);
+
+}

@@ -260,7 +260,16 @@ setParentEmail(email);
       >
 
         <button
-          onClick={onBack}
+
+onClick={() => {
+
+alert(
+
+"Your account has already been created. Please complete your student profile to continue."
+
+);
+
+}}
           style={{
             background: "transparent",
             border: "none",

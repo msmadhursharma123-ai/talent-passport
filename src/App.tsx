@@ -58,6 +58,21 @@ import {
   signOut
 } from "./services/authenticationService";
 
+import {
+    getCurrentTeacher,
+} from "./services/identityService";
+
+import {
+
+doesStudentProfileExist,
+isQuestionnaireCompleted
+
+} from "./data/studentRepository";
+
+import {
+getTeacherAssignmentsByTeacher,
+} from "./domains/teacherIntelligence/repository/TeacherAssignmentRepository";
+
 import TeacherRegistrationAuth
 from "./pages/teacher/auth/TeacherRegistrationAuth";
 
@@ -84,6 +99,10 @@ from "./domains/school/pages/SchoolDashboard";
 
 import SchoolResetPassword
 from "./domains/school/pages/SchoolResetPassword";
+
+import {
+doesTeacherProfileExist
+} from "./data/teacherRepository";
 
 const DEMO_ITEMS: Submission[] = [
   {
@@ -135,6 +154,135 @@ useState<"new" | "existing" | null>(null);
   useState<string>("identity");
 
 const adminIdentity = getCurrentAdmin();
+
+const routeTeacherAfterLogin = async () => {
+
+const teacher =
+getCurrentTeacher();
+
+const user =
+await getCurrentUser();
+
+if (!user) {
+return;
+}
+
+
+const profileExists =
+await doesTeacherProfileExist(
+user.id
+);
+
+if (!profileExists) {
+
+setTeacherStage("profile");
+setActiveTab("teacher");
+
+return;
+
+}
+
+
+if (!teacher) {
+
+await signOut();
+
+alert(
+"Unable to restore your teacher session. Please login again."
+);
+
+setTeacherStage("login");
+setActiveTab("teacher");
+
+return;
+
+}
+
+
+const assignments =
+await getTeacherAssignmentsByTeacher(
+
+teacher.teacherUuid
+
+);
+
+
+if (!assignments.length) {
+
+setTeacherStage("academic");
+setActiveTab("teacher");
+
+return;
+
+}
+
+
+setTeacherStage("portal");
+setActiveTab("teacher");
+
+};
+
+const routeStudentAfterLogin =
+async () => {
+
+const user =
+await getCurrentUser();
+
+if (!user) {
+return;
+}
+
+const profileExists =
+await doesStudentProfileExist(
+user.id
+);
+
+if (!profileExists) {
+
+setActiveTab(
+"student-profile"
+);
+
+return;
+
+}
+
+const identity =
+await getCurrentIdentity();
+
+if (!identity) {
+
+setActiveTab(
+"student-profile"
+);
+
+return;
+
+}
+
+const studentIdentity =
+identity as any;
+
+const questionnaireCompleted =
+await isQuestionnaireCompleted(
+studentIdentity.studentUuid
+);
+
+if (!questionnaireCompleted) {
+
+setActiveTab(
+"wizard"
+);
+
+return;
+
+}
+
+setActiveTab(
+"passport"
+);
+
+};
 
 const [teacherStage, setTeacherStage] =
 useState<
@@ -220,26 +368,35 @@ if (user) {
 
   switch (identity.role) {
 
-  case "student": {
+case "student": {
 
-  setSelectedRole("student");
-  setUserType("existing");
-  setActiveTab("passport");
-  break;
+setSelectedRole(
+"student"
+);
 
-}
+setUserType(
+"existing"
+);
+
+await routeStudentAfterLogin();
+
+break;
+
+} 
 
 case "teacher": {
 
-    setSelectedRole("teacher");
+setSelectedRole(
+"teacher"
+);
 
-    setUserType("existing");
+setUserType(
+"existing"
+);
 
-    setTeacherStage("portal");
+await routeTeacherAfterLogin();
 
-    setActiveTab("teacher");
-
-    break;
+break;
 
 }
 
@@ -602,22 +759,24 @@ if (selectedRole === "teacher") {
 {activeTab ===
   "existing-login" && (
   <ExistingUserLogin
-    onBack={() =>
-      setActiveTab(
-        "user-type"
-      )
-    }
-    onSuccess={() =>
-      setActiveTab(
-        "passport"
-      )
-    }
-    onRegister={() =>
-      setActiveTab(
-        "student-profile"
-      )
-    }
-  />
+onBack={() =>
+setActiveTab(
+"user-type"
+)
+}
+
+onSuccess={async () => {
+
+await routeStudentAfterLogin();
+
+}}
+
+onRegister={() =>
+setActiveTab(
+"student-profile"
+)
+}
+/>
 )}
 
 {activeTab ===
@@ -903,9 +1062,13 @@ setActiveTab("identity");
 setTeacherStage("academic")
 }
 
-                        onBack={() =>
-                            setTeacherStage("register")
-                        }
+                     onBack={() => {
+
+alert(
+"Your teacher account has already been created. Please complete your profile to continue."
+);
+
+}}
 
                     />
 
@@ -921,36 +1084,40 @@ onContinue={() =>
 setTeacherStage("portal")
 }
 
-onBack={() =>
-setTeacherStage("profile")
-}
+onBack={() => {
+
+alert(
+"Your teacher profile has already been saved. Please complete your academic questionnaire to continue."
+);
+
+}}
 
 />
 
 );
 
-            case "login":
+         case "login":
 
-                return (
+    return (
 
-                    <TeacherExistingLogin
+        <TeacherExistingLogin
 
-                        onSuccess={() =>
-                            setTeacherStage("portal")
-                        }
+           onSuccess={async () => {
 
-                        onRegister={() =>
-                            setTeacherStage("register")
-                        }
+await routeTeacherAfterLogin();
 
-                        onBack={() =>
-                            setActiveTab("user-type")
-                        }
+}}
+            onRegister={() =>
+                setTeacherStage("register")
+            }
 
-                    />
+            onBack={() =>
+                setActiveTab("user-type")
+            }
 
-                );
+        />
 
+    );
             case "portal":
 
                 return (
