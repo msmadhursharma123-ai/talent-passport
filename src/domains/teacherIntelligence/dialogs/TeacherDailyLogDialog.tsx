@@ -23,27 +23,11 @@ export default function TeacherDailyLogDialog({
   onClose,
   onSave,
 }: Props) {
-  const [selectedClass, setSelectedClass] =
-    useState("");
 
   const [
-    selectedSection,
-    setSelectedSection,
-  ] = useState("");
-
-  const [
-    selectedSubject,
-    setSelectedSubject,
-  ] = useState("");
-
-const [classes, setClasses] =
-useState<string[]>([]);
-
-const [sections, setSections] =
-useState<string[]>([]);
-
-const [subjects, setSubjects] =
-useState<string[]>([]);
+selectedAssignmentId,
+setSelectedAssignmentId,
+] = useState("");
 
 const [assignments, setAssignments] =
 useState<any[]>([]);
@@ -99,66 +83,6 @@ teacher.teacherUuid
 
 setAssignments(assignments);
 
-// CLASSES
-
-const uniqueClasses = [
-
-...new Set(
-
-assignments.map(
-item => item.className
-)
-
-),
-
-];
-
-
-
-// SECTIONS
-
-const uniqueSections = [
-
-...new Set(
-
-assignments.map(
-item => item.sectionName
-)
-
-),
-
-];
-
-
-
-// SUBJECTS
-
-const uniqueSubjects = [
-
-...new Set(
-
-assignments.map(
-item => item.subjectName
-)
-
-),
-
-];
-
-
-
-setClasses(
-uniqueClasses
-);
-
-setSections(
-uniqueSections
-);
-
-setSubjects(
-uniqueSubjects
-);
-
 }
 
   if (!open) {
@@ -204,11 +128,14 @@ conceptsCovered.filter(
  async function handleSave() {
 
 const selectedAssignment =
+
 assignments.find(
-(item) =>
-item.className === selectedClass &&
-item.sectionName === selectedSection &&
-item.subjectName === selectedSubject
+
+(item)=>
+
+String(item.id) ===
+selectedAssignmentId
+
 );
 
 
@@ -241,13 +168,13 @@ teacher_assignment_uuid:
 selectedAssignment.id,
 
 class_name:
-selectedClass,
+selectedAssignment.className,
 
 section_name:
-selectedSection,
+selectedAssignment.sectionName,
 
 subject_name:
-selectedSubject,
+selectedAssignment.subjectName,
 
 topic_name:
 topicName,
@@ -294,21 +221,21 @@ onClose();
   >
     <div
       style={{
-        width: "750px",
+        width: "500px",
         maxHeight: "92vh",
         overflowY: "auto",
         background: "white",
         borderRadius: 28,
         boxShadow:
           "0px 30px 80px rgba(0,0,0,0.25)",
-        padding: 40,
+        padding: 24,
       }}
     >
       {/* HEADER */}
 
       <div
         style={{
-          marginBottom: 30,
+          marginBottom: 18,
         }}
       >
         <p
@@ -317,7 +244,7 @@ onClose();
             color: "#F59E0B",
             fontWeight: 700,
             letterSpacing: 2,
-            fontSize: 13,
+            fontSize: 10,
           }}
         >
           DAILY CLASSROOM INTELLIGENCE LOG
@@ -326,9 +253,9 @@ onClose();
         <h1
           style={{
             marginTop: 10,
-            marginBottom: 10,
+            marginBottom: 6,
             color: "#03122E",
-            fontSize: 34,
+            fontSize: 24,
           }}
         >
           Publish Today's Lecture
@@ -348,170 +275,44 @@ onClose();
         </p>
       </div>
 
-      {/* CLASS */}
+{/* CLASSROOM */}
 
-      <select
-        style={inputStyle}
-        value={selectedClass}
-      onChange={(e)=>{
+<select
+style={inputStyle}
+value={selectedAssignmentId}
+onChange={(e)=>{
 
-const value =
-e.target.value;
-
-setSelectedClass(value);
-
-
-// FILTER SECTIONS
-
-const filteredSections =
-
-[
-...new Set(
-
-assignments
-
-.filter(
-
-item=>
-
-item.className === value
-
-)
-
-.map(
-
-item=>item.sectionName
-
-)
-
-)
-
-];
-
-
-setSections(
-filteredSections
+setSelectedAssignmentId(
+e.target.value
 );
-
-
-// RESET
-
-setSelectedSection("");
-
-setSelectedSubject("");
-
-setSubjects([]);
 
 }}
-      >
-        <option value="">
-          Select Class
-        </option>
+>
 
-        {classes.map((item) => (
-          <option
-            key={item}
-            value={item}
-          >
-            Class {item}
-          </option>
-        ))}
-      </select>
+<option value="">
+Select Classroom
+</option>
 
-      {/* SECTION */}
+{
 
-      <select
-        style={inputStyle}
-        value={selectedSection}
-      onChange={(e)=>{
+assignments.map((assignment)=>(
 
-const value =
-e.target.value;
+<option
+key={assignment.id}
+value={assignment.id}
+>
 
-setSelectedSection(
-value
-);
+Class {assignment.className}
+-
+Section {assignment.sectionName}
 
+</option>
 
-// FILTER SUBJECTS
+))
 
-const filteredSubjects =
+}
 
-[
-...new Set(
-
-assignments
-
-.filter(
-
-item=>
-
-item.className ===
-selectedClass &&
-
-item.sectionName ===
-value
-
-)
-
-.map(
-
-item=>item.subjectName
-
-)
-
-)
-
-];
-
-
-setSubjects(
-filteredSubjects
-);
-
-
-// RESET
-
-setSelectedSubject("");
-
-}}
-      >
-        <option value="">
-          Select Section
-        </option>
-
-        {sections.map((item) => (
-          <option
-            key={item}
-            value={item}
-          >
-            Section {item}
-          </option>
-        ))}
-      </select>
-
-      {/* SUBJECT */}
-
-      <select
-        style={inputStyle}
-        value={selectedSubject}
-        onChange={(e) =>
-          setSelectedSubject(e.target.value)
-        }
-      >
-        <option value="">
-          Select Subject
-        </option>
-
-        {subjects.map((item) => (
-          <option
-            key={item}
-            value={item}
-          >
-            {item}
-          </option>
-        ))}
-      </select>
+</select>
 
       {/* TOPIC */}
 
@@ -547,7 +348,7 @@ marginTop:0,
 marginBottom:18,
 lineHeight:1.7,
 color:"#64748B",
-fontSize:14,
+fontSize:12,
 }}
 >
 
@@ -621,8 +422,9 @@ key={index}
 
 style={{
 
-padding:"10px 18px",
-borderRadius:30,
+padding:"6px 12px",
+borderRadius:20,
+fontSize:13,
 background:"#FFF7ED",
 fontWeight:700,
 color:"#C2410C",
@@ -680,7 +482,7 @@ x
       <div
         style={{
           display: "flex",
-          gap: 16,
+          gap: 10,
         }}
       >
         <input
@@ -715,9 +517,9 @@ x
       <div
         style={{
           display: "flex",
-          gap: 30,
-          marginTop: 25,
-          marginBottom: 25,
+          gap: 18,
+          marginTop: 18,
+          marginBottom: 18,
         }}
       >
         <label
@@ -797,21 +599,29 @@ x
 }
 
 const inputStyle = {
-  width: "100%",
-  padding: "18px",
-  borderRadius: "16px",
-  border: "1px solid #CBD5E1",
-  marginBottom: 18,
-  fontSize: 16,
-  boxSizing: "border-box" as const,
+
+width: "100%",
+
+padding: "12px",
+
+borderRadius: "12px",
+
+border: "1px solid #CBD5E1",
+
+marginBottom: 12,
+
+fontSize: 14,
+
+boxSizing: "border-box" as const,
+
 };
 
 const textareaStyle = {
   width: "100%",
-  padding: "18px",
-  borderRadius: "18px",
+  padding: "12px",
+  borderRadius: "12px",
   border: "1px solid #CBD5E1",
-  fontSize: 16,
+  fontSize: 14,
   resize: "none" as const,
   boxSizing: "border-box" as const,
 };
@@ -825,8 +635,9 @@ const checkboxStyle = {
 };
 
 const cancelButton = {
-  padding: "14px 24px",
-  borderRadius: "14px",
+padding:"10px 18px",
+  borderRadius: "10px",
+  fontSize:13,
   border: "1px solid #CBD5E1",
   background: "white",
   cursor: "pointer",
@@ -834,13 +645,13 @@ const cancelButton = {
 };
 
 const saveButton = {
-  padding: "14px 28px",
+padding:"10px 18px",
   border: "none",
-  borderRadius: "14px",
+  borderRadius: "10px",
   background:
     "linear-gradient(90deg,#F59E0B,#FB923C)",
   color: "white",
   cursor: "pointer",
   fontWeight: 700,
-  fontSize: 16,
+  fontSize: 13,
 };
