@@ -8,6 +8,14 @@ import {
   getTableIdentity
 } from "../services/identityService";
 
+function normalizeClassName(
+  className: string
+) {
+  return String(className)
+    .trim()
+    .split(" ")[0];
+}
+
 /* ============================================================
    REPOSITORY IDENTITY HELPERS
 ============================================================ */
@@ -57,10 +65,15 @@ const studentCode =
     .replace("@", "_")
     .replace(/\./g, "_");
 
-  const payload = {
+const payload = {
   ...student,
+
+   class_name: normalizeClassName(
+      student.class_name
+   ),
+
   student_email: studentEmail,
-  student_id: studentCode
+  student_id: studentCode,
 };
 
 console.log(
@@ -151,8 +164,9 @@ student_uuid: studentRow.student_uuid,
       school_name:
         student.school_name,
 
-      class_name:
-        student.class_name,
+class_name: normalizeClassName(
+  student.class_name
+),
 
       phone:
         student.parent_mobile,

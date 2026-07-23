@@ -26,7 +26,7 @@ export default function TeacherLayout({
       style={{
         display: "flex",
         minHeight: "100vh",
-        background: "#F8F7F4",
+        background: "#F5F6FA",
       }}
     >
       <TeacherSidebar
@@ -39,31 +39,39 @@ export default function TeacherLayout({
           flex: 1,
           display: "flex",
           flexDirection: "column",
+          overflow: "hidden",
         }}
       >
         <TeacherHeader
           onLogout={onLogout}
         />
 
-        {activePage ===
-          "dashboard" && (
-          <TeacherHome />
-        )}
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+          }}
+        >
+          {activePage ===
+            "dashboard" && (
+            <TeacherHome />
+          )}
 
-        {activePage ===
-          "daily-log" && (
-          <TeacherDailyLogPage />
-        )}
+          {activePage ===
+            "daily-log" && (
+            <TeacherDailyLogPage />
+          )}
 
-        {activePage ===
-          "teaching-journal" && (
-          <TeachingJournalPage />
-        )}
+          {activePage ===
+            "teaching-journal" && (
+            <TeachingJournalPage />
+          )}
 
-        {activePage ===
-          "my-classroom" && (
-          <MyClassroomPage />
-        )}
+          {activePage ===
+            "my-classroom" && (
+            <MyClassroomPage />
+          )}
+        </div>
       </div>
     </div>
   );

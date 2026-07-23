@@ -19,91 +19,91 @@ export default function UserType({
 
   const roleConfig = {
 
-  student: {
-    title: "Student / Parent Portal",
-    subtitle:
-      "{currentRole.subtitle}",
-    newLabel: "New User",
-    existingLabel: "Existing User",
-    newDescription:
-      "{currentRole.newDescription}",
-    existingDescription:
-      "{currentRole.existingDescription}"
-  },
+    student: {
+      title: "Student / Parent Portal",
+      subtitle:
+        "{currentRole.subtitle}",
+      newLabel: "New User",
+      existingLabel: "Existing User",
+      newDescription:
+        "{currentRole.newDescription}",
+      existingDescription:
+        "{currentRole.existingDescription}"
+    },
 
-  partner: {
-    title: "Partner Portal",
-    subtitle:
-      "Register your institute or access your partner dashboard.",
-    newLabel: "New Partner",
-    existingLabel: "Existing Partner",
-    newDescription:
-      "Join the Talent Passport ecosystem and showcase your workshops, scholarships, masterclasses and talent opportunities.",
-    existingDescription:
-      "Manage programs, discover talent, track student engagement and grow your institute network."
-  },
+    partner: {
+      title: "Partner Portal",
+      subtitle:
+        "Register your institute or access your partner dashboard.",
+      newLabel: "New Partner",
+      existingLabel: "Existing Partner",
+      newDescription:
+        "Join the Talent Passport ecosystem and showcase your workshops, scholarships, masterclasses and talent opportunities.",
+      existingDescription:
+        "Manage programs, discover talent, track student engagement and grow your institute network."
+    },
 
-  school: {
-    title: "School Portal",
-    subtitle:
-      "Access school intelligence and student analytics.",
-    newLabel: "New School",
-    existingLabel: "Existing School",
-    newDescription:
-      "Register your school and unlock talent analytics, competitions and growth insights.",
-    existingDescription:
-      "Access reports, rankings, student performance and school intelligence dashboards."
-  },
+    school: {
+      title: "School Portal",
+      subtitle:
+        "Access school intelligence and student analytics.",
+      newLabel: "New School",
+      existingLabel: "Existing School",
+      newDescription:
+        "Register your school and unlock talent analytics, competitions and growth insights.",
+      existingDescription:
+        "Access reports, rankings, student performance and school intelligence dashboards."
+    },
 
-  teacher: {
-    title: "Teacher Portal",
-    subtitle:
-      "Manage classroom performance and student development.",
-    newLabel: "New Teacher",
-    existingLabel: "Existing Teacher",
-    newDescription:
-      "Join Talent Passport and access classroom tools and student development resources.",
-    existingDescription:
-      "Review student growth, assessments and classroom performance insights."
-  }
+    teacher: {
+      title: "Teacher Portal",
+      subtitle:
+        "Manage classroom performance and student development.",
+      newLabel: "New Teacher",
+      existingLabel: "Existing Teacher",
+      newDescription:
+        "Join Talent Passport and access classroom tools and student development resources.",
+      existingDescription:
+        "Review student growth, assessments and classroom performance insights."
+    }
 
-};
+  };
 
-const currentRole =
-  roleConfig[
-    role as keyof typeof roleConfig
-  ] || roleConfig.student;
+  const currentRole =
+    roleConfig[
+      role as keyof typeof roleConfig
+    ] || roleConfig.student;
 
-const roleTitle =
-  currentRole.title;
+  const roleTitle =
+    currentRole.title;
 
-const newLabel =
-  currentRole.newLabel;
+  const newLabel =
+    currentRole.newLabel;
 
-const existingLabel =
-  currentRole.existingLabel;
+  const existingLabel =
+    currentRole.existingLabel;
 
   const cardStyle = {
     background: "white",
-    borderRadius: "24px",
-    padding: "35px",
-    minHeight: "320px",
+    borderRadius: "15px",
+    padding: "22px",
+    minHeight: "200px",
     display: "flex",
     flexDirection: "column" as const,
     justifyContent: "space-between",
     cursor: "pointer",
     boxShadow:
-      "0 10px 25px rgba(0,0,0,0.06)",
+      "0 6px 16px rgba(0,0,0,0.06)",
   };
 
   const buttonStyle = {
-    marginTop: "30px",
+    marginTop: "18px",
     background: "#F4A623",
     color: "white",
     border: "none",
-    borderRadius: "12px",
-    padding: "14px 22px",
-    fontSize: "16px",
+    borderRadius: "8px",
+    padding: "9px 14px",
+    fontSize: "11px",
     fontWeight: 600,
     cursor: "pointer",
     width: "fit-content",
@@ -114,12 +114,12 @@ const existingLabel =
       style={{
         minHeight: "100vh",
         background: "#F8F7F4",
-        padding: "70px",
+        padding: "44px",
       }}
     >
       <div
         style={{
-          maxWidth: "1300px",
+          maxWidth: "800px",
           margin: "0 auto",
         }}
       >
@@ -129,10 +129,10 @@ const existingLabel =
             background: "transparent",
             border: "none",
             color: "#143B73",
-            fontSize: "18px",
+            fontSize: "11px",
             fontWeight: 600,
             cursor: "pointer",
-            marginBottom: "30px",
+            marginBottom: "18px",
           }}
         >
           ← Back to Portal Selection
@@ -141,9 +141,10 @@ const existingLabel =
         <div
           style={{
             color: "#F4A623",
-            letterSpacing: "3px",
+            letterSpacing: "2px",
             fontWeight: 600,
-            marginBottom: "20px",
+            marginBottom: "12px",
+            fontSize: "11px",
           }}
         >
           TALENT PASSPORT
@@ -151,9 +152,9 @@ const existingLabel =
 
         <h1
           style={{
-            fontSize: "72px",
+            fontSize: "45px",
             color: "#143B73",
-            marginBottom: "15px",
+            marginBottom: "9px",
             lineHeight: "1.1",
           }}
         >
@@ -163,8 +164,8 @@ const existingLabel =
         <p
           style={{
             color: "#555",
-            fontSize: "24px",
-            marginBottom: "60px",
+            fontSize: "15px",
+            marginBottom: "38px",
           }}
         >
           Choose how you would like to continue.
@@ -174,7 +175,7 @@ const existingLabel =
 
           <div
             style={{
-              maxWidth: "700px",
+              maxWidth: "430px",
             }}
           >
             <div
@@ -187,8 +188,8 @@ const existingLabel =
                 <h2
                   style={{
                     color: "#143B73",
-                    fontSize: "32px",
-                    marginBottom: "15px",
+                    fontSize: "20px",
+                    marginBottom: "9px",
                   }}
                 >
                   Admin Team Login
@@ -197,8 +198,8 @@ const existingLabel =
                 <p
                   style={{
                     color: "#666",
-                    fontSize: "18px",
-                    lineHeight: "1.7",
+                    fontSize: "11px",
+                    lineHeight: "1.6",
                   }}
                 >
                   Access platform
@@ -224,7 +225,7 @@ const existingLabel =
               display: "grid",
               gridTemplateColumns:
                 "repeat(2, 1fr)",
-              gap: "30px",
+              gap: "18px",
             }}
           >
             <div
@@ -237,8 +238,8 @@ const existingLabel =
                 <h2
                   style={{
                     color: "#143B73",
-                    fontSize: "32px",
-                    marginBottom: "15px",
+                    fontSize: "20px",
+                    marginBottom: "9px",
                   }}
                 >
                   {newLabel}
@@ -247,8 +248,8 @@ const existingLabel =
                 <p
                   style={{
                     color: "#666",
-                    fontSize: "18px",
-                    lineHeight: "1.7",
+                    fontSize: "11px",
+                    lineHeight: "1.6",
                   }}
                 >
                   Begin your Talent Passport
@@ -275,8 +276,8 @@ const existingLabel =
                 <h2
                   style={{
                     color: "#143B73",
-                    fontSize: "32px",
-                    marginBottom: "15px",
+                    fontSize: "20px",
+                    marginBottom: "9px",
                   }}
                 >
                   {existingLabel}
@@ -285,8 +286,8 @@ const existingLabel =
                 <p
                   style={{
                     color: "#666",
-                    fontSize: "18px",
-                    lineHeight: "1.7",
+                    fontSize: "11px",
+                    lineHeight: "1.6",
                   }}
                 >
                   Access your Talent Passport,

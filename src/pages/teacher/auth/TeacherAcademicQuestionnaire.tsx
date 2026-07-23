@@ -41,13 +41,6 @@ setSelectedSubject,
 const [loading, setLoading] =
 useState(false);
 
-const CLASS_SECTION_OPTIONS =
-CLASSES.flatMap((className) =>
-  SECTIONS.map(
-    (sectionName) =>
-      `${className}-${sectionName}`
-  )
-);
 
 //======================================
 // NEXT STEP
@@ -202,10 +195,10 @@ alignItems: "center",
 >
 <div
 style={{
-width: 900,
+width: 680,
 background: "white",
-borderRadius: 32,
-padding: 50,
+borderRadius: 24,
+padding: 32,
 boxShadow:
 "0 10px 30px rgba(0,0,0,0.08)",
 }}
@@ -235,7 +228,7 @@ marginBottom: 25,
 style={{
 margin: 0,
 color: "#0F172A",
-fontSize: 42,
+fontSize: 32,
 fontWeight: 400,
 }}
 >
@@ -260,7 +253,7 @@ Sections and Subject that you teach.
 
 <div
 style={{
-height: 10,
+height: 8,
 borderRadius: 20,
 background: "#E2E8F0",
 overflow: "hidden",
@@ -305,7 +298,41 @@ marginTop:30,
 }}
 >
 
-{CLASS_SECTION_OPTIONS.map((item)=>(
+{CLASSES.map((className) => (
+
+<div
+key={className}
+style={{
+width: "100%",
+marginBottom: "18px",
+}}
+>
+
+<h3
+style={{
+marginBottom: "10px",
+color: "#143B73",
+fontWeight: 700,
+fontSize: 18,
+}}
+>
+CLASS {className}
+</h3>
+
+<div
+style={{
+display: "flex",
+flexWrap: "wrap",
+gap: 16,
+}}
+>
+
+{SECTIONS.map((sectionName) => {
+
+const item =
+`${className}-${sectionName}`;
+
+return (
 
 <button
 key={item}
@@ -316,31 +343,28 @@ selectedClassSections.includes(item)
 ) {
 
 setSelectedClassSections(
-
 selectedClassSections.filter(
 (x) => x !== item
 )
-
 );
 
 } else {
 
 setSelectedClassSections([
-
 ...selectedClassSections,
 item,
-
 ]);
 
 }
 
 }}
 style={{
-padding:"18px 28px",
-borderRadius:16,
-border:"none",
-cursor:"pointer",
-fontSize:18,
+padding: "12px 20px",
+borderRadius: 16,
+border: "none",
+cursor: "pointer",
+fontSize: 16,
+
 background:
 selectedClassSections.includes(item)
 ? "#F59E0B"
@@ -353,10 +377,16 @@ selectedClassSections.includes(item)
 
 }}
 >
-
 {item}
-
 </button>
+
+);
+
+})}
+
+</div>
+
+</div>
 
 ))}
 
@@ -379,7 +409,7 @@ selectedClassSections.includes(item)
       style={{
         display: "flex",
         flexWrap: "wrap",
-        gap: 16,
+        gap: 12,
         marginTop: 30,
       }}
     >
@@ -390,7 +420,7 @@ selectedClassSections.includes(item)
             setSelectedSubject(item);
           }}
           style={{
-            padding: "18px 28px",
+            padding: "12px 20px",
             borderRadius: 16,
             border: "none",
             cursor: "pointer",
@@ -462,12 +492,12 @@ selectedClassSections.includes(item)
 }
 
 const buttonStyle = {
-  padding: "16px 28px",
-  borderRadius: "16px",
-  border: "none",
-  cursor: "pointer",
-  background: "#F59E0B",
-  color: "white",
-  fontSize: 16,
-  fontWeight: 700,
+padding: "12px 22px",
+borderRadius: "12px",
+border: "none",
+cursor: "pointer",
+background: "#F59E0B",
+color: "white",
+fontSize: 14,
+fontWeight: 700,
 };

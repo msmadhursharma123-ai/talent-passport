@@ -18,13 +18,13 @@ export default function TeacherHeader({
   return (
     <div
       style={{
-        height: 110,
+        height: 72,
         background: "white",
         borderBottom: "1px solid #E2E8F0",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0px 40px",
+        padding: "0px 24px",
         boxShadow:
           "0px 4px 20px rgba(0,0,0,0.03)",
       }}
@@ -36,7 +36,7 @@ export default function TeacherHeader({
           style={{
             margin: 0,
             color: "#03122E",
-            fontSize: 28,
+            fontSize: 20,
             fontWeight: 700,
           }}
         >
@@ -45,9 +45,9 @@ export default function TeacherHeader({
 
         <p
           style={{
-            marginTop: 8,
+            marginTop: 4,
             color: "#64748B",
-            fontSize: 15,
+            fontSize: 11,
           }}
         >
           Classroom Intelligence &
@@ -60,10 +60,10 @@ export default function TeacherHeader({
       <div
         style={{
           background: "#F8FAFC",
-          padding: "14px 22px",
-          borderRadius: 18,
+          padding: "9px 16px",
+          borderRadius: 12,
           textAlign: "center",
-          minWidth: 260,
+          minWidth: 190,
         }}
       >
         <p
@@ -71,7 +71,7 @@ export default function TeacherHeader({
             margin: 0,
             color: "#F59E0B",
             fontWeight: 700,
-            fontSize: 12,
+            fontSize: 9,
             letterSpacing: 1,
           }}
         >
@@ -80,11 +80,11 @@ export default function TeacherHeader({
 
         <p
           style={{
-            marginTop: 8,
+            marginTop: 4,
             marginBottom: 0,
             color: "#1E293B",
             fontWeight: 600,
-            fontSize: 15,
+            fontSize: 12,
           }}
         >
           {formattedDate}
@@ -97,7 +97,7 @@ export default function TeacherHeader({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 20,
+          gap: 12,
         }}
       >
         <div
@@ -109,6 +109,7 @@ export default function TeacherHeader({
             style={{
               margin: 0,
               fontWeight: 700,
+              fontSize: 14,
               color: "#03122E",
             }}
           >
@@ -117,9 +118,9 @@ export default function TeacherHeader({
 
           <p
             style={{
-              marginTop: 6,
+              marginTop: 3,
               color: "#64748B",
-              fontSize: 13,
+              fontSize: 10,
             }}
           >
             Ready for today's classes
@@ -133,13 +134,13 @@ export default function TeacherHeader({
               "linear-gradient(90deg,#EF4444,#DC2626)",
             color: "white",
             border: "none",
-            padding: "14px 24px",
-            borderRadius: 14,
+            padding: "9px 16px",
+            borderRadius: 10,
             cursor: "pointer",
             fontWeight: 700,
-            fontSize: 15,
+            fontSize: 12,
             boxShadow:
-              "0px 10px 25px rgba(220,38,38,0.25)",
+              "0px 8px 18px rgba(220,38,38,0.25)",
           }}
         >
           Logout

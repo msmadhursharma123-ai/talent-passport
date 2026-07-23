@@ -99,7 +99,7 @@ setLogs(allLogs);
   return (
     <div
       style={{
-        padding: 32,
+        padding: 20,
         background: "#F6F6F3",
         minHeight: "100%",
       }}
@@ -110,8 +110,8 @@ setLogs(allLogs);
         style={{
           background: "#04122F",
           borderRadius: 28,
-          padding: 30,
-          marginBottom: 28,
+          padding: 20,
+          marginBottom: 20,
           color: "white",
         }}
       >
@@ -121,7 +121,7 @@ setLogs(allLogs);
             color: "#F59E0B",
             fontWeight: 700,
             letterSpacing: 2,
-            fontSize: 13,
+            fontSize: 10,
           }}
         >
           CLASSROOM LECTURE LOGGING INTERFACE
@@ -131,7 +131,7 @@ setLogs(allLogs);
           style={{
             marginTop: 12,
             marginBottom: 12,
-            fontSize: 34,
+            fontSize: 26,
           }}
         >
           DAILY LESSON PUBLISHING CENTER
@@ -221,14 +221,14 @@ setLogs(allLogs);
 key={log.id}
 style={{
 background:"white",
-padding:"26px",
-borderRadius:"24px",
+padding:"16px",
+borderRadius:"16px",
 marginBottom:"18px",
 border:"1px solid #CBD5E1",
 display:"flex",
 justifyContent:"space-between",
 alignItems:"center",
-gap:"30px",
+gap:"16px",
 flexWrap:"wrap",
 }}
 >
@@ -239,7 +239,7 @@ flexWrap:"wrap",
 style={{
 margin:"0 0 10px 0",
 color:"#1E293B",
-fontSize:"18px",
+fontSize:"15px",
 fontWeight:800,
 }}
 >
@@ -259,7 +259,7 @@ Section {log.sectionName}
 style={{
 margin:0,
 color:"#64748B",
-fontSize:"15px",
+fontSize:"13px",
 }}
 >
 
@@ -314,8 +314,9 @@ Teacher Notes :
 <div
 style={{
 background:"#DCFCE7",
-padding:"8px 18px",
-borderRadius:"10px",
+padding:"6px 12px",
+borderRadius:"8px",
+fontSize:"12px",
 border:"1px solid #15803D",
 fontWeight:700,
 color:"#065F46",
@@ -343,20 +344,20 @@ whiteSpace:"nowrap",
 
 const cardStyle = {
   background: "white",
-  padding: 30,
-  borderRadius: 24,
+  padding: 20,
+  borderRadius: 18,
   marginBottom: 24,
   boxShadow:
     "0px 10px 25px rgba(0,0,0,0.05)",
 } as const;
 
 const buttonStyle = {
-  padding: "16px 28px",
+padding:"12px 20px",
   border: "none",
-  borderRadius: "14px",
+  borderRadius: "10px",
   background: "#F97316",
   color: "white",
   cursor: "pointer",
   fontWeight: 700,
-  fontSize: 16,
+  fontSize: 13,
 } as const;

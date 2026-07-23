@@ -29,12 +29,12 @@ export default function TeacherSidebar({
   return (
     <div
       style={{
-        width: 280,
+        width: 190,
         minHeight: "100vh",
         background:
           "linear-gradient(180deg,#03122E 0%, #071D46 100%)",
         color: "white",
-        padding: "40px 24px",
+        padding: "24px 16px",
         boxSizing: "border-box",
         borderRight: "1px solid rgba(255,255,255,0.08)",
       }}
@@ -43,13 +43,13 @@ export default function TeacherSidebar({
 
       <div
         style={{
-          marginBottom: 45,
+          marginBottom: 24,
         }}
       >
         <h2
           style={{
             margin: 0,
-            fontSize: 28,
+            fontSize: 18,
             fontWeight: 700,
             letterSpacing: 1,
           }}
@@ -59,10 +59,10 @@ export default function TeacherSidebar({
 
         <p
           style={{
-            marginTop: 8,
+            marginTop: 4,
             color: "#94A3B8",
-            fontSize: 14,
-            lineHeight: 1.6,
+            fontSize: 10,
+            lineHeight: 1.5,
           }}
         >
           Classroom Intelligence System
@@ -80,9 +80,9 @@ export default function TeacherSidebar({
             }
             style={{
               width: "100%",
-              marginBottom: 16,
-              padding: "18px 20px",
-              borderRadius: 18,
+              marginBottom: 10,
+              padding: "12px 14px",
+              borderRadius: 12,
               border: "none",
               cursor: "pointer",
 
@@ -93,7 +93,7 @@ export default function TeacherSidebar({
 
               color: "white",
 
-              fontSize: 17,
+              fontSize: 13,
               fontWeight: 700,
               letterSpacing: 0.5,
 
@@ -103,7 +103,7 @@ export default function TeacherSidebar({
 
               boxShadow:
                 activePage === item.id
-                  ? "0px 10px 25px rgba(245,158,11,0.25)"
+                  ? "0px 8px 18px rgba(245,158,11,0.25)"
                   : "none",
             }}
           >
@@ -117,24 +117,24 @@ export default function TeacherSidebar({
       <div
         style={{
           position: "absolute",
-          bottom: 30,
-          width: 220,
+          bottom: 18,
+          width: 150,
         }}
       >
         <div
           style={{
             background: "#0F244D",
-            padding: 18,
-            borderRadius: 16,
+            padding: 10,
+            borderRadius: 10,
           }}
         >
           <div
             style={{
               color: "#10B981",
-              fontSize: 12,
+              fontSize: 8,
               fontWeight: 700,
               letterSpacing: 1,
-              marginBottom: 6,
+              marginBottom: 3,
             }}
           >
             LIVE CLASSROOM STATUS
@@ -142,8 +142,9 @@ export default function TeacherSidebar({
 
           <div
             style={{
-              fontSize: 15,
+              fontSize: 11,
               fontWeight: 600,
+              lineHeight: 1.4,
             }}
           >
             Academic Intelligence

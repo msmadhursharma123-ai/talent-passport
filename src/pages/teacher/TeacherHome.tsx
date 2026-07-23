@@ -1,361 +1,385 @@
 import { useEffect, useState } from "react";
 
 import {
-getCurrentTeacher,
+  getCurrentTeacher,
 } from "../../services/identityService";
 
 import {
-getTeacherAssignmentsByTeacher,
+  getTeacherAssignmentsByTeacher,
 } from "../../domains/teacherIntelligence/repository/TeacherAssignmentRepository";
 
 import type {
-TeacherAssignment,
+  TeacherAssignment,
 } from "../../domains/teacherIntelligence/types/TeacherAssignment";
 
 import {
-getTeacherDailyLogsByAssignment,
+  getTeacherDailyLogsByAssignment,
 } from "../../domains/teacherIntelligence/repository/TeacherDailyLogRepository";
 
-import type {
-TeacherDailyLog,
-} from "../../domains/teacherIntelligence/types/TeacherDailyLog";
-
-
-
 import {
-getLectureFeedbackRadar,
+  getLectureFeedbackRadar,
+} from "../../domains/teacherIntelligence/repository/TeacherFeedbackAnalyticsRepository";
+
+
+
+interface ClassroomDashboardData {
+
+  classroom: string;
+
+  latestTopic: string;
+
+  studentsFilledFeedback: string;
+
+  feedbackRemaining: number;
+
+  completelyUnderstood: string;
+
+  partiallyUnderstood: string;
+
+  didNotUnderstand: string;
+
+  classHealthScore: number;
+
+  classHealthStatus: string;
+
+  studentsRequiringAttention: string;
+
+  mostDifficultConcept: string;
+
+  studentsWhoDidNotUnderstand: string;
+
+  teachingRecommendation: string;
+
 }
-from "../../domains/teacherIntelligence/repository/TeacherFeedbackAnalyticsRepository";
+
+
 
 export default function TeacherHome() {
 
-const [assignments,setAssignments] =
-useState<TeacherAssignment[]>([]);
+  const [dashboardData, setDashboardData] =
+    useState<ClassroomDashboardData[]>([]);
 
-const [dailyLogs,setDailyLogs] =
-useState<TeacherDailyLog[]>([]);
-
-const [
-
-selectedLecture,
-
-setSelectedLecture,
-
-] = useState<TeacherDailyLog | null>(null);
-
-const [selectedAssignmentId,
-setSelectedAssignmentId] =
-useState("");
-
-const [selectedAssignment,
-setSelectedAssignment] =
-useState<TeacherAssignment | null>(null);
-
-const [classroomRadar, setClassroomRadar] =
-useState<any>(null);
+  const [loading, setLoading] =
+    useState(true);
 
 
-const [showStudentsModal,setShowStudentsModal] =
-useState(false);
 
-const [selectedConcept,setSelectedConcept] =
-useState("");
+  useEffect(() => {
 
-const [selectedStudents,setSelectedStudents] =
-useState<any[]>([]);
+    loadDashboard();
 
-useEffect(()=>{
-
-loadAssignments();
-
-},[]);
+  }, []);
 
 
-async function loadAssignments(){
 
-const teacher =
-getCurrentTeacher();
+  async function loadDashboard() {
 
-if(!teacher){
-return;
-}
+    try {
+
+      const teacher =
+        getCurrentTeacher();
+
+      if (!teacher) {
+        return;
+      }
 
 
-const data =
 
-await getTeacherAssignmentsByTeacher(
-teacher.teacherUuid
+      const assignments =
+        await getTeacherAssignmentsByTeacher(
+          teacher.teacherUuid
+        );
+
+
+
+      const classroomData:
+        ClassroomDashboardData[] = [];
+
+
+
+      for (const assignment of assignments) {
+
+        const logs =
+          await getTeacherDailyLogsByAssignment(
+            assignment.id!
+          );
+
+
+
+        if (logs.length === 0) {
+          continue;
+        }
+
+
+
+        const latestLecture =
+          logs[0];
+
+
+
+        const radar =
+          await getLectureFeedbackRadar(
+            latestLecture.id
+          );
+
+const totalStudents =
+radar.totalStudents || 1;
+
+
+const completelyPercentage =
+
+Math.round(
+
+(radar.completelyUnderstood /
+totalStudents) * 100
+
 );
 
 
-setAssignments(data);
+const partiallyPercentage =
 
-}
+Math.round(
+
+(radar.partiallyUnderstood /
+totalStudents) * 100
+
+);
+
+
+const didNotPercentage =
+
+Math.round(
+
+(radar.didNotUnderstand /
+totalStudents) * 100
+
+);
+
+        const difficultConcept =
+
+          radar.commonConcepts?.length > 0
+
+            ? radar.commonConcepts[0].concept
+
+            : "-";
+
+
+
+        const studentsAttention =
+
+          radar.studentsRequiringAttention?.length > 0
+
+            ? radar.studentsRequiringAttention
+                .map(
+                  (student: any) =>
+                    student.studentName
+                )
+                .join(", ")
+
+            : "-";
+
+
+
+        const studentsNotUnderstood =
+
+          radar.studentsRequiringAttention?.length > 0
+
+            ? radar.studentsRequiringAttention
+                .filter(
+                  (student: any) =>
+                    student.understandingLevel
+                      ?.toLowerCase()
+                      .includes("did")
+                )
+                .map(
+                  (student: any) =>
+                    student.studentName
+                )
+                .join(", ")
+
+            : "-";
+
+
+
+        classroomData.push({
+
+          classroom:
+
+            `${assignment.className}-${assignment.sectionName}`,
+
+
+
+          latestTopic:
+            latestLecture.topicName,
+
+
+
+          studentsFilledFeedback:
+
+            `${
+
+              radar.totalStudents -
+
+              radar.pendingStudentsCount
+
+            } / ${radar.totalStudents}`,
+
+
+
+          feedbackRemaining:
+            radar.pendingStudentsCount,
+
+
+
+   completelyUnderstood:
+
+`${radar.completelyUnderstood} (${completelyPercentage}%)`,
+
+
+
+partiallyUnderstood:
+
+`${radar.partiallyUnderstood} (${partiallyPercentage}%)`,
+
+
+
+didNotUnderstand:
+
+`${radar.didNotUnderstand} (${didNotPercentage}%)`,
+
+
+
+          classHealthScore:
+
+            radar.classroomHealthScore.score,
+
+
+
+          classHealthStatus:
+
+            radar.classroomHealthScore.status,
+
+
+
+          studentsRequiringAttention:
+
+            studentsAttention,
+
+
+
+          mostDifficultConcept:
+
+            difficultConcept,
+
+
+
+          studentsWhoDidNotUnderstand:
+
+            studentsNotUnderstood,
+
+
+
+          teachingRecommendation:
+
+            radar.teachingRecommendation,
+
+        });
+
+      }
+
+
+
+      setDashboardData(classroomData);
+
+    }
+
+    catch (error) {
+
+      console.error(error);
+
+    }
+
+    finally {
+
+      setLoading(false);
+
+    }
+
+  }
 
   return (
-    <div
-      style={{
-        padding: 32,
-        background: "#F6F6F3",
-        minHeight: "100%",
-      }}
-    >
-      {/* DARK HEADER */}
-
-      <div
-        style={{
-          background: "#04122F",
-          borderRadius: 28,
-          padding: 30,
-          marginBottom: 28,
-          color: "white",
-        }}
-      >
-        <p
-          style={{
-            margin: 0,
-            color: "#F59E0B",
-            fontSize: 13,
-            letterSpacing: 2,
-            fontWeight: 700,
-          }}
-        >
-          CLASSROOM COMPREHENSION LIMIT ALERTS
-        </p>
-
-        <h1
-          style={{
-            marginTop: 12,
-            marginBottom: 12,
-            fontSize: 34,
-          }}
-        >
-          CLASSROOM INTELLIGENCE DASHBOARD
-        </h1>
-
-        <p
-          style={{
-            margin: 0,
-            color: "#D1D5DB",
-            lineHeight: 1.8,
-          }}
-        >
-          Review today's classroom feedback and
-          identify concepts that require additional
-          teaching support.
-        </p>
-      </div>
-
-      {/* CLASS SELECTOR */}
-
-      <div
-        style={{
-          marginBottom: 30,
-          display: "flex",
-          gap: 18,
-        }}
-      >
-       <select
-
-style={dropdownStyle}
-
-value={selectedAssignmentId}
-
-onChange={async (e)=>{
-
-const value =
-e.target.value;
-
-setSelectedAssignmentId(
-value
-);
-
-
-const assignment =
-
-assignments.find(
-item=>item.id === value
-);
-
-
-setSelectedAssignment(
-assignment ?? null
-);
-
-setSelectedLecture(null);
-
-setClassroomRadar(null);
-
-if (
-
-assignment &&
-assignment.id
-
-) {
-
-const logs =
-
-await getTeacherDailyLogsByAssignment(
-assignment.id
-);
-
-setDailyLogs(logs);
-
-
-
-if (
-
-logs.length > 0
-
-) {
-
-const latestLog =
-logs[0];
-
-console.log(
-    "LATEST DAILY LOG"
-);
-
-console.log(
-    latestLog
-);
-
-
-
-setSelectedLecture(
-latestLog
-);
-
-
-
-const radar =
-
-await getLectureFeedbackRadar(
-latestLog.id
-);
-
-console.log(
-    "LECTURE RADAR"
-);
-
-console.log(
-    radar
-);
-
-setClassroomRadar(
-radar
-);
-
-}else{
-
-setSelectedLecture(null);
-
-setClassroomRadar(null);
-
-}
-
-} else {
-
-setDailyLogs([]);
-
-}
-
-}}
-
->
-
-<option value="">
-
-Select Classroom
-
-</option>
-
-
-{
-
-assignments.map((item)=>(
-
-<option
-key={item.id}
-value={item.id}
->
-
-Class {item.className}
-
-{" - "}
-
-Section {item.sectionName}
-
-</option>
-
-))
-
-}
-
-</select>
-
-      </div>
-
-{
-
-selectedLecture && (
 
 <div
 style={{
 
-...cardStyle,
+padding:"22px",
 
-marginTop:20,
+background:"#F5F6FA",
 
-padding:24,
-
-background:"#EFF6FF",
-
-borderLeft:"6px solid #F59E0B",
+minHeight:"100vh",
 
 }}
+
 >
 
-<p
+
+{/* PREMIUM HEADER */}
+
+
+<div
+
 style={{
 
-margin:0,
+background:"#141212",
 
-fontSize:13,
+padding:"18px",
+
+borderRadius:"24px",
+
+marginBottom:"25px",
+
+}}
+
+>
+
+<div
+style={{
+
+color:"#F59E0B",
+
+fontSize:"10px",
 
 fontWeight:700,
 
-letterSpacing:2,
+letterSpacing:"2px",
 
-color:"#EA580C",
+marginBottom:"10px",
 
 }}
+
 >
 
-LATEST CLASSROOM INTELLIGENCE
+CLASSROOM INTELLIGENCE OVERVIEW
 
-</p>
+</div>
 
 
 <h1
 style={{
 
-marginTop:18,
+margin:0,
 
-marginBottom:15,
+color:"white",
 
-fontSize:30,
+fontSize:"26px",
 
-fontWeight:800,
-
-color:"#04122F",
-
-textTransform:"capitalize",
+fontWeight:700,
 
 }}
+
 >
 
-{selectedLecture.topicName}
+Welcome Back, Teacher!
 
 </h1>
 
@@ -363,777 +387,299 @@ textTransform:"capitalize",
 <p
 style={{
 
-margin:0,
+color:"#D8E4FF",
 
-fontSize:15,
+marginTop:"12px",
 
-fontWeight:600,
-
-color:"#475569",
+lineHeight:1.7,
 
 }}
+
 >
 
-Most recent lecture submitted by you.
-
-</p>
-
-
-<p
-style={{
-
-marginTop:18,
-
-lineHeight:1.8,
-
-color:"#64748B",
-
-fontSize:15,
-
-}}
->
-
-Today's Academic Intelligence is being generated
-based on student comprehension and classroom
-feedback collected for this lecture.
+Here is your classroom intelligence summary for yesterday's latest lecture.
 
 </p>
 
 </div>
 
-)
-
-}
-
-{/* CLASSROOM HEALTH SCORE */}
-
-{classroomRadar && (
-
-<>
 
 
-<div
-style={{
-...cardStyle,
-padding:24,
-background:"#FFF7ED",
-border:"2px solid #FDBA74",
-marginTop:20,
-}}
->
-
-<p
-style={{
-margin:0,
-color:"#EA580C",
-fontSize:13,
-fontWeight:700,
-letterSpacing:2,
-}}
->
-
-CLASSROOM HEALTH SCORE
-
-</p>
+{/* LOADING */}
 
 
-<h1
-style={{
-marginTop:15,
-marginBottom:5,
-fontSize:54,
-color:"#04122F",
-}}
->
+{loading && (
 
-{classroomRadar.classroomHealthScore.score}/100
+<div>
 
-</h1>
-
-
-<h2
-style={{
-marginTop:0,
-color:"#EA580C",
-}}
->
-
-{classroomRadar.classroomHealthScore.status}
-
-</h2>
-
-
-<p
-style={{
-color:"#475569",
-lineHeight:1.8,
-marginBottom:0,
-}}
->
-
-Today's classroom may require revision before tomorrow's lecture.
-
-</p>
+Loading Dashboard...
 
 </div>
 
-<div
-style={{
-...cardStyle,
-marginTop:25,
-}}
->
-
-<h2 style={sectionHeadingStyle}>
-Understanding Breakdown
-</h2>
-
-<p style={sectionSubHeadingStyle}>
-Student comprehension levels for today's lecture.
-</p>
-
-<div
-style={{
-display:"grid",
-gridTemplateColumns:"repeat(5,1fr)",
-gap:20,
-marginTop:20,
-}}
->
-
-<DashboardKPI
-title="Completely Understood"
-value={String(
-classroomRadar.completelyUnderstood
 )}
-/>
-
-<DashboardKPI
-title="Partially Understood"
-value={String(
-classroomRadar.partiallyUnderstood
-)}
-/>
-
-<DashboardKPI
-title="Didn't Understand"
-value={String(
-classroomRadar.didNotUnderstand
-)}
-/>
-
-<DashboardKPI
-title="Total Students"
-value={String(
-classroomRadar.totalStudents
-)}
-/>
-
-<div
-style={dashboardPendingCard}
->
-
-<h1
-style={{
-
-margin:0,
-fontSize:42,
-fontWeight:800,
-color:"#04122F",
-
-}}
->
-
-{classroomRadar.pendingStudentsCount}
-
-</h1>
 
 
-<p
-style={{
 
-marginTop:12,
-fontWeight:700,
-fontSize:15,
-color:"#475569",
-
-}}
->
-
-Feedback Pending
-
-</p>
+{/* EMPTY STATE */}
 
 
-{
-
-classroomRadar.pendingStudentsCount > 0 && (
+{!loading && dashboardData.length === 0 && (
 
 <div
 
-onClick={()=>{
-
-setSelectedConcept(
-"Students Pending Feedback"
-);
-
-setSelectedStudents(
-classroomRadar.pendingStudents
-);
-
-setShowStudentsModal(true);
-
-}}
-
-style={{
-
-marginTop:15,
-padding:"8px 14px",
-borderRadius:12,
-background:"#EFF6FF",
-color:"#2563EB",
-fontWeight:700,
-fontSize:13,
-display:"inline-block",
-cursor:"pointer",
-
-}}
-
->
-
-View Students →
-
-</div>
-
-)
-
-}
-
-</div>
-
-</div>
-
-</div>
-
-{
-classroomRadar.commonConcepts.length > 0 && (
-
-<div
-style={{
-...cardStyle,
-marginTop:25,
-}}
->
-
-<h2 style={sectionHeadingStyle}>
-Most Difficult Concepts as per Students
-</h2>
-
-<p style={sectionSubHeadingStyle}>
-Common concepts where students struggled.
-</p>
-
-
-<div
-style={{
-
-display:"flex",
-
-gap:20,
-
-overflowX:"auto",
-
-paddingBottom:10,
-
-marginTop:20,
-
-}}
->
-
-{
-
-classroomRadar.commonConcepts.map(
-(item:any,index:number)=>(
-
-<div
-key={index}
-style={conceptCard}
->
-
-<h3
-style={{
-
-marginTop:0,
-
-marginBottom:12,
-
-fontSize:20,
-
-fontWeight:700,
-
-color:"#04122F",
-
-}}
->
-
-{item.concept}
-
-</h3>
-
-
-<p
-style={{
-margin:0,
-fontWeight:600,
-fontSize:15,
-color:"#64748B",
-}}
->
-
-Mentioned by {item.count}
-student(s)
-
-</p>
-
-
-<div
-
-onClick={()=>{
-
-const students =
-
-classroomRadar.studentsRequiringAttention
-.filter((student:any)=>{
-
-return student.concepts.includes(
-item.concept
-);
-
-});
-
-setSelectedConcept(
-item.concept
-);
-
-setSelectedStudents(
-students
-);
-
-setShowStudentsModal(true);
-
-}}
-
-style={{
-
-marginTop:18,
-padding:"8px 14px",
-borderRadius:12,
-background:"#EFF6FF",
-color:"#2563EB",
-fontWeight:700,
-fontSize:13,
-cursor:"pointer",
-display:"inline-block",
-
-}}
-
->
-
-View Students →
-
-</div>
-
-</div>
-
-))
-
-}
-
-</div>
-
-</div>
-
-)
-
-}
-
-{/* STUDENTS REQUIRING ATTENTION */}
-
-<div
-style={{
-
-...cardStyle,
-
-marginTop:25,
-
-}}
->
-
-<h2 style={sectionHeadingStyle}>
-Students Requiring Additional Attention
-</h2>
-
-<p style={sectionSubHeadingStyle}>
-Students that may require revision or additional support.
-</p>
-
-
-{
-
-classroomRadar?.studentsRequiringAttention?.length === 0 ? (
-
-<div style={cardStyle}>
-
-<p>
-No students currently require additional
-teaching support.
-</p>
-
-</div>
-
-)
-
-:
-
-(
-
-<div
-style={{
-display:"flex",
-gap:20,
-overflowX:"auto",
-paddingBottom:10,
-}}
->
-
-{
-
-classroomRadar.studentsRequiringAttention.map(
-(student:any,index:number)=>(
-
-<div
-key={index}
-style={studentSliderCard}
->
-
-<h2
-style={{
-marginTop:0,
-marginBottom:15,
-fontSize:18,
-color:"#04122F",
-}}
->
-
-{student.studentName}
-
-</h2>
-
-
-<div
-style={statusChip}
->
-
-{student.understandingLevel}
-
-</div>
-
-
-<p
-style={{
-
-marginTop:15,
-
-marginBottom:0,
-
-fontWeight:700,
-
-fontSize:15,
-
-color:"#475569",
-
-}}
->
-
-{student.concepts.length} Concepts Need Revision
-
-</p>
-
-
-<div
-style={{
-display:"flex",
-flexWrap:"wrap",
-gap:10,
-marginTop:15,
-}}
->
-
-{
-
-student.concepts?.map(
-(concept:string)=>(
-
-<div
-key={concept}
-style={feedbackChip}
->
-
-{concept}
-
-</div>
-
-))
-
-}
-
-</div>
-
-
-</div>
-
-))
-
-}
-
-</div>
-
-)
-
-}
-
-</div>
-
-{
-
-showStudentsModal && (
-
-<div
-style={{
-
-position:"fixed",
-top:0,
-left:0,
-right:0,
-bottom:0,
-background:"rgba(0,0,0,0.45)",
-
-display:"flex",
-justifyContent:"center",
-alignItems:"center",
-
-zIndex:9999,
-
-}}
->
-
-<div
 style={{
 
 background:"white",
-width:"650px",
-maxHeight:"80vh",
-overflowY:"auto",
 
-borderRadius:30,
-padding:35,
+padding:"20px",
 
+borderRadius:"24px",
+
+fontSize:"18px",
+
+}}
+
+>
+
+No classroom intelligence available yet.
+
+</div>
+
+)}
+
+
+{/* TABLE CONTAINER */}
+
+{!loading && dashboardData.length > 0 && (
+
+<>
+
+<div
+style={{
+background:"white",
+padding:"16px",
+borderRadius:"24px",
 boxShadow:
-"0px 25px 50px rgba(0,0,0,0.2)",
-
+"0px 8px 24px rgba(0,0,0,0.05)",
+overflowX:"auto",
 }}
 >
 
-<div
+<table
 style={{
-
-background:"#FFF7ED",
-padding:28,
-borderRadius:22,
-marginBottom:30,
-
+width: "100%",
+borderCollapse: "collapse",
+minWidth: "950px",
 }}
 >
 
-{
+<thead>
 
-selectedConcept ===
-"Students Pending Feedback"
+<tr>
 
-? "FEEDBACK PENDING"
-
-: "CONCEPT INTELLIGENCE"
-
-}
-
-<h1
+<th
 style={{
 
-color:"4d360e",
-marginTop:10,
-marginBottom:10,
+padding:"10px",
 
-}}
->
+background:"#f7f4f9",
 
-{selectedConcept}
+color:"#041B4D",
 
-</h1>
-
-<p
-style={{
-color:"#4d360e",
-marginBottom:0,
-}}
->
-
-{
-
-selectedConcept ===
-"Students Pending Feedback"
-
-? `${selectedStudents.length} students have not yet submitted today's lecture feedback.`
-
-: `${selectedStudents.length} students struggled with this concept.`
-
-}
-
-</p>
-
-</div>
-
-
-{
-
-selectedStudents.map(
-(student:any,index:number)=>(
-
-<div
-key={index}
-style={{
-
-background:"#F8FAFC",
-padding:22,
-borderRadius:18,
-marginBottom:18,
-border:"1px solid #E2E8F0",
-
-}}
->
-
-<h3
-style={{
-marginTop:0,
-marginBottom:10,
-color:"#04122F",
-}}
->
-
-{
-
-selectedConcept ===
-"Students Pending Feedback"
-
-? student.student_name
-
-: student.studentName
-
-}
-
-</h3>
-
-
-{
-
-selectedConcept !==
-"Students Pending Feedback"
-
-&&
-
-(
-
-<p>
-
-Understanding Level :
-
-{" "}
-
-{student.understandingLevel}
-
-</p>
-
-)
-
-}
-
-</div>
-
-))
-
-}
-
-
-<button
-
-onClick={()=>{
-
-setShowStudentsModal(false);
-
-}}
-
-style={{
-
-padding:"14px 28px",
-background:"#F59E0B",
-color:"#04122F",
-border:"none",
-borderRadius:14,
-cursor:"pointer",
 fontWeight:700,
 
+fontSize:"18px",
+
+textAlign:"center",
+
+border:"1px solid #E5E7EB",
+
 }}
 
 >
 
-CLOSE
+ METRICS
 
-</button>
+</th>
+
+{dashboardData.map((item, index) => (
+
+<th
+key={item.classroom}
+style={{
+
+...tableHeaderStyle,
+
+background:
+
+index % 4 === 0
+? "#F9F4EA"
+
+: index % 4 === 1
+? "#EEF4FB"
+
+: index % 4 === 2
+? "#EEF8F4"
+
+: "#F4EFFA",
+
+color:"#041B4D",
+fontSize:"20px",
+
+fontWeight:700,
+}}
+>
+
+{item.classroom}
+
+</th>
+
+))}
+
+</tr>
+
+</thead>
 
 
-</div>
+<tbody>
 
-</div>
-
+{renderTableRow(
+"Latest Topic",
+dashboardData.map(
+(item)=>item.latestTopic
 )
+)}
 
-}
+{renderTableRow(
+"Students Filled Feedback",
+dashboardData.map(
+(item)=>item.studentsFilledFeedback
+)
+)}
+
+{renderTableRow(
+"Feedback Remaining",
+dashboardData.map(
+(item)=>
+String(item.feedbackRemaining)
+)
+)}
+
+{renderTableRow(
+"Completely Understood",
+dashboardData.map(
+(item)=>item.completelyUnderstood
+)
+)}
+
+{renderTableRow(
+"Partially Understood",
+dashboardData.map(
+(item)=>item.partiallyUnderstood
+)
+)}
+
+{renderTableRow(
+"Didn't Understand",
+dashboardData.map(
+(item)=>item.didNotUnderstand
+)
+)}
+
+{renderHealthScoreRow(
+dashboardData
+)}
+
+{renderTableRow(
+"Most Difficult Concept",
+dashboardData.map(
+(item)=>item.mostDifficultConcept
+)
+)}
+
+{renderTableRow(
+"Students Requiring Attention",
+dashboardData.map(
+(item)=>item.studentsRequiringAttention
+)
+)}
+
+</tbody>
+
+</table>
+
+<div
+style={{
+display:"flex",
+gap:"40px",
+marginTop:"20px",
+fontSize:"14px",
+fontWeight:600,
+color:"#64748B",
+}}
+>
+
+<div>
+🟢 Good (70-100)
+</div>
+
+<div>
+🟠 Average (40-69)
+</div>
+
+<div>
+🔴 Needs Attention (0-39)
+</div>
+
+</div>
+
+</div>
+
+
 
 {/* TOMORROW'S TEACHING PLAN */}
 
 <div
 style={{
-...cardStyle,
-marginTop:25,
-background:"#FFF7ED",
-border:"1px solid #FDBA74",
+marginTop:"28px",
+background:"#FFF8EA",
+padding:"24px",
+borderRadius:"24px",
+border:"1px solid #FFE1A3",
 }}
 >
 
-<h2>
-
+<h2
+style={{
+marginTop:0,
+color:"#041B4D",
+}}
+>
 Tomorrow's Teaching Plan
-
 </h2>
 
-<p
+
+{dashboardData.map((item)=>(
+
+<div
+key={item.classroom}
 style={{
+marginBottom:"14px",
 lineHeight:1.8,
 }}
 >
 
-{classroomRadar.teachingRecommendation}
+<strong>
+{item.classroom}
+</strong>
 
-</p>
+{" - "}
+
+{item.teachingRecommendation}
+
+</div>
+
+))}
 
 </div>
 
@@ -1147,200 +693,326 @@ lineHeight:1.8,
 
 }
 
+const tableHeaderStyle = {
 
-function DashboardKPI(props:any){
+padding: "10px",
 
-return(
+background: "#041B4D",
+
+color: "white",
+
+fontWeight: 700,
+
+fontSize: "14px",
+
+textAlign: "center" as const,
+
+border: "1px solid #E5E7EB",
+
+};
+
+
+
+const metricColumnStyle = {
+
+padding: "10px",
+
+fontWeight: 700,
+
+background: "#FFFFFF",
+
+color: "#0F172A",
+
+fontSize:"14px",
+
+border: "1px solid #E5E7EB",
+
+width: "220px",
+
+textAlign: "left" as const,
+
+};
+
+
+
+const tableCellStyle = {
+
+padding: "10px",
+
+border: "1px solid #E5E7EB",
+
+textAlign: "center" as const,
+
+color: "#334155",
+
+fontSize: "14px",
+
+verticalAlign: "top" as const,
+
+lineHeight:1.4,
+
+};
+
+
+
+function renderTableRow(
+
+metricName:string,
+values:string[]
+
+) {
+
+return (
+
+<tr>
+
+<td style={metricColumnStyle}>
+
+{
+
+metricName === "Latest Topic"
+? "📖 Latest Topic"
+
+:
+
+metricName === "Students Filled Feedback"
+? "👥 Students Filled Feedback"
+
+:
+
+metricName === "Feedback Remaining"
+? "⏳ Feedback Remaining"
+
+:
+
+metricName === "Completely Understood"
+? "😊 Completely Understood"
+
+:
+
+metricName === "Partially Understood"
+? "😐 Partially Understood"
+
+:
+
+metricName === "Didn't Understand"
+? "☹️ Didn't Understand"
+
+:
+
+metricName === "Class Health Score"
+? "🛡️ Class Health Score"
+
+:
+
+metricName === "Most Difficult Concept"
+? "⚠️ Most Difficult Concept"
+
+:
+
+metricName === "Students Requiring Attention"
+? "👤 Students Requiring Attention"
+
+:
+
+metricName
+
+}
+
+</td>
+
+{values.map((value, index) => (
+
+<td
+key={index}
+style={{
+
+...tableCellStyle,
+
+color:
+
+metricName === "Completely Understood"
+? "#16A34A"
+
+:
+
+metricName === "Partially Understood"
+? "#F59E0B"
+
+:
+
+metricName === "Didn't Understand"
+? "#EF4444"
+
+:
+
+metricName === "Most Difficult Concept"
+? "#1E3A8A"
+
+:
+
+metricName === "Students Requiring Attention"
+? "#DC2626"
+
+:
+
+"#334155",
+
+fontWeight:
+
+metricName === "Completely Understood" ||
+metricName === "Partially Understood" ||
+metricName === "Didn't Understand"
+
+? 700
+
+: 500,
+
+}}
+>
+
+{value || "-"}
+
+</td>
+
+))}
+
+</tr>
+
+);}
+
+function renderHealthScoreRow(
+
+dashboardData:
+ClassroomDashboardData[]
+
+) {
+
+return (
+
+<tr>
+
+<td style={metricColumnStyle}>
+
+🛡️ Class Health Score
+
+</td>
+
+
+{dashboardData.map((item,index)=>(
+
+<td
+key={index}
+style={{
+
+...tableCellStyle,
+
+}}
+
+>
 
 <div
 style={{
 
-padding:20,
-borderRadius:20,
-background:"#FFF7ED",
-border:"1px solid #FDBA74",
-minHeight:140,
+fontSize:"22px",
 
-}}
->
-
-<h1
-style={{
-
-margin:0,
-fontSize:42,
-fontWeight:800,
-color:"#04122F",
-
-}}
->
-
-{props.value}
-
-</h1>
-
-<p
-style={{
-
-marginTop:12,
-marginBottom:0,
 fontWeight:700,
-fontSize:15,
-color:"#475569",
+
+color:"#041B4D",
 
 }}
 >
 
-{props.title}
+{item.classHealthScore}
 
-</p>
+<span
+style={{
+
+fontSize:"14px",
+
+fontWeight:500,
+
+}}
+
+>
+
+ /100
+
+</span>
 
 </div>
+
+
+<div
+style={{
+
+marginTop:"10px",
+
+display:"inline-block",
+
+padding:"5px 10px",
+
+borderRadius:"999px",
+
+fontWeight:700,
+
+fontSize:"11px",
+
+background:
+
+item.classHealthStatus
+.toLowerCase()
+.includes("good")
+
+? "#DCFCE7"
+
+:
+
+item.classHealthStatus
+.toLowerCase()
+.includes("average")
+
+? "#FEF3C7"
+
+:
+
+"#FEE2E2",
+
+
+color:
+
+item.classHealthStatus
+.toLowerCase()
+.includes("good")
+
+? "#16A34A"
+
+:
+
+item.classHealthStatus
+.toLowerCase()
+.includes("average")
+
+? "#D97706"
+
+:
+
+"#DC2626",
+
+}}
+
+>
+
+{item.classHealthStatus}
+
+</div>
+
+</td>
+
+))}
+
+</tr>
 
 );
 
 }
-
-const conceptCard = {
-
-minWidth:"240px",
-
-padding:"22px",
-
-borderRadius:"22px",
-
-background:"#FFF7ED",
-
-border:
-"1px solid #FDBA74",
-
-boxShadow:
-"0px 8px 18px rgba(0,0,0,0.04)",
-
-} as const;
-
-const cardStyle={
-
-background:"white",
-padding:30,
-borderRadius:24,
-boxShadow:
-"0px 10px 25px rgba(0,0,0,0.05)",
-
-} as const;
-
-
-
-const dropdownStyle={
-
-padding:"16px",
-minWidth:"260px",
-borderRadius:"14px",
-border:
-"1px solid #CBD5E1",
-fontSize:16,
-
-} as const;
-
-
-
-
-const feedbackChip={
-
-padding:"12px 18px",
-background:"#EFF6FF",
-border:"1px solid #BFDBFE",
-borderRadius:999,
-fontWeight:600,
-color:"#1D4ED8",
-
-} as const;
-
-const studentAttentionCard = {
-
-background:"white",
-
-padding:30,
-
-borderRadius:28,
-
-marginTop:20,
-
-boxShadow:
-"0px 10px 25px rgba(0,0,0,0.05)",
-
-} as const;
-
-const studentSliderCard = {
-
-minWidth:"240px",
-
-background:"#FFF7ED",
-
-padding:20,
-
-borderRadius:20,
-
-border:
-"1px solid #FDBA74",
-
-boxShadow:
-"0px 8px 18px rgba(0,0,0,0.04)",
-
-} as const;
-
-const statusChip = {
-
-padding:"10px 18px",
-
-background:"#FFF7ED",
-
-border:
-"1px solid #FDBA74",
-
-borderRadius:999,
-
-fontWeight:700,
-
-width:"fit-content",
-
-color:"#EA580C",
-
-} as const;
-
-const sectionHeadingStyle = {
-
-fontSize:24,
-
-fontWeight:600,
-
-color:"#04122F",
-
-marginBottom:8,
-
-} as const;
-
-
-const sectionSubHeadingStyle = {
-
-fontSize:15,
-
-color:"#64748B",
-
-marginBottom:28,
-
-} as const;
-
-const dashboardPendingCard = {
-
-padding:20,
-
-borderRadius:20,
-
-background:"#FFF7ED",
-
-border:"1px solid #FDBA74",
-
-minHeight:140,
-
-} as const;

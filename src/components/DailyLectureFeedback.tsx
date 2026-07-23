@@ -23,6 +23,22 @@ getStudentFeedbackByLecture,
 
 } from "../data/studentDailyFeedbackRepository";
 
+import {
+
+getPendingDoubtsByStudent,
+submitStudentPendingDoubtResponse,
+
+}
+
+from
+"../domains/teacherIntelligence/repository/PendingTeacherDoubtRepository";
+
+import {
+
+requireIdentity,
+
+} from "../services/identityService";
+
 export default function DailyLectureFeedback() {
   const [lectureLogs, setLectureLogs] = useState<any[]>([]);
 
@@ -80,6 +96,23 @@ setAdditionalNote,
 
 ] = useState("");
 
+const [
+
+pendingDoubts,
+
+setPendingDoubts,
+
+] = useState<any[]>([]);
+
+
+const [
+
+selectedResponse,
+
+setSelectedResponse,
+
+] = useState<Record<string,string>>({});
+
 
 const [submittedFeedback, setSubmittedFeedback] =
 
@@ -87,11 +120,13 @@ const [submittedFeedback, setSubmittedFeedback] =
 
 useState<Record<string, any>>({});
 
-useEffect(() => {
+useEffect(()=>{
 
 loadDailyLogs();
 
-}, []);
+loadPendingDoubts();
+
+},[]);
 
 
 useEffect(() => {
@@ -118,6 +153,28 @@ await getTodaysLectureLogs();
   );
 
   setLectureLogs(logs);
+}
+
+async function loadPendingDoubts(){
+
+const identity =
+requireIdentity();
+
+const doubts =
+
+await getPendingDoubtsByStudent(
+
+identity.studentUuid
+
+);
+
+console.log(
+"PENDING DOUBTS",
+doubts
+);
+
+setPendingDoubts(doubts);
+
 }
 
 async function loadSubmittedFeedback() {
@@ -310,6 +367,66 @@ setSomethingElseText("");
 
 }
 
+async function submitPendingDoubt(
+
+doubt:any
+
+){
+
+const response =
+
+selectedResponse[doubt.id];
+
+
+if(!response){
+
+alert(
+
+"Please select your response."
+
+);
+
+return;
+
+}
+
+
+await submitStudentPendingDoubtResponse(
+
+doubt.id,
+response
+
+);
+
+if(
+
+response ===
+
+"DISCUSSED"
+
+){
+
+alert(
+
+"Great! Your teacher revised the concept."
+
+);
+
+}else{
+
+alert(
+
+"Thank you. Your learning gap has been recorded."
+
+);
+
+}
+
+
+await loadPendingDoubts();
+
+}
+
   return (
     <div className="space-y-6">
       {/* Announcement Card */}
@@ -325,6 +442,319 @@ setSomethingElseText("");
           once the Daily Lecture Logs are available.
         </p>
       </div>
+
+
+{
+pendingDoubts.length > 0 && (
+
+<>
+
+<div className="px-1">
+
+<h2 className="text-2xl font-bold text-slate-900">
+
+Pending Learning Gaps
+
+</h2>
+
+<p className="mt-2 text-slate-600">
+
+Please let us know whether your teacher revised these
+difficult concepts during today's classroom discussion.
+
+</p>
+
+</div>
+
+<div
+className="rounded-3xl border border-orange-200 bg-orange-50 p-6 shadow-sm"
+>
+
+<div
+className="mt-5 space-y-5"
+>
+
+{
+
+pendingDoubts.map(
+
+(doubt:any)=>(
+
+<div
+
+key={doubt.id}
+
+className="rounded-2xl bg-white p-5"
+
+>
+
+<div className="space-y-3">
+
+<div>
+
+<p className="text-sm text-slate-500">
+
+Subject
+
+</p>
+
+<p className="font-semibold">
+
+{doubt.subject_name}
+
+</p>
+
+</div>
+
+
+<div>
+
+<p className="text-sm text-slate-500">
+
+Previous Topic
+
+</p>
+
+<p className="font-semibold">
+
+{doubt.previous_topic_name}
+
+</p>
+
+</div>
+
+
+<div>
+
+<p className="text-sm text-slate-500">
+
+Difficult Concept
+
+</p>
+
+<p className="font-semibold text-orange-700">
+
+{doubt.previous_difficult_concept}
+
+</p>
+
+</div>
+
+</div>
+
+
+<div className="mt-4">
+
+<p className="text-sm text-slate-500">
+
+Teacher
+
+</p>
+
+<p className="font-semibold">
+
+{doubt.teacher_name}
+
+</p>
+
+</div> 
+
+
+<p className="mt-2">
+
+You previously mentioned that this concept was difficult.
+
+</p>
+
+
+<div
+className="mt-5 space-y-3"
+>
+
+<label
+className="flex gap-3"
+>
+
+<input
+
+type="radio"
+
+name={doubt.id}
+
+checked={
+
+selectedResponse[doubt.id]
+
+===
+
+"DISCUSSED"
+
+}
+
+onChange={()=>{
+
+setSelectedResponse(
+
+(previous)=>({
+
+...previous,
+
+[doubt.id]:
+
+"DISCUSSED",
+
+})
+
+);
+
+}}
+
+ />
+
+<span>
+
+Yes, it was discussed today.
+
+</span>
+
+</label>
+
+
+<label
+className="flex gap-3"
+>
+
+<input
+
+type="radio"
+
+name={doubt.id}
+
+checked={
+
+selectedResponse[doubt.id]
+
+===
+
+"NOT DISCUSSED"
+
+}
+
+onChange={()=>{
+
+setSelectedResponse(
+
+(previous)=>({
+
+...previous,
+
+[doubt.id]:
+
+"NOT DISCUSSED",
+
+})
+
+);
+
+}}
+
+ />
+
+<span>
+
+No, it was NOT discussed today.
+
+</span>
+
+</label>
+
+</div>
+
+
+<button
+
+onClick={()=>{
+
+submitPendingDoubt(
+
+doubt
+
+);
+
+}}
+
+className="mt-5 rounded-xl bg-red-600 px-5 py-2 font-bold text-white"
+
+>
+
+Submit Response
+
+</button>
+
+
+</div>
+
+))
+
+}
+
+</div>
+
+</div>
+
+</>
+
+)
+
+}
+
+{
+pendingDoubts.length === 0 && (
+
+<div
+className="rounded-3xl border border-green-200 bg-green-50 p-6 shadow-sm"
+>
+
+<h2
+className="text-2xl font-bold text-green-700"
+>
+
+No Pending Learning Gaps
+
+</h2>
+
+<p
+className="mt-3 text-slate-600"
+>
+
+Great work! All your previous difficult concepts
+have either been revised by your teacher or have
+already been resolved.
+
+</p>
+
+</div>
+
+)
+
+}
+
+<div>
+
+<h2 className="text-2xl font-bold text-slate-900">
+
+Today's Daily Feedback
+
+</h2>
+
+<p className="mt-2 text-slate-600">
+
+Review today's classroom activities and submit your
+learning feedback.
+
+</p>
+
+</div>
 
       {/* Daily Lecture Feed */}
 

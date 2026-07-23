@@ -32,23 +32,7 @@ export default function MyClassroomPage() {
 const [assignments,setAssignments] =
 useState<TeacherAssignment[]>([]);
 
-const [classes,setClasses] =
-useState<string[]>([]);
 
-const [sections,setSections] =
-useState<string[]>([]);
-
-const [subjects,setSubjects] =
-useState<string[]>([]);
-
-const [selectedClass,setSelectedClass] =
-useState("");
-
-const [selectedSection,setSelectedSection] =
-useState("");
-
-const [selectedSubject,setSelectedSubject] =
-useState("");
 
 const [selectedMonth,setSelectedMonth] =
 useState("July 2026");
@@ -162,258 +146,109 @@ console.log(data);
 
 console.log(teacher.teacherUuid);
 
-const uniqueClasses = [
 
-...new Set(
-data.map(
-item=>item.className
-)
-),
+}return (
+  <div
+    style={{
+      padding: 16,
+      background: "#F6F6F3",
+      minHeight: "100%",
+    }}
+  >
+    {/* HEADER */}
 
-];
-
-setClasses(uniqueClasses);
-
-}
-  return (
     <div
       style={{
-        padding: 32,
-        background: "#F6F6F3",
-        minHeight: "100%",
+        background: "#04122F",
+        padding: 18,
+        borderRadius: 18,
+        marginBottom: 16,
+        position: "relative",
       }}
     >
-      {/* HEADER */}
+      <p
+        style={{
+          color: "#F59E0B",
+          fontWeight: 700,
+          letterSpacing: 1.5,
+          fontSize: 9,
+          marginBottom: 5,
+        }}
+      >
+        MY CLASSROOM
+      </p>
+
+      <h1
+        style={{
+          color: "white",
+          fontSize: 26,
+          margin: 0,
+        }}
+      >
+        CLASSROOM OVERVIEW
+      </h1>
+
+      <p
+        style={{
+          color: "#E5E7EB",
+          marginTop: 6,
+          fontSize: 12,
+          lineHeight: 1.6,
+        }}
+      >
+        View your class details and teaching history
+        in a calendar format.
+      </p>
+    </div>
+
+    {/* FILTERS */}
+
+    <div
+      style={{
+        background: "white",
+        padding: 14,
+        borderRadius: 14,
+        boxShadow:
+          "0px 10px 30px rgba(0,0,0,0.05)",
+      }}
+    >
+      <h2
+        style={{
+          marginTop: 0,
+          marginBottom: 16,
+          fontSize: 20,
+        }}
+      >
+        Filters
+      </h2>
 
       <div
-style={{
-background:"#04122F",
-padding:40,
-borderRadius:28,
-marginBottom:24,
-position:"relative",
-}}
->
-
-<p
-style={{
-color:"#F59E0B",
-fontWeight:700,
-letterSpacing:2,
-fontSize:13,
-marginBottom:8,
-}}
->
-
-MY CLASSROOM
-
-</p>
-
-
-<h1
-style={{
-color:"white",
-fontSize:48,
-margin:0,
-}}
->
-
-CLASSROOM OVERVIEW
-
-</h1>
-
-
-<p
-style={{
-color:"#E5E7EB",
-marginTop:10,
-fontSize:18,
-}}
->
-
-View your class details and teaching history in a calendar format.
-
-</p>
-
-</div>
-
-      {/* FILTERS */}
-
-<div style={{
-
-background:"white",
-padding:28,
-borderRadius:28,
-boxShadow:"0px 10px 30px rgba(0,0,0,0.05)",
-
-}}>
-
-<h2>Filters</h2>
-
-<div
-style={{
-display:"flex",
-gap:18,
-flexWrap:"wrap",
-}}
->
-
-{/* CLASS */}
+        style={{
+          display: "flex",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+      {/* CLASSROOM */}
 
 <select
 style={dropdownStyle}
-value={selectedClass}
-onChange={(e)=>{
+value={
 
-const value =
-e.target.value;
-
-setSelectedClass(value);
-
-const filteredSections = [
-
-...new Set(
-
-assignments
-
-.filter(
-item=>
-item.className === value
-)
-
-.map(
-item=>item.sectionName
-)
-
-),
-
-];
-
-setSections(filteredSections);
-
-setSelectedSection("");
-setSelectedSubject("");
-setSubjects([]);
-setSelectedAssignment(null);
-
-}}
->
-
-<option value="">
-Select Class
-</option>
-
-{
-
-classes.map((item)=>(
-
-<option
-key={item}
-value={item}
->
-Class {item}
-</option>
-
-))
+selectedAssignment?.id ?? ""
 
 }
 
-</select>
-
-
-{/* SECTION */}
-
-<select
-style={dropdownStyle}
-value={selectedSection}
-onChange={(e)=>{
-
-const value =
-e.target.value;
-
-setSelectedSection(value);
-
-const filteredSubjects = [
-
-...new Set(
-
-assignments
-
-.filter(
-item=>
-
-item.className ===
-selectedClass &&
-
-item.sectionName ===
-value
-
-)
-
-.map(
-item=>item.subjectName
-)
-
-),
-
-];
-
-setSubjects(filteredSubjects);
-
-setSelectedSubject("");
-setSelectedAssignment(null);
-
-}}
->
-
-<option value="">
-Select Section
-</option>
-
-{
-
-sections.map((item)=>(
-
-<option
-key={item}
-value={item}
->
-Section {item}
-</option>
-
-))
-
-}
-
-</select>
-
-
-
-{/* SUBJECT */}
-
-<select
-style={dropdownStyle}
-value={selectedSubject}
 onChange={async (e)=>{
-
-const value =
-e.target.value;
-
-setSelectedSubject(value);
 
 const assignment =
 
 assignments.find(
-item=>
 
-item.className ===
-selectedClass &&
+(item)=>
 
-item.sectionName ===
-selectedSection &&
-
-item.subjectName ===
-value
+String(item.id) ===
+e.target.value
 
 );
 
@@ -421,7 +256,7 @@ setSelectedAssignment(
 assignment ?? null
 );
 
-if (assignment) {
+if(assignment){
 
 const logs =
 
@@ -435,8 +270,8 @@ const riskData =
 
 await getStudentsAtRisk(
 
-selectedClass,
-selectedSection
+assignment.className,
+assignment.sectionName
 
 );
 
@@ -444,8 +279,9 @@ setStudentsAtRisk(
 riskData
 );
 
+}
 
-} else {
+else{
 
 setDailyLogs([]);
 
@@ -455,18 +291,26 @@ setDailyLogs([]);
 >
 
 <option value="">
-Select Subject
+
+Select Classroom
+
 </option>
 
 {
 
-subjects.map((item)=>(
+assignments.map((assignment)=>(
 
 <option
-key={item}
-value={item}
+key={assignment.id}
+value={assignment.id}
 >
-{item}
+
+Class {assignment.className}
+
+-
+
+Section {assignment.sectionName}
+
 </option>
 
 ))
@@ -518,21 +362,21 @@ value={month}
 
 </div>
 
-     {/* CLASS INFO */}
+ {/* CLASS INFO */}
 
 <div
 style={{
 ...cardStyle,
-marginTop:30,
+marginTop:20,
 }}
 >
 
 <h2
 style={{
-fontSize:"24px",
+fontSize:"18px",
 fontWeight:600,
 color:"#04122F",
-marginBottom:12,
+marginBottom:8,
 }}
 >
 
@@ -549,9 +393,9 @@ display:"grid",
 gridTemplateColumns:
 "repeat(4,1fr)",
 
-gap:30,
+gap:18,
 
-marginTop:30,
+marginTop:18,
 
 }}
 >
@@ -615,26 +459,27 @@ selectedAssignment?.academicYear ??
 
 />
 
-
 </div>
 
 </div>
+
+
 
 {/* CLASSROOM HISTORY */}
 
 <div
 style={{
 ...cardStyle,
-marginTop:30,
+marginTop:20,
 }}
 >
 
 <h2
 style={{
-fontSize:"24px",
+fontSize:"18px",
 fontWeight:600,
 color:"#04122F",
-marginBottom:12,
+marginBottom:8,
 }}
 >
 
@@ -646,7 +491,7 @@ Classroom Teaching Calendar
 style={{
 marginTop:0,
 color:"#64748B",
-fontSize:"16px",
+fontSize:"11px",
 fontWeight:500,
 }}
 >
@@ -656,15 +501,16 @@ View all topics taught during the month.
 </p>
 
 
+
 {/* WEEK DAYS */}
 
 <div
 style={{
 display:"grid",
 gridTemplateColumns:"repeat(7,1fr)",
-gap:12,
-marginTop:30,
-marginBottom:15,
+gap:8,
+marginTop:18,
+marginBottom:10,
 }}
 >
 
@@ -679,7 +525,7 @@ key={day}
 style={{
 textAlign:"center",
 fontWeight:800,
-fontSize:18,
+fontSize:12,
 letterSpacing:1,
 color:"#334155",
 textTransform:"uppercase",
@@ -704,7 +550,7 @@ textTransform:"uppercase",
 style={{
 display:"grid",
 gridTemplateColumns:"repeat(7,1fr)",
-gap:12,
+gap:8,
 }}
 >
 
@@ -777,7 +623,7 @@ style={emptyCalendarBox}
 <div
 style={{
 fontWeight:700,
-fontSize:18,
+fontSize:12,
 }}
 >
 
@@ -788,10 +634,12 @@ fontSize:18,
 
 <p
 style={{
-marginTop:25,
-fontSize:13,
+marginTop:14,
+fontSize:9,
 color:"#CA8A04",
 fontWeight:600,
+textAlign:"center",
+lineHeight:1.4,
 }}
 >
 
@@ -804,7 +652,6 @@ No Lecture Conducted
 );
 
 }
-
 
 return(
 
@@ -819,15 +666,14 @@ background:"#F7FFF8",
 }}
 >
 
-
 <div
 style={{
 
 fontWeight:700,
 
-fontSize:18,
+fontSize:12,
 
-marginBottom:12,
+marginBottom:8,
 
 }}
 >
@@ -850,9 +696,9 @@ style={{
 
 display:"inline-flex",
 
-padding:"8px 14px",
+padding:"5px 9px",
 
-borderRadius:14,
+borderRadius:10,
 
 background:
 
@@ -868,9 +714,9 @@ topic.id === latestLog?.id
 
 fontWeight:700,
 
-fontSize:13,
+fontSize:9,
 
-marginBottom:12,
+marginBottom:8,
 
 }}
 >
@@ -885,13 +731,15 @@ style={{
 
 marginTop:0,
 
-marginBottom:14,
+marginBottom:8,
 
-fontSize:13,
+fontSize:9,
 
 fontWeight:600,
 
 color:"#475569",
+
+lineHeight:1.5,
 
 }}
 >
@@ -933,13 +781,13 @@ setShowTopicsModal(true);
 
 style={{
 
-marginTop:10,
-marginBottom:14,
-padding:"8px 12px",
-borderRadius:12,
+marginTop:6,
+marginBottom:8,
+padding:"5px 8px",
+borderRadius:8,
 background:"#EFF6FF",
 color:"#2563EB",
-fontSize:13,
+fontSize:9,
 fontWeight:700,
 display:"inline-block",
 cursor:"pointer",
@@ -965,11 +813,13 @@ display:"flex",
 
 justifyContent:"space-between",
 
-marginTop:14,
+marginTop:8,
 
-fontSize:13,
+fontSize:9,
 
 color:"#475569",
+
+lineHeight:1.5,
 
 }}
 >
@@ -1038,7 +888,9 @@ item=>item.activityConducted
 </div>
 
 </div>
-    
+
+
+
 {
 
 showTopicsModal && (
@@ -1070,13 +922,13 @@ zIndex:9999,
 style={{
 
 background:"white",
-width:"700px",
-maxHeight:"80vh",
+width:"460px",
+maxHeight:"75vh",
 
 overflowY:"auto",
 
-borderRadius:30,
-padding:35,
+borderRadius:20,
+padding:22,
 
 boxShadow:
 "0px 25px 50px rgba(0,0,0,0.2)",
@@ -1091,11 +943,11 @@ style={{
 
 background:"#04122F",
 
-padding:28,
+padding:18,
 
-borderRadius:22,
+borderRadius:16,
 
-marginBottom:30,
+marginBottom:20,
 
 }}
 
@@ -1109,7 +961,9 @@ color:"#F59E0B",
 
 fontWeight:700,
 
-letterSpacing:1.5,
+letterSpacing:1,
+
+fontSize:"10px",
 
 marginTop:0,
 
@@ -1128,9 +982,11 @@ style={{
 
 color:"white",
 
-marginTop:10,
+marginTop:6,
 
-marginBottom:10,
+marginBottom:6,
+
+fontSize:"24px",
 
 }}
 
@@ -1149,6 +1005,10 @@ color:"#E5E7EB",
 
 marginBottom:0,
 
+fontSize:"11px",
+
+lineHeight:1.5,
+
 }}
 
 >
@@ -1163,6 +1023,7 @@ Topics were covered during this lecture day.
 </div>
 
 
+
 {
 
 selectedDayTopics.map((topic,index)=>(
@@ -1175,11 +1036,11 @@ style={{
 
 background:"#F8FAFC",
 
-padding:24,
+padding:16,
 
-borderRadius:18,
+borderRadius:12,
 
-marginBottom:20,
+marginBottom:14,
 
 border:"1px solid #E2E8F0",
 
@@ -1192,9 +1053,9 @@ style={{
 
 color:"#04122F",
 
-marginBottom:18,
+marginBottom:12,
 
-fontSize:22,
+fontSize:16,
 
 }}
 >
@@ -1204,7 +1065,12 @@ fontSize:22,
 </h3>
 
 
-<p>
+<p
+style={{
+fontSize:"11px",
+lineHeight:1.6,
+}}
+>
 
 Pages :
 
@@ -1217,7 +1083,12 @@ Pages :
 </p>
 
 
-<p>
+<p
+style={{
+fontSize:"11px",
+lineHeight:1.6,
+}}
+>
 
 Homework :
 
@@ -1230,7 +1101,12 @@ Homework :
 </p>
 
 
-<p>
+<p
+style={{
+fontSize:"11px",
+lineHeight:1.6,
+}}
+>
 
 Activity :
 
@@ -1247,7 +1123,12 @@ Activity :
 
 topic.teacherNotes && (
 
-<p>
+<p
+style={{
+fontSize:"11px",
+lineHeight:1.6,
+}}
+>
 
 Teacher Notes :
 
@@ -1261,12 +1142,11 @@ Teacher Notes :
 
 }
 
-
 </div>
 
 ))
-
 }
+
 
 
 <button
@@ -1279,7 +1159,7 @@ setShowTopicsModal(false);
 
 style={{
 
-padding:"16px 30px",
+padding:"10px 18px",
 
 background:"#F59E0B",
 
@@ -1287,13 +1167,13 @@ color:"#04122F",
 
 border:"none",
 
-borderRadius:16,
+borderRadius:10,
 
 cursor:"pointer",
 
 fontWeight:700,
 
-fontSize:15,
+fontSize:11,
 
 }}
 
@@ -1312,21 +1192,22 @@ CLOSE TOPICS
 
 }
 
+
 {/* MONTHLY SUMMARY */}
 
 <div
 style={{
 ...cardStyle,
-marginTop:30,
+marginTop:20,
 }}
 >
 
 <h2
 style={{
-fontSize:"24px",
+fontSize:"18px",
 fontWeight:600,
 color:"#04122F",
-marginBottom:12,
+marginBottom:8,
 }}
 >
 
@@ -1340,8 +1221,8 @@ style={{
 display:"grid",
 gridTemplateColumns:
 "repeat(4,1fr)",
-gap:20,
-marginTop:30,
+gap:14,
+marginTop:18,
 }}
 >
 
@@ -1365,7 +1246,7 @@ item.homeworkGiven
 
 
 <SummaryCard
-title=" Activity Days"
+title="Activity Days"
 value={String(
 
 dailyLogs.filter(
@@ -1386,6 +1267,8 @@ value={String(dailyLogs.length)}
 
 </div>
 
+
+
 {/* STUDENTS AT RISK */}
 
 <div
@@ -1394,13 +1277,18 @@ style={{
 
 ...cardStyle,
 
-marginTop:30,
+marginTop:20,
 
 }}
 
 >
 
-<h2>
+<h2
+style={{
+fontSize:"18px",
+marginBottom:"6px",
+}}
+>
 
 Students At Risk
 
@@ -1409,7 +1297,8 @@ Students At Risk
 <p
 style={{
 color:"#64748B",
-marginBottom:24,
+marginBottom:16,
+fontSize:"11px",
 }}
 >
 
@@ -1428,7 +1317,7 @@ display:"grid",
 gridTemplateColumns:
 "repeat(3,1fr)",
 
-gap:20,
+gap:14,
 
 }}
 
@@ -1492,82 +1381,151 @@ background="#FEFCE8"
 
 </div>
 
+
+
 <div
 style={{
-marginTop:30,
+marginTop:18,
 display:"grid",
 gridTemplateColumns:"repeat(3,1fr)",
-gap:20,
+gap:14,
 }}
 >
 
 <div>
-<h3 style={{marginBottom:8}}>
+
+<h3
+style={{
+marginBottom:6,
+fontSize:"14px",
+}}
+>
 Very Critical
 </h3>
 
-<p style={{color:"#64748B"}}>
+<p
+style={{
+color:"#64748B",
+fontSize:"10px",
+lineHeight:1.6,
+}}
+>
 3 consecutive "I didn't understand."
 responses.
 </p>
+
 </div>
 
 
 <div>
-<h3 style={{marginBottom:8}}>
+
+<h3
+style={{
+marginBottom:6,
+fontSize:"14px",
+}}
+>
 Critical
 </h3>
 
-<p style={{color:"#64748B"}}>
+<p
+style={{
+color:"#64748B",
+fontSize:"10px",
+lineHeight:1.6,
+}}
+>
 2 "I didn't understand." and
 1 "I partially understood."
 response.
 </p>
+
 </div>
 
 
 <div>
-<h3 style={{marginBottom:8}}>
+
+<h3
+style={{
+marginBottom:6,
+fontSize:"14px",
+}}
+>
 Moderate
 </h3>
 
-<p style={{color:"#64748B"}}>
+<p
+style={{
+color:"#64748B",
+fontSize:"10px",
+lineHeight:1.6,
+}}
+>
 3 consecutive "I partially understood."
 responses.
 </p>
-</div>
 
 </div>
 
 </div>
 
+</div>
 
 
-    </div>
-  );
+
+</div>
+
+);
+
 }
 
 
 /* ------------------------------------------------ */
 
 function TimelineCard(props: any) {
-  return (
-    <div
-      style={{
-        background: "#F8FAFC",
-        padding: 18,
-        borderRadius: 16,
-        marginBottom: 14,
-      }}
-    >
-      <h3>{props.date}</h3>
 
-      <p>Topic : {props.topic}</p>
+return (
 
-      <p>Status : {props.status}</p>
-    </div>
-  );
+<div
+style={{
+background:"#F8FAFC",
+padding:12,
+borderRadius:10,
+marginBottom:10,
+}}
+>
+
+<h3
+style={{
+fontSize:"14px",
+marginBottom:"6px",
+}}
+>
+{props.date}
+</h3>
+
+<p
+style={{
+fontSize:"11px",
+}}
+>
+Topic : {props.topic}
+</p>
+
+<p
+style={{
+fontSize:"11px",
+}}
+>
+Status : {props.status}
+</p>
+
+</div>
+
+);
+
 }
+
 
 /* ------------------------------------------------ */
 
@@ -1578,9 +1536,8 @@ return(
 <div
 style={{
 ...cardStyle,
-padding:25,
+padding:16,
 background:"#ecf0de",
-
 border:"1px solid #DBEAFE",
 }}
 >
@@ -1588,7 +1545,7 @@ border:"1px solid #DBEAFE",
 <h1
 style={{
 margin:0,
-fontSize:48,
+fontSize:30,
 color:"#64748B",
 }}
 >
@@ -1600,8 +1557,9 @@ color:"#64748B",
 
 <p
 style={{
-marginTop:12,
+marginTop:8,
 fontWeight:600,
+fontSize:"11px",
 color:"#475569",
 }}
 >
@@ -1628,9 +1586,9 @@ style={{
 background:
 props.background,
 
-borderRadius:20,
+borderRadius:12,
 
-minHeight:220,
+minHeight:140,
 
 overflowY:"auto",
 
@@ -1641,13 +1599,13 @@ overflowY:"auto",
 <div
 style={{
 
-padding:"16px 18px",
+padding:"10px 12px",
 
 background:"rgba(255,255,255,0.55)",
 
-borderTopLeftRadius:20,
+borderTopLeftRadius:12,
 
-borderTopRightRadius:20,
+borderTopRightRadius:12,
 
 borderBottom:"1px solid rgba(0,0,0,0.08)",
 
@@ -1657,6 +1615,7 @@ borderBottom:"1px solid rgba(0,0,0,0.08)",
 <h3
 style={{
 margin:0,
+fontSize:"15px",
 }}
 >
 {props.title}
@@ -1664,9 +1623,10 @@ margin:0,
 
 <p
 style={{
-marginTop:6,
+marginTop:4,
 marginBottom:0,
 fontWeight:700,
+fontSize:"11px",
 }}
 >
 {props.count} Students
@@ -1677,7 +1637,7 @@ fontWeight:700,
 
 <div
 style={{
-padding:18,
+padding:12,
 }}
 >
 
@@ -1693,15 +1653,17 @@ key={name}
 
 style={{
 
-padding:"10px 14px",
+padding:"6px 10px",
 
 background:"white",
 
-borderRadius:12,
+borderRadius:8,
 
-marginBottom:10,
+marginBottom:6,
 
 fontWeight:600,
+
+fontSize:"11px",
 
 }}
 
@@ -1737,7 +1699,7 @@ display:"flex",
 
 alignItems:"center",
 
-gap:10,
+gap:6,
 
 }}
 >
@@ -1745,9 +1707,9 @@ gap:10,
 <div
 style={{
 
-width:18,
+width:12,
 
-height:18,
+height:12,
 
 borderRadius:"50%",
 
@@ -1765,6 +1727,8 @@ style={{
 
 fontWeight:600,
 
+fontSize:"11px",
+
 color:"#334155",
 
 }}
@@ -1780,6 +1744,7 @@ color:"#334155",
 
 }
 
+
 /* ------------------------------------------------ */
 
 function InfoCard(props:any){
@@ -1789,9 +1754,9 @@ return(
 <div
 style={{
 
-padding:20,
+padding:12,
 
-borderRadius:18,
+borderRadius:12,
 
 background:"#ecf0de",
 
@@ -1806,7 +1771,7 @@ style={{
 
 margin:0,
 
-fontSize:14,
+fontSize:10,
 
 fontWeight:600,
 
@@ -1823,12 +1788,12 @@ color:"#64748B",
 <h2
 style={{
 
-marginTop:12,
+marginTop:8,
 marginBottom:0,
 
 color:"#64748B",
 
-fontSize:30,
+fontSize:18,
 
 }}
 >
@@ -1844,18 +1809,24 @@ fontSize:30,
 
 }
 
+
+/* ------------------------------------------------ */
+
 const cardStyle = {
 
 background:"white",
 
-padding:32,
+padding:20,
 
-borderRadius:28,
+borderRadius:18,
 
 boxShadow:
 "0px 10px 30px rgba(0,0,0,0.05)",
 
 } as const;
+
+
+/* ------------------------------------------------ */
 
 const calendarLectureBox = {
 
@@ -1863,11 +1834,11 @@ background:"#FFFFFF",
 
 border:"1px solid #E2E8F0",
 
-borderRadius:24,
+borderRadius:16,
 
-padding:18,
+padding:12,
 
-minHeight:180,
+minHeight:120,
 
 boxShadow:
 "0px 4px 15px rgba(0,0,0,0.04)",
@@ -1875,6 +1846,7 @@ boxShadow:
 } as const;
 
 
+/* ------------------------------------------------ */
 
 const emptyCalendarBox = {
 
@@ -1882,11 +1854,11 @@ background:"#FFFDF3",
 
 border:"1px solid #FDE68A",
 
-borderRadius:24,
+borderRadius:16,
 
-padding:18,
+padding:12,
 
-minHeight:150,
+minHeight:100,
 
 display:"flex",
 
@@ -1896,10 +1868,13 @@ alignItems:"center",
 
 } as const;
 
+
+/* ------------------------------------------------ */
+
 const dropdownStyle = {
-  padding: "14px",
-  minWidth: "220px",
-  borderRadius: "14px",
+  padding: "9px",
+  minWidth: "150px",
+  borderRadius: "9px",
   border:
     "1px solid #CBD5E1",
 } as const;

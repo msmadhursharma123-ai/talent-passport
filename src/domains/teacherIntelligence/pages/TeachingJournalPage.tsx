@@ -41,23 +41,10 @@ useState<TeacherAssignment[]>([]);
 const [dailyLogs,setDailyLogs] =
 useState<TeacherDailyLog[]>([]);
 
-const [classes,setClasses] =
-useState<string[]>([]);
-
-const [sections,setSections] =
-useState<string[]>([]);
-
-const [subjects,setSubjects] =
-useState<string[]>([]);
-
-const [selectedClass,setSelectedClass] =
-useState("");
-
-const [selectedSection,setSelectedSection] =
-useState("");
-
-const [selectedSubject,setSelectedSubject] =
-useState("");
+const [
+selectedAssignmentId,
+setSelectedAssignmentId,
+] = useState("");
 
 const [selectedMonth,setSelectedMonth] =
 useState("July");
@@ -108,58 +95,38 @@ loadOverallClassroomComparison();
 
 },[selectedMonth]);
 
-useEffect(()=>{
+useEffect(() => {
 
 loadSelectedClassroomData();
 
 },[
 
-selectedClass,
-selectedSection,
-selectedSubject,
+selectedAssignmentId,
 selectedMonth,
 
 ]);
 
 const loadSelectedClassroomData =
-
 async ()=>{
 
-
 if(
-
-!selectedClass ||
-!selectedSection ||
-!selectedSubject
-
+!selectedAssignmentId
 ){
-
 return;
-
 }
-
 
 const assignment =
 
 assignments.find(
-item=>
+(item)=>
 
-item.className ===
-selectedClass &&
-
-item.sectionName ===
-selectedSection &&
-
-item.subjectName ===
-selectedSubject
-
+String(item.id) ===
+selectedAssignmentId
 );
 
 
 if(!assignment){
-
 return;
-
 }
 
 
@@ -210,7 +177,6 @@ setMonthlyFeedback(
 feedback
 );
 
-
 };
 
 async function loadAssignments(){
@@ -229,19 +195,6 @@ teacher.teacherUuid
 );
 
 setAssignments(data);
-
-const uniqueClasses = [
-
-...new Set(
-data.map(
-item=>item.className
-)
-
-),
-
-];
-
-setClasses(uniqueClasses);
 
 }
 
@@ -592,389 +545,170 @@ totalScore / count
 
 const summary = getMonthSummary();
 
-  return (
+ return (
+  <div
+    style={{
+      padding: 20,
+      background: "#F6F6F3",
+      minHeight: "100%",
+    }}
+  >
+    {/* HEADER */}
+
     <div
       style={{
-        padding: 32,
-        background: "#F6F6F3",
-        minHeight: "100%",
+        background: "#04122F",
+        borderRadius: 18,
+        padding: 18,
+        color: "white",
+        marginBottom: 18,
       }}
     >
-      {/* HEADER */}
+      <p
+        style={{
+          margin: 0,
+          color: "#F59E0B",
+          fontWeight: 700,
+          letterSpacing: 2,
+          fontSize: 10,
+        }}
+      >
+        CLASSROOM ANALYTICS ENGINE
+      </p>
+
+      <h1
+        style={{
+          marginTop: 8,
+          marginBottom: 8,
+          fontSize: 24,
+        }}
+      >
+        TEACHING JOURNAL
+      </h1>
+
+      <p
+        style={{
+          margin: 0,
+          color: "#D1D5DB",
+          lineHeight: 1.5,
+          fontSize: 13,
+        }}
+      >
+        Review class health, comprehension
+        trends and teaching effectiveness
+        month on month.
+      </p>
+    </div>
+
+    {/* FILTERS */}
+
+    <div style={cardStyle}>
+      <h2
+        style={{
+          fontSize: 20,
+          marginBottom: 12,
+          marginTop: 0,
+        }}
+      >
+        Filters
+      </h2>
 
       <div
         style={{
-          background: "#04122F",
-          borderRadius: 28,
-          padding: 30,
-          color: "white",
-          marginBottom: 28,
+          display: "flex",
+          gap: 12,
+          flexWrap: "wrap",
         }}
       >
-        <p
-          style={{
-            margin: 0,
-            color: "#F59E0B",
-            fontWeight: 700,
-            letterSpacing: 2,
-            fontSize: 13,
+        <select
+          style={dropdownStyle}
+          value={selectedAssignmentId}
+          onChange={(e) => {
+            setSelectedAssignmentId(
+              e.target.value
+            );
           }}
         >
-          CLASSROOM ANALYTICS ENGINE
-        </p>
+          <option value="">
+            Select Classroom
+          </option>
 
-        <h1
-          style={{
-            marginTop: 12,
-            marginBottom: 12,
-            fontSize: 34,
-          }}
-        >
-          TEACHING JOURNAL
-        </h1>
+          {assignments.map((assignment) => (
+            <option
+              key={assignment.id}
+              value={assignment.id}
+            >
+              Class {assignment.className}
+              -
+              Section {assignment.sectionName}
+            </option>
+          ))}
+        </select>
 
-        <p
-          style={{
-            margin: 0,
-            color: "#D1D5DB",
-            lineHeight: 1.8,
+        {/* MONTH */}
+
+        <select
+          style={dropdownStyle}
+          value={selectedMonth}
+          onChange={(e) => {
+            setSelectedMonth(
+              e.target.value
+            );
           }}
         >
-          Review class health, comprehension
-          trends and teaching effectiveness
-          month on month.
-        </p>
+          <option>January 2026</option>
+          <option>February 2026</option>
+          <option>March 2026</option>
+          <option>April 2026</option>
+          <option>May 2026</option>
+          <option>June 2026</option>
+          <option>July 2026</option>
+          <option>August 2026</option>
+          <option>September 2026</option>
+          <option>October 2026</option>
+          <option>November 2026</option>
+          <option>December 2026</option>
+        </select>
       </div>
-
-      {/* FILTERS */}
-
-      <div style={cardStyle}>
-        <h2>Filters</h2>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 18,
-            flexWrap: "wrap",
-          }}
-        >
-        {/* CLASS */}
-
-<select
-style={dropdownStyle}
-value={selectedClass}
-onChange={(e)=>{
-
-const value =
-e.target.value;
-
-setSelectedClass(value);
-
-const filteredSections = [
-
-...new Set(
-
-assignments
-
-.filter(
-item=>
-item.className === value
-)
-
-.map(
-item=>item.sectionName
-)
-
-),
-
-];
-
-setSections(filteredSections);
-
-setSelectedSection("");
-
-setSelectedSubject("");
-
-setSubjects([]);
-
-setDailyLogs([]);
-
-
-
-setSelectedMonth("July");
-}}
->
-
-<option value="">
-Select Class
-</option>
-
-{
-
-classes.map((item)=>(
-
-<option
-key={item}
-value={item}
->
-
-Class {item}
-
-</option>
-
-))
-
-}
-
-</select>
-
-
-{/* SECTION */}
-
-<select
-style={dropdownStyle}
-value={selectedSection}
-onChange={(e)=>{
-
-const value =
-e.target.value;
-
-setSelectedSection(value);
-
-const filteredSubjects = [
-
-...new Set(
-
-assignments
-
-.filter(
-item=>
-
-item.className ===
-selectedClass &&
-
-item.sectionName ===
-value
-
-)
-
-.map(
-item=>item.subjectName
-)
-
-),
-
-];
-
-setSubjects(filteredSubjects);
-
-setSelectedSubject("");
-setDailyLogs([]);
-
-}}
->
-
-<option value="">
-Select Section
-</option>
-
-{
-
-sections.map((item)=>(
-
-<option
-key={item}
-value={item}
->
-
-Section {item}
-
-</option>
-
-))
-
-}
-
-</select>
-
-
-{/* SUBJECT */}
-
-<select
-style={dropdownStyle}
-value={selectedSubject}
-onChange={async (e)=>{
-
-const value =
-e.target.value;
-
-setSelectedSubject(value);
-
-const assignment =
-
-assignments.find(
-item=>
-
-item.className ===
-selectedClass &&
-
-item.sectionName ===
-selectedSection &&
-
-item.subjectName ===
-value
-
-);
-
-
-if(assignment && assignment.id){
-
-const logs =
-await getTeacherDailyLogsByAssignment(
-assignment.id
-);
-
-
-// MONTH FILTER
-
-const filteredLogs =
-
-logs.filter((log)=>{
-
-const monthYear =
-
-new Date(log.logDate)
-.toLocaleString(
-"default",
-{
-month:"long",
-year:"numeric",
-}
-);
-
-return monthYear === selectedMonth;
-
-});
-
-
-setDailyLogs(filteredLogs);
-
-
-const feedback =
-
-await getMonthlyComprehensionData(
-
-filteredLogs.map(
-(log)=>log.id!
-)
-
-);
-
-
-setMonthlyFeedback(
-feedback
-);
-
-}else{
-
-setDailyLogs([]);
-setMonthlyFeedback([]);
-
-}
-
-}}
->
-
-<option value="">
-Select Subject
-</option>
-
-{
-
-subjects.map((item)=>(
-
-<option
-key={item}
-value={item}
->
-
-{item}
-
-</option>
-
-))
-
-}
-
-</select>
-
-
-{/* MONTH */}
-
-<select
-style={dropdownStyle}
-value={selectedMonth}
-onChange={(e)=>{
-
-setSelectedMonth(
-e.target.value
-);
-
-}}
->
-
-<option>January 2026</option>
-<option>February 2026</option>
-<option>March 2026</option>
-<option>April 2026</option>
-<option>May 2026</option>
-<option>June 2026</option>
-<option>July 2026</option>
-<option>August 2026</option>
-<option>September 2026</option>
-<option>October 2026</option>
-<option>November 2026</option>
-<option>December 2026</option>
-
-</select>
-        </div>
-      </div>
-
-{/* MONTHLY CALENDAR */}
-
-<div style={cardStyle}>
-
-<h2>
-Monthly Classroom Calendar
-</h2>
-
-<p
-style={{
-marginTop:8,
-color:"#64748B",
-}}
->
-Your classroom comprehension heatmap for the month.
-</p>
-
-<div
-
-style={{
-
-display:"grid",
-
-gridTemplateColumns:"repeat(7,1fr)",
-
-gap:12,
-
-marginTop:30,
-
-marginBottom:15,
-
-}}
-
->
-
+    </div>
+
+    {/* MONTHLY CALENDAR */}
+
+    <div style={cardStyle}>
+      <h2
+        style={{
+          marginTop: 0,
+          fontSize: 20,
+        }}
+      >
+        Monthly Classroom Calendar
+      </h2>
+
+      <p
+        style={{
+          marginTop: 6,
+          color: "#64748B",
+          fontSize: 13,
+        }}
+      >
+        Your classroom comprehension heatmap
+        for the month.
+      </p>
+
+      <div
+        style={{
+          display: "grid",
+
+          gridTemplateColumns:
+            "repeat(7,1fr)",
+
+          gap: 8,
+
+          marginTop: 18,
+
+          marginBottom: 10,
+        }}
+      >
 {
 
 ["MON","TUE","WED","THU","FRI","SAT","SUN"]
@@ -991,7 +725,7 @@ textAlign:"center",
 
 fontWeight:700,
 
-fontSize:13,
+fontSize:10,
 
 color:"#64748B",
 
@@ -1009,6 +743,7 @@ color:"#64748B",
 
 </div>
 
+
 <div
 
 style={{
@@ -1017,7 +752,7 @@ display:"grid",
 
 gridTemplateColumns:"repeat(7,1fr)",
 
-gap:12,
+gap:8,
 
 }}
 
@@ -1047,8 +782,11 @@ background:getDayColor(day),
 
 <div
 style={{
-fontSize:18,
+
+fontSize:13,
+
 fontWeight:700,
+
 }}
 >
 
@@ -1063,10 +801,15 @@ getClassroomHealthScore(day) && (
 
 <div
 style={{
-fontSize:13,
+
+fontSize:10,
+
 fontWeight:700,
-marginTop:4,
+
+marginTop:3,
+
 color:"#04122F",
+
 }}
 >
 
@@ -1083,11 +826,11 @@ color:"#04122F",
 
 style={{
 
-marginTop:5,
+marginTop:4,
 
-width:8,
+width:6,
 
-height:8,
+height:6,
 
 borderRadius:"50%",
 
@@ -1112,13 +855,17 @@ getDotColor(day),
 
 {/* LEGEND SECTION */}
 
+
 <div
 
 style={{
 
 display:"flex",
-gap:24,
-marginTop:28,
+
+gap:16,
+
+marginTop:18,
+
 flexWrap:"wrap",
 
 }}
@@ -1154,15 +901,22 @@ label="No Lecture Conducted"
 
 </div>
 
- {/* MONTHLY SUMMARY */}
+
+{/* MONTHLY SUMMARY */}
+
 
 <div
 style={{
+
 display:"grid",
+
 gridTemplateColumns:
 "repeat(4,1fr)",
-gap:20,
-marginTop:30,
+
+gap:14,
+
+marginTop:18,
+
 }}
 >
 
@@ -1209,17 +963,18 @@ color="#2563EB"
 
 />
 
+
 <div
 
 style={{
 
-marginTop:30,
+marginTop:18,
 
 textAlign:"center",
 
 color:"#64748B",
 
-fontSize:14,
+fontSize:11,
 
 }}
 
@@ -1236,16 +991,16 @@ Calendar reflects classroom comprehension based on student feedback for the sele
 <div
 style={{
 ...cardStyle,
-marginTop:30,
+marginTop:18,
 }}
 >
 
 <p
 style={{
 margin:0,
-fontSize:13,
+fontSize:10,
 fontWeight:700,
-letterSpacing:2,
+letterSpacing:1.5,
 color:"#F59E0B",
 }}
 >
@@ -1257,8 +1012,9 @@ BEYOND THE CLASSROOM
 
 <h2
 style={{
-marginTop:12,
-marginBottom:10,
+marginTop:8,
+marginBottom:8,
+fontSize:20,
 }}
 >
 
@@ -1269,8 +1025,9 @@ Overall Classroom Performance Comparison
 
 <p
 style={{
-marginBottom:25,
+marginBottom:18,
 color:"#64748B",
+fontSize:13,
 }}
 >
 
@@ -1284,9 +1041,9 @@ Compare all classrooms taught by you during the selected month.
 <div
 style={{
 display:"grid",
-gridTemplateColumns:
 
-`220px repeat(${overallClassroomComparison.length},1fr)`,
+gridTemplateColumns:
+`170px repeat(${overallClassroomComparison.length},1fr)`,
 
 gap:4,
 }}
@@ -1303,11 +1060,15 @@ overallClassroomComparison.map(
 key={item.classroom}
 style={{
 background:"#04122F",
-padding:18,
-borderRadius:14,
+padding:"8px 6px",
+borderRadius:8,
 color:"white",
 fontWeight:700,
+fontSize:"11px",
 textAlign:"center",
+whiteSpace:"nowrap",
+overflow:"hidden",
+textOverflow:"ellipsis",
 }}
 >
 
@@ -1399,9 +1160,12 @@ String(item.studentsAtRisk)
 
 </div>
 
-   </div>
-  );
+</div>
+
+);
+
 }
+
 
 /* -------------------------------- */
 
@@ -1417,7 +1181,7 @@ display:"flex",
 
 alignItems:"center",
 
-gap:10,
+gap:6,
 
 }}
 
@@ -1427,8 +1191,8 @@ gap:10,
 
 style={{
 
-width:16,
-height:16,
+width:10,
+height:10,
 
 borderRadius:"50%",
 
@@ -1440,7 +1204,11 @@ border:"1px solid #CBD5E1",
 
  />
 
-<span>
+<span
+style={{
+fontSize:"12px",
+}}
+>
 
 {props.label}
 
@@ -1452,6 +1220,9 @@ border:"1px solid #CBD5E1",
 
 }
 
+
+/* -------------------------------- */
+
 function AnalyticsCard(props:any){
 
 return(
@@ -1462,7 +1233,7 @@ style={{
 
 ...cardStyle,
 
-padding:30,
+padding:18,
 
 background:props.background,
 
@@ -1476,7 +1247,7 @@ style={{
 
 margin:0,
 
-fontSize:48,
+fontSize:32,
 
 color:props.color,
 
@@ -1493,9 +1264,11 @@ color:props.color,
 
 style={{
 
-marginTop:15,
+marginTop:8,
 
-marginBottom:5,
+marginBottom:4,
+
+fontSize:"16px",
 
 }}
 
@@ -1514,6 +1287,8 @@ margin:0,
 
 color:"#64748B",
 
+fontSize:"13px",
+
 }}
 
 >
@@ -1531,35 +1306,52 @@ color:"#64748B",
 
 /* -------------------------------- */
 
+
 /* -------------------------------- */
 
 const cardStyle = {
-  background: "white",
-  padding: 30,
-  borderRadius: 24,
-  boxShadow:
-    "0px 10px 25px rgba(0,0,0,0.05)",
+
+background: "white",
+
+padding: 18,
+
+borderRadius: 16,
+
+boxShadow:
+"0px 8px 18px rgba(0,0,0,0.05)",
+
 } as const;
 
+
 /* -------------------------------- */
+
 
 const dropdownStyle = {
-  padding: "14px",
-  minWidth: "220px",
-  borderRadius: "14px",
-  border:
-    "1px solid #CBD5E1",
+
+padding: "10px",
+
+minWidth: "170px",
+
+borderRadius: "10px",
+
+fontSize:"13px",
+
+border:
+"1px solid #CBD5E1",
+
 } as const;
 
+
 /* -------------------------------- */
+
 
 const calendarBox = {
 
-padding:18,
+padding:10,
 
-height:70,
+height:48,
 
-borderRadius:16,
+borderRadius:10,
 
 display:"flex",
 
@@ -1572,12 +1364,16 @@ alignItems:"center",
 cursor:"pointer",
 
 boxShadow:
-"0px 4px 15px rgba(0,0,0,0.04)",
+"0px 3px 10px rgba(0,0,0,0.04)",
 
 border:
 "1px solid rgba(0,0,0,0.04)",
 
 } as const;
+
+
+/* -------------------------------- */
+
 
 function ComparisonRow(props:any){
 
@@ -1586,21 +1382,29 @@ return(
 <div
 style={{
 display:"grid",
-gridTemplateColumns:
 
-`220px repeat(${props.data.length},1fr)`,
+gridTemplateColumns:
+`170px repeat(${props.data.length},1fr)`,
 
 gap:4,
+
 marginTop:4,
+
 }}
 >
 
 <div
 style={{
 background:"#FFF7ED",
-padding:18,
-borderRadius:14,
+
+padding:12,
+
+borderRadius:10,
+
 fontWeight:700,
+
+fontSize:"13px",
+
 }}
 >
 
@@ -1619,10 +1423,17 @@ props.data.map(
 key={index}
 style={{
 background:"#F8FAFC",
-padding:18,
-borderRadius:14,
+
+padding:12,
+
+borderRadius:10,
+
 fontWeight:700,
+
+fontSize:"13px",
+
 textAlign:"center",
+
 }}
 >
 

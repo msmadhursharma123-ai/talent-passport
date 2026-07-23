@@ -23,13 +23,9 @@ export interface ClassroomHealthScore {
 export interface ClassroomFeedbackRadar {
 
 classroomHealthScore:{
-
 score:number;
-
 status:string;
-
 };
-
 
 completelyUnderstood:number;
 
@@ -37,30 +33,30 @@ partiallyUnderstood:number;
 
 didNotUnderstand:number;
 
-
 commonConcepts:{
-
 concept:string;
-
 count:number;
-
 }[];
-
 
 studentsRequiringAttention:{
-
 studentName:string;
-
 topicName:string;
-
 understandingLevel:string;
-
 concepts:string[];
-
 }[];
 
-
 teachingRecommendation:string;
+
+
+/********************************
+NEW FIELDS
+********************************/
+
+totalStudents:number;
+
+pendingStudentsCount:number;
+
+pendingStudents:any[];
 
 }
 

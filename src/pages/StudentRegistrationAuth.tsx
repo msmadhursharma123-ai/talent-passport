@@ -152,7 +152,7 @@ console.log("CALLING onVerificationRequired");
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        padding: 40,
+        padding: 30,
       }}
     >
       <div

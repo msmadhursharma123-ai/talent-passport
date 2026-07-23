@@ -197,7 +197,12 @@ count,
 }
 
 async function buildFeedbackRadar(
-  classroomFeedback: StudentFeedbackRow[]
+
+classroomFeedback:
+StudentFeedbackRow[],
+
+dailyLogUuid?: string
+
 ): Promise<ClassroomFeedbackRadar> {
 
   // WE WILL BUILD THIS IN THE NEXT STEPS.
@@ -245,19 +250,15 @@ item.understanding_level ===
 
 ).length;
 
-const dailyLogUuid =
+const actualDailyLogUuid =
+
+dailyLogUuid ??
 
 classroomFeedback[0]?.daily_log_uuid;
 
-const className =
-classroomFeedback[0]?.class_name;
-
-const sectionName =
-classroomFeedback[0]?.section_name;
-
 const teacherConcepts:string[] = [];
 
-if(dailyLogUuid){
+if(actualDailyLogUuid){
 
 const { data: teacherLog } =
 
@@ -273,7 +274,7 @@ await (supabase as any)
 
 .eq(
 "id",
-dailyLogUuid
+actualDailyLogUuid
 )
 
 .single();
@@ -459,10 +460,101 @@ let totalStudentsInClass = 0;
 
 let pendingStudents:any[] = [];
 
+let actualClassName = "";
+
+let actualSectionName = "";
+
+
+/*
+---------------------------------------
+FETCH CLASS + SECTION FROM DAILY LOG
+---------------------------------------
+*/
+
+let teacherAssignmentUuid = "";
+
+
+if(actualDailyLogUuid){
+
+const {
+
+data:dailyLog
+
+} = await (supabase as any)
+
+.from("teacher_daily_logs")
+
+.select(
+"teacher_assignment_uuid"
+)
+
+.eq(
+"id",
+actualDailyLogUuid
+)
+
+.single();
+
+
+teacherAssignmentUuid =
+
+dailyLog?.teacher_assignment_uuid ?? "";
+
+}
+
+
+/*
+---------------------------------------
+FETCH CLASSROOM ASSIGNMENT
+---------------------------------------
+*/
+
+if(teacherAssignmentUuid){
+
+const {
+
+data:assignment
+
+} = await (supabase as any)
+
+.from(
+"teacher_classroom_assignments"
+)
+
+.select(
+"class_name,section_name"
+)
+
+.eq(
+"id",
+teacherAssignmentUuid
+)
+
+.single();
+
+
+actualClassName =
+
+assignment?.class_name ?? "";
+
+
+actualSectionName =
+
+assignment?.section_name ?? "";
+
+}
+
+
+/*
+---------------------------------------
+FETCH TOTAL STUDENTS
+---------------------------------------
+*/
+
 if(
 
-className &&
-sectionName
+actualClassName &&
+actualSectionName
 
 ){
 
@@ -480,12 +572,12 @@ data:allStudents
 
 .eq(
 "class_name",
-className
+actualClassName
 )
 
 .eq(
 "section_name",
-sectionName
+actualSectionName
 );
 
 
@@ -494,12 +586,11 @@ totalStudentsInClass =
 allStudents?.length ?? 0;
 
 
-/****************************************
-
+/*
+---------------------------------------
 PENDING STUDENTS
-
-****************************************/
-
+---------------------------------------
+*/
 
 const submittedStudentUuids =
 
@@ -524,14 +615,6 @@ student.student_uuid
 
 }
 
-);
-
-console.log(
-"PENDING STUDENTS"
-);
-
-console.table(
-pendingStudents
 );
 
 }
@@ -812,9 +895,13 @@ export async function getLectureFeedbackRadar(
     lectureFeedback
   );
 
-  return await buildFeedbackRadar(
-    lectureFeedback
-  );
+return await buildFeedbackRadar(
+
+lectureFeedback,
+
+dailyLogUuid
+
+);
 
 }
 

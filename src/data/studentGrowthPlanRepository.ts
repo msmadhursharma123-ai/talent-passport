@@ -83,6 +83,14 @@ const className =
 const sectionName =
   student.section_name;
 
+console.log("================================");
+console.log("STEP 1 : STUDENT DETAILS");
+console.log("Student UUID :", identity.studentUuid);
+console.log("School Name :", schoolName);
+console.log("Class Name :", className);
+console.log("Section Name :", sectionName);
+console.log("================================");
+
   /* --------------------------------------------------------
      STEP 1
 
@@ -109,6 +117,11 @@ const sectionName =
 
   const schoolUuid = school.school_uuid;
 
+console.log("================================");
+console.log("STEP 2 : SCHOOL UUID");
+console.log("School UUID :", schoolUuid);
+console.log("================================");
+
 console.log("SCHOOL DATA");
 console.log(school);
 
@@ -127,6 +140,11 @@ console.log(school);
     .eq("school_uuid", schoolUuid)
     .eq("class_name", className)
     .eq("section_name", sectionName);
+
+console.log("================================");
+console.log("STEP 3 : TEACHER ASSIGNMENTS");
+console.log(assignments);
+console.log("================================");
 
 console.log("TEACHER ASSIGNMENTS");
 console.log(assignments);
@@ -159,6 +177,11 @@ console.log(assignments);
     (item: any) => item.id
   );
 
+console.log("================================");
+console.log("STEP 4 : ASSIGNMENT UUIDS");
+console.log(assignmentIds);
+console.log("================================");
+
 console.log("ASSIGNMENT IDS");
 console.log(assignmentIds);
 
@@ -181,6 +204,11 @@ console.log(assignmentIds);
     .order("log_date", {
       ascending: false,
     });
+
+console.log("================================");
+console.log("STEP 5 : DAILY LOGS");
+console.log(logs);
+console.log("================================");
 
   if (logsError) {
     console.error(
@@ -236,6 +264,11 @@ teacher?.[0]?.full_name ??
 });
 
 }
+
+console.log("================================");
+console.log("STEP 6 : FINAL LOGS");
+console.table(enrichedLogs);
+console.log("================================");
 
 return enrichedLogs;
 

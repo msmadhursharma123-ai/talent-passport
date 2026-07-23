@@ -26,13 +26,13 @@ const tabs: {
   { key: "homeboard", label: "Home Board" },
   { key: "timeline", label: "Timeline" },
   { key: "portfolio", label: "Portfolio" },
-{ key: "competitions", label: "Competitions" },
-{ key: "opportunities", label: "Opportunities" },
-{
-  key: "mauke-pe-chauka",
-  label: "🎯 Mauke Pe Chauka"
-},
-{ key: "my-analysis", label: "My Analysis" },
+  { key: "competitions", label: "Competitions" },
+  { key: "opportunities", label: "Opportunities" },
+  {
+    key: "mauke-pe-chauka",
+    label: "🎯 Mauke Pe Chauka"
+  },
+  { key: "my-analysis", label: "My Analysis" },
   { key: "growth-plan", label: "Growth Plan" }
 ];
 
@@ -67,45 +67,23 @@ export default function StudentLayout({
             border: "1px solid #E5E7EB"
           }}
         >
-          {/* LOGOUT */}
-
           <div
             style={{
               display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: 16
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 20
             }}
           >
-            <button
-              onClick={onLogout}
-              style={{
-                background: "#D32F2F",
-                color: "#FFF",
-                border: "none",
-                borderRadius: 10,
-                padding: "10px 20px",
-                cursor: "pointer",
-                fontWeight: 700
-              }}
-            >
-              Logout
-            </button>
-          </div>
+            {/* TABS */}
 
-          {/* TABS */}
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end"
-            }}
-          >
             <div
               style={{
                 display: "flex",
-                flexWrap: "wrap",
+                flexWrap: "nowrap",
                 gap: 10,
-                maxWidth: "1100px"
+                overflowX: "auto",
+                flex: 1
               }}
             >
               {tabs.map((tab) => {
@@ -125,6 +103,7 @@ export default function StudentLayout({
                       padding: "10px 16px",
                       fontSize: 13,
                       fontWeight: 700,
+                      whiteSpace: "nowrap",
                       background: isActive
                         ? "#FF6B00"
                         : "#EFF2F6",
@@ -132,7 +111,8 @@ export default function StudentLayout({
                         ? "#FFFFFF"
                         : "#475569",
                       transition:
-                        "all .2s ease"
+                        "all .2s ease",
+                      flexShrink: 0
                     }}
                   >
                     {tab.label}
@@ -140,18 +120,36 @@ export default function StudentLayout({
                 );
               })}
             </div>
+
+            {/* LOGOUT BUTTON */}
+
+            <button
+              onClick={onLogout}
+              style={{
+                background: "#D32F2F",
+                color: "#FFF",
+                border: "none",
+                borderRadius: 10,
+                padding: "10px 20px",
+                cursor: "pointer",
+                fontWeight: 700,
+                flexShrink: 0
+              }}
+            >
+              Logout
+            </button>
           </div>
         </div>
 
         {/* PAGE CONTENT */}
 
-       <div
-  style={{
-    width: "100%"
-  }}
->
-  {children}
-</div>
+        <div
+          style={{
+            width: "100%"
+          }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );
