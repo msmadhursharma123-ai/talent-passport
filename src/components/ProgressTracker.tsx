@@ -1,6 +1,8 @@
-export default function ProgressTracker() {
-  const progressData = null;
+import StudentExamPreparation
+from "../domains/teacherIntelligence/pages/StudentExamPreparation";
 
+
+export default function ProgressTracker() {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -69,7 +71,9 @@ export default function ProgressTracker() {
                 {item}
               </h3>
 
-              <p className="mt-4 text-3xl font-black text-orange-500">--</p>
+              <p className="mt-4 text-3xl font-black text-orange-500">
+                --
+              </p>
             </div>
           ))}
         </div>
@@ -102,26 +106,7 @@ export default function ProgressTracker() {
 
       {/* Academic Ledger */}
 
-      <div className="rounded-3xl bg-white p-8 shadow-sm">
-        <h2 className="text-xl font-bold uppercase text-slate-800">
-          Month On Month Academic Year Ledger
-        </h2>
-
-        <div className="mt-6 rounded-2xl border border-dashed border-gray-300 p-10 text-center">
-          {!progressData && (
-            <>
-              <h3 className="text-2xl font-bold text-slate-800">
-                No Progress Data Available Yet
-              </h3>
-
-              <p className="mt-4 text-slate-500">
-                Your classroom continuity tracker will automatically
-                populate once Daily Lecture Feedback submissions begin.
-              </p>
-            </>
-          )}
-        </div>
-      </div>
+      <StudentExamPreparation />
     </div>
   );
 }

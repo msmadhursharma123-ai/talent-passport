@@ -133,7 +133,7 @@ studentResponse ===
 ){
 
 updates.status =
-"PENDING";
+"NOT DISCUSSED";
 
 updates.doubt_resolved =
 false;

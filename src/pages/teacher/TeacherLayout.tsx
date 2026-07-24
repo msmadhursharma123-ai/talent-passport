@@ -11,6 +11,9 @@ import TeachingJournalPage from "../../domains/teacherIntelligence/pages/Teachin
 
 import MyClassroomPage from "../../domains/teacherIntelligence/pages/MyClassroomPage";
 
+import ExamPreparationPage
+from "../../domains/teacherIntelligence/pages/ExamPreparationPage";
+
 interface Props {
   onLogout: () => void;
 }
@@ -67,9 +70,14 @@ export default function TeacherLayout({
             <TeachingJournalPage />
           )}
 
-          {activePage ===
-            "my-classroom" && (
-            <MyClassroomPage />
+         {activePage ===
+"my-classroom" && (
+<MyClassroomPage />
+)}
+
+{activePage ===
+"exam-preparation" && (
+<ExamPreparationPage />
           )}
         </div>
       </div>

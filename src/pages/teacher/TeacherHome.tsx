@@ -59,10 +59,14 @@ export default function TeacherHome() {
   const [dashboardData, setDashboardData] =
     useState<ClassroomDashboardData[]>([]);
 
-  const [loading, setLoading] =
-    useState(true);
+const [loading, setLoading] =
+useState(true);
 
+const [teacherAssignments,setTeacherAssignments] =
+useState<TeacherAssignment[]>([]);
 
+const [loadingClassrooms,setLoadingClassrooms] =
+useState<string[]>([]);
 
   useEffect(() => {
 
@@ -90,10 +94,14 @@ export default function TeacherHome() {
           teacher.teacherUuid
         );
 
+setTeacherAssignments(
+assignments
+);
 
+ const classroomData:
+ClassroomDashboardData[] = [];
 
-      const classroomData:
-        ClassroomDashboardData[] = [];
+const loadingColumns:string[] = [];
 
 
 
@@ -103,6 +111,12 @@ export default function TeacherHome() {
           await getTeacherDailyLogsByAssignment(
             assignment.id!
           );
+
+loadingColumns.push(
+
+`${assignment.className}-${assignment.sectionName}`
+
+);
 
 
 
@@ -289,7 +303,13 @@ didNotUnderstand:
 
 
 
-      setDashboardData(classroomData);
+    setLoadingClassrooms(
+loadingColumns
+);
+
+setDashboardData(
+classroomData
+);
 
     }
 
@@ -408,15 +428,7 @@ Here is your classroom intelligence summary for yesterday's latest lecture.
 {/* LOADING */}
 
 
-{loading && (
 
-<div>
-
-Loading Dashboard...
-
-</div>
-
-)}
 
 
 
@@ -450,7 +462,24 @@ No classroom intelligence available yet.
 
 {/* TABLE CONTAINER */}
 
-{!loading && dashboardData.length > 0 && (
+{loading && (
+
+<div
+style={{
+marginBottom:"14px",
+fontSize:"16px",
+fontWeight:700,
+color:"#64748B",
+}}
+>
+
+Loading All Metrics...
+
+</div>
+
+)}
+
+{(loading || dashboardData.length > 0) && (
 
 <>
 
@@ -479,30 +508,37 @@ minWidth: "950px",
 
 <th
 style={{
-
 padding:"10px",
-
 background:"#f7f4f9",
-
 color:"#041B4D",
-
 fontWeight:700,
-
 fontSize:"18px",
-
 textAlign:"center",
-
 border:"1px solid #E5E7EB",
-
 }}
-
 >
 
- METRICS
+METRICS
 
 </th>
 
-{dashboardData.map((item, index) => (
+{
+
+(loading
+
+? loadingClassrooms.map(
+
+(classroom)=>({
+
+classroom
+
+})
+
+)
+
+: dashboardData
+
+).map((item:any,index)=>(
 
 <th
 key={item.classroom}
@@ -525,8 +561,8 @@ index % 4 === 0
 
 color:"#041B4D",
 fontSize:"20px",
-
 fontWeight:700,
+
 }}
 >
 
@@ -534,74 +570,176 @@ fontWeight:700,
 
 </th>
 
-))}
+))
+
+}
 
 </tr>
 
 </thead>
 
 
+
 <tbody>
 
 {renderTableRow(
+
 "Latest Topic",
-dashboardData.map(
+
+loading
+? loadingClassrooms.map(
+()=> "-"
+)
+
+: dashboardData.map(
 (item)=>item.latestTopic
 )
+
 )}
 
+
+
 {renderTableRow(
+
 "Students Filled Feedback",
-dashboardData.map(
+
+loading
+? loadingClassrooms.map(
+()=> "-"
+)
+
+: dashboardData.map(
 (item)=>item.studentsFilledFeedback
 )
+
 )}
 
+
+
 {renderTableRow(
+
 "Feedback Remaining",
-dashboardData.map(
-(item)=>
-String(item.feedbackRemaining)
+
+loading
+? loadingClassrooms.map(
+()=> "-"
 )
+
+: dashboardData.map(
+(item)=>String(item.feedbackRemaining)
+)
+
 )}
 
+
+
 {renderTableRow(
+
 "Completely Understood",
-dashboardData.map(
+
+loading
+? loadingClassrooms.map(
+()=> "-"
+)
+
+: dashboardData.map(
 (item)=>item.completelyUnderstood
 )
+
 )}
 
+
+
 {renderTableRow(
+
 "Partially Understood",
-dashboardData.map(
+
+loading
+? loadingClassrooms.map(
+()=> "-"
+)
+
+: dashboardData.map(
 (item)=>item.partiallyUnderstood
 )
+
 )}
 
+
+
 {renderTableRow(
+
 "Didn't Understand",
-dashboardData.map(
+
+loading
+? loadingClassrooms.map(
+()=> "-"
+)
+
+: dashboardData.map(
 (item)=>item.didNotUnderstand
 )
+
 )}
 
-{renderHealthScoreRow(
+
+
+{
+
+loading
+
+?
+
+renderTableRow(
+
+"Class Health Score",
+
+loadingClassrooms.map(
+()=> "-"
+)
+
+)
+
+:
+
+renderHealthScoreRow(
 dashboardData
-)}
+)
+
+}
+
+
 
 {renderTableRow(
+
 "Most Difficult Concept",
-dashboardData.map(
+
+loading
+? loadingClassrooms.map(
+()=> "-"
+)
+
+: dashboardData.map(
 (item)=>item.mostDifficultConcept
 )
+
 )}
 
+
+
 {renderTableRow(
+
 "Students Requiring Attention",
-dashboardData.map(
+
+loading
+? loadingClassrooms.map(
+()=> "-"
+)
+
+: dashboardData.map(
 (item)=>item.studentsRequiringAttention
 )
+
 )}
 
 </tbody>

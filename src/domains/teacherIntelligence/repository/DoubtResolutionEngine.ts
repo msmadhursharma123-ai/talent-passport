@@ -69,11 +69,17 @@ normalizedConcept
 export async function
 processPendingDoubts(
 
+
+    
 teacherAssignmentUuid:string,
 
 todayConceptsCovered:string[]
 
 ){
+
+console.log(
+"PROCESS PENDING DOUBTS HIT"
+);
 
 const supabase =
 getSupabaseClient();
@@ -93,12 +99,17 @@ await getTeacherDailyLogsByAssignment(
 teacherAssignmentUuid
 );
 
+console.log(
+"ALL LOGS OF THIS TEACHER"
+);
 
-if(
+console.table(logs);
 
-logs.length < 2
+if(logs.length <2){
 
-){
+console.log(
+"EXIT 1 : LESS THAN 2 LOGS"
+);
 
 return;
 
@@ -116,8 +127,20 @@ const previousLog =
 
 logs[1];
 
+console.log(
+"PREVIOUS LOG"
+);
+
+console.log(
+previousLog
+);
+console.log(previousLog);
 
 if(!previousLog.id){
+
+console.log(
+"EXIT 2 : PREVIOUS LOG MISSING"
+);
 
 return;
 
@@ -138,12 +161,27 @@ await getLectureFeedbackRadar(
 previousLog.id
 );
 
+console.log(
+"RADAR"
+);
+
+console.log(
+radar
+);
 
 if(
 
-radar.commonConcepts.length === 0
+radar.commonConcepts.length===0
 
 ){
+
+console.log(
+"EXIT 3 : NO COMMON CONCEPTS FOUND"
+);
+
+console.log(
+radar
+);
 
 return;
 
@@ -154,6 +192,13 @@ const mostDifficultConcept =
 
 radar.commonConcepts[0].concept;
 
+console.log(
+"MOST DIFFICULT CONCEPT"
+);
+
+console.log(
+mostDifficultConcept
+);
 
 /*
 -------------------------------------
@@ -174,7 +219,19 @@ todayConceptsCovered
 );
 
 
+console.log(
+"COVERED TODAY ?"
+);
+
+console.log(
+coveredToday
+);
+
 if(coveredToday){
+
+console.log(
+"EXIT 4 : TEACHER ALREADY REVISED THE CONCEPT"
+);
 
 return;
 
@@ -205,13 +262,34 @@ data:feedbacks
 previousLog.id
 )
 
-.eq(
+.in(
+
 "understanding_level",
+
+[
+
+"I partially understood.",
+
 "I didn't understand."
+
+]
+
+)
+
+console.log(
+"STUDENTS TO BE PUSHED"
 );
 
+console.table(
+feedbacks
+);
+console.log(feedbacks[0]);
 
 if(!feedbacks){
+
+console.log(
+"EXIT 5 : FEEDBACKS NOT FOUND"
+);
 
 return;
 
@@ -225,10 +303,28 @@ CREATE PENDING DOUBTS
 
 -------------------------------------
 */
+const records = [];
 
-const records =
+for (const item of feedbacks) {
 
-feedbacks.map((item:any)=>({
+const { data: studentData } =
+await (supabase as any)
+
+.from("students_master")
+
+.select(
+"student_name,school_name"
+)
+
+.eq(
+"student_uuid",
+item.student_uuid
+)
+
+.single();
+
+
+records.push({
 
 /*
 -------------------------------------
@@ -239,7 +335,8 @@ STUDENT DETAILS
 student_uuid:
 item.student_uuid,
 
-student_name: null,
+student_name:
+studentData?.student_name ?? "",
 
 
 /*
@@ -251,7 +348,8 @@ TEACHER DETAILS
 teacher_assignment_uuid:
 teacherAssignmentUuid,
 
-teacher_name: null,
+teacher_name:
+"",
 
 
 /*
@@ -260,7 +358,8 @@ SCHOOL DETAILS
 -------------------------------------
 */
 
-school_name: null,
+school_name:
+studentData?.school_name ?? "",
 
 class_name:
 item.class_name ?? null,
@@ -319,8 +418,17 @@ TIMESTAMPS
 created_at:
 new Date().toISOString(),
 
-}));
+});
 
+}
+
+console.log(
+"INSERTING INTO TABLE"
+);
+
+console.table(
+records
+);
 
 if(records.length === 0){
 
@@ -356,3 +464,5 @@ console.log(
 console.table(records);
 
 }
+
+

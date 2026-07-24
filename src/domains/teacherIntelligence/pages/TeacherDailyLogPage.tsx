@@ -17,17 +17,43 @@ import {
 loadTodaysTeacherLogsByAssignment,
 } from "../viewmodels/TeacherDailyLogViewModel";
 
+import {
+getTeacherPendingDoubtLedger,
+} from "../repository/TeacherPendingDoubtRepository";
+
 export default function TeacherDailyLogPage() {
   const [openDialog, setOpenDialog] =
     useState(false);
 
   const [logs, setLogs] = useState<any[]>([]);
 
-  useEffect(() => {
-    fetchLogs();
-  }, []);
+const [logsLoading, setLogsLoading] =
+useState(true);
+
+const [pendingDoubtLoading, setPendingDoubtLoading] =
+useState(true);
+
+const [
+
+pendingDoubts,
+
+setPendingDoubts,
+
+] = useState<any[]>([]);
+
+useEffect(() => {
+
+fetchLogs();
+
+loadPendingDoubtLedger();
+
+}, []);
 
 async function fetchLogs() {
+
+setLogsLoading(true);
+
+try{
 
 const teacher =
 getCurrentTeacher();
@@ -40,61 +66,95 @@ return;
 
 }
 
-
 const assignments =
 
 await getTeacherAssignmentsByTeacher(
 teacher.teacherUuid
 );
 
-
 let allLogs:any[] = [];
-
 
 for (const assignment of assignments) {
 
 if (!assignment.id) {
-  continue;
+continue;
 }
 
 const logs =
+
 await loadTodaysTeacherLogsByAssignment(
 assignment.id
 );
 
-
 allLogs.push(...logs);
 
 }
-
 
 allLogs.sort(
 (a,b)=>
 new Date(
 b.createdAt
 ).getTime()
-
 -
-
 new Date(
 a.createdAt
 ).getTime()
 );
 
-
 setLogs(allLogs);
 
 }
 
-  async function handleSave(
-    data: Record<string, unknown>
-  ) {
-    await saveTeacherDailyLog(data);
+finally{
 
-    await fetchLogs();
+setLogsLoading(false);
 
-    setOpenDialog(false);
-  }
+}
+
+}
+
+async function
+loadPendingDoubtLedger(){
+
+setPendingDoubtLoading(true);
+
+try{
+
+const data =
+
+await getTeacherPendingDoubtLedger();
+
+setPendingDoubts(
+data
+);
+
+}
+
+finally{
+
+setPendingDoubtLoading(false);
+
+}
+
+}
+
+async function handleSave(
+data: Record<string, unknown>
+) {
+
+await saveTeacherDailyLog(
+data
+);
+
+await fetchLogs();
+
+await loadPendingDoubtLedger();
+
+setOpenDialog(
+false
+);
+
+}
 
   return (
     <div
@@ -193,27 +253,87 @@ setLogs(allLogs);
         <h2
           style={{
             color: "#04122F",
+            fontSize:"15px",
+            margin:"0 0 15px 0",
+fontWeight:800,
+
+
           }}
         >
           Today's Published Lecture Records
         </h2>
 
-        {logs.length === 0 && (
-          <div style={cardStyle}>
-            <h3>
-              No Lecture Published Today.
-            </h3>
+        {
 
-            <p
-              style={{
-                color: "#64748B",
-              }}
-            >
-              Publish your first lecture
-              for today's classes.
-            </p>
-          </div>
-        )}
+logsLoading ? (
+
+Array.from({length:5}).map((_,index)=>(
+
+<div
+key={index}
+style={{
+background:"white",
+padding:"16px",
+borderRadius:"16px",
+marginBottom:"18px",
+border:"1px solid #CBD5E1",
+}}
+>
+
+<h2
+style={{
+margin:"0 0 10px 0",
+color:"#64748B",
+}}
+>
+
+Loading Today's Lecture...
+
+</h2>
+
+<p
+style={{
+color:"#94A3B8"
+}}
+>
+
+Fetching today's classroom records...
+
+</p>
+
+</div>
+
+))
+
+)
+
+:
+
+logs.length === 0 && (
+
+<div style={cardStyle}>
+
+<h3>
+No Lecture Published Today.
+</h3>
+
+<p
+style={{
+color:"#64748B",
+}}
+>
+
+Publish your first lecture
+for today's classes.
+
+</p>
+
+</div>
+
+)
+
+}
+        
 
        {logs.map((log: any) => (
 
@@ -329,6 +449,372 @@ whiteSpace:"nowrap",
 </div>
 
 ))}
+
+{/* -------------------------------------------
+
+SESSION BEYOND THE CLASSROOM
+
+-------------------------------------------- */}
+
+<div
+style={{
+
+marginTop:"30px",
+
+background:"white",
+
+padding:"24px",
+
+borderRadius:"24px",
+
+boxShadow:
+"0px 8px 24px rgba(0,0,0,0.05)",
+
+overflowX:"auto",
+
+}}
+
+>
+
+<div
+style={{
+
+marginBottom:"25px",
+
+}}
+
+>
+
+<p
+style={{
+
+margin:0,
+
+fontSize:"12px",
+
+fontWeight:700,
+
+letterSpacing:"2px",
+
+color:"#F59E0B",
+
+textTransform:"uppercase",
+
+}}
+
+>
+
+SESSION BEYOND THE CLASSROOM
+
+</p>
+
+
+<h2
+style={{
+
+marginTop:"8px",
+
+marginBottom:"10px",
+
+color:"#041B4D",
+
+}}
+
+>
+
+ Not discussed Doubt Ledger
+
+</h2>
+
+
+<p
+style={{
+
+margin:0,
+
+color:"#64748B",
+
+lineHeight:1.7,
+
+}}
+
+>
+
+These are the difficult concepts that students reported were NOT revised during the next classroom lecture.
+
+</p>
+
+</div>
+
+{
+
+pendingDoubtLoading ? (
+
+<table
+style={{
+
+width:"100%",
+borderCollapse:"collapse",
+minWidth:"950px",
+
+}}
+>
+
+<thead>
+
+<tr>
+
+<th style={{
+padding:"10px",
+background:"#f7f4f9",
+color:"#041B4D",
+fontWeight:700,
+fontSize:"18px",
+textAlign:"center",
+border:"1px solid #E5E7EB",
+}}>
+METRICS
+</th>
+
+<th style={{
+...tableHeaderStyle,
+background:"#F9F4EA",
+color:"#041B4D",
+fontSize:"20px",
+fontWeight:700,
+}}>
+Loading...
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{renderPendingDoubtRow(
+"Students Count who had Doubt",
+["-"]
+)}
+
+{renderPendingDoubtRow(
+"Topic that was taught that day",
+["-"]
+)}
+
+{renderPendingDoubtRow(
+"Most Difficult Concept from that topic",
+["-"]
+)}
+
+{renderPendingDoubtRow(
+"Students Are",
+["-"]
+)}
+
+{renderPendingDoubtRow(
+"Date of this discussion",
+["-"]
+)}
+
+{renderPendingDoubtRow(
+"Status",
+["-"]
+)}
+
+</tbody>
+
+</table>
+
+)
+
+:
+
+pendingDoubts.length === 0 ? (
+
+<div
+style={{
+
+padding:"30px",
+
+textAlign:"center",
+
+color:"#64748B",
+
+fontSize:"16px",
+
+}}
+
+>
+
+No unresolved classroom learning gaps.
+
+</div>
+
+)
+
+:
+(
+
+  <table
+style={{
+
+width:"100%",
+
+borderCollapse:"collapse",
+
+minWidth:"950px",
+
+}}
+
+>
+
+<thead>
+
+<tr>
+
+<th
+style={{
+padding:"10px",
+background:"#f7f4f9",
+color:"#041B4D",
+fontWeight:700,
+fontSize:"18px",
+textAlign:"center",
+border:"1px solid #E5E7EB",
+}}
+>
+
+METRICS
+
+</th>
+
+
+{
+
+pendingDoubts.map(
+
+(item:any, index:number)=>(
+
+<th
+
+key={item.classroom}
+
+style={{
+
+...tableHeaderStyle,
+
+background:
+
+index % 4 === 0
+? "#F9F4EA"
+
+: index % 4 === 1
+? "#EEF4FB"
+
+: index % 4 === 2
+? "#EEF8F4"
+
+: "#F4EFFA",
+
+color:"#041B4D",
+fontSize:"20px",
+fontWeight:700,
+
+}}
+
+>
+
+{item.classroom}
+
+</th>
+
+))
+
+}
+
+</tr>
+
+</thead>
+
+
+<tbody>
+
+{renderPendingDoubtRow(
+
+"Students Count who had Doubt",
+
+pendingDoubts.map(
+(item)=>String(item.pendingCount)
+)
+
+)}
+
+
+{renderPendingDoubtRow(
+
+"Topic that was taught that day",
+
+pendingDoubts.map(
+(item)=>item.previousTopic
+)
+
+)}
+
+
+{renderPendingDoubtRow(
+
+"Most Difficult Concept from that topic",
+
+pendingDoubts.map(
+(item)=>item.difficultConcept
+)
+
+)}
+
+
+{renderPendingDoubtRow(
+
+"Students Are",
+
+pendingDoubts.map(
+(item)=>item.students
+)
+
+)}
+
+
+{renderPendingDoubtRow(
+
+"Date of this discussion",
+
+pendingDoubts.map(
+(item)=>item.logDate
+)
+
+)}
+
+
+{renderPendingDoubtRow(
+
+"Status",
+
+pendingDoubts.map(
+(item)=>item.status
+)
+
+)}
+
+</tbody>
+
+</table>
+
+)
+
+}
+
+</div>
+
       </div>
 
       <TeacherDailyLogDialog
@@ -339,6 +825,51 @@ whiteSpace:"nowrap",
         onSave={handleSave}
       />
     </div>
+
+
+
+      );
+}
+
+
+function renderPendingDoubtRow(
+  metricName: string,
+  values: string[]
+) {
+  return (
+    <tr>
+      <td style={metricColumnStyle}>
+        {metricName}
+      </td>
+
+      {values.map((value, index) => (
+        <td
+          key={index}
+          style={{
+            ...tableCellStyle,
+
+            color:
+              metricName.includes("Count")
+                ? "#EF4444"
+                : metricName.includes("Difficult")
+                ? "#1E3A8A"
+                : metricName === "Students Are"
+                ? "#DC2626"
+                : metricName === "Status"
+                ? "#F59E0B"
+                : "#334155",
+
+            fontWeight:
+              metricName.includes("Count") ||
+              metricName.includes("Difficult")
+                ? 700
+                : 500,
+          }}
+        >
+          {value || "-"}
+        </td>
+      ))}
+    </tr>
   );
 }
 
@@ -361,3 +892,64 @@ padding:"12px 20px",
   fontWeight: 700,
   fontSize: 13,
 } as const;
+
+const tableHeaderStyle = {
+
+padding: "10px",
+
+background: "#041B4D",
+
+color: "white",
+
+fontWeight: 700,
+
+fontSize: "14px",
+
+textAlign: "center" as const,
+
+border: "1px solid #E5E7EB",
+
+};
+
+
+
+const metricColumnStyle = {
+
+padding: "10px",
+
+fontWeight: 700,
+
+background: "#FFFFFF",
+
+color: "#0F172A",
+
+fontSize:"14px",
+
+border: "1px solid #E5E7EB",
+
+width: "320px",
+minWidth: "320px",
+
+textAlign: "left" as const,
+
+};
+
+
+
+const tableCellStyle = {
+
+padding: "10px",
+
+border: "1px solid #E5E7EB",
+
+textAlign: "center" as const,
+
+color: "#334155",
+
+fontSize: "14px",
+
+verticalAlign: "top" as const,
+
+lineHeight:1.4,
+
+};

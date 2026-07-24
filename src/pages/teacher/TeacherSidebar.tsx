@@ -21,9 +21,16 @@ export default function TeacherSidebar({
       label: "Teaching Journal",
     },
     {
-      id: "my-classroom",
-      label: "My Classroom",
-    },
+    
+id:"my-classroom",
+label:"My Classroom",
+},
+
+{
+id:"exam-preparation",
+label:"Exam Preparation",
+},
+  
   ];
 
   return (

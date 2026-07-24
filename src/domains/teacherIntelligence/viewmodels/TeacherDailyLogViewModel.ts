@@ -9,7 +9,10 @@ import {
   getTodaysTeacherDailyLogsByAssignment
 } from "../repository/TeacherDailyLogRepository";
 
-
+import {
+processPendingDoubts,
+}
+from "../repository/DoubtResolutionEngine";
 
 export async function loadTeacherDailyLogs() {
   return await getTeacherDailyLogs();
@@ -28,13 +31,71 @@ export async function loadTeacherLogsByAssignment(
 
 
 export async function saveTeacherDailyLog(
-  dailyLog: Record<string, unknown>
-) {
-  return await createTeacherDailyLog(
-    dailyLog
-  );
-}
 
+dailyLog: Record<string, unknown>
+
+) {
+
+const result =
+
+await createTeacherDailyLog(
+dailyLog
+);
+
+
+/*
+------------------------------------
+
+SECOND FEEDBACK LOOP
+
+------------------------------------
+*/
+
+const teacherAssignmentUuid =
+
+String(
+dailyLog.teacher_assignment_uuid
+);
+
+
+const conceptsCovered =
+
+Array.isArray(
+
+dailyLog["concepts_covered"]
+
+)
+
+? dailyLog["concepts_covered"]
+
+: [];
+
+
+console.log(
+"RUNNING SECOND LOOP"
+);
+
+console.log(
+teacherAssignmentUuid
+);
+
+console.table(
+conceptsCovered
+);
+
+
+await processPendingDoubts(
+
+teacherAssignmentUuid,
+
+conceptsCovered
+
+);
+
+
+return result;
+
+}
 
 
 export async function editTeacherDailyLog(
