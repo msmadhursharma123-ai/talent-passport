@@ -826,45 +826,149 @@ function getSkillTags() {
 
 <div
   style={{
-    background: "white",
+    position: "relative",
+    overflow: "hidden",
+    background:
+      "linear-gradient(115deg, #FFFFFF 0%, #FFFFFF 48%, #FFF9F3 76%, #F3F7FF 100%)",
     borderRadius: 28,
-    padding: 28,
+    padding: "38px 40px",
     marginBottom: 24,
-    border: "1px solid #E2E8F0"
+    minHeight: 220,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    border: "1px solid #E2E8F0",
+    boxShadow: "0 4px 16px rgba(15,23,42,0.04)"
   }}
 >
 
+  {/* DECORATIVE BACKGROUND CIRCLES */}
+
   <div
     style={{
-      color: "#FF6B00",
-      fontSize: 18,
-      letterSpacing: 2,
-      fontWeight: 700
+      position: "absolute",
+      width: 430,
+      height: 430,
+      borderRadius: "50%",
+      right: -115,
+      top: -235,
+      background: "rgba(249,115,22,0.055)",
+      pointerEvents: "none"
+    }}
+  />
+
+  <div
+    style={{
+      position: "absolute",
+      width: 315,
+      height: 315,
+      borderRadius: "50%",
+      right: 120,
+      bottom: -245,
+      background: "rgba(37,99,235,0.05)",
+      pointerEvents: "none"
+    }}
+  />
+
+  <div
+    style={{
+      position: "absolute",
+      width: 180,
+      height: 180,
+      borderRadius: "50%",
+      right: 245,
+      top: -125,
+      background: "rgba(168,85,247,0.025)",
+      pointerEvents: "none"
+    }}
+  />
+
+  {/* CONTENT */}
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 2,
+      maxWidth: "76%"
     }}
   >
-    Showcase Your Achievements 
+
+    <div
+      style={{
+        color: "#F97316",
+        fontSize: 12,
+        letterSpacing: 2,
+        fontWeight: 800,
+        marginBottom: 10
+      }}
+    >
+      SHOWCASE YOUR ACHIEVEMENTS
+    </div>
+
+    <h1
+      style={{
+        margin: 0,
+        color: "#0F172A",
+        fontSize: 38,
+        fontWeight: 800,
+        lineHeight: 1.15,
+        letterSpacing: -0.7
+      }}
+    >
+      Bring Your Achievements Here
+    </h1>
+
+    <p
+      style={{
+        color: "#64748B",
+        fontSize: 14,
+        fontWeight: 500,
+        lineHeight: 1.6,
+        marginTop: 12,
+        marginBottom: 0
+      }}
+    >
+      Complete achievement history, evidence vault and accredited student
+      record.
+    </p>
+
   </div>
 
-  <h1
-    style={{
-      marginTop: 10,
-      marginBottom: 8,
-      color: "#0F172A",
-      fontSize: 34,
-      fontWeight: 500
-    }}
-  >
-   Bring Your Achievements Here  🏆  
-
-  </h1>
+  {/* DECORATIVE ACHIEVEMENT MARK */}
 
   <div
     style={{
-      color: "#000000",
-      fontSize: 18
+      position: "relative",
+      zIndex: 2,
+      width: 112,
+      height: 112,
+      borderRadius: "50%",
+      background: "rgba(249,115,22,0.075)",
+      border: "1px solid rgba(249,115,22,0.08)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0
     }}
   >
-    Complete achievement history, evidence vault and accredited student record.
+
+    <div
+      style={{
+        width: 72,
+        height: 72,
+        borderRadius: "50%",
+        background: "rgba(255,255,255,0.78)",
+        border: "1px solid rgba(249,115,22,0.10)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 34,
+        boxShadow: "0 8px 24px rgba(249,115,22,0.08)"
+      }}
+    >
+      ★
+    </div>
+
   </div>
 
 </div>

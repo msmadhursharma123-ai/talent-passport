@@ -343,88 +343,172 @@ return (
 
 <div
     style={{
-        background: "#FFF",
-        borderRadius: 24,
-        padding: 30,
+        position: "relative",
+        overflow: "hidden",
+        background:
+            "linear-gradient(115deg, #FFFFFF 0%, #FFFFFF 48%, #FFF9F3 76%, #F3F7FF 100%)",
+        borderRadius: 28,
+        padding: "38px 40px",
         marginBottom: 24,
+        minHeight: 220,
         display: "flex",
         justifyContent: "space-between",
-        alignItems: "center"
+        alignItems: "center",
+        border: "1px solid #E2E8F0",
+        boxShadow: "0 4px 16px rgba(15,23,42,0.04)"
     }}
 >
 
-<div>
+    {/* DECORATIVE BACKGROUND CIRCLES */}
 
-<div
-    style={{
-        fontSize: 12,
-        color: "#F97316",
-        fontWeight: 700,
-        letterSpacing: 2
-    }}
->
-    PRE-TERM TALENT PROFILING
-</div>
+    <div
+        style={{
+            position: "absolute",
+            width: 430,
+            height: 430,
+            borderRadius: "50%",
+            right: -115,
+            top: -235,
+            background: "rgba(249,115,22,0.055)",
+            pointerEvents: "none"
+        }}
+    />
 
-<h1
-    style={{
-        marginTop: 10,
-        color: "#0B2A4A",
-        fontSize: 38,
-        marginBottom: 10
-    }}
->
-    Co-Curricular Diagnostic Calibration
-</h1>
+    <div
+        style={{
+            position: "absolute",
+            width: 315,
+            height: 315,
+            borderRadius: "50%",
+            right: 120,
+            bottom: -245,
+            background: "rgba(37,99,235,0.05)",
+            pointerEvents: "none"
+        }}
+    />
 
-<div
-    style={{
-        color: "#64748B"
-    }}
->
-    {studentName}
-</div>
+    <div
+        style={{
+            position: "absolute",
+            width: 180,
+            height: 180,
+            borderRadius: "50%",
+            right: 245,
+            top: -125,
+            background: "rgba(168,85,247,0.025)",
+            pointerEvents: "none"
+        }}
+    />
 
-</div>
+    {/* LEFT CONTENT */}
 
-<div
-    style={{
-        background: "#FF6B00",
-        color: "#FFF",
-        padding: 24,
-        borderRadius: 20,
-        width: 220,
-        textAlign: "center"
-    }}
->
+    <div
+        style={{
+            position: "relative",
+            zIndex: 2,
+            maxWidth: "68%"
+        }}
+    >
 
-<div style={{ fontSize: 12 }}>
-    RELATIVE DNA AVG
-</div>
+        <div
+            style={{
+                fontSize: 12,
+                color: "#F97316",
+                fontWeight: 800,
+                letterSpacing: 2,
+                textTransform: "uppercase"
+            }}
+        >
+            PRE-TERM TALENT PROFILING
+        </div>
 
-<div
-    style={{
-        fontSize: 52,
-        fontWeight: 700
-    }}
->
-    {dnaAverage}
-</div>
+        <h1
+            style={{
+                marginTop: 12,
+                color: "#0F172A",
+                fontSize: 38,
+                fontWeight: 800,
+                marginBottom: 10,
+                lineHeight: 1.15,
+                letterSpacing: -0.7
+            }}
+        >
+            Co-Curricular Diagnostic Calibration
+        </h1>
 
-<div>/100</div>
+        <div
+            style={{
+                color: "#64748B",
+                fontSize: 14,
+                fontWeight: 600
+            }}
+        >
+            {studentName}
+        </div>
 
-<div
-    style={{
-        marginTop: 8,
-        fontSize: 12
-    }}
->
-    Reliability {reliability}%
-</div>
+    </div>
 
-</div>
-</div>
-</div>
+    {/* DNA SCORE CARD */}
+
+    <div
+        style={{
+            position: "relative",
+            zIndex: 2,
+            background: "#FF6B00",
+            color: "#FFF",
+            padding: "20px 24px",
+            borderRadius: 18,
+            width: 205,
+            textAlign: "center",
+            boxShadow: "0 10px 25px rgba(249,115,22,0.16)"
+        }}
+    >
+
+        <div
+            style={{
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: 1,
+                opacity: 0.9
+            }}
+        >
+            RELATIVE DNA AVG
+        </div>
+
+        <div
+            style={{
+                fontSize: 48,
+                lineHeight: 1.1,
+                fontWeight: 800,
+                marginTop: 6
+            }}
+        >
+            {dnaAverage}
+        </div>
+
+        <div
+            style={{
+                fontSize: 12,
+                opacity: 0.9
+            }}
+        >
+            /100
+        </div>
+
+        <div
+            style={{
+                marginTop: 8,
+                fontSize: 11,
+                fontWeight: 600,
+                opacity: 0.9
+            }}
+        >
+            Reliability {reliability}%
+        </div>
+
+    </div>
+
+</div></div>
 
       {/* ==========================================================
     MAIN GRID

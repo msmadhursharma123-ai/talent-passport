@@ -24,7 +24,7 @@ borderRadius:24,
 
 padding:18,
 
-minHeight:180,
+minHeight:150,
 
 boxShadow:
 "0px 4px 15px rgba(34,197,94,0.06)"
@@ -43,7 +43,7 @@ borderRadius:24,
 
 padding:18,
 
-minHeight:150,
+minHeight:130,
 
 display:"flex",
 
@@ -63,8 +63,8 @@ const [selectedSubject,setSelectedSubject]
 =
 useState("");
 
-  const [selectedMonth, setSelectedMonth] =
-    useState("July");
+const [selectedMonth, setSelectedMonth] =
+  useState("July 2026");
 
   const [selectedWeek, setSelectedWeek] =
     useState("Entire Month");
@@ -150,26 +150,16 @@ return false;
 /* MONTH FILTER */
 
 
-const logMonth =
-new Date(
-log.log_date
-).toLocaleString(
-"default",
-{
-month:"long"
-}
-);
+const logDate = new Date(log.log_date);
 
+const logMonthYear =
+  logDate.toLocaleString("default", {
+    month: "long",
+    year: "numeric",
+  });
 
-if(
-
-selectedMonth !==
-logMonth
-
-){
-
-return false;
-
+if (selectedMonth !== logMonthYear) {
+  return false;
 }
 
 
@@ -338,17 +328,21 @@ b.log_date
 
 console.log(filteredLogs);
 
-const totalDays = new Date(
+const selectedMonthDate =
+  new Date(`${selectedMonth} 1`);
 
-2026,
+const selectedYear =
+  selectedMonthDate.getFullYear();
 
-new Date(
-`${selectedMonth} 1, 2026`
-).getMonth() + 1,
+const selectedMonthIndex =
+  selectedMonthDate.getMonth();
 
-0
-
-).getDate();
+const totalDays =
+  new Date(
+    selectedYear,
+    selectedMonthIndex + 1,
+    0
+  ).getDate();
 
 const subjectTeacher =
 
@@ -390,129 +384,166 @@ subjectList[0]
     <div className="space-y-6">
       {/* Header */}
 
-      <div className="rounded-3xl bg-[#07142D] p-8 text-white shadow-lg">
+     <div className="rounded-3xl bg-[#07142D] px-8 py-5 text-white shadow-lg">
         <p className="text-sm font-bold uppercase tracking-[0.2em] text-orange-400">
-          Doubt Diary & Syllabus Alignment
+         
         </p>
 
-        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <h1 className="text-3xl font-black uppercase">
-            Continuous Calendar Of Daily Lectures
-          </h1>
+    <div className="mt-2 flex items-center justify-between gap-10">
 
-    <div className="flex flex-wrap gap-5">
+  {/* LEFT */}
 
-  {/* SUBJECT */}
+  <div className="flex-1">
 
-  <div>
-    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-300">
-      Subject
+    <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange-400">
+      Doubt Diary & Syllabus Alignment
     </p>
+
+    <h1 className="mt-2 text-[38px] font-black uppercase leading-tight">
+      Continuous Calendar
+    </h1>
+
+  </div>
+
+  {/* RIGHT */}
+
+  <div className="flex items-end gap-4">
+
+    {/* SUBJECT */}
+
+    <div>
+
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
+        Subject
+      </p>
+
+      <select
+        value={selectedSubject}
+        onChange={(e) => setSelectedSubject(e.target.value)}
+        className="h-12 w-56 rounded-xl border border-white/20 bg-white/10 px-4 text-base text-white outline-none"
+      >
+        {subjects.map((subject) => (
+
+          <option
+            key={subject}
+            value={subject}
+            className="text-black"
+          >
+            {subject}
+          </option>
+
+        ))}
+      </select>
+
+    </div>
+
+    {/* MONTH */}
+
+    <div>
+
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
+        Month
+      </p>
 
 <select
-      value={selectedSubject}
-      onChange={(e) =>
-        setSelectedSubject(e.target.value)
-      }
-      className="rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-white outline-none"
+  value={selectedMonth}
+  onChange={(e) => setSelectedMonth(e.target.value)}
+  className="h-12 w-44 rounded-xl border border-white/20 bg-white/10 px-4 text-base text-white outline-none"
 >
 
-      {subjects.map((subject) => (
+  <option value="July 2026" className="text-black">
+    July 2026
+  </option>
 
-        <option
-          key={subject}
-          value={subject}
-          className="text-black"
-        >
-          {subject}
-        </option>
+  <option value="August 2026" className="text-black">
+    August 2026
+  </option>
 
-      ))}
+  <option value="September 2026" className="text-black">
+    September 2026
+  </option>
+
+  <option value="October 2026" className="text-black">
+    October 2026
+  </option>
+
+  <option value="November 2026" className="text-black">
+    November 2026
+  </option>
+
+  <option value="December 2026" className="text-black">
+    December 2026
+  </option>
+
+  <option value="January 2027" className="text-black">
+    January 2027
+  </option>
+
+  <option value="February 2027" className="text-black">
+    February 2027
+  </option>
+
+  <option value="March 2027" className="text-black">
+    March 2027
+  </option>
+
+  <option value="April 2027" className="text-black">
+    April 2027
+  </option>
 
 </select>
-  </div>
 
+    </div>
 
+    {/* WEEK FILTER */}
 
-  {/* MONTH */}
+    <div>
 
-  <div>
-    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-300">
-      Month
-    </p>
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
+        Week
+      </p>
 
-    <select
-      value={selectedMonth}
-      onChange={(e) =>
-        setSelectedMonth(e.target.value)
-      }
-      className="rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-white outline-none"
-    >
-      <option className="text-black">January</option>
-      <option className="text-black">February</option>
-      <option className="text-black">March</option>
-      <option className="text-black">April</option>
-      <option className="text-black">May</option>
-      <option className="text-black">June</option>
-      <option className="text-black">July</option>
-      <option className="text-black">August</option>
-      <option className="text-black">September</option>
-      <option className="text-black">October</option>
-      <option className="text-black">November</option>
-      <option className="text-black">December</option>
-    </select>
-  </div>
+      <select
+        value={selectedWeek}
+        onChange={(e) => setSelectedWeek(e.target.value)}
+        className="h-12 w-48 rounded-xl border border-white/20 bg-white/10 px-4 text-base text-white outline-none"
+      >
 
+        <option className="text-black">
+          Entire Month
+        </option>
 
+        <option className="text-black">
+          Week 1
+        </option>
 
+        <option className="text-black">
+          Week 2
+        </option>
 
-  {/* WEEK FILTER */}
+        <option className="text-black">
+          Week 3
+        </option>
 
-  <div>
-    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-300">
-      Week Filter
-    </p>
+        <option className="text-black">
+          Week 4
+        </option>
 
-    <select
-      value={selectedWeek}
-      onChange={(e) =>
-        setSelectedWeek(e.target.value)
-      }
-      className="rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-white outline-none"
-    >
-      <option className="text-black">
-        Entire Month
-      </option>
+        <option className="text-black">
+          Week 5
+        </option>
 
-      <option className="text-black">
-        Week 1
-      </option>
+        <option className="text-black">
+          Custom Date Selection
+        </option>
 
-      <option className="text-black">
-        Week 2
-      </option>
+      </select>
 
-      <option className="text-black">
-        Week 3
-      </option>
+    </div>
 
-      <option className="text-black">
-        Week 4
-      </option>
-
-      <option className="text-black">
-        Week 5
-      </option>
-
-      <option className="text-black">
-        Custom Date Selection
-      </option>
-
-    </select>
   </div>
 
 </div>
-        </div>
       </div>
 
 {
@@ -573,35 +604,32 @@ subjectList[0]
   )
 }
 
+{/* Teacher Card */}
 
-      {/* Teacher Card */}
+<div className="rounded-3xl bg-white p-8 shadow-sm">
 
-      <div className="rounded-3xl bg-white p-8 shadow-sm">
-        <h2 className="text-xl font-bold uppercase text-slate-800">
-          Assigned Subject Facilitator
-        </h2>
+  <h2 className="mb-6 text-xl font-bold uppercase text-slate-800">
+    Assigned Subject Facilitator
+  </h2>
 
-      <div
-className="
-mt-5
-rounded-3xl
-p-8
-"
-style={{
-
-background:"#ECF0DE",
-
-border:
-"1px solid #BFDBFE"
-
-}}
->
+  <div
+    style={{
+      background:"linear-gradient(135deg,#EEF7FF,#F8FAFF)",
+      border:"1px solid #BFDBFE",
+      borderRadius:20,
+      padding:"22px 28px",
+      display:"flex",
+      justifyContent:"space-between",
+      alignItems:"center"
+    }}
+  >
 
 <h2
 style={{
-fontSize:"26px",
-fontWeight:700,
-color:"#04122F"
+fontSize:"22px",
+fontWeight:800,
+color:"#0F172A",
+margin:0
 }}
 >
 {teacherName}
@@ -609,19 +637,33 @@ color:"#04122F"
 
 <p
 style={{
+marginTop:6,
 fontWeight:600,
+fontSize:15,
 color:"#64748B"
 }}
 >
 {selectedSubject} Subject Facilitator
 </p>
 
-<p>
+<div
+style={{
+background:"#2563EB",
+color:"white",
+padding:"10px 18px",
+borderRadius:14,
+fontWeight:700,
+fontSize:14
+}}
+>
 
 Academic Session
-2026-2027
 
-</p>
+<br/>
+
+2026–2027
+
+</div>
 
 </div>
       </div>
@@ -631,7 +673,7 @@ Academic Session
 <div
 style={{
 background:"white",
-padding:32,
+padding:24,
 borderRadius:28,
 marginTop:30,
 }}
@@ -639,7 +681,7 @@ marginTop:30,
 
 <h2
 style={{
-fontSize:"24px",
+fontSize:"20px",
 fontWeight:600,
 color:"#04122F",
 marginBottom:12,
@@ -688,7 +730,7 @@ key={day}
 style={{
 textAlign:"center",
 fontWeight:800,
-fontSize:18,
+fontSize:15,
 letterSpacing:1,
 color:"#334155",
 textTransform:"uppercase",
@@ -770,6 +812,9 @@ fontSize:18,
 <p
 style={{
 marginTop:25,
+marginBottom:0,
+width:"100%",
+textAlign:"center",
 fontSize:13,
 color:"#CA8A04",
 fontWeight:600,
@@ -819,12 +864,12 @@ visibleTopics.map((topic)=>(
 style={{
 
 display:"inline-flex",
-padding:"8px 14px",
+padding:"6px 10px",
 borderRadius:14,
 background:"#DCFCE7",
 color:"#15803D",
 fontWeight:700,
-fontSize:13,
+fontSize:12,
 marginBottom:12,
 
 }}
@@ -962,25 +1007,16 @@ item=>item.homework_given
 showTopicsModal && (
 
 <div
-
 style={{
-
-position:"fixed",
-top:0,
-left:0,
-right:0,
-bottom:0,
-
-background:"rgba(0,0,0,0.45)",
-
+background:"linear-gradient(135deg,#EEF7FF,#F8FAFF)",
+border:"1px solid #BFDBFE",
+borderRadius:20,
+marginTop:28,
+padding:"22px 28px",
 display:"flex",
-justifyContent:"center",
-alignItems:"center",
-
-zIndex:9999,
-
+justifyContent:"space-between",
+alignItems:"center"
 }}
-
 >
 
 <div

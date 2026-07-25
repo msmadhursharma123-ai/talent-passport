@@ -321,80 +321,168 @@ const closeVideo = () =>
 
 )}
 
-      {/* HEADER */}
+     {/* HEADER */}
 
-      <div
-        style={{
-          background: "#FFF",
-          borderRadius: 24,
-          padding: 30,
-          marginBottom: 25,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
-        }}
-      >
-        <div>
-          <div
-            style={{
-              color: "#FF6B00",
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: 2,
-              marginBottom: 10
-            }}
-          >
-            ACCREDITED TALENT LEDGER
-          </div>
+<div
+  style={{
+    position: "relative",
+    overflow: "hidden",
+    background:
+      "linear-gradient(115deg, #FFFFFF 0%, #FFFFFF 48%, #FFF9F3 76%, #F3F7FF 100%)",
+    borderRadius: 28,
+    padding: "38px 40px",
+    marginBottom: 25,
+    minHeight: 220,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    border: "1px solid #E2E8F0",
+    boxShadow: "0 4px 16px rgba(15,23,42,0.04)"
+  }}
+>
 
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 38
-            }}
-          >
-            Student Talent Ledger Terminal
-          </h1>
+  {/* DECORATIVE BACKGROUND CIRCLES */}
 
+  <div
+    style={{
+      position: "absolute",
+      width: 430,
+      height: 430,
+      borderRadius: "50%",
+      right: -115,
+      top: -235,
+      background: "rgba(249,115,22,0.055)",
+      pointerEvents: "none"
+    }}
+  />
 
-          <p
-            style={{
-              color: "#64748B"
-            }}
-          >
-            Complete Talent Passport Overview
-          </p>
-        </div>
+  <div
+    style={{
+      position: "absolute",
+      width: 315,
+      height: 315,
+      borderRadius: "50%",
+      right: 120,
+      bottom: -245,
+      background: "rgba(37,99,235,0.05)",
+      pointerEvents: "none"
+    }}
+  />
 
-        <div
-          style={{
-            background: "#F97316",
-            color: "white",
-            padding: 25,
-            borderRadius: 20,
-            minWidth: 180,
-            textAlign: "center"
-          }}
-        >
-          <div
-            style={{
-              fontSize: 12,
-              letterSpacing: 2
-            }}
-          >
-            RELATIVE SCORE
-          </div>
+  <div
+    style={{
+      position: "absolute",
+      width: 180,
+      height: 180,
+      borderRadius: "50%",
+      right: 245,
+      top: -125,
+      background: "rgba(168,85,247,0.025)",
+      pointerEvents: "none"
+    }}
+  />
 
-          <div
-            style={{
-              fontSize: 56,
-              fontWeight: 800
-            }}
-          >
-            {overallScore}
-          </div>
-        </div>
-      </div>
+  {/* LEFT CONTENT */}
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 2,
+      maxWidth: "68%"
+    }}
+  >
+
+    <div
+      style={{
+        color: "#F97316",
+        fontSize: 12,
+        fontWeight: 800,
+        letterSpacing: 2,
+        marginBottom: 10
+      }}
+    >
+      ACCREDITED TALENT LEDGER
+    </div>
+
+    <h1
+      style={{
+        margin: 0,
+        color: "#0F172A",
+        fontSize: 38,
+        fontWeight: 800,
+        lineHeight: 1.15,
+        letterSpacing: -0.7
+      }}
+    >
+      Student Talent Ledger Terminal
+    </h1>
+
+    <p
+      style={{
+        color: "#64748B",
+        marginTop: 12,
+        marginBottom: 0,
+        fontSize: 14,
+        fontWeight: 500
+      }}
+    >
+      Complete Talent Passport Overview
+    </p>
+
+  </div>
+
+  {/* RELATIVE SCORE */}
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 2,
+      background: "#F97316",
+      color: "#FFF",
+      padding: "20px 24px",
+      borderRadius: 18,
+      minWidth: 190,
+      textAlign: "center",
+      boxShadow: "0 10px 25px rgba(249,115,22,0.16)"
+    }}
+  >
+
+    <div
+      style={{
+        fontSize: 10,
+        fontWeight: 800,
+        letterSpacing: 1.5,
+        opacity: 0.9
+      }}
+    >
+      RELATIVE SCORE
+    </div>
+
+    <div
+      style={{
+        fontSize: 52,
+        lineHeight: 1.1,
+        fontWeight: 800,
+        marginTop: 6
+      }}
+    >
+      {overallScore}
+    </div>
+
+    <div
+      style={{
+        marginTop: 3,
+        fontSize: 11,
+        fontWeight: 600,
+        opacity: 0.85
+      }}
+    >
+      TALENT PASSPORT
+    </div>
+
+  </div>
+
+</div>
 
       {/* TALENT BREAKDOWN */}
 
