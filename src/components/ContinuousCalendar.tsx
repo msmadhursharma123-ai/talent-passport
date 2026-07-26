@@ -13,46 +13,6 @@ import {
 getStudentMonthlyLectureLogs,
 } from "../data/studentGrowthPlanRepository";
 
-const calendarLectureBox = {
-
-background:"#F7FFF8",
-
-border:
-"1px solid #BBF7D0",
-
-borderRadius:24,
-
-padding:18,
-
-minHeight:150,
-
-boxShadow:
-"0px 4px 15px rgba(34,197,94,0.06)"
-
-} as const;
-
-
-
-const emptyCalendarBox = {
-
-background:"#FFFDF3",
-
-border:"1px solid #FDE68A",
-
-borderRadius:24,
-
-padding:18,
-
-minHeight:130,
-
-display:"flex",
-
-flexDirection:"column" as const,
-
-alignItems:"center",
-
-} as const;
-
 
 export default function ContinuousCalendar() {
 
@@ -382,169 +342,223 @@ subjectList[0]
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+   {/* =========================================================
+    CONTINUOUS CALENDAR HERO
+========================================================= */}
 
-     <div className="rounded-3xl bg-[#07142D] px-8 py-5 text-white shadow-lg">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-orange-400">
-         
-        </p>
-
-    <div className="mt-2 flex items-center justify-between gap-10">
-
-  {/* LEFT */}
-
-  <div className="flex-1">
-
-    <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange-400">
-      Doubt Diary & Syllabus Alignment
-    </p>
-
-    <h1 className="mt-2 text-[38px] font-black uppercase leading-tight">
-      Continuous Calendar
-    </h1>
-
-  </div>
-
-  {/* RIGHT */}
-
-  <div className="flex items-end gap-4">
-
-    {/* SUBJECT */}
-
-    <div>
-
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
-        Subject
-      </p>
-
-      <select
-        value={selectedSubject}
-        onChange={(e) => setSelectedSubject(e.target.value)}
-        className="h-12 w-56 rounded-xl border border-white/20 bg-white/10 px-4 text-base text-white outline-none"
-      >
-        {subjects.map((subject) => (
-
-          <option
-            key={subject}
-            value={subject}
-            className="text-black"
-          >
-            {subject}
-          </option>
-
-        ))}
-      </select>
-
-    </div>
-
-    {/* MONTH */}
-
-    <div>
-
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
-        Month
-      </p>
-
-<select
-  value={selectedMonth}
-  onChange={(e) => setSelectedMonth(e.target.value)}
-  className="h-12 w-44 rounded-xl border border-white/20 bg-white/10 px-4 text-base text-white outline-none"
+<div
+  className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white px-8 py-7 shadow-sm"
+  style={{
+    background:
+      "linear-gradient(135deg,#FFFFFF 0%,#FFFFFF 70%,#FFF7ED 100%)",
+  }}
 >
 
-  <option value="July 2026" className="text-black">
-    July 2026
-  </option>
+  {/* Decorative background circles */}
 
-  <option value="August 2026" className="text-black">
-    August 2026
-  </option>
+  <div
+    className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full"
+    style={{
+      background: "rgba(255,237,213,0.55)",
+    }}
+  />
 
-  <option value="September 2026" className="text-black">
-    September 2026
-  </option>
+  <div
+    className="pointer-events-none absolute right-[300px] -bottom-24 h-44 w-44 rounded-full"
+    style={{
+      background: "rgba(239,246,255,0.8)",
+    }}
+  />
 
-  <option value="October 2026" className="text-black">
-    October 2026
-  </option>
 
-  <option value="November 2026" className="text-black">
-    November 2026
-  </option>
+  <div className="relative z-10 flex flex-col gap-7 xl:flex-row xl:items-center xl:justify-between">
 
-  <option value="December 2026" className="text-black">
-    December 2026
-  </option>
 
-  <option value="January 2027" className="text-black">
-    January 2027
-  </option>
+    {/* =====================================================
+        LEFT — PAGE IDENTITY
+    ===================================================== */}
 
-  <option value="February 2027" className="text-black">
-    February 2027
-  </option>
+    <div className="min-w-0 flex-1">
 
-  <option value="March 2027" className="text-black">
-    March 2027
-  </option>
+      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-500">
+        Student Academic Continuity
+      </p>
 
-  <option value="April 2027" className="text-black">
-    April 2027
-  </option>
+      <h1 className="mt-3 text-[30px] font-black leading-tight text-slate-900 md:text-[34px]">
+        Continuous Calendar
+      </h1>
 
-</select>
+      <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-500">
+        Review your classroom teaching history, covered topics and
+        academic continuity across the school year.
+      </p>
 
     </div>
 
-    {/* WEEK FILTER */}
 
-    <div>
+    {/* =====================================================
+        RIGHT — FILTERS
+    ===================================================== */}
 
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
-        Week
-      </p>
+    <div className="flex flex-wrap items-end gap-3">
 
-      <select
-        value={selectedWeek}
-        onChange={(e) => setSelectedWeek(e.target.value)}
-        className="h-12 w-48 rounded-xl border border-white/20 bg-white/10 px-4 text-base text-white outline-none"
+
+      {/* SUBJECT */}
+
+      <div>
+
+        <p className="mb-2 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">
+          Subject
+        </p>
+
+        <select
+          value={selectedSubject}
+          onChange={(e) =>
+            setSelectedSubject(e.target.value)
+          }
+          className="h-11 w-48 rounded-xl border border-orange-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-orange-400"
+        >
+
+          {subjects.map((subject) => (
+
+            <option
+              key={subject}
+              value={subject}
+            >
+              {subject}
+            </option>
+
+          ))}
+
+        </select>
+
+      </div>
+
+
+      {/* MONTH */}
+
+      <div>
+
+        <p className="mb-2 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">
+          Month
+        </p>
+
+        <select
+          value={selectedMonth}
+          onChange={(e) =>
+            setSelectedMonth(e.target.value)
+          }
+          className="h-11 w-44 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-orange-400"
+        >
+
+          <option value="July 2026">
+            July 2026
+          </option>
+
+          <option value="August 2026">
+            August 2026
+          </option>
+
+          <option value="September 2026">
+            September 2026
+          </option>
+
+          <option value="October 2026">
+            October 2026
+          </option>
+
+          <option value="November 2026">
+            November 2026
+          </option>
+
+          <option value="December 2026">
+            December 2026
+          </option>
+
+          <option value="January 2027">
+            January 2027
+          </option>
+
+          <option value="February 2027">
+            February 2027
+          </option>
+
+          <option value="March 2027">
+            March 2027
+          </option>
+
+          <option value="April 2027">
+            April 2027
+          </option>
+
+        </select>
+
+      </div>
+
+
+      {/* WEEK */}
+
+      <div>
+
+        <p className="mb-2 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">
+          Week
+        </p>
+
+        <select
+          value={selectedWeek}
+          onChange={(e) =>
+            setSelectedWeek(e.target.value)
+          }
+          className="h-11 w-44 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-orange-400"
+        >
+
+          <option>
+            Entire Month
+          </option>
+
+          <option>
+            Week 1
+          </option>
+
+          <option>
+            Week 2
+          </option>
+
+          <option>
+            Week 3
+          </option>
+
+          <option>
+            Week 4
+          </option>
+
+          <option>
+            Week 5
+          </option>
+
+          <option>
+            Custom Date Selection
+          </option>
+
+        </select>
+
+      </div>
+
+
+      {/* PAGE ICON */}
+
+      <div
+        className="flex h-12 w-12 items-center justify-center rounded-xl border border-orange-200 bg-white text-xl shadow-sm"
+        title="Continuous Calendar"
       >
-
-        <option className="text-black">
-          Entire Month
-        </option>
-
-        <option className="text-black">
-          Week 1
-        </option>
-
-        <option className="text-black">
-          Week 2
-        </option>
-
-        <option className="text-black">
-          Week 3
-        </option>
-
-        <option className="text-black">
-          Week 4
-        </option>
-
-        <option className="text-black">
-          Week 5
-        </option>
-
-        <option className="text-black">
-          Custom Date Selection
-        </option>
-
-      </select>
+        📅
+      </div>
 
     </div>
 
   </div>
 
 </div>
-      </div>
 
 {
   selectedWeek === "Custom Date Selection" && (
@@ -604,399 +618,550 @@ subjectList[0]
   )
 }
 
-{/* Teacher Card */}
+{/* =========================================================
+    ASSIGNED SUBJECT FACILITATOR
+========================================================= */}
 
-<div className="rounded-3xl bg-white p-8 shadow-sm">
-
-  <h2 className="mb-6 text-xl font-bold uppercase text-slate-800">
-    Assigned Subject Facilitator
-  </h2>
+<div
+  className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-sm"
+>
 
   <div
+    className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full"
     style={{
-      background:"linear-gradient(135deg,#EEF7FF,#F8FAFF)",
-      border:"1px solid #BFDBFE",
-      borderRadius:20,
-      padding:"22px 28px",
-      display:"flex",
-      justifyContent:"space-between",
-      alignItems:"center"
+      background: "rgba(239,246,255,0.8)",
+    }}
+  />
+
+
+  {/* SECTION HEADER */}
+
+  <div className="relative z-10 flex items-start justify-between gap-4">
+
+    <div>
+
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+        Classroom Academic Connection
+      </p>
+
+      <h2 className="mt-2 text-xl font-black text-slate-900">
+        Assigned Subject Facilitator
+      </h2>
+
+      <p className="mt-2 text-sm text-slate-500">
+        Your assigned facilitator for the currently selected subject.
+      </p>
+
+    </div>
+
+
+    <div className="hidden rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-blue-600 md:block">
+      Academic Session 2026–2027
+    </div>
+
+  </div>
+
+
+  {/* FACILITATOR CARD */}
+
+  <div
+    className="relative z-10 mt-6 flex flex-col gap-4 rounded-2xl border border-blue-200 px-6 py-5 md:flex-row md:items-center md:justify-between"
+    style={{
+      background:
+        "linear-gradient(135deg,#EFF6FF,#FFFFFF)",
     }}
   >
 
-<h2
-style={{
-fontSize:"22px",
-fontWeight:800,
-color:"#0F172A",
-margin:0
-}}
->
-{teacherName}
-</h2>
+    <div className="flex items-center gap-4">
 
-<p
-style={{
-marginTop:6,
-fontWeight:600,
-fontSize:15,
-color:"#64748B"
-}}
->
-{selectedSubject} Subject Facilitator
-</p>
-
-<div
-style={{
-background:"#2563EB",
-color:"white",
-padding:"10px 18px",
-borderRadius:14,
-fontWeight:700,
-fontSize:14
-}}
->
-
-Academic Session
-
-<br/>
-
-2026–2027
-
-</div>
-
-</div>
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-blue-200 bg-white text-xl shadow-sm">
+        👨‍🏫
       </div>
 
-     {/* CONTINUOUS CLASSROOM CALENDAR */}
 
-<div
-style={{
-background:"white",
-padding:24,
-borderRadius:28,
-marginTop:30,
-}}
->
+      <div>
 
-<h2
-style={{
-fontSize:"20px",
-fontWeight:600,
-color:"#04122F",
-marginBottom:12,
-}}
->
+        <p className="text-[9px] font-black uppercase tracking-[0.16em] text-blue-600">
+          Subject Facilitator
+        </p>
 
-Continuous Classroom Calendar
+        <h3 className="mt-1 text-lg font-black text-slate-900">
+          {teacherName}
+        </h3>
 
-</h2>
+        <p className="mt-1 text-sm font-semibold text-slate-500">
+          {selectedSubject} Subject Facilitator
+        </p>
+
+      </div>
+
+    </div>
 
 
-<p
-style={{
-marginTop:0,
-color:"#64748B",
-fontSize:"16px",
-fontWeight:500,
-}}
->
+    <div className="rounded-xl border border-blue-200 bg-white px-5 py-3">
 
-View all lectures conducted during the selected month.
+      <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">
+        Academic Session
+      </p>
 
-</p>
+      <p className="mt-1 text-sm font-black text-blue-600">
+        2026–2027
+      </p>
 
+    </div>
 
-{/* WEEK DAYS */}
-
-<div
-style={{
-display:"grid",
-gridTemplateColumns:"repeat(7,1fr)",
-gap:12,
-marginTop:30,
-marginBottom:15,
-}}
->
-
-{
-
-["MON","TUE","WED","THU","FRI","SAT","SUN"]
-
-.map((day)=>(
-
-<div
-key={day}
-style={{
-textAlign:"center",
-fontWeight:800,
-fontSize:15,
-letterSpacing:1,
-color:"#334155",
-textTransform:"uppercase",
-}}
->
-
-{day}
+  </div>
 
 </div>
 
-))
-
-}
-
-</div>
-
+{/* =========================================================
+    CONTINUOUS CLASSROOM CALENDAR
+========================================================= */}
 
 <div
-style={{
-display:"grid",
-gridTemplateColumns:"repeat(7,1fr)",
-gap:12,
-}}
+  className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-sm"
 >
 
-{
+  <div
+    className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full"
+    style={{
+      background: "rgba(255,247,237,0.9)",
+    }}
+  />
 
-Array.from({ length: totalDays }).map((_,index)=>{
+<div className="relative z-10 flex items-start justify-between gap-5">
 
-const day = index + 1;
+  <div>
 
+    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+      Learning Continuity
+    </p>
 
-const logsForDay =
+    <h2 className="mt-2 text-xl font-black text-slate-900">
+      See Your Classroom Calendar
+    </h2>
 
-filteredLogs.filter((item)=>{
+    <p className="mt-2 text-sm leading-6 text-slate-500">
+      Review lectures, topics, pages and classroom activity
+      recorded throughout the selected month.
+    </p>
 
-const currentDate =
-new Date(item.log_date);
-
-return(
-
-currentDate.getDate() === day
-
-);
-
-});
-
-
-const visibleTopics =
-logsForDay.slice(0,1);
-
-
-const remainingTopics =
-logsForDay.length - 1;
+  </div>
 
 
-
-if(logsForDay.length===0){
-
-return(
-
-<div
-key={day}
-style={emptyCalendarBox}
->
-
-<div
-style={{
-fontWeight:700,
-fontSize:18,
-}}
->
-
-{day}
+  <div className="hidden rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-orange-600 md:block">
+    Monthly Learning Ledger
+  </div>
 
 </div>
 
 
-<p
-style={{
-marginTop:25,
-marginBottom:0,
-width:"100%",
-textAlign:"center",
-fontSize:13,
-color:"#CA8A04",
-fontWeight:600,
-}}
->
-
-No Lecture Conducted
-
-</p>
-
-</div>
-
-);
-
-}
-
-
-
-return(
+{/* =========================================================
+    WEEK DAYS
+========================================================= */}
 
 <div
-key={day}
-style={calendarLectureBox}
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+    gap: 12,
+    marginTop: 30,
+    marginBottom: 12,
+  }}
 >
+  {["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map(
+    (day) => (
+      <div
+        key={day}
+        style={{
+          textAlign: "center",
+          fontWeight: 800,
+          fontSize: 11,
+          letterSpacing: 1.2,
+          color: "#64748B",
+        }}
+      >
+        {day}
+      </div>
+    )
+  )}
+</div>
+
+
+{/* =========================================================
+    CALENDAR GRID
+========================================================= */}
 
 <div
-style={{
-fontWeight:700,
-fontSize:18,
-marginBottom:12,
-}}
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+    gap: 12,
+  }}
 >
+  {Array.from({ length: totalDays }).map((_, index) => {
 
-{day}
+    const day = index + 1;
 
-</div>
+    const logsForDay =
+      filteredLogs.filter((item) => {
 
+        const currentDate =
+          new Date(item.log_date);
 
-{
+        return (
+          currentDate.getDate() === day
+        );
 
-visibleTopics.map((topic)=>(
-
-<div key={topic.id}>
-
-
-<div
-style={{
-
-display:"inline-flex",
-padding:"6px 10px",
-borderRadius:14,
-background:"#DCFCE7",
-color:"#15803D",
-fontWeight:700,
-fontSize:12,
-marginBottom:12,
-
-}}
->
-
-{topic.topic_name}
-
-</div>
+      });
 
 
-<p
-style={{
-marginTop:0,
-marginBottom:14,
-fontSize:13,
-fontWeight:600,
-color:"#475569",
-}}
->
+    const visibleTopics =
+      logsForDay.slice(0, 1);
 
-Pages :
-
-{topic.page_from}
-
--
-
-{topic.page_to}
-
-</p>
+    const remainingTopics =
+      logsForDay.length - 1;
 
 
-</div>
+    /* =====================================================
+       EMPTY DAY
+    ===================================================== */
 
-))
+    if (logsForDay.length === 0) {
 
-}
+      return (
 
+        <div
+          key={day}
+          style={{
+            position: "relative",
+            overflow: "hidden",
 
+            minHeight: 116,
 
-{
+            padding: "14px 14px",
 
-remainingTopics > 0 && (
+            borderRadius: 15,
 
+            border:
+              "1px solid #FDBA74",
 
+            background:
+              "linear-gradient(135deg,#FFF9EF 0%,#FFFCF7 100%)",
 
-<div
+            display: "flex",
+            flexDirection: "column",
 
-onClick={()=>{
+            boxShadow:
+              "0 2px 6px rgba(15,23,42,0.02)",
+          }}
+        >
 
-setSelectedDayTopics(
-logsForDay
-);
+          {/* TOP RIGHT DECORATIVE CIRCLE */}
 
-setShowTopicsModal(
-true
-);
+          <div
+            style={{
+              position: "absolute",
 
-}}
+              width: 54,
+              height: 54,
 
-style={{
+              borderRadius: "50%",
 
-marginTop:10,
-marginBottom:14,
-padding:"8px 12px",
-borderRadius:12,
-background:"#EFF6FF",
-color:"#2563EB",
-fontSize:13,
-fontWeight:700,
-cursor:"pointer",
-display:"inline-block",
+              right: -18,
+              top: -18,
 
-}}
+              background:
+                "rgba(255,237,213,0.75)",
 
->
-
-View All Topics
-({logsForDay.length})
-→
-
-</div>
-
-)
-
-}
-
-
-
-<div
-style={{
-fontSize:13,
-color:"#475569",
-}}
->
-
-Homework :
-
-<strong>
-
-{
-
-logsForDay.some(
-item=>item.homework_given
-)
-
-?
-
-"Yes"
-
-:
-
-"No"
-
-}
-
-</strong>
-
-</div>
+              pointerEvents: "none",
+            }}
+          />
 
 
-</div>
+          {/* DATE */}
 
-);
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
 
-})
+              fontWeight: 800,
+              fontSize: 14,
 
-}
+              lineHeight: 1,
+
+              color: "#0F172A",
+            }}
+          >
+            {day}
+          </div>
+
+
+          {/* EMPTY STATE */}
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+
+              flex: 1,
+
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+
+              paddingBottom: 3,
+            }}
+          >
+
+            <p
+              style={{
+                margin: 0,
+
+                textAlign: "center",
+
+                fontSize: 10,
+                lineHeight: 1.3,
+
+                color: "#EA580C",
+
+                fontWeight: 800,
+              }}
+            >
+              No Lecture Conducted
+            </p>
+
+          </div>
+
+        </div>
+
+      );
+
+    }
+
+
+    /* =====================================================
+       LECTURE CONDUCTED
+    ===================================================== */
+
+    return (
+
+      <div
+        key={day}
+        style={{
+          position: "relative",
+          overflow: "hidden",
+
+          minHeight: 116,
+
+          padding: "14px 14px",
+
+          borderRadius: 15,
+
+          border:
+            "1px solid #BBF7D0",
+
+          background:
+            "linear-gradient(135deg,#F0FDF4 0%,#F8FFF9 100%)",
+
+          boxShadow:
+            "0 2px 6px rgba(34,197,94,0.03)",
+        }}
+      >
+
+        {/* TOP RIGHT DECORATIVE CIRCLE */}
+
+        <div
+          style={{
+            position: "absolute",
+
+            width: 54,
+            height: 54,
+
+            borderRadius: "50%",
+
+            right: -18,
+            top: -18,
+
+            background:
+              "rgba(220,252,231,0.8)",
+
+            pointerEvents: "none",
+          }}
+        />
+
+
+        {/* DATE */}
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+
+            fontWeight: 800,
+            fontSize: 14,
+
+            lineHeight: 1,
+
+            color: "#0F172A",
+
+            marginBottom: 13,
+          }}
+        >
+          {day}
+        </div>
+
+
+        {/* TOPIC */}
+
+        {visibleTopics.map((topic) => (
+
+          <div
+            key={topic.id}
+            style={{
+              position: "relative",
+              zIndex: 1,
+            }}
+          >
+
+            <div
+              style={{
+                display: "inline-flex",
+
+                maxWidth: "100%",
+
+                padding: "5px 8px",
+
+                borderRadius: 10,
+
+                background:
+                  "#DCFCE7",
+
+                color:
+                  "#15803D",
+
+                fontWeight: 800,
+
+                fontSize: 10,
+
+                marginBottom: 8,
+
+                overflow: "hidden",
+
+                textOverflow: "ellipsis",
+
+                whiteSpace: "nowrap",
+              }}
+            >
+              {topic.topic_name}
+            </div>
+
+
+            <p
+              style={{
+                margin: 0,
+
+                fontSize: 10,
+
+                fontWeight: 600,
+
+                color: "#64748B",
+              }}
+            >
+              Pages: {topic.page_from}–{topic.page_to}
+            </p>
+
+          </div>
+
+        ))}
+
+
+        {/* MULTIPLE TOPICS */}
+
+        {remainingTopics > 0 && (
+
+          <button
+            type="button"
+
+            onClick={() => {
+
+              setSelectedDayTopics(
+                logsForDay
+              );
+
+              setShowTopicsModal(
+                true
+              );
+
+            }}
+
+            style={{
+              position: "relative",
+              zIndex: 1,
+
+              marginTop: 8,
+
+              padding: 0,
+
+              border: "none",
+
+              background:
+                "transparent",
+
+              color:
+                "#2563EB",
+
+              fontSize: 10,
+
+              fontWeight: 800,
+
+              cursor:
+                "pointer",
+            }}
+          >
+            View All Topics ({logsForDay.length}) →
+          </button>
+
+        )}
+
+
+        {/* HOMEWORK */}
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+
+            marginTop: 8,
+
+            fontSize: 10,
+
+            color: "#64748B",
+          }}
+        >
+          Homework:{" "}
+
+          <strong
+            style={{
+              color: "#334155",
+            }}
+          >
+            {logsForDay.some(
+              (item) =>
+                item.homework_given
+            )
+              ? "Yes"
+              : "No"}
+          </strong>
+
+        </div>
+
+      </div>
+
+    );
+
+  })}
 
 </div>
 

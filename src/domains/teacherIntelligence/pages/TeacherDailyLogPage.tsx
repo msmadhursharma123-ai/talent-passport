@@ -335,735 +335,1258 @@ false
   return (
     <div
       style={{
-        padding: 20,
-        background: "#F6F6F3",
-        minHeight: "100%",
+        minHeight: "100vh",
+        padding: "28px",
+
+        background: `
+          radial-gradient(
+            circle at 94% 7%,
+            rgba(249, 115, 22, 0.075) 0,
+            rgba(249, 115, 22, 0.075) 120px,
+            transparent 121px
+          ),
+          radial-gradient(
+            circle at 8% 92%,
+            rgba(37, 99, 235, 0.045) 0,
+            rgba(37, 99, 235, 0.045) 150px,
+            transparent 151px
+          ),
+          #F8FAFC
+        `,
       }}
     >
-      {/* HEADER */}
+      {/* ======================================================
+          DAILY LOG HERO
+         ====================================================== */}
 
       <div
         style={{
-          background: "#04122F",
-          borderRadius: 28,
-          padding: 20,
-          marginBottom: 20,
-          color: "white",
+          position: "relative",
+          overflow: "hidden",
+
+          background:
+            "linear-gradient(135deg, #FFFFFF 0%, #FFFCF8 72%, #FFF7ED 100%)",
+
+          border: "1px solid #E2E8F0",
+          borderRadius: "28px",
+
+          padding: "34px 38px",
+          marginBottom: "24px",
+
+          boxShadow:
+            "0 12px 32px rgba(15, 23, 42, 0.055)",
         }}
       >
-        <p
-          style={{
-            margin: 0,
-            color: "#F59E0B",
-            fontWeight: 700,
-            letterSpacing: 2,
-            fontSize: 10,
-          }}
-        >
-          CLASSROOM LECTURE LOGGING INTERFACE
-        </p>
+        {/* Decorative orange circle */}
 
-        <h1
+        <div
           style={{
-            marginTop: 12,
-            marginBottom: 12,
-            fontSize: 26,
-          }}
-        >
-          DAILY LESSON PUBLISHING CENTER
-        </h1>
+            position: "absolute",
+            width: 220,
+            height: 220,
+            borderRadius: "50%",
 
-        <p
+            background:
+              "rgba(249, 115, 22, 0.055)",
+
+            right: -60,
+            top: -105,
+
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Small orange circle */}
+
+        <div
           style={{
-            margin: 0,
-            color: "#D1D5DB",
-            lineHeight: 1.8,
+            position: "absolute",
+            width: 100,
+            height: 100,
+            borderRadius: "50%",
+
+            background:
+              "rgba(249, 115, 22, 0.04)",
+
+            right: 190,
+            top: -55,
+
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Blue lower circle */}
+
+        <div
+          style={{
+            position: "absolute",
+            width: 170,
+            height: 170,
+            borderRadius: "50%",
+
+            background:
+              "rgba(37, 99, 235, 0.035)",
+
+            right: 245,
+            bottom: -115,
+
+            pointerEvents: "none",
+          }}
+        />
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+
+            gap: "30px",
           }}
         >
-          Publish today's lecture details for
-          parents, students and classroom
-          intelligence surveys.
-        </p>
+          <div>
+            <div
+              style={{
+                color: "#F97316",
+
+                fontSize: "11px",
+                fontWeight: 800,
+
+                letterSpacing: "2.2px",
+                textTransform: "uppercase",
+
+                marginBottom: "12px",
+              }}
+            >
+              CLASSROOM LECTURE LOGGING INTERFACE
+            </div>
+
+            <h1
+              style={{
+                margin: 0,
+
+                color: "#0F172A",
+
+                fontSize: "34px",
+                lineHeight: 1.15,
+
+                fontWeight: 800,
+                letterSpacing: "-0.7px",
+              }}
+            >
+              DAILY LESSON PUBLISHING CENTER
+            </h1>
+
+            <p
+              style={{
+                color: "#64748B",
+
+                margin: "13px 0 0",
+
+                fontSize: "16px",
+                fontWeight: 500,
+
+                lineHeight: 1.65,
+
+                maxWidth: "760px",
+              }}
+            >
+              Publish today's lecture details for parents, students and
+              classroom intelligence surveys.
+            </p>
+          </div>
+
+          {/* Hero badge */}
+
+          <div
+            style={{
+              width: "106px",
+              height: "106px",
+
+              flexShrink: 0,
+
+              display: "flex",
+              flexDirection: "column",
+
+              alignItems: "center",
+              justifyContent: "center",
+
+              background:
+                "linear-gradient(145deg, #FFF8F1 0%, #FFFFFF 100%)",
+
+              border: "1px solid #FED7AA",
+
+              borderRadius: "26px",
+
+              boxShadow:
+                "0 10px 24px rgba(249, 115, 22, 0.08)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "30px",
+                marginBottom: "7px",
+              }}
+            >
+              📚
+            </div>
+
+            <div
+              style={{
+                color: "#F97316",
+
+                fontSize: "9px",
+                fontWeight: 800,
+
+                letterSpacing: "1.3px",
+
+                textAlign: "center",
+              }}
+            >
+              DAILY
+              <br />
+              LOG
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* SUBMIT CARD */}
-
-      <div style={cardStyle}>
-        <h2
-          style={{
-            marginTop: 0,
-            color: "#04122F",
-          }}
-        >
-          Today's Lecture Submission
-        </h2>
-
-        <p
-          style={{
-            color: "#64748B",
-            marginBottom: 25,
-          }}
-        >
-          Publish today's lesson coverage,
-          homework status and classroom
-          activity.
-        </p>
-
-        <button
-          onClick={() =>
-            setOpenDialog(true)
-          }
-          style={buttonStyle}
-        >
-          + Publish Today's Lecture
-        </button>
-      </div>
-
-      {/* TODAY'S LOGS */}
+      {/* ======================================================
+          TODAY'S LECTURE SUBMISSION
+         ====================================================== */}
 
       <div
         style={{
-          marginTop: 35,
+          position: "relative",
+          overflow: "hidden",
+
+          background: "#FFFFFF",
+
+          border: "1px solid #E2E8F0",
+          borderRadius: "26px",
+
+          padding: "26px 28px",
+          marginBottom: "24px",
+
+          boxShadow:
+            "0 10px 30px rgba(15, 23, 42, 0.05)",
         }}
       >
-        <h2
+        <div
           style={{
-            color: "#04122F",
-            fontSize:"15px",
-            margin:"0 0 15px 0",
-fontWeight:800,
+            position: "absolute",
 
+            width: "130px",
+            height: "130px",
 
+            borderRadius: "50%",
+
+            background:
+              "rgba(249, 115, 22, 0.045)",
+
+            right: "-35px",
+            top: "-65px",
+
+            pointerEvents: "none",
+          }}
+        />
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+
+            gap: "25px",
+            flexWrap: "wrap",
           }}
         >
-          Today's Published Lecture Records
-        </h2>
-
-        {
-
-logsLoading ? (
-
-Array.from({length:5}).map((_,index)=>(
-
-<div
-key={index}
-style={{
-background:"white",
-padding:"16px",
-borderRadius:"16px",
-marginBottom:"18px",
-border:"1px solid #CBD5E1",
-}}
->
-
-<h2
-style={{
-margin:"0 0 10px 0",
-color:"#64748B",
-}}
->
-
-Loading Today's Lecture...
-
-</h2>
-
-<p
-style={{
-color:"#94A3B8"
-}}
->
-
-Fetching today's classroom records...
-
-</p>
-
-</div>
-
-))
-
-)
-
-:
-
-logs.length === 0 && (
-
-<div style={cardStyle}>
-
-<h3>
-No Lecture Published Today.
-</h3>
-
-<p
-style={{
-color:"#64748B",
-}}
->
-
-Publish your first lecture
-for today's classes.
-
-</p>
-
-</div>
-
-)
-
-}
-        
-
-       {logs.map((log: any) => (
-
-<div
-key={log.id}
-style={{
-background:"white",
-padding:"16px",
-borderRadius:"16px",
-marginBottom:"18px",
-border:"1px solid #CBD5E1",
-display:"flex",
-justifyContent:"space-between",
-alignItems:"center",
-gap:"16px",
-flexWrap:"wrap",
-}}
->
-
-<div>
-
-<h2
-style={{
-margin:"0 0 10px 0",
-color:"#1E293B",
-fontSize:"15px",
-fontWeight:800,
-}}
->
-Class {log.className}
-{" "}
-•
-{" "}
-Section {log.sectionName}
-{" "}
-—
-{" "}
-{log.topicName}
-</h2>
-
-
-<p
-style={{
-margin:0,
-color:"#64748B",
-fontSize:"13px",
-}}
->
-
-Covered Pages :
-
-Page {log.pageFrom}
-{" "}
-to
-{" "}
-Page {log.pageTo}
-
-{" • "}
-
-Homework :
-
-<strong>
-{log.homeworkGiven ? "YES" : "NO"}
-</strong>
-
-{" • "}
-
-Activity :
-
-<strong>
-{log.activityConducted ? "YES" : "NO"}
-</strong>
-
-</p>
-
-
-<p
-style={{
-marginTop:"8px",
-color:"#64748B",
-fontSize:"15px",
-}}
->
-
-Teacher Notes :
-
-<strong>
-
-{log.teacherNotes || "No Notes"}
-
-</strong>
-
-</p>
-
-</div>
-
-
-<div
-style={{
-background:"#DCFCE7",
-padding:"6px 12px",
-borderRadius:"8px",
-fontSize:"12px",
-border:"1px solid #15803D",
-fontWeight:700,
-color:"#065F46",
-whiteSpace:"nowrap",
-}}
->
-🟢 ACTIVE SURVEY PUBLISHED
-</div>
-
-</div>
-
-))}
-
-{/* -------------------------------------------
-
-SESSION BEYOND THE CLASSROOM
-
--------------------------------------------- */}
-
-<div
-style={{
-
-marginTop:"30px",
-
-background:"white",
-
-padding:"24px",
-
-borderRadius:"24px",
-
-boxShadow:
-"0px 8px 24px rgba(0,0,0,0.05)",
-
-overflowX:"auto",
-
-}}
-
->
-
-<div
-style={{
-
-marginBottom:"25px",
-
-}}
-
->
-
-<p
-style={{
-
-margin:0,
-
-fontSize:"12px",
-
-fontWeight:700,
-
-letterSpacing:"2px",
-
-color:"#F59E0B",
-
-textTransform:"uppercase",
-
-}}
-
->
-
-SESSION BEYOND THE CLASSROOM
-
-</p>
-
-
-<h2
-style={{
-
-marginTop:"8px",
-
-marginBottom:"10px",
-
-color:"#041B4D",
-
-}}
-
->
-
- ❌ Day Before Yesterday's Not discussed Doubt Ledger ❌
-
-</h2>
-
-
-<p
-style={{
-
-margin:0,
-
-color:"#64748B",
-
-lineHeight:1.7,
-
-}}
-
->
-
-These are the difficult concepts that students reported were NOT revised during the next classroom lecture.
-
-</p>
-
-</div>
-
-{
-
-pendingDoubtLoading ? (
-
-<table
-style={{
-
-width:"100%",
-borderCollapse:"collapse",
-minWidth:"950px",
-
-}}
->
-
-<thead>
-
-<tr>
-
-<th
-style={{
-padding:"10px",
-background:"#f7f4f9",
-color:"#041B4D",
-fontWeight:700,
-fontSize:"18px",
-textAlign:"center",
-border:"1px solid #E5E7EB",
-}}
->
-
-METRICS
-
-</th>
-
-{
-
-doubtLedgerClassrooms.map(
-(classroom,index)=>(
-
-<th
-key={classroom}
-style={{
-
-...tableHeaderStyle,
-
-background:
-
-index % 4 === 0
-? "#F9F4EA"
-
-: index % 4 === 1
-? "#EEF4FB"
-
-: index % 4 === 2
-? "#EEF8F4"
-
-: "#F4EFFA",
-
-color:"#041B4D",
-fontSize:"20px",
-fontWeight:700,
-
-}}
->
-
-{classroom}
-
-</th>
-
-))
-
-}
-
-</tr>
-
-</thead>
-
-
-<tbody>
-
-{renderPendingDoubtRow(
-"Students Count who had Doubt",
-doubtLedgerClassrooms.map(
-()=> "-"
-)
-)}
-
-{renderPendingDoubtRow(
-"Topic that was taught that day",
-doubtLedgerClassrooms.map(
-()=> "-"
-)
-)}
-
-{renderPendingDoubtRow(
-"Most Difficult Concept from that topic",
-doubtLedgerClassrooms.map(
-()=> "-"
-)
-)}
-
-{renderPendingDoubtRow(
-"Students Are",
-doubtLedgerClassrooms.map(
-()=> "-"
-)
-)}
-
-{renderPendingDoubtRow(
-"Date of this discussion",
-doubtLedgerClassrooms.map(
-()=> "-"
-)
-)}
-
-{renderPendingDoubtRow(
-"Status",
-doubtLedgerClassrooms.map(
-()=> "-"
-)
-)}
-
-</tbody>
-
-</table>
-
-)
-
-:
-
-(
-
-<table
-style={{
-
-width:"100%",
-borderCollapse:"collapse",
-minWidth:"950px",
-
-}}
->
-
-<thead>
-
-<tr>
-
-<th
-style={{
-padding:"10px",
-background:"#f7f4f9",
-color:"#041B4D",
-fontWeight:700,
-fontSize:"18px",
-textAlign:"center",
-border:"1px solid #E5E7EB",
-}}
->
-
-METRICS
-
-</th>
-
-
-{
-
-doubtLedgerClassrooms.map(
-(classroom,index)=>(
-
-<th
-key={classroom}
-style={{
-
-...tableHeaderStyle,
-
-background:
-
-index % 4 === 0
-? "#F9F4EA"
-
-: index % 4 === 1
-? "#EEF4FB"
-
-: index % 4 === 2
-? "#EEF8F4"
-
-: "#F4EFFA",
-
-color:"#041B4D",
-fontSize:"20px",
-fontWeight:700,
-
-}}
->
-
-{classroom}
-
-</th>
-
-))
-
-}
-
-</tr>
-
-</thead>
-
-
-<tbody>
-
-
-{renderPendingDoubtRow(
-
-"Students Count who had Doubt",
-
-doubtLedgerClassrooms.map(
-(classroom) => {
-
-const item =
-pendingDoubts.find(
-(doubt:any) =>
-doubt.classroom === classroom
-);
-
-return item
-? String(item.pendingCount)
-: "-";
-
-})
-
-)}
-
-
-{renderPendingDoubtRow(
-
-"Topic that was taught that day",
-
-doubtLedgerClassrooms.map(
-(classroom) => {
-
-const item =
-pendingDoubts.find(
-(doubt:any) =>
-doubt.classroom === classroom
-);
-
-return item?.previousTopic ?? "-";
-
-})
-
-)}
-
-
-{renderPendingDoubtRow(
-
-"Most Difficult Concept from that topic",
-
-doubtLedgerClassrooms.map(
-(classroom) => {
-
-const item =
-pendingDoubts.find(
-(doubt:any) =>
-doubt.classroom === classroom
-);
-
-return item?.difficultConcept ?? "-";
-
-})
-
-)}
-
-
-{renderPendingDoubtRow(
-
-"Students Are",
-
-doubtLedgerClassrooms.map(
-(classroom) => {
-
-const item =
-pendingDoubts.find(
-(doubt:any) =>
-doubt.classroom === classroom
-);
-
-return item?.students ?? "-";
-
-})
-
-)}
-
-
-{renderPendingDoubtRow(
-
-"Date of this discussion",
-
-doubtLedgerClassrooms.map(
-(classroom) => {
-
-const item =
-pendingDoubts.find(
-(doubt:any) =>
-doubt.classroom === classroom
-);
-
-return item?.logDate ?? "-";
-
-})
-
-)}
-
-
-{renderPendingDoubtRow(
-
-"Status",
-
-doubtLedgerClassrooms.map(
-(classroom) => {
-
-const item =
-pendingDoubts.find(
-(doubt:any) =>
-doubt.classroom === classroom
-);
-
-return item?.status ?? "-";
-
-})
-
-)}
-
-</tbody>
-
-</table>
-
-)
-
-}
-
-</div>
-
+          <div>
+            <div
+              style={{
+                color: "#F97316",
+
+                fontSize: "10px",
+                fontWeight: 800,
+
+                letterSpacing: "1.8px",
+
+                marginBottom: "7px",
+              }}
+            >
+              LECTURE PUBLISHING
+            </div>
+
+            <h2
+              style={{
+                margin: 0,
+
+                color: "#0F172A",
+
+                fontSize: "22px",
+                fontWeight: 800,
+
+                letterSpacing: "-0.3px",
+              }}
+            >
+              Today's Lecture Submission
+            </h2>
+
+            <p
+              style={{
+                color: "#64748B",
+
+                margin: "7px 0 0",
+
+                fontSize: "13px",
+                lineHeight: 1.6,
+              }}
+            >
+              Publish today's lesson coverage, homework status and classroom
+              activity.
+            </p>
+          </div>
+
+          <button
+            onClick={() =>
+              setOpenDialog(true)
+            }
+            style={buttonStyle}
+          >
+            + Publish Today's Lecture
+          </button>
+        </div>
       </div>
+
+      {/* ======================================================
+          TODAY'S PUBLISHED LECTURE RECORDS
+         ====================================================== */}
+
+      <div
+        style={{
+          background: "#FFFFFF",
+
+          border: "1px solid #E2E8F0",
+          borderRadius: "26px",
+
+          padding: "24px",
+
+          boxShadow:
+            "0 10px 30px rgba(15, 23, 42, 0.05)",
+
+          marginBottom: "24px",
+        }}
+      >
+        {/* Section heading */}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+
+            gap: "20px",
+
+            marginBottom: "20px",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#F97316",
+
+                fontSize: "10px",
+                fontWeight: 800,
+
+                letterSpacing: "1.8px",
+
+                marginBottom: "7px",
+              }}
+            >
+              TODAY'S CLASSROOM ACTIVITY
+            </div>
+
+            <h2
+              style={{
+                margin: 0,
+
+                color: "#0F172A",
+
+                fontSize: "22px",
+                fontWeight: 800,
+
+                letterSpacing: "-0.3px",
+              }}
+            >
+              Today's Published Lecture Records
+            </h2>
+
+            <p
+              style={{
+                margin: "7px 0 0",
+
+                color: "#64748B",
+
+                fontSize: "13px",
+                lineHeight: 1.5,
+              }}
+            >
+              Lectures published today across your active classrooms.
+            </p>
+          </div>
+
+          <div
+            style={{
+              color: "#94A3B8",
+
+              fontSize: "10px",
+              fontWeight: 800,
+
+              letterSpacing: "1.3px",
+
+              whiteSpace: "nowrap",
+            }}
+          >
+            DAILY LECTURE LEDGER
+          </div>
+        </div>
+
+        {/* LOADING */}
+
+        {logsLoading &&
+          Array.from({
+            length: 5,
+          }).map((_, index) => (
+            <div
+              key={index}
+              style={{
+                background:
+                  "linear-gradient(135deg, #FAFBFC 0%, #FFFFFF 100%)",
+
+                padding: "18px 20px",
+
+                borderRadius: "17px",
+
+                marginBottom: "12px",
+
+                border:
+                  "1px solid #E2E8F0",
+              }}
+            >
+              <h2
+                style={{
+                  margin:
+                    "0 0 8px 0",
+
+                  color: "#64748B",
+
+                  fontSize: "14px",
+                  fontWeight: 800,
+                }}
+              >
+                Loading Today's Lecture...
+              </h2>
+
+              <p
+                style={{
+                  margin: 0,
+
+                  color: "#94A3B8",
+
+                  fontSize: "13px",
+                }}
+              >
+                Fetching today's classroom records...
+              </p>
+            </div>
+          ))}
+
+        {/* EMPTY STATE */}
+
+        {!logsLoading &&
+          logs.length === 0 && (
+            <div
+              style={{
+                padding: "30px",
+
+                background:
+                  "linear-gradient(135deg, #FFF9F2 0%, #FFFFFF 100%)",
+
+                border:
+                  "1px solid #FED7AA",
+
+                borderRadius: "18px",
+
+                textAlign: "center",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "30px",
+
+                  marginBottom: "10px",
+                }}
+              >
+                📖
+              </div>
+
+              <h3
+                style={{
+                  margin:
+                    "0 0 7px",
+
+                  color: "#0F172A",
+
+                  fontSize: "16px",
+                  fontWeight: 800,
+                }}
+              >
+                No Lecture Published Today.
+              </h3>
+
+              <p
+                style={{
+                  margin: 0,
+
+                  color: "#64748B",
+
+                  fontSize: "13px",
+                }}
+              >
+                Publish your first lecture for today's classes.
+              </p>
+            </div>
+          )}
+
+        {/* PUBLISHED LOGS */}
+
+        {logs.map(
+          (log: any, index) => (
+            <div
+              key={log.id}
+              style={{
+                position: "relative",
+                overflow: "hidden",
+
+                background:
+                  index % 3 === 0
+                    ? "linear-gradient(135deg, #FFF9F2 0%, #FFFFFF 72%)"
+                    : index % 3 === 1
+                    ? "linear-gradient(135deg, #F5F9FF 0%, #FFFFFF 72%)"
+                    : "linear-gradient(135deg, #F2FCF7 0%, #FFFFFF 72%)",
+
+                padding: "19px 20px",
+
+                borderRadius: "18px",
+
+                marginBottom: "12px",
+
+                border:
+                  index % 3 === 0
+                    ? "1px solid #FED7AA"
+                    : index % 3 === 1
+                    ? "1px solid #BFDBFE"
+                    : "1px solid #BBF7D0",
+
+                display: "flex",
+
+                justifyContent:
+                  "space-between",
+
+                alignItems: "center",
+
+                gap: "18px",
+
+                flexWrap: "wrap",
+              }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+
+                  flex: 1,
+
+                  minWidth: "300px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "inline-flex",
+
+                    alignItems: "center",
+
+                    padding:
+                      "5px 9px",
+
+                    borderRadius:
+                      "999px",
+
+                    background:
+                      "#FFFFFF",
+
+                    border:
+                      "1px solid #E2E8F0",
+
+                    color:
+                      index % 3 === 0
+                        ? "#C2410C"
+                        : index % 3 === 1
+                        ? "#1D4ED8"
+                        : "#15803D",
+
+                    fontSize: "9px",
+                    fontWeight: 800,
+
+                    letterSpacing:
+                      "1px",
+
+                    marginBottom:
+                      "10px",
+                  }}
+                >
+                  CLASS {log.className}
+                  {" • "}
+                  SECTION{" "}
+                  {log.sectionName}
+                </div>
+
+                <h2
+                  style={{
+                    margin:
+                      "0 0 10px 0",
+
+                    color: "#0F172A",
+
+                    fontSize: "16px",
+                    fontWeight: 800,
+
+                    letterSpacing:
+                      "-0.2px",
+                  }}
+                >
+                  {log.topicName}
+                </h2>
+
+                <div
+                  style={{
+                    display: "flex",
+
+                    gap: "8px",
+
+                    flexWrap: "wrap",
+
+                    marginBottom:
+                      "10px",
+                  }}
+                >
+                  <div style={recordMetaPillStyle}>
+                    📖 Page {log.pageFrom} to Page {log.pageTo}
+                  </div>
+
+                  <div style={recordMetaPillStyle}>
+                    📝 Homework:{" "}
+                    <strong>
+                      {log.homeworkGiven
+                        ? "YES"
+                        : "NO"}
+                    </strong>
+                  </div>
+
+                  <div style={recordMetaPillStyle}>
+                    🎯 Activity:{" "}
+                    <strong>
+                      {log.activityConducted
+                        ? "YES"
+                        : "NO"}
+                    </strong>
+                  </div>
+                </div>
+
+                <p
+                  style={{
+                    margin: 0,
+
+                    color: "#64748B",
+
+                    fontSize: "13px",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  <strong
+                    style={{
+                      color:
+                        "#334155",
+                    }}
+                  >
+                    Teacher Notes:
+                  </strong>{" "}
+                  {log.teacherNotes ||
+                    "No Notes"}
+                </p>
+              </div>
+
+              <div
+                style={{
+                  display:
+                    "inline-flex",
+
+                  alignItems:
+                    "center",
+
+                  gap: "7px",
+
+                  background:
+                    "#F0FDF4",
+
+                  padding:
+                    "8px 12px",
+
+                  borderRadius:
+                    "999px",
+
+                  fontSize:
+                    "10px",
+
+                  border:
+                    "1px solid #BBF7D0",
+
+                  fontWeight:
+                    800,
+
+                  color:
+                    "#15803D",
+
+                  whiteSpace:
+                    "nowrap",
+                }}
+              >
+                ● ACTIVE SURVEY PUBLISHED
+              </div>
+            </div>
+          )
+        )}
+      </div>
+
+      {/* ======================================================
+          SESSION BEYOND THE CLASSROOM
+         ====================================================== */}
+
+      <div
+        style={{
+          background: "#FFFFFF",
+
+          padding: "24px",
+
+          borderRadius: "26px",
+          border: "1px solid #E2E8F0",
+
+          boxShadow:
+            "0 10px 30px rgba(15, 23, 42, 0.05)",
+
+          overflow: "hidden",
+        }}
+      >
+        {/* Doubt ledger heading */}
+
+        <div
+          style={{
+            position: "relative",
+            overflow: "hidden",
+
+            background:
+              "linear-gradient(135deg, #FFF9F2 0%, #FFFFFF 72%, #FFF7ED 100%)",
+
+            border:
+              "1px solid #FED7AA",
+
+            borderRadius: "20px",
+
+            padding: "22px 24px",
+
+            marginBottom: "22px",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+
+              width: "120px",
+              height: "120px",
+
+              borderRadius: "50%",
+
+              background:
+                "rgba(249, 115, 22, 0.05)",
+
+              right: "-25px",
+              top: "-60px",
+
+              pointerEvents: "none",
+            }}
+          />
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+            }}
+          >
+            <div
+              style={{
+                color: "#F97316",
+
+                fontSize: "10px",
+                fontWeight: 800,
+
+                letterSpacing: "1.8px",
+
+                marginBottom: "7px",
+              }}
+            >
+              SESSION BEYOND THE CLASSROOM
+            </div>
+
+            <h2
+              style={{
+                margin: 0,
+
+                color: "#0F172A",
+
+                fontSize: "21px",
+                fontWeight: 800,
+
+                letterSpacing: "-0.3px",
+              }}
+            >
+              ❌ Day Before Yesterday's Not discussed Doubt Ledger ❌
+            </h2>
+
+            <p
+              style={{
+                margin: "8px 0 0",
+
+                color: "#64748B",
+
+                fontSize: "13px",
+                lineHeight: 1.6,
+
+                maxWidth: "850px",
+              }}
+            >
+              These are the difficult concepts that students reported were NOT
+              revised during the next classroom lecture.
+            </p>
+          </div>
+        </div>
+
+        {/* TABLE */}
+
+        <div
+          style={{
+            overflowX: "auto",
+
+            border:
+              "1px solid #E2E8F0",
+
+            borderRadius: "18px",
+
+            background: "#FFFFFF",
+          }}
+        >
+          {pendingDoubtLoading ? (
+            <table
+              style={{
+                width: "100%",
+
+                borderCollapse:
+                  "separate",
+
+                borderSpacing: 0,
+
+                minWidth: "950px",
+              }}
+            >
+              <thead>
+                <tr>
+                  <th
+                    style={{
+                      padding:
+                        "16px 18px",
+
+                      background:
+                        "linear-gradient(135deg, #FFF7ED 0%, #FFFBF5 100%)",
+
+                      color:
+                        "#C2410C",
+
+                      fontWeight:
+                        800,
+
+                      fontSize:
+                        "12px",
+
+                      letterSpacing:
+                        "1px",
+
+                      textAlign:
+                        "left",
+
+                      borderBottom:
+                        "1px solid #E2E8F0",
+
+                      borderRight:
+                        "1px solid #E2E8F0",
+
+                      minWidth:
+                        "320px",
+                    }}
+                  >
+                    METRICS
+                  </th>
+
+                  {doubtLedgerClassrooms.map(
+                    (
+                      classroom,
+                      index
+                    ) => (
+                      <th
+                        key={
+                          classroom
+                        }
+                        style={{
+                          ...tableHeaderStyle,
+
+                          background:
+                            index %
+                              4 ===
+                            0
+                              ? "linear-gradient(135deg, #FFF7ED 0%, #FFFBF5 100%)"
+                              : index %
+                                  4 ===
+                                1
+                              ? "linear-gradient(135deg, #EFF6FF 0%, #F8FBFF 100%)"
+                              : index %
+                                  4 ===
+                                2
+                              ? "linear-gradient(135deg, #ECFDF5 0%, #F7FFFB 100%)"
+                              : "linear-gradient(135deg, #F5F3FF 0%, #FBFAFF 100%)",
+
+                          color:
+                            index %
+                              4 ===
+                            0
+                              ? "#C2410C"
+                              : index %
+                                  4 ===
+                                1
+                              ? "#1D4ED8"
+                              : index %
+                                  4 ===
+                                2
+                              ? "#15803D"
+                              : "#7C3AED",
+                        }}
+                      >
+                        {classroom}
+                      </th>
+                    )
+                  )}
+                </tr>
+              </thead>
+
+              <tbody>
+                {renderPendingDoubtRow(
+                  "Students Count who had Doubt",
+                  doubtLedgerClassrooms.map(
+                    () => "-"
+                  )
+                )}
+
+                {renderPendingDoubtRow(
+                  "Topic that was taught that day",
+                  doubtLedgerClassrooms.map(
+                    () => "-"
+                  )
+                )}
+
+                {renderPendingDoubtRow(
+                  "Most Difficult Concept from that topic",
+                  doubtLedgerClassrooms.map(
+                    () => "-"
+                  )
+                )}
+
+                {renderPendingDoubtRow(
+                  "Students Are",
+                  doubtLedgerClassrooms.map(
+                    () => "-"
+                  )
+                )}
+
+                {renderPendingDoubtRow(
+                  "Date of this discussion",
+                  doubtLedgerClassrooms.map(
+                    () => "-"
+                  )
+                )}
+
+                {renderPendingDoubtRow(
+                  "Status",
+                  doubtLedgerClassrooms.map(
+                    () => "-"
+                  )
+                )}
+              </tbody>
+            </table>
+          ) : (
+            <table
+              style={{
+                width: "100%",
+
+                borderCollapse:
+                  "separate",
+
+                borderSpacing: 0,
+
+                minWidth: "950px",
+              }}
+            >
+              <thead>
+                <tr>
+                  <th
+                    style={{
+                      padding:
+                        "16px 18px",
+
+                      background:
+                        "linear-gradient(135deg, #FFF7ED 0%, #FFFBF5 100%)",
+
+                      color:
+                        "#C2410C",
+
+                      fontWeight:
+                        800,
+
+                      fontSize:
+                        "12px",
+
+                      letterSpacing:
+                        "1px",
+
+                      textAlign:
+                        "left",
+
+                      borderBottom:
+                        "1px solid #E2E8F0",
+
+                      borderRight:
+                        "1px solid #E2E8F0",
+
+                      minWidth:
+                        "320px",
+                    }}
+                  >
+                    METRICS
+                  </th>
+
+                  {doubtLedgerClassrooms.map(
+                    (
+                      classroom,
+                      index
+                    ) => (
+                      <th
+                        key={
+                          classroom
+                        }
+                        style={{
+                          ...tableHeaderStyle,
+
+                          background:
+                            index %
+                              4 ===
+                            0
+                              ? "linear-gradient(135deg, #FFF7ED 0%, #FFFBF5 100%)"
+                              : index %
+                                  4 ===
+                                1
+                              ? "linear-gradient(135deg, #EFF6FF 0%, #F8FBFF 100%)"
+                              : index %
+                                  4 ===
+                                2
+                              ? "linear-gradient(135deg, #ECFDF5 0%, #F7FFFB 100%)"
+                              : "linear-gradient(135deg, #F5F3FF 0%, #FBFAFF 100%)",
+
+                          color:
+                            index %
+                              4 ===
+                            0
+                              ? "#C2410C"
+                              : index %
+                                  4 ===
+                                1
+                              ? "#1D4ED8"
+                              : index %
+                                  4 ===
+                                2
+                              ? "#15803D"
+                              : "#7C3AED",
+                        }}
+                      >
+                        {classroom}
+                      </th>
+                    )
+                  )}
+                </tr>
+              </thead>
+
+              <tbody>
+                {renderPendingDoubtRow(
+                  "Students Count who had Doubt",
+
+                  doubtLedgerClassrooms.map(
+                    (classroom) => {
+                      const item =
+                        pendingDoubts.find(
+                          (
+                            doubt: any
+                          ) =>
+                            doubt.classroom ===
+                            classroom
+                        );
+
+                      return item
+                        ? String(
+                            item.pendingCount
+                          )
+                        : "-";
+                    }
+                  )
+                )}
+
+                {renderPendingDoubtRow(
+                  "Topic that was taught that day",
+
+                  doubtLedgerClassrooms.map(
+                    (classroom) => {
+                      const item =
+                        pendingDoubts.find(
+                          (
+                            doubt: any
+                          ) =>
+                            doubt.classroom ===
+                            classroom
+                        );
+
+                      return (
+                        item?.previousTopic ??
+                        "-"
+                      );
+                    }
+                  )
+                )}
+
+                {renderPendingDoubtRow(
+                  "Most Difficult Concept from that topic",
+
+                  doubtLedgerClassrooms.map(
+                    (classroom) => {
+                      const item =
+                        pendingDoubts.find(
+                          (
+                            doubt: any
+                          ) =>
+                            doubt.classroom ===
+                            classroom
+                        );
+
+                      return (
+                        item?.difficultConcept ??
+                        "-"
+                      );
+                    }
+                  )
+                )}
+
+                {renderPendingDoubtRow(
+                  "Students Are",
+
+                  doubtLedgerClassrooms.map(
+                    (classroom) => {
+                      const item =
+                        pendingDoubts.find(
+                          (
+                            doubt: any
+                          ) =>
+                            doubt.classroom ===
+                            classroom
+                        );
+
+                      return (
+                        item?.students ??
+                        "-"
+                      );
+                    }
+                  )
+                )}
+
+                {renderPendingDoubtRow(
+                  "Date of this discussion",
+
+                  doubtLedgerClassrooms.map(
+                    (classroom) => {
+                      const item =
+                        pendingDoubts.find(
+                          (
+                            doubt: any
+                          ) =>
+                            doubt.classroom ===
+                            classroom
+                        );
+
+                      return (
+                        item?.logDate ??
+                        "-"
+                      );
+                    }
+                  )
+                )}
+
+                {renderPendingDoubtRow(
+                  "Status",
+
+                  doubtLedgerClassrooms.map(
+                    (classroom) => {
+                      const item =
+                        pendingDoubts.find(
+                          (
+                            doubt: any
+                          ) =>
+                            doubt.classroom ===
+                            classroom
+                        );
+
+                      return (
+                        item?.status ??
+                        "-"
+                      );
+                    }
+                  )
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* ======================================================
+          EXISTING DIALOG — FUNCTIONALITY UNCHANGED
+         ====================================================== */}
 
       <TeacherDailyLogDialog
         open={openDialog}
@@ -1073,10 +1596,7 @@ return item?.status ?? "-";
         onSave={handleSave}
       />
     </div>
-
-
-
-      );
+  );
 }
 
 
@@ -1122,82 +1642,131 @@ function renderPendingDoubtRow(
 }
 
 const cardStyle = {
-  background: "white",
-  padding: 20,
-  borderRadius: 18,
-  marginBottom: 24,
+  background: "#FFFFFF",
+
+  padding: "24px",
+
+  borderRadius: "20px",
+
+  border: "1px solid #E2E8F0",
+
   boxShadow:
-    "0px 10px 25px rgba(0,0,0,0.05)",
+    "0 8px 24px rgba(15, 23, 42, 0.045)",
 } as const;
+
 
 const buttonStyle = {
-padding:"12px 20px",
-  border: "none",
-  borderRadius: "10px",
-  background: "#F97316",
-  color: "white",
+  padding: "13px 20px",
+
+  border: "1px solid #F97316",
+
+  borderRadius: "12px",
+
+  background:
+    "linear-gradient(135deg, #F97316 0%, #FB8C24 100%)",
+
+  color: "#FFFFFF",
+
   cursor: "pointer",
-  fontWeight: 700,
-  fontSize: 13,
+
+  fontWeight: 800,
+
+  fontSize: "12px",
+
+  boxShadow:
+    "0 8px 18px rgba(249, 115, 22, 0.18)",
+
+  whiteSpace: "nowrap",
 } as const;
 
+
+const recordMetaPillStyle = {
+  display: "inline-flex",
+
+  alignItems: "center",
+
+  padding: "6px 9px",
+
+  borderRadius: "9px",
+
+  background: "rgba(255, 255, 255, 0.82)",
+
+  border: "1px solid #E2E8F0",
+
+  color: "#475569",
+
+  fontSize: "11px",
+
+  fontWeight: 600,
+} as const;
+
+
 const tableHeaderStyle = {
+  padding: "16px 18px",
 
-padding: "10px",
+  color: "#0F172A",
 
-background: "#041B4D",
+  fontWeight: 800,
 
-color: "white",
+  fontSize: "17px",
 
-fontWeight: 700,
+  textAlign: "center" as const,
 
-fontSize: "14px",
+  borderBottom:
+    "1px solid #E2E8F0",
 
-textAlign: "center" as const,
+  borderRight:
+    "1px solid #E2E8F0",
 
-border: "1px solid #E5E7EB",
-
+  minWidth: "210px",
 };
-
 
 
 const metricColumnStyle = {
+  padding: "14px 18px",
 
-padding: "10px",
+  fontWeight: 700,
 
-fontWeight: 700,
+  background: "#FFFFFF",
 
-background: "#FFFFFF",
+  color: "#334155",
 
-color: "#0F172A",
+  fontSize: "13px",
 
-fontSize:"14px",
+  borderBottom:
+    "1px solid #EEF2F7",
 
-border: "1px solid #E5E7EB",
+  borderRight:
+    "1px solid #E2E8F0",
 
-width: "320px",
-minWidth: "320px",
+  width: "320px",
 
-textAlign: "left" as const,
+  minWidth: "320px",
 
+  textAlign: "left" as const,
+
+  verticalAlign: "middle" as const,
 };
 
 
-
 const tableCellStyle = {
+  padding: "14px 18px",
 
-padding: "10px",
+  borderBottom:
+    "1px solid #EEF2F7",
 
-border: "1px solid #E5E7EB",
+  borderRight:
+    "1px solid #EEF2F7",
 
-textAlign: "center" as const,
+  textAlign: "center" as const,
 
-color: "#334155",
+  color: "#475569",
 
-fontSize: "14px",
+  fontSize: "13px",
 
-verticalAlign: "top" as const,
+  verticalAlign: "middle" as const,
 
-lineHeight:1.4,
+  lineHeight: 1.5,
 
+  background: "#FFFFFF",
 };

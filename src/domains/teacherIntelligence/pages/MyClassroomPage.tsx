@@ -89,19 +89,51 @@ const academicMonths = [
 
 ];
 
+const selectedMonthName =
+selectedMonth.split(" ")[0];
+
+const selectedYear =
+selectedMonth.split(" ")[1];
+
+
+const logsForSelectedMonth =
+
+dailyLogs.filter((item) => {
+
+  const currentDate =
+    new Date(item.logDate);
+
+  return (
+
+    currentDate.toLocaleString(
+      "default",
+      {
+        month: "long",
+      }
+    ) === selectedMonthName &&
+
+    String(
+      currentDate.getFullYear()
+    ) === selectedYear
+
+  );
+
+});
+
+
 const sortedLogs =
 
-[...dailyLogs].sort(
-(a,b)=>
-new Date(a.logDate).getTime() -
-new Date(b.logDate).getTime()
+[...logsForSelectedMonth].sort(
+  (a,b) =>
+    new Date(a.logDate).getTime() -
+    new Date(b.logDate).getTime()
 );
 
 
 const latestLog =
 
 sortedLogs[
-sortedLogs.length - 1
+  sortedLogs.length - 1
 ];
 
 const daysInMonthMap = {
@@ -150,1731 +182,2433 @@ console.log(teacher.teacherUuid);
 }return (
   <div
     style={{
-      padding: 16,
-      background: "#F6F6F3",
+      padding: "20px",
+      background: "#F6F7F9",
       minHeight: "100%",
     }}
   >
-    {/* HEADER */}
+    {/* =====================================================
+        PAGE HERO
+       ===================================================== */}
 
-    <div
-      style={{
-        background: "#04122F",
-        padding: 18,
-        borderRadius: 18,
-        marginBottom: 16,
-        position: "relative",
-      }}
-    >
-      <p
-        style={{
-          color: "#F59E0B",
-          fontWeight: 700,
-          letterSpacing: 1.5,
-          fontSize: 9,
-          marginBottom: 5,
-        }}
-      >
-        MY CLASSROOM
-      </p>
-
-      <h1
-        style={{
-          color: "white",
-          fontSize: 26,
-          margin: 0,
-        }}
-      >
-        CLASSROOM OVERVIEW
-      </h1>
-
-      <p
-        style={{
-          color: "#E5E7EB",
-          marginTop: 6,
-          fontSize: 12,
-          lineHeight: 1.6,
-        }}
-      >
-        View your class details and teaching history
-        in a calendar format.
-      </p>
-    </div>
-
-    {/* FILTERS */}
-
-    <div
-      style={{
-        background: "white",
-        padding: 14,
-        borderRadius: 14,
-        boxShadow:
-          "0px 10px 30px rgba(0,0,0,0.05)",
-      }}
-    >
-      <h2
-        style={{
-          marginTop: 0,
-          marginBottom: 16,
-          fontSize: 20,
-        }}
-      >
-        Filters
-      </h2>
+    <div style={heroStyle}>
+      <div style={heroOrangeCircle} />
+      <div style={heroSoftCircle} />
+      <div style={heroBlueCircle} />
 
       <div
         style={{
+          position: "relative",
+          zIndex: 1,
           display: "flex",
-          gap: 12,
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "24px",
+        }}
+      >
+        <div>
+          <div style={eyebrowStyle}>
+            CLASSROOM INTELLIGENCE WORKSPACE
+          </div>
+
+          <h1
+            style={{
+              margin: "8px 0 8px",
+              color: "#0F172A",
+              fontSize: "28px",
+              lineHeight: 1.15,
+              fontWeight: 800,
+              letterSpacing: "-0.7px",
+            }}
+          >
+            My Classroom
+          </h1>
+
+          <p
+            style={{
+              margin: 0,
+              maxWidth: "650px",
+              color: "#64748B",
+              fontSize: "16px",
+              lineHeight: 1.65,
+            }}
+          >
+            Explore your Assigned Classroom, Teaching History and
+            Monthly Activities
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px",
+              marginTop: "14px",
+            }}
+          >
+            <div style={orangePillStyle}>
+              CLASSROOM HISTORY
+            </div>
+
+            <div style={bluePillStyle}>
+              STUDENT INTELLIGENCE
+            </div>
+          </div>
+        </div>
+
+        <div style={heroBadgeStyle}>
+          <div
+            style={{
+              fontSize: "28px",
+              lineHeight: 1,
+            }}
+          >
+            ◇
+          </div>
+
+          <div
+            style={{
+              marginTop: "8px",
+              color: "#F97316",
+              fontSize: "8px",
+              fontWeight: 800,
+              letterSpacing: "1.2px",
+            }}
+          >
+            CLASSROOM
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* =====================================================
+        CLASSROOM CONTROLS
+       ===================================================== */}
+
+    <div style={sectionCardStyle}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: "18px",
           flexWrap: "wrap",
         }}
       >
-      {/* CLASSROOM */}
+        <div>
+          <div style={eyebrowStyle}>
+            CLASSROOM CONTROLS
+          </div>
 
-<select
-style={dropdownStyle}
-value={
+          <h2 style={sectionTitleStyle}>
+            Explore Your Classroom
+          </h2>
 
-selectedAssignment?.id ?? ""
+          <p style={sectionDescriptionStyle}>
+            Select an assigned classroom and academic month to
+            explore its teaching record.
+          </p>
+        </div>
 
-}
+        <div style={ledgerLabelStyle}>
+          ACADEMIC WORKSPACE
+        </div>
+      </div>
 
-onChange={async (e)=>{
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(2, minmax(0, 1fr))",
+          gap: "12px",
+          marginTop: "18px",
+        }}
+      >
+        <div>
+          <div style={fieldLabelStyle}>
+            
+          </div>
 
-const assignment =
+          <select
+            style={dropdownStyle}
+            value={selectedAssignment?.id ?? ""}
+            onChange={async (e) => {
+              const assignment =
+                assignments.find(
+                  (item) =>
+                    String(item.id) === e.target.value
+                );
 
-assignments.find(
+              setSelectedAssignment(
+                assignment ?? null
+              );
 
-(item)=>
+              if (assignment) {
+                const logs =
+                  await getTeacherDailyLogsByAssignment(
+                    assignment.id
+                  );
 
-String(item.id) ===
-e.target.value
+                setDailyLogs(logs);
 
-);
+                const riskData =
+                  await getStudentsAtRisk(
+                    assignment.className,
+                    assignment.sectionName
+                  );
 
-setSelectedAssignment(
-assignment ?? null
-);
+                setStudentsAtRisk(riskData);
+              } else {
+                setDailyLogs([]);
+              }
+            }}
+          >
+            <option value="">
+              Select Classroom
+            </option>
 
-if(assignment){
+            {assignments.map((assignment) => (
+              <option
+                key={assignment.id}
+                value={assignment.id}
+              >
+                Class {assignment.className} - Section{" "}
+                {assignment.sectionName}
+              </option>
+            ))}
+          </select>
+        </div>
 
-const logs =
+        <div>
+          <div style={fieldLabelStyle}>
+            
+          </div>
 
-await getTeacherDailyLogsByAssignment(
-assignment.id
-);
+          <select
+            style={dropdownStyle}
+            value={selectedMonth}
+            onChange={(e) => {
+              setSelectedMonth(e.target.value);
+            }}
+          >
+            {academicMonths.map((month) => (
+              <option
+                key={month}
+                value={month}
+              >
+                {month}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
 
-setDailyLogs(logs);
+    {/* =====================================================
+        ASSIGNED CLASSROOM
+       ===================================================== */}
 
-const riskData =
+    <div style={sectionCardStyle}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: "20px",
+        }}
+      >
+        <div>
+          <div style={eyebrowStyle}>
+            CLASSROOM PROFILE
+          </div>
 
-await getStudentsAtRisk(
+          <h2 style={sectionTitleStyle}>
+            Assigned Classroom Information
+          </h2>
 
-assignment.className,
-assignment.sectionName
+          <p style={sectionDescriptionStyle}>
+            Your current academic assignment and classroom
+            configuration.
+          </p>
+        </div>
 
-);
+        <div style={ledgerLabelStyle}>
+          TEACHER ASSIGNMENT
+        </div>
+      </div>
 
-setStudentsAtRisk(
-riskData
-);
-
-}
-
-else{
-
-setDailyLogs([]);
-
-}
-
-}}
+     <div
+  style={{
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(4, minmax(0, 1fr))",
+    gap: "14px",
+    marginTop: "20px",
+  }}
 >
+        <InfoCard
+          
+          title="Class"
+          value={
+            selectedAssignment?.className ??
+            "Not Selected"
+          }
+          background="#FFF7ED"
+          border="#FED7AA"
+          color="#EA580C"
+        />
 
-<option value="">
+        <InfoCard
+          
+          title="Section"
+          value={
+            selectedAssignment?.sectionName ??
+            "Not Selected"
+          }
+          background="#EFF6FF"
+          border="#BFDBFE"
+          color="#2563EB"
+        />
 
-Select Classroom
+        <InfoCard
+          
+          title="Subject"
+          value={
+            selectedAssignment?.subjectName ??
+            "Not Selected"
+          }
+          background="#F0FDF4"
+          border="#BBF7D0"
+          color="#16A34A"
+        />
 
-</option>
+        <InfoCard
+          
+          title="Session"
+          value={
+            selectedAssignment?.academicYear ??
+            "2026-2027"
+          }
+          background="#FAF5FF"
+          border="#E9D5FF"
+          color="#7C3AED"
+        />
+      </div>
+    </div>
 
-{
-
-assignments.map((assignment)=>(
-
-<option
-key={assignment.id}
-value={assignment.id}
->
-
-Class {assignment.className}
-
--
-
-Section {assignment.sectionName}
-
-</option>
-
-))
-
-}
-
-</select>
-
-
-
-{/* MONTH */}
-
-<select
-
-style={dropdownStyle}
-
-value={selectedMonth}
-
-onChange={(e)=>{
-
-setSelectedMonth(
-e.target.value
-);
-
-}}
-
->
-
-{
-
-academicMonths.map((month)=>(
-
-<option
-key={month}
-value={month}
->
-
-{month}
-
-</option>
-
-))
-
-}
-
-</select>
-
-</div>
-
-</div>
-
- {/* CLASS INFO */}
+   {/* =====================================================
+    CLASSROOM HISTORY
+   ===================================================== */}
 
 <div
-style={{
-...cardStyle,
-marginTop:20,
-}}
+  style={{
+    position: "relative",
+    overflow: "hidden",
+
+    marginBottom: "18px",
+    padding: "24px",
+
+    background: "#FFFFFF",
+
+    border: "1px solid #E2E8F0",
+    borderRadius: "22px",
+
+    boxShadow:
+      "0 7px 24px rgba(15,23,42,0.035)",
+  }}
 >
 
-<h2
-style={{
-fontSize:"18px",
-fontWeight:600,
-color:"#04122F",
-marginBottom:8,
-}}
->
+  {/* DECORATIVE SECTION CIRCLE */}
 
-Assigned Classroom Information
+  <div
+    style={{
+      position: "absolute",
 
-</h2>
+      width: "125px",
+      height: "125px",
 
+      right: "-38px",
+      top: "-52px",
 
-<div
-style={{
+      borderRadius: "50%",
 
-display:"grid",
+      background:
+        "rgba(255,237,213,0.48)",
 
-gridTemplateColumns:
-"repeat(4,1fr)",
+      pointerEvents: "none",
+    }}
+  />
 
-gap:18,
 
-marginTop:18,
+  {/* =====================================================
+      SECTION HEADER
+     ===================================================== */}
 
-}}
->
+  <div
+    style={{
+      position: "relative",
+      zIndex: 1,
 
-<InfoCard
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
 
-title="Class"
+      gap: "20px",
+    }}
+  >
 
-value={
+    <div>
 
-selectedAssignment?.className ??
+      <div
+        style={{
+          color: "#F97316",
 
-"Not Selected"
+          fontSize: "10px",
+          fontWeight: 800,
 
-}
+          letterSpacing: "1.6px",
+          textTransform: "uppercase",
+        }}
+      >
+        LEARNING CONTINUITY
+      </div>
 
-/>
 
+      <h2
+        style={{
+          margin: "7px 0 0",
 
-<InfoCard
+          color: "#0F172A",
 
-title="Section"
+          fontSize: "21px",
+          lineHeight: 1.2,
 
-value={
+          fontWeight: 800,
 
-selectedAssignment?.sectionName ??
+          letterSpacing: "-0.3px",
+        }}
+      >
+        See Your Classroom Calendar
+      </h2>
 
-"Not Selected"
 
-}
+      <p
+        style={{
+          margin: "7px 0 0",
 
-/>
+          color: "#64748B",
 
+          fontSize: "14px",
+          lineHeight: 1.55,
+        }}
+      >
+        Review lectures, topics, homework and classroom
+        activities recorded throughout the selected month.
+      </p>
 
-<InfoCard
+    </div>
 
-title="Subject"
 
-value={
+    {/* MONTHLY LEDGER BADGE */}
 
-selectedAssignment?.subjectName ??
+    <div
+      style={{
+        position: "relative",
+        zIndex: 1,
 
-"Not Selected"
+        flexShrink: 0,
 
-}
+        padding: "8px 14px",
 
-/>
+        background:
+          "linear-gradient(135deg,#FFF7ED,#FFFFFF)",
 
+        border:
+          "1px solid #FED7AA",
 
-<InfoCard
+        borderRadius: "11px",
 
-title="Academic Session"
+        color: "#EA580C",
 
-value={
+        fontSize: "10px",
+        fontWeight: 800,
 
-selectedAssignment?.academicYear ??
+        letterSpacing: "0.7px",
 
-"2026-2027"
+        textTransform: "uppercase",
+      }}
+    >
+      Monthly Learning Ledger
+    </div>
 
-}
+  </div>
 
-/>
 
-</div>
+  {/* =====================================================
+      WEEK DAYS
+     ===================================================== */}
 
-</div>
+  <div
+    style={{
+      position: "relative",
+      zIndex: 1,
 
+      display: "grid",
 
+      gridTemplateColumns:
+        "repeat(7, minmax(0,1fr))",
 
-{/* CLASSROOM HISTORY */}
+      gap: "12px",
 
-<div
-style={{
-...cardStyle,
-marginTop:20,
-}}
->
+      marginTop: "30px",
+      marginBottom: "12px",
+    }}
+  >
 
-<h2
-style={{
-fontSize:"18px",
-fontWeight:600,
-color:"#04122F",
-marginBottom:8,
-}}
->
+    {[
+      "MON",
+      "TUE",
+      "WED",
+      "THU",
+      "FRI",
+      "SAT",
+      "SUN",
+    ].map((day) => (
 
-Classroom Teaching Calendar
+      <div
+        key={day}
+        style={{
+          textAlign: "center",
 
-</h2>
+          color: "#64748B",
 
-<p
-style={{
-marginTop:0,
-color:"#64748B",
-fontSize:"11px",
-fontWeight:500,
-}}
->
+          fontSize: "11px",
+          fontWeight: 800,
 
-View all topics taught during the month.
+          letterSpacing: "1.1px",
+        }}
+      >
+        {day}
+      </div>
 
-</p>
+    ))}
 
+  </div>
 
 
-{/* WEEK DAYS */}
+  {/* =====================================================
+      CALENDAR GRID
+     ===================================================== */}
 
-<div
-style={{
-display:"grid",
-gridTemplateColumns:"repeat(7,1fr)",
-gap:8,
-marginTop:18,
-marginBottom:10,
-}}
->
+  <div
+    style={{
+      position: "relative",
+      zIndex: 1,
 
-{
+      display: "grid",
 
-["MON","TUE","WED","THU","FRI","SAT","SUN"]
+      gridTemplateColumns:
+        "repeat(7, minmax(0,1fr))",
 
-.map((day)=>(
+      gap: "12px",
+    }}
+  >
 
-<div
-key={day}
-style={{
-textAlign:"center",
-fontWeight:800,
-fontSize:12,
-letterSpacing:1,
-color:"#334155",
-textTransform:"uppercase",
-}}
->
+    {Array.from({
+      length:
+        daysInMonthMap[
+          selectedMonth as keyof typeof daysInMonthMap
+        ],
+    }).map((_, index) => {
 
-{day}
+      const day =
+        index + 1;
 
-</div>
 
-))
+      /* -------------------------------------------------
+         LOGS FOR CURRENT DAY
+         EXISTING FUNCTIONALITY PRESERVED
+      ------------------------------------------------- */
 
-}
+      const logsForDay =
+        dailyLogs.filter((item) => {
 
-</div>
+          const currentDate =
+            new Date(item.logDate);
 
+          const selectedMonthName =
+            selectedMonth.split(" ")[0];
 
+          const selectedYear =
+            selectedMonth.split(" ")[1];
 
-{/* CALENDAR */}
+          return (
 
-<div
-style={{
-display:"grid",
-gridTemplateColumns:"repeat(7,1fr)",
-gap:8,
-}}
->
+            currentDate.getDate() === day &&
 
-{
+            currentDate.toLocaleString(
+              "default",
+              {
+                month: "long",
+              }
+            ) === selectedMonthName &&
 
-Array.from({
+            String(
+              currentDate.getFullYear()
+            ) === selectedYear
 
-length:
+          );
 
-daysInMonthMap[
-selectedMonth as keyof typeof daysInMonthMap
-]
+        });
 
-}).map((_,index)=>{
 
-const day = index + 1;
+      const visibleTopics =
+        logsForDay.slice(0, 1);
 
 
-const logsForDay =
+      const remainingTopics =
+        logsForDay.length - 1;
 
-dailyLogs.filter((item)=>{
 
-const currentDate =
-new Date(item.logDate);
+      /* =================================================
+         EMPTY DAY
+         SAME UI LANGUAGE AS STUDENT CALENDAR
+      ================================================= */
 
-const selectedMonthName =
-selectedMonth.split(" ")[0];
+      if (
+        logsForDay.length === 0
+      ) {
 
-const selectedYear =
-selectedMonth.split(" ")[1];
+        return (
 
+          <div
+            key={day}
+            style={{
+              position: "relative",
 
-return(
+              overflow: "hidden",
 
-currentDate.getDate() === day &&
+              minHeight: "116px",
 
-currentDate.toLocaleString(
-"default",
-{month:"long"}
-) === selectedMonthName &&
+              padding: "14px",
 
-String(
-currentDate.getFullYear()
-) === selectedYear
+              boxSizing: "border-box",
 
-);
+              background:
+                "linear-gradient(135deg,#FFF9EF 0%,#FFFCF7 100%)",
 
-});
+              border:
+                "1px solid #FDBA74",
 
+              borderRadius: "15px",
 
-const visibleTopics =
+              display: "flex",
+              flexDirection: "column",
 
-logsForDay.slice(0,1);
+              boxShadow:
+                "0 2px 6px rgba(15,23,42,0.02)",
+            }}
+          >
 
+            {/* CORNER CIRCLE */}
 
-const remainingTopics =
+            <div
+              style={{
+                position: "absolute",
 
-logsForDay.length - 1;
+                width: "54px",
+                height: "54px",
 
+                right: "-18px",
+                top: "-18px",
 
-if(logsForDay.length === 0){
+                borderRadius: "50%",
 
-return(
+                background:
+                  "rgba(255,237,213,0.78)",
 
-<div
-key={day}
-style={emptyCalendarBox}
->
+                pointerEvents: "none",
+              }}
+            />
 
-<div
-style={{
-fontWeight:700,
-fontSize:12,
-}}
->
 
-{day}
+            {/* DATE */}
 
-</div>
+            <div
+              style={{
+                position: "relative",
+                zIndex: 1,
 
+                color: "#0F172A",
 
-<p
-style={{
-marginTop:14,
-fontSize:9,
-color:"#CA8A04",
-fontWeight:600,
-textAlign:"center",
-lineHeight:1.4,
-}}
->
+                fontSize: "14px",
+                lineHeight: 1,
 
-No Lecture Conducted
+                fontWeight: 800,
+              }}
+            >
+              {day}
+            </div>
 
-</p>
 
-</div>
+            {/* EMPTY MESSAGE */}
 
-);
+            <div
+              style={{
+                position: "relative",
+                zIndex: 1,
 
-}
+                flex: 1,
 
-return(
+                display: "flex",
 
-<div
-key={day}
-style={{
+                alignItems: "center",
+                justifyContent: "center",
 
-...calendarLectureBox,
+                paddingBottom: "3px",
+              }}
+            >
 
-background:"#F7FFF8",
+              <div
+                style={{
+                  color: "#EA580C",
 
-}}
->
+                  fontSize: "10px",
+                  lineHeight: 1.3,
 
-<div
-style={{
+                  fontWeight: 800,
 
-fontWeight:700,
+                  textAlign: "center",
+                }}
+              >
+                No Lecture Conducted
+              </div>
 
-fontSize:12,
+            </div>
 
-marginBottom:8,
+          </div>
 
-}}
->
+        );
 
-{day}
+      }
 
-</div>
 
+      /* =================================================
+         LECTURE DAY
+      ================================================= */
 
-{
+      const isLatestDay =
+        logsForDay.some(
+          (item) =>
+            item.id === latestLog?.id
+        );
 
-visibleTopics.map((topic)=>(
 
-<div
-key={topic.id}
->
+      return (
 
-<div
-style={{
+        <div
+          key={day}
+          style={{
+            position: "relative",
 
-display:"inline-flex",
+            overflow: "hidden",
 
-padding:"5px 9px",
+            minHeight: "116px",
 
-borderRadius:10,
+            padding: "14px",
 
-background:
+            boxSizing: "border-box",
 
-topic.id === latestLog?.id
-? "#FFF7ED"
-: "#DCFCE7",
-
-color:
-
-topic.id === latestLog?.id
-? "#EA580C"
-: "#15803D",
-
-fontWeight:700,
-
-fontSize:9,
-
-marginBottom:8,
-
-}}
->
-
-{topic.topicName}
-
-</div>
-
-
-<p
-style={{
-
-marginTop:0,
-
-marginBottom:8,
-
-fontSize:9,
-
-fontWeight:600,
-
-color:"#475569",
-
-lineHeight:1.5,
-
-}}
->
-
-Pages :
-
-{" "}
-
-{topic.pageFrom}
-
--
-
-{topic.pageTo}
-
-</p>
-
-
-</div>
-
-))
-
-}
-
-
-
-{
-
-remainingTopics > 0 && (
-
-<div
-
-onClick={()=>{
-
-setSelectedDayTopics(logsForDay);
-
-setShowTopicsModal(true);
-
-}}
-
-style={{
-
-marginTop:6,
-marginBottom:8,
-padding:"5px 8px",
-borderRadius:8,
-background:"#EFF6FF",
-color:"#2563EB",
-fontSize:9,
-fontWeight:700,
-display:"inline-block",
-cursor:"pointer",
-
-}}
-
->
-
-View All Topics ({logsForDay.length}) →
-
-</div>
-
-)
-
-}
-
-
-
-<div
-style={{
-
-display:"flex",
-
-justifyContent:"space-between",
-
-marginTop:8,
-
-fontSize:9,
-
-color:"#475569",
-
-lineHeight:1.5,
-
-}}
->
-
-<div>
-
-Homework :
-
-{" "}
-
-<strong>
-
-{
-
-logsForDay.some(
-item=>item.homeworkGiven
-)
-
-? "Yes"
-
-: "No"
-
-}
-
-</strong>
-
-</div>
-
-
-<div>
-
-Activity :
-
-{" "}
-
-<strong>
-
-{
-
-logsForDay.some(
-item=>item.activityConducted
-)
-
-? "Yes"
-
-: "No"
-
-}
-
-</strong>
-
-</div>
-
-
-</div>
-
-
-</div>
-
-);
-
-})
-
-}
-
-</div>
-
-</div>
-
-
-
-{
-
-showTopicsModal && (
-
-<div
-
-style={{
-
-position:"fixed",
-top:0,
-left:0,
-right:0,
-bottom:0,
-
-background:"rgba(0,0,0,0.45)",
-
-display:"flex",
-justifyContent:"center",
-alignItems:"center",
-
-zIndex:9999,
-
-}}
-
->
-
-<div
-
-style={{
-
-background:"white",
-width:"460px",
-maxHeight:"75vh",
-
-overflowY:"auto",
-
-borderRadius:20,
-padding:22,
-
-boxShadow:
-"0px 25px 50px rgba(0,0,0,0.2)",
-
-}}
-
->
-
-<div
-
-style={{
-
-background:"#04122F",
-
-padding:18,
-
-borderRadius:16,
-
-marginBottom:20,
-
-}}
-
->
-
-<p
-
-style={{
-
-color:"#F59E0B",
-
-fontWeight:700,
-
-letterSpacing:1,
-
-fontSize:"10px",
-
-marginTop:0,
-
-}}
-
->
-
-CLASSROOM TEACHING HISTORY
-
-</p>
-
-
-<h1
-
-style={{
-
-color:"white",
-
-marginTop:6,
-
-marginBottom:6,
-
-fontSize:"24px",
-
-}}
-
->
-
-TOPICS TAUGHT TODAY
-
-</h1>
-
-
-<p
-
-style={{
-
-color:"#E5E7EB",
-
-marginBottom:0,
-
-fontSize:"11px",
-
-lineHeight:1.5,
-
-}}
-
->
-
-{selectedDayTopics.length}
-
-Topics were covered during this lecture day.
-
-</p>
-
-
-</div>
-
-
-
-{
-
-selectedDayTopics.map((topic,index)=>(
-
-<div
-
-key={topic.id}
-
-style={{
-
-background:"#F8FAFC",
-
-padding:16,
-
-borderRadius:12,
-
-marginBottom:14,
-
-border:"1px solid #E2E8F0",
-
-}}
-
->
-
-<h3
-style={{
-
-color:"#04122F",
-
-marginBottom:12,
-
-fontSize:16,
-
-}}
->
-
-{index+1}. {topic.topicName}
-
-</h3>
-
-
-<p
-style={{
-fontSize:"11px",
-lineHeight:1.6,
-}}
->
-
-Pages :
-
-{topic.pageFrom}
-
--
-
-{topic.pageTo}
-
-</p>
-
-
-<p
-style={{
-fontSize:"11px",
-lineHeight:1.6,
-}}
->
-
-Homework :
-
-{" "}
-
-{topic.homeworkGiven
-? "Yes"
-: "No"}
-
-</p>
-
-
-<p
-style={{
-fontSize:"11px",
-lineHeight:1.6,
-}}
->
-
-Activity :
-
-{" "}
-
-{topic.activityConducted
-? "Yes"
-: "No"}
-
-</p>
-
-
-{
-
-topic.teacherNotes && (
-
-<p
-style={{
-fontSize:"11px",
-lineHeight:1.6,
-}}
->
-
-Teacher Notes :
-
-{" "}
-
-{topic.teacherNotes}
-
-</p>
-
-)
-
-}
-
-</div>
-
-))
-}
-
-
-
-<button
-
-onClick={()=>{
-
-setShowTopicsModal(false);
-
-}}
-
-style={{
-
-padding:"10px 18px",
-
-background:"#F59E0B",
-
-color:"#04122F",
-
-border:"none",
-
-borderRadius:10,
-
-cursor:"pointer",
-
-fontWeight:700,
-
-fontSize:11,
-
-}}
-
->
-
-CLOSE TOPICS
-
-</button>
-
-
-</div>
-
-</div>
-
-)
-
-}
-
-
-{/* MONTHLY SUMMARY */}
-
-<div
-style={{
-...cardStyle,
-marginTop:20,
-}}
->
-
-<h2
-style={{
-fontSize:"18px",
-fontWeight:600,
-color:"#04122F",
-marginBottom:8,
-}}
->
-
-Monthly Classroom Summary
-
-</h2>
-
-
-<div
-style={{
-display:"grid",
-gridTemplateColumns:
-"repeat(4,1fr)",
-gap:14,
-marginTop:18,
-}}
->
-
-<SummaryCard
-title="Total Lectures"
-value={String(dailyLogs.length)}
-/>
-
-
-<SummaryCard
-title="Homework Days"
-value={String(
-
-dailyLogs.filter(
-item=>
-item.homeworkGiven
-).length
-
-)}
-/>
-
-
-<SummaryCard
-title="Activity Days"
-value={String(
-
-dailyLogs.filter(
-item=>
-item.activityConducted
-).length
-
-)}
-/>
-
-
-<SummaryCard
-title="Completed Topics"
-value={String(dailyLogs.length)}
-/>
-
-</div>
-
-</div>
-
-
-
-{/* STUDENTS AT RISK */}
-
-<div
-
-style={{
-
-...cardStyle,
-
-marginTop:20,
-
-}}
-
->
-
-<h2
-style={{
-fontSize:"18px",
-marginBottom:"6px",
-}}
->
-
-Students At Risk
-
-</h2>
-
-<p
-style={{
-color:"#64748B",
-marginBottom:16,
-fontSize:"11px",
-}}
->
-
-Identify students requiring immediate academic support.
-
-</p>
-
-
-
-<div
-
-style={{
-
-display:"grid",
-
-gridTemplateColumns:
-"repeat(3,1fr)",
-
-gap:14,
-
-}}
-
->
-
-<RiskCard
-
-title="Very Critical"
-
-count={
-studentsAtRisk.
-veryCritical.length
-}
-
-students={
-studentsAtRisk.
-veryCritical
-}
-
-background="#FEF2F2"
-
-/>
-
-
-<RiskCard
-
-title="Critical"
-
-count={
-studentsAtRisk.
-critical.length
-}
-
-students={
-studentsAtRisk.
-critical
-}
-
-background="#FFF7ED"
-
-/>
-
-
-<RiskCard
-
-title="Moderate"
-
-count={
-studentsAtRisk.
-moderate.length
-}
-
-students={
-studentsAtRisk.
-moderate
-}
-
-background="#FEFCE8"
-
-/>
-
-</div>
-
-
-
-<div
-style={{
-marginTop:18,
-display:"grid",
-gridTemplateColumns:"repeat(3,1fr)",
-gap:14,
-}}
->
-
-<div>
-
-<h3
-style={{
-marginBottom:6,
-fontSize:"14px",
-}}
->
-Very Critical
-</h3>
-
-<p
-style={{
-color:"#64748B",
-fontSize:"10px",
-lineHeight:1.6,
-}}
->
-3 consecutive "I didn't understand."
-responses.
-</p>
-
-</div>
-
-
-<div>
-
-<h3
-style={{
-marginBottom:6,
-fontSize:"14px",
-}}
->
-Critical
-</h3>
-
-<p
-style={{
-color:"#64748B",
-fontSize:"10px",
-lineHeight:1.6,
-}}
->
-2 "I didn't understand." and
-1 "I partially understood."
-response.
-</p>
-
-</div>
-
-
-<div>
-
-<h3
-style={{
-marginBottom:6,
-fontSize:"14px",
-}}
->
-Moderate
-</h3>
-
-<p
-style={{
-color:"#64748B",
-fontSize:"10px",
-lineHeight:1.6,
-}}
->
-3 consecutive "I partially understood."
-responses.
-</p>
-
-</div>
-
-</div>
-
-</div>
-
-
-
-</div>
-
-);
-
-}
-
-
-/* ------------------------------------------------ */
-
-function TimelineCard(props: any) {
-
-return (
-
-<div
-style={{
-background:"#F8FAFC",
-padding:12,
-borderRadius:10,
-marginBottom:10,
-}}
->
-
-<h3
-style={{
-fontSize:"14px",
-marginBottom:"6px",
-}}
->
-{props.date}
-</h3>
-
-<p
-style={{
-fontSize:"11px",
-}}
->
-Topic : {props.topic}
-</p>
-
-<p
-style={{
-fontSize:"11px",
-}}
->
-Status : {props.status}
-</p>
-
-</div>
-
-);
-
-}
-
-
-/* ------------------------------------------------ */
-
-function SummaryCard(props:any){
-
-return(
-
-<div
-style={{
-...cardStyle,
-padding:16,
-background:"#ecf0de",
-border:"1px solid #DBEAFE",
-}}
->
-
-<h1
-style={{
-margin:0,
-fontSize:30,
-color:"#64748B",
-}}
->
-
-{props.value}
-
-</h1>
-
-
-<p
-style={{
-marginTop:8,
-fontWeight:600,
-fontSize:"11px",
-color:"#475569",
-}}
->
-
-{props.title}
-
-</p>
-
-</div>
-
-);
-
-}
-
-
-function RiskCard(props:any){
-
-return(
-
-<div
-
-style={{
-
-background:
-props.background,
-
-borderRadius:12,
-
-minHeight:140,
-
-overflowY:"auto",
-
-}}
-
->
-
-<div
-style={{
-
-padding:"10px 12px",
-
-background:"rgba(255,255,255,0.55)",
-
-borderTopLeftRadius:12,
-
-borderTopRightRadius:12,
-
-borderBottom:"1px solid rgba(0,0,0,0.08)",
-
-}}
->
-
-<h3
-style={{
-margin:0,
-fontSize:"15px",
-}}
->
-{props.title}
-</h3>
-
-<p
-style={{
-marginTop:4,
-marginBottom:0,
-fontWeight:700,
-fontSize:"11px",
-}}
->
-{props.count} Students
-</p>
-
-</div>
-
-
-<div
-style={{
-padding:12,
-}}
->
-
-{
-
-props.students.map(
-
-(name:string)=>(
-
-<div
-
-key={name}
-
-style={{
-
-padding:"6px 10px",
-
-background:"white",
-
-borderRadius:8,
-
-marginBottom:6,
-
-fontWeight:600,
-
-fontSize:"11px",
-
-}}
-
->
-
-{name}
-
-</div>
-
-))
-
-}
-
-</div>
-
-</div>
-
-);
-
-}
-
-
-/* ------------------------------------------------ */
-
-function Legend(props:any){
-
-return(
-
-<div
-style={{
-
-display:"flex",
-
-alignItems:"center",
-
-gap:6,
-
-}}
->
-
-<div
-style={{
-
-width:12,
-
-height:12,
-
-borderRadius:"50%",
-
-background:props.color,
+   background:
+  isLatestDay
+    ? "linear-gradient(135deg,#FFF3E8 0%,#FFF9F3 100%)"
+    : "linear-gradient(135deg,#F0FDF4 0%,#F8FFF9 100%)",
 
 border:
-"1px solid #CBD5E1",
+  isLatestDay
+    ? "1.5px solid #F97316"
+    : "1px solid #BBF7D0",
 
-}}
-/>
+            borderRadius: "15px",
+
+            boxShadow:
+              "0 2px 6px rgba(15,23,42,0.02)",
+          }}
+        >
+
+          {/* CORNER CIRCLE */}
+
+          <div
+            style={{
+              position: "absolute",
+
+              width: "54px",
+              height: "54px",
+
+              right: "-18px",
+              top: "-18px",
+
+              borderRadius: "50%",
+
+            background:
+  isLatestDay
+    ? "rgba(249,115,22,0.10)"
+    : "rgba(220,252,231,0.82)",
+
+              pointerEvents: "none",
+            }}
+          />
 
 
-<span
-style={{
+          {/* DATE */}
 
-fontWeight:600,
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
 
-fontSize:"11px",
+              color: "#0F172A",
 
-color:"#334155",
+              fontSize: "14px",
+              lineHeight: 1,
 
-}}
->
+              fontWeight: 800,
 
-{props.label}
-
-</span>
-
-</div>
-
-);
-
-}
+              marginBottom: "13px",
+            }}
+          >
+            {day}
+          </div>
 
 
-/* ------------------------------------------------ */
+          {/* TOPIC */}
 
-function InfoCard(props:any){
+          {visibleTopics.map(
+            (topic) => (
 
-return(
+              <div
+                key={topic.id}
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+
+                <div
+                  style={{
+                    display:
+                      "inline-flex",
+
+                    maxWidth: "100%",
+
+                    padding:
+                      "5px 8px",
+
+                    borderRadius:
+                      "10px",
+
+                    background:
+                      topic.id ===
+                      latestLog?.id
+                        ? "#FFEDD5"
+                        : "#DCFCE7",
+
+                    color:
+                      topic.id ===
+                      latestLog?.id
+                        ? "#EA580C"
+                        : "#15803D",
+
+                    fontWeight: 800,
+
+                    fontSize: "10px",
+
+                    lineHeight: 1.3,
+
+                    overflow:
+                      "hidden",
+
+                    textOverflow:
+                      "ellipsis",
+
+                    whiteSpace:
+                      "nowrap",
+
+                    boxSizing:
+                      "border-box",
+                  }}
+                >
+                  {topic.topicName}
+                </div>
+
+
+                <div
+                  style={{
+                    marginTop: "7px",
+
+                    color: "#64748B",
+
+                    fontSize: "10px",
+
+                    fontWeight: 700,
+                  }}
+                >
+                  Pages:{" "}
+                  {topic.pageFrom}–
+                  {topic.pageTo}
+                </div>
+
+              </div>
+
+            )
+          )}
+
+
+          {/* MORE TOPICS */}
+
+          {remainingTopics > 0 && (
+
+            <button
+              type="button"
+
+              onClick={() => {
+
+                setSelectedDayTopics(
+                  logsForDay
+                );
+
+                setShowTopicsModal(
+                  true
+                );
+
+              }}
+
+              style={{
+                position: "relative",
+                zIndex: 1,
+
+                marginTop: "7px",
+
+                padding: 0,
+
+                border: "none",
+
+                background:
+                  "transparent",
+
+                color: "#2563EB",
+
+                fontSize: "10px",
+
+                fontWeight: 800,
+
+                cursor: "pointer",
+              }}
+            >
+              View All Topics (
+              {logsForDay.length}) →
+            </button>
+
+          )}
+
+
+          {/* HOMEWORK + ACTIVITY */}
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+
+              display: "flex",
+
+              flexWrap: "wrap",
+
+              gap: "5px",
+
+              marginTop: "8px",
+            }}
+          >
+
+            <div
+              style={{
+                padding:
+                  "4px 6px",
+
+                background:
+                  "rgba(255,255,255,0.72)",
+
+                border:
+                  "1px solid rgba(148,163,184,0.18)",
+
+                borderRadius:
+                  "7px",
+
+                color:
+                  "#64748B",
+
+                fontSize:
+                  "9px",
+
+                fontWeight:
+                  700,
+              }}
+            >
+              HW{" "}
+
+              <strong
+                style={{
+                  color:
+                    "#334155",
+                }}
+              >
+                {logsForDay.some(
+                  (item) =>
+                    item.homeworkGiven
+                )
+                  ? "YES"
+                  : "NO"}
+              </strong>
+
+            </div>
+
+
+            <div
+              style={{
+                padding:
+                  "4px 6px",
+
+                background:
+                  "rgba(255,255,255,0.72)",
+
+                border:
+                  "1px solid rgba(148,163,184,0.18)",
+
+                borderRadius:
+                  "7px",
+
+                color:
+                  "#64748B",
+
+                fontSize:
+                  "9px",
+
+                fontWeight:
+                  700,
+              }}
+            >
+              ACT{" "}
+
+              <strong
+                style={{
+                  color:
+                    "#334155",
+                }}
+              >
+                {logsForDay.some(
+                  (item) =>
+                    item.activityConducted
+                )
+                  ? "YES"
+                  : "NO"}
+              </strong>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      );
+
+    })}
+
+  </div>
+
+
+  {/* =====================================================
+    CALENDAR REFERENCE
+   ===================================================== */}
 
 <div
-style={{
+  style={{
+    position: "relative",
+    zIndex: 1,
 
-padding:12,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
 
-borderRadius:12,
+    flexWrap: "wrap",
 
-background:"#ecf0de",
+    gap: "16px",
 
-border:
-"1px solid #BFDBFE",
-
-}}
+    marginTop: "20px",
+  }}
 >
+  {/* LEFT — CALENDAR LEGEND */}
 
-<p
-style={{
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: "18px",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "7px",
 
-margin:0,
+        color: "#64748B",
 
-fontSize:10,
+        fontSize: "12px",
+        fontWeight: 700,
+      }}
+    >
+      <div
+        style={{
+          width: "9px",
+          height: "9px",
 
-fontWeight:600,
+          flexShrink: 0,
 
-color:"#64748B",
+          borderRadius: "50%",
 
-}}
->
+          background: "#22C55E",
+        }}
+      />
 
-{props.title}
+      Lecture Conducted
+    </div>
 
-</p>
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "7px",
+
+        color: "#64748B",
+
+        fontSize: "12px",
+        fontWeight: 700,
+      }}
+    >
+      <div
+        style={{
+          width: "9px",
+          height: "9px",
+
+          flexShrink: 0,
+
+          borderRadius: "50%",
+
+          background: "#FDBA74",
+        }}
+      />
+
+      No Lecture Conducted
+    </div>
 
 
-<h2
-style={{
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "7px",
 
-marginTop:8,
-marginBottom:0,
+        color: "#64748B",
 
-color:"#64748B",
+        fontSize: "12px",
+        fontWeight: 700,
+      }}
+    >
+      <div
+        style={{
+          width: "9px",
+          height: "9px",
 
-fontSize:18,
+          flexShrink: 0,
 
-}}
->
+          borderRadius: "50%",
 
-{props.value}
+          background: "#F97316",
+        }}
+      />
 
-</h2>
+      Latest Lecture
+    </div>
+  </div>
 
+
+  {/* RIGHT — TEACHER REFERENCE */}
+
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "flex-end",
+
+      flexWrap: "wrap",
+
+      gap: "8px",
+    }}
+  >
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+
+        gap: "7px",
+
+        padding: "6px 9px",
+
+        background:
+          "linear-gradient(135deg,#F8FAFC,#FFFFFF)",
+
+        border: "1px solid #E2E8F0",
+
+        borderRadius: "9px",
+      }}
+    >
+      <span
+        style={{
+          color: "#0F172A",
+
+          fontSize: "10px",
+          fontWeight: 800,
+
+          letterSpacing: "0.4px",
+        }}
+      >
+        HW
+      </span>
+
+      <span
+        style={{
+          color: "#CBD5E1",
+
+          fontSize: "11px",
+          fontWeight: 700,
+        }}
+      >
+        =
+      </span>
+
+      <span
+        style={{
+          color: "#64748B",
+
+          fontSize: "10px",
+          fontWeight: 700,
+        }}
+      >
+        Homework Given After Class
+      </span>
+    </div>
+
+
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+
+        gap: "7px",
+
+        padding: "6px 9px",
+
+        background:
+          "linear-gradient(135deg,#F8FAFC,#FFFFFF)",
+
+        border: "1px solid #E2E8F0",
+
+        borderRadius: "9px",
+      }}
+    >
+      <span
+        style={{
+          color: "#0F172A",
+
+          fontSize: "10px",
+          fontWeight: 800,
+
+          letterSpacing: "0.4px",
+        }}
+      >
+        ACT
+      </span>
+
+      <span
+        style={{
+          color: "#CBD5E1",
+
+          fontSize: "11px",
+          fontWeight: 700,
+        }}
+      >
+        =
+      </span>
+
+      <span
+        style={{
+          color: "#64748B",
+
+          fontSize: "10px",
+          fontWeight: 700,
+        }}
+      >
+        Activity Performed In the Class
+      </span>
+    </div>
+  </div>
+</div>
 
 </div>
 
+    {/* =====================================================
+        TOPICS MODAL
+       ===================================================== */}
+
+    {showTopicsModal && (
+      <div style={modalOverlayStyle}>
+        <div style={modalStyle}>
+          <div style={modalHeroStyle}>
+            <div
+              style={{
+                position: "relative",
+                zIndex: 1,
+              }}
+            >
+              <div style={eyebrowStyle}>
+                CLASSROOM TEACHING HISTORY
+              </div>
+
+              <h2
+                style={{
+                  margin: "7px 0 5px",
+                  color: "#0F172A",
+                  fontSize: "25px",
+                  fontWeight: 800,
+                  letterSpacing: "-0.4px",
+                }}
+              >
+                Topics Taught Today
+              </h2>
+
+              <p
+                style={{
+                  margin: 0,
+                  color: "#64748B",
+                  fontSize: "14px",
+                  lineHeight: 1.55,
+                }}
+              >
+                {selectedDayTopics.length} topics were
+                covered during this lecture day.
+              </p>
+            </div>
+          </div>
+
+          {selectedDayTopics.map(
+            (topic, index) => (
+              <div
+                key={topic.id}
+                style={topicModalCard}
+              >
+                <div
+                  style={{
+                    color: "#F97316",
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    letterSpacing: "1px",
+                  }}
+                >
+                  TOPIC {index + 1}
+                </div>
+
+                <h3
+                  style={{
+                    margin: "6px 0 12px",
+                    color: "#0F172A",
+                    fontSize: "18px",
+                    fontWeight: 800,
+                  }}
+                >
+                  {topic.topicName}
+                </h3>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(3, 1fr)",
+                    gap: "8px",
+                  }}
+                >
+                  <ModalInfo
+                    title="PAGES"
+                    value={`${topic.pageFrom}-${topic.pageTo}`}
+                  />
+
+                  <ModalInfo
+                    title="HOMEWORK"
+                    value={
+                      topic.homeworkGiven
+                        ? "Yes"
+                        : "No"
+                    }
+                  />
+
+                  <ModalInfo
+                    title="ACTIVITY"
+                    value={
+                      topic.activityConducted
+                        ? "Yes"
+                        : "No"
+                    }
+                  />
+                </div>
+
+                {topic.teacherNotes && (
+                  <div
+                    style={{
+                      marginTop: "10px",
+                      padding: "10px",
+                      background: "#F8FAFC",
+                      border:
+                        "1px solid #E2E8F0",
+                      borderRadius: "10px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: "#94A3B8",
+                        fontSize: "11px",
+                        fontWeight: 800,
+                        letterSpacing: "0.8px",
+                      }}
+                    >
+                      TEACHER NOTES
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: "5px",
+                        color: "#475569",
+                        fontSize: "13px",
+                        lineHeight: 1.55,
+                      }}
+                    >
+                      {topic.teacherNotes}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          )}
+
+          <button
+            onClick={() => {
+              setShowTopicsModal(false);
+            }}
+            style={closeButtonStyle}
+          >
+            CLOSE TOPICS
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* =====================================================
+        MONTHLY SUMMARY
+       ===================================================== */}
+
+    <div style={sectionCardStyle}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: "20px",
+        }}
+      >
+        <div>
+          <div style={eyebrowStyle}>
+            TEACHING INTELLIGENCE
+          </div>
+
+          <h2 style={sectionTitleStyle}>
+            Monthly Classroom Summary
+          </h2>
+
+          <p style={sectionDescriptionStyle}>
+            A snapshot of teaching activity recorded across
+            the selected classroom.
+          </p>
+        </div>
+
+        <div style={ledgerLabelStyle}>
+          CLASSROOM ACTIVITY LEDGER
+        </div>
+      </div>
+
+  <div
+  style={{
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(4, minmax(0, 1fr))",
+    gap: "14px",
+    marginTop: "20px",
+  }}
+>
+        <SummaryCard
+          eyebrow="TEACHING RECORD"
+          title="Total Lectures"
+          value={String(dailyLogs.length)}
+          background="#FFF7ED"
+          border="#FED7AA"
+          color="#EA580C"
+        />
+
+        <SummaryCard
+          eyebrow="ACADEMIC PRACTICE"
+          title="Homework Days"
+          value={String(
+            dailyLogs.filter(
+              (item) => item.homeworkGiven
+            ).length
+          )}
+          background="#EFF6FF"
+          border="#BFDBFE"
+          color="#2563EB"
+        />
+
+        <SummaryCard
+          eyebrow="ACTIVE LEARNING"
+          title="Activity Days"
+          value={String(
+            dailyLogs.filter(
+              (item) =>
+                item.activityConducted
+            ).length
+          )}
+          background="#F0FDF4"
+          border="#BBF7D0"
+          color="#16A34A"
+        />
+
+        <SummaryCard
+          eyebrow="CURRICULUM PROGRESS"
+          title="Completed Topics"
+          value={String(dailyLogs.length)}
+          background="#FAF5FF"
+          border="#E9D5FF"
+          color="#7C3AED"
+        />
+      </div>
+    </div>
+
+    {/* =====================================================
+        STUDENTS AT RISK
+       ===================================================== */}
+
+    <div style={sectionCardStyle}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: "20px",
+        }}
+      >
+        <div>
+          <div style={eyebrowStyle}>
+            STUDENT LEARNING INTELLIGENCE
+          </div>
+
+          <h2 style={sectionTitleStyle}>
+            Students Requiring Attention
+          </h2>
+
+          <p style={sectionDescriptionStyle}>
+            Identify students showing repeated comprehension
+            difficulty and requiring academic support.
+          </p>
+        </div>
+
+        <div style={ledgerLabelStyle}>
+          LEARNING RISK LEDGER
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(3, minmax(0, 1fr))",
+          gap: "12px",
+          marginTop: "18px",
+        }}
+      >
+        <RiskCard
+          eyebrow="IMMEDIATE ATTENTION"
+          title="Very Critical"
+          count={
+            studentsAtRisk.veryCritical
+              .length
+          }
+          students={
+            studentsAtRisk.veryCritical
+          }
+          background="#FEF2F2"
+          border="#FECACA"
+          color="#DC2626"
+          description={`3 consecutive "I didn't understand." responses.`}
+        />
+
+        <RiskCard
+          eyebrow="ACADEMIC SUPPORT"
+          title="Critical"
+          count={
+            studentsAtRisk.critical.length
+          }
+          students={
+            studentsAtRisk.critical
+          }
+          background="#FFF7ED"
+          border="#FED7AA"
+          color="#EA580C"
+          description={`2 "I didn't understand." and 1 "I partially understood." response.`}
+        />
+
+        <RiskCard
+          eyebrow="EARLY ATTENTION"
+          title="Moderate"
+          count={
+            studentsAtRisk.moderate.length
+          }
+          students={
+            studentsAtRisk.moderate
+          }
+          background="#FFFBEB"
+          border="#FDE68A"
+          color="#CA8A04"
+          description={`3 consecutive "I partially understood." responses.`}
+        />
+      </div>
+    </div>
+  </div>
 );
 
 }
 
+/* =========================================================
+   UI COMPONENTS
+   ========================================================= */
 
-/* ------------------------------------------------ */
+function InfoCard(props: any) {
+  return (
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
 
-const cardStyle = {
+        minHeight: "108px",
+        padding: "14px 16px",
 
-background:"white",
+        background: `linear-gradient(
+          135deg,
+          ${props.background} 0%,
+          #FFFFFF 145%
+        )`,
 
-padding:20,
+        border: `1px solid ${props.border}`,
+        borderRadius: "16px",
 
-borderRadius:18,
+        boxSizing: "border-box",
+      }}
+    >
+      {/* DECORATIVE CORNER */}
 
-boxShadow:
-"0px 10px 30px rgba(0,0,0,0.05)",
+      <div
+        style={{
+          position: "absolute",
 
+          width: "78px",
+          height: "78px",
+
+          right: "-27px",
+          top: "-31px",
+
+          borderRadius: "50%",
+
+          background: props.color,
+          opacity: 0.055,
+
+          pointerEvents: "none",
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {/* EYEBROW */}
+
+        <div
+          style={{
+            color: props.color,
+
+            fontSize: "13px",
+            fontWeight: 800,
+
+            letterSpacing: "0.65px",
+            textTransform: "uppercase",
+
+            marginBottom: "10px",
+          }}
+        >
+          {props.eyebrow}
+        </div>
+
+        {/* SMALL LABEL */}
+
+        <div
+          style={{
+            color: "#475569",
+
+            fontSize: "14px",
+            fontWeight: 700,
+
+            marginBottom: "5px",
+          }}
+        >
+          {props.title}
+        </div>
+
+        {/* VALUE */}
+
+        <div
+          style={{
+            color: props.color,
+
+            fontSize: "27px",
+            lineHeight: 1.05,
+
+            fontWeight: 800,
+            letterSpacing: "-0.45px",
+          }}
+        >
+          {props.value}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* --------------------------------------------------------- */
+
+function SummaryCard(props: any) {
+  return (
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+
+        minHeight: "108px",
+        padding: "14px 16px",
+
+        background: `linear-gradient(
+          135deg,
+          ${props.background} 0%,
+          #FFFFFF 145%
+        )`,
+
+        border: `1px solid ${props.border}`,
+        borderRadius: "16px",
+
+        boxSizing: "border-box",
+      }}
+    >
+      {/* DECORATIVE CORNER */}
+
+      <div
+        style={{
+          position: "absolute",
+
+          width: "78px",
+          height: "78px",
+
+          right: "-27px",
+          top: "-31px",
+
+          borderRadius: "50%",
+
+          background: props.color,
+          opacity: 0.055,
+
+          pointerEvents: "none",
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {/* EYEBROW */}
+
+        <div
+          style={{
+            color: props.color,
+
+            fontSize: "13px",
+            fontWeight: 800,
+
+            letterSpacing: "0.65px",
+            textTransform: "uppercase",
+
+            marginBottom: "9px",
+          }}
+        >
+          {props.eyebrow}
+        </div>
+
+        {/* VALUE */}
+
+        <div
+          style={{
+            color: props.color,
+
+            fontSize: "34px",
+            lineHeight: 1,
+
+            fontWeight: 800,
+            letterSpacing: "-0.6px",
+          }}
+        >
+          {props.value}
+        </div>
+
+        {/* TITLE */}
+
+        <div
+          style={{
+            marginTop: "9px",
+
+            color: "#0F172A",
+
+            fontSize: "17px",
+            lineHeight: 1.25,
+
+            fontWeight: 800,
+          }}
+        >
+          {props.title}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* --------------------------------------------------------- */
+
+function RiskCard(props: any) {
+  return (
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        minHeight: "205px",
+        background: props.background,
+        border: `1px solid ${props.border}`,
+        borderRadius: "16px",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          width: "80px",
+          height: "80px",
+          right: "-25px",
+          top: "-28px",
+          borderRadius: "50%",
+          background:
+            "rgba(255,255,255,0.42)",
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          padding: "16px",
+        }}
+      >
+        <div
+          style={{
+            color: props.color,
+            fontSize: "11px",
+            fontWeight: 800,
+            letterSpacing: "0.8px",
+          }}
+        >
+          {props.eyebrow}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent:
+              "space-between",
+            alignItems: "center",
+            gap: "10px",
+            marginTop: "8px",
+          }}
+        >
+          <h3
+            style={{
+              margin: 0,
+              color: "#0F172A",
+              fontSize: "18px",
+              fontWeight: 800,
+            }}
+          >
+            {props.title}
+          </h3>
+
+          <div
+            style={{
+              minWidth: "30px",
+              height: "30px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "0 7px",
+              borderRadius: "10px",
+              background:
+                "rgba(255,255,255,0.65)",
+              color: props.color,
+              fontSize: "16px",
+              fontWeight: 800,
+            }}
+          >
+            {props.count}
+          </div>
+        </div>
+
+        <p
+          style={{
+            margin: "8px 0 13px",
+            minHeight: "30px",
+            color: "#64748B",
+            fontSize: "12px",
+            lineHeight: 1.5,
+          }}
+        >
+          {props.description}
+        </p>
+
+        <div
+          style={{
+            borderTop: `1px solid ${props.border}`,
+            paddingTop: "10px",
+          }}
+        >
+          {props.students.length === 0 ? (
+            <div
+              style={{
+                padding: "9px",
+                background:
+                  "rgba(255,255,255,0.55)",
+                borderRadius: "9px",
+                color: "#94A3B8",
+                fontSize: "12px",
+                fontWeight: 700,
+                textAlign: "center",
+              }}
+            >
+              No students in this category
+            </div>
+          ) : (
+            props.students.map(
+              (name: string) => (
+                <div
+                  key={name}
+                  style={{
+                    padding: "7px 9px",
+                    marginBottom: "6px",
+                    background:
+                      "rgba(255,255,255,0.75)",
+                    borderRadius: "8px",
+                    color: "#334155",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                  }}
+                >
+                  {name}
+                </div>
+              )
+            )
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* --------------------------------------------------------- */
+
+function Legend(props: any) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "7px",
+        padding: "7px 10px",
+        background: props.background,
+        border:
+          "1px solid rgba(148,163,184,0.22)",
+        borderRadius: "999px",
+        color: "#475569",
+        fontSize: "12px",
+        fontWeight: 700,
+      }}
+    >
+      <div
+        style={{
+          width: "7px",
+          height: "7px",
+          borderRadius: "50%",
+          background: props.color,
+        }}
+      />
+
+      {props.label}
+    </div>
+  );
+}
+
+
+/* --------------------------------------------------------- */
+
+function ModalInfo(props: any) {
+  return (
+    <div
+      style={{
+        padding: "9px",
+        background: "#F8FAFC",
+        border: "1px solid #E2E8F0",
+        borderRadius: "9px",
+      }}
+    >
+      <div
+        style={{
+          color: "#94A3B8",
+          fontSize: "10px",
+          fontWeight: 800,
+          letterSpacing: "0.7px",
+        }}
+      >
+        {props.title}
+      </div>
+
+      <div
+        style={{
+          marginTop: "4px",
+          color: "#0F172A",
+          fontSize: "13px",
+          fontWeight: 800,
+        }}
+      >
+        {props.value}
+      </div>
+    </div>
+  );
+}
+
+
+/* =========================================================
+   PAGE STYLES
+   ========================================================= */
+
+const heroStyle = {
+  position: "relative",
+  overflow: "hidden",
+  marginBottom: "18px",
+  padding: "26px 28px",
+
+  background:
+    "linear-gradient(135deg, #FFFFFF 0%, #FFFFFF 72%, #FFF9F3 100%)",
+
+  border: "1px solid #E2E8F0",
+  borderRadius: "24px",
+
+  boxShadow:
+    "0 10px 30px rgba(15, 23, 42, 0.045)",
 } as const;
 
 
-/* ------------------------------------------------ */
+const heroOrangeCircle = {
+  position: "absolute",
 
-const calendarLectureBox = {
+  width: "180px",
+  height: "180px",
 
-background:"#FFFFFF",
+  right: "-60px",
+  top: "-85px",
 
-border:"1px solid #E2E8F0",
+  borderRadius: "50%",
 
-borderRadius:16,
+  background:
+    "rgba(249, 115, 22, 0.06)",
 
-padding:12,
-
-minHeight:120,
-
-boxShadow:
-"0px 4px 15px rgba(0,0,0,0.04)",
-
+  pointerEvents: "none",
 } as const;
 
 
-/* ------------------------------------------------ */
+const heroSoftCircle = {
+  position: "absolute",
 
-const emptyCalendarBox = {
+  width: "95px",
+  height: "95px",
 
-background:"#FFFDF3",
+  right: "120px",
+  top: "-50px",
 
-border:"1px solid #FDE68A",
+  borderRadius: "50%",
 
-borderRadius:16,
+  background:
+    "rgba(249, 115, 22, 0.035)",
 
-padding:12,
-
-minHeight:100,
-
-display:"flex",
-
-flexDirection:"column" as const,
-
-alignItems:"center",
-
+  pointerEvents: "none",
 } as const;
 
 
-/* ------------------------------------------------ */
+const heroBlueCircle = {
+  position: "absolute",
+
+  width: "150px",
+  height: "150px",
+
+  right: "180px",
+  bottom: "-105px",
+
+  borderRadius: "50%",
+
+  background:
+    "rgba(37, 99, 235, 0.04)",
+
+  pointerEvents: "none",
+} as const;
+
+
+const heroBadgeStyle = {
+  width: "82px",
+  height: "82px",
+
+  flexShrink: 0,
+
+  display: "flex",
+  flexDirection: "column",
+
+  alignItems: "center",
+  justifyContent: "center",
+
+  background:
+    "linear-gradient(145deg, #FFF8F1 0%, #FFFFFF 100%)",
+
+  border: "1px solid #FED7AA",
+  borderRadius: "22px",
+
+  color: "#0F172A",
+
+  boxShadow:
+    "0 8px 20px rgba(249, 115, 22, 0.07)",
+} as const;
+
+
+const eyebrowStyle = {
+  color: "#F97316",
+
+  fontSize: "12px",
+  fontWeight: 800,
+
+  letterSpacing: "1.6px",
+
+  textTransform:
+    "uppercase" as const,
+};
+
+
+const orangePillStyle = {
+  padding: "6px 10px",
+
+  background: "#FFF7ED",
+
+  border: "1px solid #FED7AA",
+  borderRadius: "999px",
+
+  color: "#C2410C",
+
+  fontSize: "11px",
+  fontWeight: 800,
+
+  letterSpacing: "0.6px",
+} as const;
+
+
+const bluePillStyle = {
+  padding: "6px 10px",
+
+  background: "#EFF6FF",
+
+  border: "1px solid #BFDBFE",
+  borderRadius: "999px",
+
+  color: "#1D4ED8",
+
+  fontSize: "11px",
+  fontWeight: 800,
+
+  letterSpacing: "0.6px",
+} as const;
+
+
+const sectionCardStyle = {
+  position: "relative",
+
+  marginBottom: "18px",
+  padding: "20px",
+
+  background: "#FFFFFF",
+
+  border: "1px solid #E2E8F0",
+  borderRadius: "20px",
+
+  boxShadow:
+    "0 7px 24px rgba(15, 23, 42, 0.035)",
+} as const;
+
+
+const sectionTitleStyle = {
+  margin: "6px 0 0",
+
+  color: "#0F172A",
+
+  fontSize: "21px",
+  fontWeight: 800,
+
+  letterSpacing: "-0.3px",
+} as const;
+
+
+const sectionDescriptionStyle = {
+  margin: "5px 0 0",
+
+  color: "#64748B",
+
+  fontSize: "14px",
+
+  lineHeight: 1.55,
+} as const;
+
+
+const ledgerLabelStyle = {
+  color: "#94A3B8",
+
+  fontSize: "12px",
+  fontWeight: 800,
+
+  letterSpacing: "1px",
+
+  whiteSpace: "nowrap" as const,
+};
+
+
+const fieldLabelStyle = {
+  marginBottom: "6px",
+
+  color: "#64748B",
+
+  fontSize: "12px",
+  fontWeight: 800,
+
+  letterSpacing: "0.8px",
+} as const;
+
 
 const dropdownStyle = {
-  padding: "9px",
-  minWidth: "150px",
-  borderRadius: "9px",
+  width: "100%",
+
+  padding: "11px 12px",
+
+  background: "#F8FAFC",
+
+  border: "1px solid #CBD5E1",
+  borderRadius: "11px",
+
+  color: "#0F172A",
+
+  fontSize: "15px",
+  fontWeight: 600,
+
+  outline: "none",
+
+  boxSizing:
+    "border-box" as const,
+};
+
+
+const calendarBadgeStyle = {
+  display: "flex",
+
+  alignItems: "center",
+
+  gap: "9px",
+
+  flexShrink: 0,
+
+  padding: "9px 12px",
+
+  background:
+    "linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)",
+
+  border: "1px solid #FED7AA",
+  borderRadius: "13px",
+
+  color: "#F97316",
+} as const;
+
+
+const miniStatusPill = {
+  padding: "4px 6px",
+
+  background:
+    "rgba(255,255,255,0.75)",
+
   border:
-    "1px solid #CBD5E1",
+    "1px solid rgba(148,163,184,0.20)",
+
+  borderRadius: "7px",
+
+  color: "#64748B",
+
+  fontSize: "10px",
+  fontWeight: 700,
+} as const;
+
+
+const modalOverlayStyle = {
+  position: "fixed",
+
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+
+  display: "flex",
+
+  justifyContent: "center",
+  alignItems: "center",
+
+  padding: "20px",
+
+  background:
+    "rgba(15, 23, 42, 0.48)",
+
+  backdropFilter: "blur(3px)",
+
+  zIndex: 9999,
+} as const;
+
+
+const modalStyle = {
+  width: "480px",
+  maxWidth: "100%",
+
+  maxHeight: "78vh",
+
+  overflowY: "auto" as const,
+
+  padding: "18px",
+
+  background: "#FFFFFF",
+
+  border: "1px solid #E2E8F0",
+
+  borderRadius: "22px",
+
+  boxShadow:
+    "0 25px 70px rgba(15,23,42,0.22)",
+} as const;
+
+
+const modalHeroStyle = {
+  position: "relative",
+
+  overflow: "hidden",
+
+  marginBottom: "14px",
+
+  padding: "17px",
+
+  background:
+    "linear-gradient(135deg, #FFFFFF 0%, #FFF7ED 100%)",
+
+  border: "1px solid #FED7AA",
+
+  borderRadius: "16px",
+} as const;
+
+
+const topicModalCard = {
+  marginBottom: "10px",
+
+  padding: "14px",
+
+  background: "#FFFFFF",
+
+  border: "1px solid #E2E8F0",
+
+  borderRadius: "14px",
+
+  boxShadow:
+    "0 4px 14px rgba(15,23,42,0.03)",
+} as const;
+
+
+const closeButtonStyle = {
+  width: "100%",
+
+  marginTop: "4px",
+
+  padding: "11px 16px",
+
+  background:
+    "linear-gradient(135deg, #F97316 0%, #FB923C 100%)",
+
+  color: "#FFFFFF",
+
+  border: "none",
+
+  borderRadius: "11px",
+
+  cursor: "pointer",
+
+  fontSize: "13px",
+  fontWeight: 800,
+
+  letterSpacing: "0.5px",
+
+  boxShadow:
+    "0 7px 16px rgba(249,115,22,0.16)",
 } as const;

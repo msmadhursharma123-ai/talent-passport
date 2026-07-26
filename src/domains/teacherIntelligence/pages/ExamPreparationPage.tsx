@@ -34,214 +34,548 @@ export default function ExamPreparationPage() {
     >
       {/* HEADER */}
 
-      <div
+     {/* =====================================================
+    PAGE HERO
+   ===================================================== */}
+
+<div style={heroStyle}>
+  <div style={heroOrangeCircle} />
+  <div style={heroSoftCircle} />
+  <div style={heroBlueCircle} />
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 1,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "24px",
+    }}
+  >
+    <div>
+      <div style={eyebrowStyle}>
+        EXAM PREPARATION INTELLIGENCE
+      </div>
+
+      <h1
         style={{
-          background: "#141212",
-          borderRadius: "28px",
-          padding: "24px",
-          marginBottom: "30px",
+          margin: "8px 0 8px",
+          color: "#0F172A",
+          fontSize: "31px",
+          lineHeight: 1.15,
+          fontWeight: 800,
+          letterSpacing: "-0.7px",
         }}
       >
-        <p
-          style={{
-            margin: 0,
-            color: "#F59E0B",
-            fontWeight: 700,
-            letterSpacing: "2px",
-            fontSize: "11px",
-          }}
-        >
-          EXAM PREPARATION INTELLIGENCE
-        </p>
+        Students Requiring Academic Attention
+      </h1>
 
-        <h1
-          style={{
-            marginTop: "12px",
-            marginBottom: "12px",
-            fontSize: "28px",
-            color: "white",
-          }}
-        >
-          Students Requiring Academic Attention
-        </h1>
+      <p
+        style={{
+          margin: 0,
+          maxWidth: "720px",
+          color: "#64748B",
+          fontSize: "13px",
+          lineHeight: 1.65,
+        }}
+      >
+        Identify students whose classroom doubts remained
+        unresolved throughout the academic term 
+      </p>
 
-        <p
-          style={{
-            margin: 0,
-            color: "#D1D5DB",
-            lineHeight: 1.8,
-          }}
-        >
-          Identify students whose classroom doubts
-          remained unresolved throughout the academic
-          term and prepare targeted revision plans
-          before examinations.
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "8px",
+          marginTop: "14px",
+        }}
+      >
+        <div style={orangePillStyle}>
+          EXAM READINESS
+        </div>
+
+        <div style={bluePillStyle}>
+          STUDENT ATTENTION
+        </div>
+      </div>
+    </div>
+
+    <div style={heroBadgeStyle}>
+      <div
+        style={{
+          fontSize: "28px",
+          lineHeight: 1,
+        }}
+      >
+        ◇
+      </div>
+
+      <div
+        style={{
+          marginTop: "8px",
+          color: "#F97316",
+          fontSize: "8px",
+          fontWeight: 800,
+          letterSpacing: "1.1px",
+          textAlign: "center",
+        }}
+      >
+        EXAM
+        <br />
+        INTELLIGENCE
+      </div>
+    </div>
+  </div>
+</div>
+
+    {/* =====================================================
+    EMPTY STATE
+   ===================================================== */}
+
+{tables.length === 0 && (
+  <div style={sectionCardStyle}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "20px",
+      }}
+    >
+      <div>
+        <div style={eyebrowStyle}>
+          EXAM ATTENTION LEDGER
+        </div>
+
+        <h2 style={sectionTitleStyle}>
+          No Exam Preparation Intelligence Available Yet
+        </h2>
+
+        <p style={sectionDescriptionStyle}>
+          Students will start appearing here after they
+          report unresolved classroom doubts.
         </p>
       </div>
 
-      {/* EMPTY STATE */}
+      <div style={emptyStateBadgeStyle}>
+        <div
+          style={{
+            fontSize: "23px",
+            lineHeight: 1,
+          }}
+        >
+          ✓
+        </div>
 
-      {tables.length === 0 && (
-        <div style={cardStyle}>
-          <h2
-            style={{
-              marginTop: 0,
-              color: "#041B4D",
-            }}
-          >
-            No Exam Preparation Intelligence Available Yet.
+        <div
+          style={{
+            marginTop: "6px",
+            fontSize: "11px",
+            fontWeight: 800,
+            letterSpacing: "0.8px",
+          }}
+        >
+          NO RISKS
+        </div>
+      </div>
+    </div>
+
+    <div style={emptyStateInnerStyle}>
+      <div
+        style={{
+          width: "38px",
+          height: "38px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          borderRadius: "12px",
+          background: "#F0FDF4",
+          border: "1px solid #BBF7D0",
+          color: "#16A34A",
+          fontSize: "20px",
+          fontWeight: 800,
+        }}
+      >
+        ✓
+      </div>
+
+      <div>
+        <div
+          style={{
+            color: "#0F172A",
+            fontSize: "15px",
+            fontWeight: 800,
+          }}
+        >
+          No students currently require exam attention
+        </div>
+
+        <div
+          style={{
+            marginTop: "4px",
+            color: "#64748B",
+            fontSize: "13px",
+            lineHeight: 1.55,
+          }}
+        >
+          Unresolved classroom doubts will automatically
+          surface here as academic attention intelligence
+          becomes available.
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* =====================================================
+    CLASSROOM INTELLIGENCE
+   ===================================================== */}
+
+{tables.map(
+  (table: any, tableIndex: number) => (
+    <div
+      key={table.classroom}
+      style={sectionCardStyle}
+    >
+      {/* SECTION HEADER */}
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: "20px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <div style={eyebrowStyle}>
+            CLASSROOM INTELLIGENCE
+          </div>
+
+          <h2 style={sectionTitleStyle}>
+            {table.classroom}
           </h2>
 
-          <p
-            style={{
-              color: "#64748B",
-              lineHeight: 1.8,
-            }}
-          >
-            Students will start appearing here after
-            they report unresolved classroom doubts.
+          <p style={sectionDescriptionStyle}>
+            Review unresolved doubts, topic-level risk and
+            academic attention requirements for students in
+            this classroom.
           </p>
         </div>
-      )}
 
-      {/* CLASSROOM TABLES */}
+        <div style={ledgerLabelStyle}>
+          EXAM ATTENTION LEDGER
+        </div>
+      </div>
 
-      {tables.map(
-        (table: any, tableIndex: number) => (
+      {/* CLASSROOM SUMMARY STRIP */}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(3, minmax(0, 1fr))",
+          gap: "10px",
+          marginTop: "18px",
+          marginBottom: "18px",
+        }}
+      >
+        <div
+          style={{
+            ...summaryStripCard,
+            background: "#FFF7ED",
+            border: "1px solid #FED7AA",
+          }}
+        >
           <div
-            key={table.classroom}
             style={{
-              marginTop: "28px",
-              background: "white",
-              padding: "24px",
-              borderRadius: "24px",
-              boxShadow:
-                "0px 8px 24px rgba(0,0,0,0.05)",
-              overflowX: "auto",
+              color: "#EA580C",
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.7px",
             }}
           >
-            <p
+            CLASSROOM
+          </div>
+
+          <div style={summaryStripValue}>
+            {table.classroom}
+          </div>
+
+          <div style={summaryStripDescription}>
+            Academic classroom
+          </div>
+        </div>
+
+        <div
+          style={{
+            ...summaryStripCard,
+            background: "#EFF6FF",
+            border: "1px solid #BFDBFE",
+          }}
+        >
+          <div
+            style={{
+              color: "#2563EB",
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.7px",
+            }}
+          >
+            STUDENT INTELLIGENCE
+          </div>
+
+          <div
+            style={{
+              ...summaryStripValue,
+              color: "#2563EB",
+            }}
+          >
+            {table.students.length}
+          </div>
+
+          <div style={summaryStripDescription}>
+            Students analysed
+          </div>
+        </div>
+
+        <div
+          style={{
+            ...summaryStripCard,
+            background: "#F0FDF4",
+            border: "1px solid #BBF7D0",
+          }}
+        >
+          <div
+            style={{
+              color: "#16A34A",
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.7px",
+            }}
+          >
+            INTELLIGENCE STATUS
+          </div>
+
+          <div
+            style={{
+              ...summaryStripValue,
+              color: "#16A34A",
+              fontSize: "20px",
+            }}
+          >
+            ACTIVE
+          </div>
+
+          <div style={summaryStripDescription}>
+            Exam preparation analysis
+          </div>
+        </div>
+      </div>
+
+      {/* TABLE WORKSPACE */}
+
+      <div style={tableWorkspaceStyle}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "12px",
+            marginBottom: "12px",
+          }}
+        >
+          <div>
+            <div
               style={{
-                margin: 0,
-                color: "#F59E0B",
-                fontWeight: 700,
-                letterSpacing: "2px",
-                fontSize: "11px",
-                textTransform: "uppercase",
+                color: "#0F172A",
+                fontSize: "15px",
+                fontWeight: 800,
               }}
             >
-              CLASSROOM INTELLIGENCE
-            </p>
+              Student Attention Matrix
+            </div>
 
-            <h2
+            <div
               style={{
-                marginTop: "8px",
-                marginBottom: "12px",
-                color: "#041B4D",
+                marginTop: "3px",
+                color: "#94A3B8",
+                fontSize: "12px",
+                fontWeight: 600,
               }}
             >
-              {table.classroom}
-            </h2>
+              Compare exam preparation risk across students.
+            </div>
+          </div>
 
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                minWidth: "950px",
-              }}
-            >
-              <thead>
-                <tr>
-                  <th
-                    style={{
-                      padding: "10px",
-                      background: "#f7f4f9",
-                      color: "#041B4D",
-                      fontWeight: 700,
-                      fontSize: "18px",
-                      textAlign: "center",
-                      border:
-                        "1px solid #E5E7EB",
-                    }}
-                  >
-                    METRICS
-                  </th>
+          <div
+            style={{
+              padding: "6px 9px",
+              background: "#FFF7ED",
+              border: "1px solid #FED7AA",
+              borderRadius: "999px",
+              color: "#C2410C",
+              fontSize: "11px",
+              fontWeight: 800,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {table.students.length} STUDENTS
+          </div>
+        </div>
 
-                  {table.students.map(
-                    (
-                      student: any,
-                      index: number
-                    ) => (
-                      <th
+        <div
+          style={{
+            overflowX: "auto",
+            borderRadius: "14px",
+            border: "1px solid #E2E8F0",
+          }}
+        >
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              minWidth: "950px",
+              background: "#FFFFFF",
+            }}
+          >
+            <thead>
+              <tr>
+                <th style={metricHeaderStyle}>
+                  METRICS
+                </th>
+
+                {table.students.map(
+                  (
+                    student: any,
+                    index: number
+                  ) => (
+                    <th
                       key={student.studentName}
+                      style={{
+                        ...tableHeaderStyle,
+
+                        background:
+                          index % 4 === 0
+                            ? "#FFF7ED"
+                            : index % 4 === 1
+                            ? "#EFF6FF"
+                            : index % 4 === 2
+                            ? "#F0FDF4"
+                            : "#FAF5FF",
+
+                        color:
+                          index % 4 === 0
+                            ? "#C2410C"
+                            : index % 4 === 1
+                            ? "#1D4ED8"
+                            : index % 4 === 2
+                            ? "#15803D"
+                            : "#7E22CE",
+                      }}
+                    >
+                      <div
                         style={{
-                          ...tableHeaderStyle,
+                          fontSize: "11px",
+                          fontWeight: 800,
+                          letterSpacing: "0.6px",
+                          opacity: 0.72,
+                          marginBottom: "5px",
+                        }}
+                      >
+                        STUDENT
+                      </div>
 
-                          background:
-                            index % 4 === 0
-                              ? "#F9F4EA"
-                              : index % 4 === 1
-                              ? "#EEF4FB"
-                              : index % 4 === 2
-                              ? "#EEF8F4"
-                              : "#F4EFFA",
-
-                          color: "#041B4D",
-                          fontSize: "20px",
-                          fontWeight: 700,
+                      <div
+                        style={{
+                          color: "#0F172A",
+                          fontSize: "15px",
+                          fontWeight: 800,
+                          lineHeight: 1.3,
                         }}
                       >
                         {student.studentName}
-                      </th>
+                      </div>
+                    </th>
+                  )
+                )}
+              </tr>
+            </thead>
+
+            <tbody>
+              {renderExamPreparationRow(
+                "Total Unresolved Not Discussed Doubts",
+                table.students.map(
+                  (student: any) =>
+                    String(
+                      student.totalUnresolvedDoubts
                     )
-                  )}
-                </tr>
-              </thead>
+                )
+              )}
 
-              <tbody>
-                {renderExamPreparationRow(
-                  "Total Unresolved Not Discussed Doubts",
+              {renderExamPreparationRow(
+                "Topics With Unresolved Doubts",
+                table.students.map(
+                  (student: any) =>
+                    student.topics.join(", ")
+                )
+              )}
 
-               table.students.map(
-(student:any)=>
-String(
-student.totalUnresolvedDoubts
-)
-)
-                )}
+              {renderExamPreparationRow(
+                "Highest Risk Topic",
+                table.students.map(
+                  (student: any) =>
+                    student.highestRiskTopic ?? "-"
+                )
+              )}
 
-                {renderExamPreparationRow(
-                  "Topics With Unresolved Doubts",
+              {renderExamPreparationRow(
+                "Attention Level",
+                table.students.map(
+                  (student: any) =>
+                    student.attentionLevel
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
 
-               table.students.map(
-(student:any)=>
-student.topics.join(", ")
-)
-                  
-                )}
+        {/* LEGEND */}
 
-                {renderExamPreparationRow(
-                  "Highest Risk Topic",
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            flexWrap: "wrap",
+            marginTop: "12px",
+          }}
+        >
+          <Legend
+            color="#DC2626"
+            background="#FEF2F2"
+            label="High Attention"
+          />
 
-             table.students.map(
-(student:any)=>
-student.highestRiskTopic ?? "-"
-)
-                )}
+          <Legend
+            color="#D97706"
+            background="#FFFBEB"
+            label="Medium Attention"
+          />
 
-                {renderExamPreparationRow(
-                  "Attention Level",
-
-         table.students.map(
-(student:any)=>
-student.attentionLevel
-)
-                )}
-              </tbody>
-            </table>
-          </div>
-        )
-      )}
+          <Legend
+            color="#16A34A"
+            background="#F0FDF4"
+            label="Low Attention"
+          />
+        </div>
+      </div>
+    </div>
+  )
+)}
     </div>
   );
 }
@@ -301,61 +635,401 @@ function renderExamPreparationRow(
     </tr>
   );
 }
+/* =========================================================
+   UI COMPONENTS
+   ========================================================= */
 
-const cardStyle = {
-  background: "white",
-  padding: "24px",
+function Legend(props: any) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "7px",
+        padding: "7px 10px",
+        background: props.background,
+        border:
+          "1px solid rgba(148,163,184,0.22)",
+        borderRadius: "999px",
+        color: "#475569",
+        fontSize: "12px",
+        fontWeight: 700,
+      }}
+    >
+      <div
+        style={{
+          width: "7px",
+          height: "7px",
+          borderRadius: "50%",
+          background: props.color,
+        }}
+      />
+
+      {props.label}
+    </div>
+  );
+}
+
+
+/* =========================================================
+   PAGE STYLES
+   ========================================================= */
+
+const heroStyle = {
+  position: "relative",
+  overflow: "hidden",
+
+  marginBottom: "18px",
+  padding: "26px 28px",
+
+  background:
+    "linear-gradient(135deg, #FFFFFF 0%, #FFFFFF 72%, #FFF9F3 100%)",
+
+  border: "1px solid #E2E8F0",
   borderRadius: "24px",
+
   boxShadow:
-    "0px 8px 24px rgba(0,0,0,0.05)",
+    "0 10px 30px rgba(15, 23, 42, 0.045)",
 } as const;
 
-const tableHeaderStyle = {
-  padding: "10px",
 
-  color: "white",
+const heroOrangeCircle = {
+  position: "absolute",
 
-  fontWeight: 700,
+  width: "180px",
+  height: "180px",
 
-  fontSize: "14px",
+  right: "-60px",
+  top: "-85px",
 
-  textAlign: "center" as const,
+  borderRadius: "50%",
 
-  border: "1px solid #E5E7EB",
-};
+  background:
+    "rgba(249, 115, 22, 0.06)",
 
-const metricColumnStyle = {
-  padding: "10px",
+  pointerEvents: "none",
+} as const;
 
-  fontWeight: 700,
 
-  background: "#FFFFFF",
+const heroSoftCircle = {
+  position: "absolute",
+
+  width: "95px",
+  height: "95px",
+
+  right: "120px",
+  top: "-50px",
+
+  borderRadius: "50%",
+
+  background:
+    "rgba(249, 115, 22, 0.035)",
+
+  pointerEvents: "none",
+} as const;
+
+
+const heroBlueCircle = {
+  position: "absolute",
+
+  width: "150px",
+  height: "150px",
+
+  right: "180px",
+  bottom: "-105px",
+
+  borderRadius: "50%",
+
+  background:
+    "rgba(37, 99, 235, 0.04)",
+
+  pointerEvents: "none",
+} as const;
+
+
+const heroBadgeStyle = {
+  width: "82px",
+  height: "82px",
+
+  flexShrink: 0,
+
+  display: "flex",
+  flexDirection: "column",
+
+  alignItems: "center",
+  justifyContent: "center",
+
+  background:
+    "linear-gradient(145deg, #FFF8F1 0%, #FFFFFF 100%)",
+
+  border: "1px solid #FED7AA",
+  borderRadius: "22px",
 
   color: "#0F172A",
 
+  boxShadow:
+    "0 8px 20px rgba(249, 115, 22, 0.07)",
+} as const;
+
+
+const eyebrowStyle = {
+  color: "#F97316",
+
+  fontSize: "12px",
+  fontWeight: 800,
+
+  letterSpacing: "1.6px",
+
+  textTransform: "uppercase" as const,
+};
+
+
+const orangePillStyle = {
+  padding: "6px 10px",
+
+  background: "#FFF7ED",
+
+  border: "1px solid #FED7AA",
+  borderRadius: "999px",
+
+  color: "#C2410C",
+
+  fontSize: "11px",
+  fontWeight: 800,
+
+  letterSpacing: "0.6px",
+} as const;
+
+
+const bluePillStyle = {
+  padding: "6px 10px",
+
+  background: "#EFF6FF",
+
+  border: "1px solid #BFDBFE",
+  borderRadius: "999px",
+
+  color: "#1D4ED8",
+
+  fontSize: "11px",
+  fontWeight: 800,
+
+  letterSpacing: "0.6px",
+} as const;
+
+
+const sectionCardStyle = {
+  position: "relative",
+
+  marginBottom: "18px",
+  padding: "20px",
+
+  background: "#FFFFFF",
+
+  border: "1px solid #E2E8F0",
+  borderRadius: "20px",
+
+  boxShadow:
+    "0 7px 24px rgba(15, 23, 42, 0.035)",
+} as const;
+
+
+const sectionTitleStyle = {
+  margin: "6px 0 0",
+
+  color: "#0F172A",
+
+  fontSize: "21px",
+  fontWeight: 800,
+
+  letterSpacing: "-0.3px",
+} as const;
+
+
+const sectionDescriptionStyle = {
+  margin: "5px 0 0",
+
+  color: "#64748B",
+
   fontSize: "14px",
 
-  border: "1px solid #E5E7EB",
+  lineHeight: 1.55,
+} as const;
 
-  width: "320px",
 
-  minWidth: "320px",
+const ledgerLabelStyle = {
+  color: "#94A3B8",
+
+  fontSize: "12px",
+  fontWeight: 800,
+
+  letterSpacing: "1px",
+
+  whiteSpace: "nowrap" as const,
+};
+
+
+const summaryStripCard = {
+  position: "relative",
+
+  overflow: "hidden",
+
+  minHeight: "92px",
+
+  padding: "14px",
+
+  borderRadius: "14px",
+} as const;
+
+
+const summaryStripValue = {
+  marginTop: "9px",
+
+  color: "#EA580C",
+
+  fontSize: "25px",
+  fontWeight: 800,
+
+  lineHeight: 1,
+} as const;
+
+
+const summaryStripDescription = {
+  marginTop: "7px",
+
+  color: "#64748B",
+
+  fontSize: "12px",
+  fontWeight: 600,
+} as const;
+
+
+const tableWorkspaceStyle = {
+  padding: "16px",
+
+  background: "#FAFBFC",
+
+  border: "1px solid #E2E8F0",
+
+  borderRadius: "17px",
+} as const;
+
+
+const metricHeaderStyle = {
+  width: "280px",
+  minWidth: "280px",
+
+  padding: "13px 14px",
+
+  background: "#F8FAFC",
+
+  borderRight: "1px solid #E2E8F0",
+  borderBottom: "1px solid #E2E8F0",
+
+  color: "#64748B",
+
+  fontSize: "12px",
+  fontWeight: 800,
+
+  letterSpacing: "0.8px",
 
   textAlign: "left" as const,
 };
 
-const tableCellStyle = {
-  padding: "10px",
 
-  border: "1px solid #E5E7EB",
+const tableHeaderStyle = {
+  minWidth: "170px",
+
+  padding: "12px",
+
+  borderRight: "1px solid #E2E8F0",
+  borderBottom: "1px solid #E2E8F0",
+
+  textAlign: "center" as const,
+};
+
+
+const metricColumnStyle = {
+  width: "280px",
+  minWidth: "280px",
+
+  padding: "12px 14px",
+
+  background: "#F8FAFC",
+
+  borderRight: "1px solid #E2E8F0",
+  borderBottom: "1px solid #E2E8F0",
+
+  color: "#0F172A",
+
+  fontSize: "13px",
+  fontWeight: 800,
+
+  textAlign: "left" as const,
+
+  lineHeight: 1.45,
+};
+
+
+const tableCellStyle = {
+  minWidth: "170px",
+
+  padding: "12px",
+
+  background: "#FFFFFF",
+
+  borderRight: "1px solid #E2E8F0",
+  borderBottom: "1px solid #E2E8F0",
 
   textAlign: "center" as const,
 
   color: "#334155",
 
-  fontSize: "14px",
+  fontSize: "13px",
 
-  verticalAlign: "top" as const,
+  verticalAlign: "middle" as const,
 
-  lineHeight: 1.4,
+  lineHeight: 1.5,
 };
+
+
+const emptyStateBadgeStyle = {
+  width: "72px",
+  height: "72px",
+
+  flexShrink: 0,
+
+  display: "flex",
+  flexDirection: "column",
+
+  alignItems: "center",
+  justifyContent: "center",
+
+  background: "#F0FDF4",
+
+  border: "1px solid #BBF7D0",
+
+  borderRadius: "18px",
+
+  color: "#16A34A",
+} as const;
+
+
+const emptyStateInnerStyle = {
+  display: "flex",
+
+  alignItems: "center",
+
+  gap: "12px",
+
+  marginTop: "18px",
+
+  padding: "14px",
+
+  background:
+    "linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%)",
+
+  border: "1px solid #E2E8F0",
+
+  borderRadius: "14px",
+} as const;

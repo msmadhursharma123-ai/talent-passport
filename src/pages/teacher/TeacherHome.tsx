@@ -68,6 +68,9 @@ useState<TeacherAssignment[]>([]);
 const [loadingClassrooms,setLoadingClassrooms] =
 useState<string[]>([]);
 
+const [teacherName, setTeacherName] =
+useState("Teacher");
+
   useEffect(() => {
 
     loadDashboard();
@@ -80,12 +83,16 @@ useState<string[]>([]);
 
   try {
 
-    const teacher =
-      getCurrentTeacher();
+const teacher =
+getCurrentTeacher();
 
-    if (!teacher) {
-      return;
-    }
+if (!teacher) {
+    return;
+}
+
+setTeacherName(
+    teacher.teacherName || "Teacher"
+);
 
     const assignments =
       await getTeacherAssignmentsByTeacher(
@@ -374,785 +381,968 @@ const classroomColumns =
 
 }
 
-  return (
+   return (
+    <div
+      style={{
+        minHeight: "100vh",
+        padding: "28px",
+        background: `
+          radial-gradient(
+            circle at 94% 7%,
+            rgba(249, 115, 22, 0.075) 0,
+            rgba(249, 115, 22, 0.075) 120px,
+            transparent 121px
+          ),
+          radial-gradient(
+            circle at 8% 92%,
+            rgba(37, 99, 235, 0.045) 0,
+            rgba(37, 99, 235, 0.045) 150px,
+            transparent 151px
+          ),
+          #F8FAFC
+        `,
+      }}
+    >
+      {/* ======================================================
+          CLASSROOM INTELLIGENCE HERO
+         ====================================================== */}
 
-<div
+      <div
+        style={{
+          position: "relative",
+          overflow: "hidden",
+
+          background:
+            "linear-gradient(135deg, #FFFFFF 0%, #FFFCF8 72%, #FFF7ED 100%)",
+
+          border: "1px solid #E2E8F0",
+          borderRadius: "28px",
+
+          padding: "34px 38px",
+          marginBottom: "24px",
+
+          boxShadow:
+            "0 12px 32px rgba(15, 23, 42, 0.055)",
+        }}
+      >
+        {/* Decorative orange circle */}
+
+        <div
+          style={{
+            position: "absolute",
+            width: 220,
+            height: 220,
+            borderRadius: "50%",
+            background: "rgba(249, 115, 22, 0.055)",
+            right: -60,
+            top: -105,
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Decorative small circle */}
+
+        <div
+          style={{
+            position: "absolute",
+            width: 100,
+            height: 100,
+            borderRadius: "50%",
+            background: "rgba(249, 115, 22, 0.04)",
+            right: 190,
+            top: -55,
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Decorative blue circle */}
+
+        <div
+          style={{
+            position: "absolute",
+            width: 170,
+            height: 170,
+            borderRadius: "50%",
+            background: "rgba(37, 99, 235, 0.035)",
+            right: 245,
+            bottom: -115,
+            pointerEvents: "none",
+          }}
+        />
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "30px",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#F97316",
+                fontSize: "11px",
+                fontWeight: 800,
+                letterSpacing: "2.2px",
+                textTransform: "uppercase",
+                marginBottom: "12px",
+              }}
+            >
+              CLASSROOM INTELLIGENCE OVERVIEW
+            </div>
+
+        <h1
 style={{
-
-padding:"22px",
-
-background:"#F5F6FA",
-
-minHeight:"100vh",
-
+    margin: 0,
+    color: "#0F172A",
+    fontSize: "34px",
+    lineHeight: 1.15,
+    fontWeight: 800,
+    letterSpacing: "-0.7px",
 }}
-
 >
-
-
-{/* PREMIUM HEADER */}
-
-
-<div
-
-style={{
-
-background:"#141212",
-
-padding:"18px",
-
-borderRadius:"24px",
-
-marginBottom:"25px",
-
-}}
-
->
-
-<div
-style={{
-
-color:"#F59E0B",
-
-fontSize:"10px",
-
-fontWeight:700,
-
-letterSpacing:"2px",
-
-marginBottom:"10px",
-
-}}
-
->
-
-CLASSROOM INTELLIGENCE OVERVIEW
-
-</div>
-
-
-<h1
-style={{
-
-margin:0,
-
-color:"white",
-
-fontSize:"26px",
-
-fontWeight:700,
-
-}}
-
->
-
-Welcome Back, Teacher!
-
+Welcome Back, {teacherName}!
 </h1>
 
+            <p
+              style={{
+                color: "#64748B",
+                margin: "13px 0 0",
+                fontSize: "19px",
+                fontWeight: 500,
+                lineHeight: 1.65,
+              }}
+            >
+              Here is your classroom intelligence summary for yesterday&apos;s
+              latest lecture.
+            </p>
+          </div>
 
-<p
-style={{
+          {/* Hero badge */}
 
-color:"#D8E4FF",
+          <div
+            style={{
+              width: "106px",
+              height: "106px",
+              flexShrink: 0,
 
-marginTop:"12px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
 
-lineHeight:1.7,
+              background:
+                "linear-gradient(145deg, #FFF8F1 0%, #FFFFFF 100%)",
 
-}}
+              border: "1px solid #FED7AA",
+              borderRadius: "26px",
 
->
+              boxShadow:
+                "0 10px 24px rgba(249, 115, 22, 0.08)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "33px",
+                marginBottom: "7px",
+              }}
+            >
+              📊
+            </div>
 
-Here is your classroom intelligence summary for yesterday's latest lecture.
+            <div
+              style={{
+                color: "#F97316",
+                fontSize: "9px",
+                fontWeight: 800,
+                letterSpacing: "1.3px",
+                textAlign: "center",
+              }}
+            >
+              CLASSROOM
+              <br />
+              INTELLIGENCE
+            </div>
+          </div>
+        </div>
+      </div>
 
-</p>
+      {/* ======================================================
+          LOADING
+         ====================================================== */}
 
-</div>
+      {loading && (
+        <div
+          style={{
+            marginBottom: "18px",
 
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "9px",
 
+            padding: "9px 14px",
 
-{/* LOADING */}
+            background: "#FFF7ED",
+            border: "1px solid #FED7AA",
+            borderRadius: "999px",
 
+            color: "#C2410C",
 
+            fontSize: "15px",
+            fontWeight: 800,
+            letterSpacing: "0.4px",
+          }}
+        >
+          <span>●</span>
+          Loading All Metrics...
+        </div>
+      )}
 
+      {/* ======================================================
+          CLASSROOM INTELLIGENCE TABLE
+         ====================================================== */}
 
+      <div
+        style={{
+          background: "#FFFFFF",
 
+          padding: "24px",
 
+          borderRadius: "26px",
+          border: "1px solid #E2E8F0",
 
+          boxShadow:
+            "0 10px 30px rgba(15, 23, 42, 0.05)",
 
+          overflow: "hidden",
+        }}
+      >
+        {/* Section title */}
 
-{/* TABLE CONTAINER */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            gap: "20px",
 
-{loading && (
+            marginBottom: "22px",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#F97316",
+                fontSize: "13px",
+                fontWeight: 800,
+                letterSpacing: "1.8px",
+                marginBottom: "7px",
+              }}
+            >
+              CLASSROOM PERFORMANCE
+            </div>
 
-<div
-style={{
-marginBottom:"14px",
-fontSize:"16px",
-fontWeight:700,
-color:"#64748B",
-}}
->
+            <h2
+              style={{
+                margin: 0,
 
-Loading All Metrics...
+                color: "#0F172A",
 
-</div>
+                fontSize: "25px",
+                fontWeight: 800,
+                letterSpacing: "-0.3px",
+              }}
+            >
+              Classroom Intelligence Summary
+            </h2>
 
-)}
+            <p
+              style={{
+                margin: "7px 0 0",
 
-<>
+                color: "#64748B",
 
-<div
-style={{
-background:"white",
-padding:"16px",
-borderRadius:"24px",
-boxShadow:
-"0px 8px 24px rgba(0,0,0,0.05)",
-overflowX:"auto",
-}}
->
+                fontSize: "16px",
+                lineHeight: 1.5,
+              }}
+            >
+              Compare learning response and classroom health across your active
+              classes.
+            </p>
+          </div>
 
-<table
-style={{
-width: "100%",
-borderCollapse: "collapse",
-minWidth: "950px",
-}}
->
+          <div
+            style={{
+              color: "#94A3B8",
 
-<thead>
+              fontSize: "13px",
+              fontWeight: 800,
+              letterSpacing: "1.3px",
 
-<tr>
+              whiteSpace: "nowrap",
+            }}
+          >
+            ACADEMIC INTELLIGENCE LEDGER
+          </div>
+        </div>
 
-<th
-style={{
-padding:"10px",
-background:"#f7f4f9",
-color:"#041B4D",
-fontWeight:700,
-fontSize:"18px",
-textAlign:"center",
-border:"1px solid #E5E7EB",
-}}
->
+        {/* TABLE */}
 
-METRICS
+        <div
+          style={{
+            overflowX: "auto",
 
-</th>
+            border: "1px solid #E2E8F0",
+            borderRadius: "18px",
 
-{
+            background: "#FFFFFF",
+          }}
+        >
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "separate",
+              borderSpacing: 0,
+              minWidth: "1100px",
+            }}
+          >
+            <thead>
+              <tr>
+                <th
+                  style={{
+                    padding: "16px 18px",
 
-classroomColumns.map(
-  (item:any,index)=>(
+                    background:
+                      "linear-gradient(135deg, #FFF7ED 0%, #FFFBF5 100%)",
 
-<th
-key={item.classroom}
-style={{
+                    color: "#C2410C",
 
-...tableHeaderStyle,
+                    fontWeight: 800,
+                    fontSize: "10px",
+                    letterSpacing: "1px",
 
-background:
+                    textAlign: "left",
 
-index % 4 === 0
-? "#F9F4EA"
+                    borderBottom: "1px solid #E2E8F0",
+                    borderRight: "1px solid #E2E8F0",
 
-: index % 4 === 1
-? "#EEF4FB"
+                    minWidth: "235px",
+                  }}
+                >
+                  METRICS
+                </th>
 
-: index % 4 === 2
-? "#EEF8F4"
+                {classroomColumns.map(
+                  (item: any, index) => (
+                    <th
+                      key={item.classroom}
+                      style={{
+                        ...tableHeaderStyle,
 
-: "#F4EFFA",
+                        background:
+                          index % 4 === 0
+                            ? "linear-gradient(135deg, #FFF7ED 0%, #FFFBF5 100%)"
+                            : index % 4 === 1
+                            ? "linear-gradient(135deg, #EFF6FF 0%, #F8FBFF 100%)"
+                            : index % 4 === 2
+                            ? "linear-gradient(135deg, #ECFDF5 0%, #F7FFFB 100%)"
+                            : "linear-gradient(135deg, #F5F3FF 0%, #FBFAFF 100%)",
 
-color:"#041B4D",
-fontSize:"20px",
-fontWeight:700,
+                        color:
+                          index % 4 === 0
+                            ? "#C2410C"
+                            : index % 4 === 1
+                            ? "#1D4ED8"
+                            : index % 4 === 2
+                            ? "#15803D"
+                            : "#7C3AED",
+                      }}
+                    >
+                      {item.classroom}
+                    </th>
+                  )
+                )}
+              </tr>
+            </thead>
 
-}}
->
+            <tbody>
+              {renderTableRow(
+                "Latest Topic",
 
-{item.classroom}
+                classroomColumns.map(
+                  (item) =>
+                    getDashboardItem(
+                      item.classroom
+                    )?.latestTopic ?? "-"
+                )
+              )}
 
-</th>
+              {renderTableRow(
+                "Students Filled Feedback",
 
-))
+                classroomColumns.map(
+                  (item) =>
+                    getDashboardItem(
+                      item.classroom
+                    )?.studentsFilledFeedback ??
+                    "-"
+                )
+              )}
 
+              {renderTableRow(
+                "Feedback Remaining",
+
+                classroomColumns.map(
+                  (item) => {
+                    const data =
+                      getDashboardItem(
+                        item.classroom
+                      );
+
+                    return data
+                      ? String(
+                          data.feedbackRemaining
+                        )
+                      : "-";
+                  }
+                )
+              )}
+
+              {renderTableRow(
+                "Completely Understood",
+
+                classroomColumns.map(
+                  (item) =>
+                    getDashboardItem(
+                      item.classroom
+                    )?.completelyUnderstood ??
+                    "-"
+                )
+              )}
+
+              {renderTableRow(
+                "Partially Understood",
+
+                classroomColumns.map(
+                  (item) =>
+                    getDashboardItem(
+                      item.classroom
+                    )?.partiallyUnderstood ??
+                    "-"
+                )
+              )}
+
+              {renderTableRow(
+                "Didn't Understand",
+
+                classroomColumns.map(
+                  (item) =>
+                    getDashboardItem(
+                      item.classroom
+                    )?.didNotUnderstand ?? "-"
+                )
+              )}
+
+              {renderTableRow(
+                "Class Health Score",
+
+                classroomColumns.map(
+                  (item) => {
+                    const data =
+                      getDashboardItem(
+                        item.classroom
+                      );
+
+                    if (
+                      !data ||
+                      data.classHealthStatus ===
+                        "No Data"
+                    ) {
+                      return "-";
+                    }
+
+                    return `${data.classHealthScore} /100 — ${data.classHealthStatus}`;
+                  }
+                )
+              )}
+
+              {renderTableRow(
+                "Most Difficult Concept",
+
+                classroomColumns.map(
+                  (item) =>
+                    getDashboardItem(
+                      item.classroom
+                    )?.mostDifficultConcept ??
+                    "-"
+                )
+              )}
+
+              {renderTableRow(
+                "Students Requiring Attention",
+
+                classroomColumns.map(
+                  (item) =>
+                    getDashboardItem(
+                      item.classroom
+                    )
+                      ?.studentsRequiringAttention ??
+                    "-"
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* HEALTH LEGEND */}
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+
+            marginTop: "18px",
+
+            flexWrap: "wrap",
+          }}
+        >
+          <div
+            style={{
+              ...legendPillStyle,
+              background: "#F0FDF4",
+              border: "1px solid #BBF7D0",
+              color: "#15803D",
+            }}
+          >
+            <span>●</span>
+            Good (70-100)
+          </div>
+
+          <div
+            style={{
+              ...legendPillStyle,
+              background: "#FFFBEB",
+              border: "1px solid #FDE68A",
+              color: "#B45309",
+            }}
+          >
+            <span>●</span>
+            Average (40-69)
+          </div>
+
+          <div
+            style={{
+              ...legendPillStyle,
+              background: "#FEF2F2",
+              border: "1px solid #FECACA",
+              color: "#DC2626",
+            }}
+          >
+            <span>●</span>
+            Needs Attention (0-39)
+          </div>
+        </div>
+      </div>
+
+      {/* ======================================================
+          TOMORROW'S TEACHING PLAN
+         ====================================================== */}
+
+      <div
+        style={{
+          position: "relative",
+          overflow: "hidden",
+
+          marginTop: "24px",
+
+          background:
+            "linear-gradient(135deg, #FFF9F2 0%, #FFFFFF 72%, #FFF7ED 100%)",
+
+          padding: "26px",
+
+          borderRadius: "26px",
+          border: "1px solid #FED7AA",
+
+          boxShadow:
+            "0 10px 30px rgba(15, 23, 42, 0.045)",
+        }}
+      >
+        {/* Decoration */}
+
+        <div
+          style={{
+            position: "absolute",
+
+            width: "150px",
+            height: "150px",
+
+            borderRadius: "50%",
+
+            background:
+              "rgba(249, 115, 22, 0.045)",
+
+            right: "-40px",
+            top: "-70px",
+
+            pointerEvents: "none",
+          }}
+        />
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
+          <div
+            style={{
+              color: "#F97316",
+
+              fontSize: "13px",
+              fontWeight: 800,
+              letterSpacing: "1.8px",
+
+              marginBottom: "7px",
+            }}
+          >
+            NEXT CLASS PREPARATION
+          </div>
+
+          <h2
+            style={{
+              margin: 0,
+
+              color: "#0F172A",
+
+              fontSize: "25px",
+              fontWeight: 800,
+              letterSpacing: "-0.3px",
+            }}
+          >
+            Tomorrow&apos;s Teaching Plan
+          </h2>
+
+          <p
+            style={{
+              margin: "7px 0 20px",
+
+              color: "#64748B",
+
+              fontSize: "16px",
+              lineHeight: 1.5,
+            }}
+          >
+            Classroom recommendations generated from the latest learning
+            response.
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: "12px",
+            }}
+          >
+            {dashboardData.map(
+              (item) => (
+                <div
+                  key={item.classroom}
+                  style={{
+                    padding: "17px 18px",
+
+                    background:
+                      "rgba(255, 255, 255, 0.86)",
+
+                    border:
+                      "1px solid #FFEDD5",
+
+                    borderRadius: "16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: "#F97316",
+
+                      fontSize: "13px",
+                      fontWeight: 800,
+                      letterSpacing:
+                        "1.1px",
+
+                      marginBottom: "7px",
+                    }}
+                  >
+                    {item.classroom}
+                  </div>
+
+                  <div
+                    style={{
+                      color: "#334155",
+
+                      fontSize: "17px",
+                      fontWeight: 600,
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {
+                      item.teachingRecommendation
+                    }
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-</tr>
-
-</thead>
-
-
-
-<tbody>
-
-{renderTableRow(
-
-"Latest Topic",
-
-classroomColumns.map(
-(item) =>
-  getDashboardItem(
-    item.classroom
-  )?.latestTopic ?? "-"
-)
-
-)}
-
-
-
-{renderTableRow(
-
-"Students Filled Feedback",
-
-classroomColumns.map(
-(item) =>
-  getDashboardItem(
-    item.classroom
-  )?.studentsFilledFeedback ?? "-"
-)
-
-)}
-
-
-
-{renderTableRow(
-
-"Feedback Remaining",
-
-classroomColumns.map(
-(item) => {
-
-  const data =
-    getDashboardItem(
-      item.classroom
-    );
-
-  return data
-    ? String(
-        data.feedbackRemaining
-      )
-    : "-";
-
-})
-
-)}
-
-
-
-{renderTableRow(
-
-"Completely Understood",
-
-classroomColumns.map(
-(item) =>
-  getDashboardItem(
-    item.classroom
-  )?.completelyUnderstood ?? "-"
-)
-
-)}
-
-
-
-{renderTableRow(
-
-"Partially Understood",
-
-classroomColumns.map(
-(item) =>
-  getDashboardItem(
-    item.classroom
-  )?.partiallyUnderstood ?? "-"
-)
-
-)}
-
-
-
-{renderTableRow(
-
-"Didn't Understand",
-
-classroomColumns.map(
-(item) =>
-  getDashboardItem(
-    item.classroom
-  )?.didNotUnderstand ?? "-"
-)
-
-)}
-
-
-
-{renderTableRow(
-
-"Class Health Score",
-
-classroomColumns.map(
-(item) => {
-
-  const data =
-    getDashboardItem(
-      item.classroom
-    );
-
-  if (
-    !data ||
-    data.classHealthStatus === "No Data"
-  ) {
-
-    return "-";
-
-  }
-
-  return `${data.classHealthScore} /100 — ${data.classHealthStatus}`;
-
-})
-
-)}
-
-
-
-{renderTableRow(
-
-"Most Difficult Concept",
-
-classroomColumns.map(
-(item) =>
-  getDashboardItem(
-    item.classroom
-  )?.mostDifficultConcept ?? "-"
-)
-
-)}
-
-
-
-{renderTableRow(
-
-"Students Requiring Attention",
-
-classroomColumns.map(
-(item) =>
-  getDashboardItem(
-    item.classroom
-  )?.studentsRequiringAttention ?? "-"
-)
-
-)}
-
-</tbody>
-
-</table>
-
-<div
-style={{
-display:"flex",
-gap:"40px",
-marginTop:"20px",
-fontSize:"14px",
-fontWeight:600,
-color:"#64748B",
-}}
->
-
-<div>
-🟢 Good (70-100)
-</div>
-
-<div>
-🟠 Average (40-69)
-</div>
-
-<div>
-🔴 Needs Attention (0-39)
-</div>
-
-</div>
-
-</div>
-
-
-
-{/* TOMORROW'S TEACHING PLAN */}
-
-<div
-style={{
-marginTop:"28px",
-background:"#FFF8EA",
-padding:"24px",
-borderRadius:"24px",
-border:"1px solid #FFE1A3",
-}}
->
-
-<h2
-style={{
-marginTop:0,
-color:"#041B4D",
-}}
->
-Tomorrow's Teaching Plan
-</h2>
-
-
-{dashboardData.map((item)=>(
-
-<div
-key={item.classroom}
-style={{
-marginBottom:"14px",
-lineHeight:1.8,
-}}
->
-
-<strong>
-{item.classroom}
-</strong>
-
-{" - "}
-
-{item.teachingRecommendation}
-
-</div>
-
-))}
-
-</div>
-
-</>
-
-
-</div>
-
-);
-
-}
+/* ============================================================
+   TABLE STYLES
+   ============================================================ */
 
 const tableHeaderStyle = {
+  padding: "16px 18px",
 
-padding: "10px",
+  color: "#0F172A",
 
-background: "#041B4D",
+  fontWeight: 800,
+  fontSize: "20px",
 
-color: "white",
+  textAlign: "center" as const,
 
-fontWeight: 700,
+  borderBottom: "1px solid #E2E8F0",
+  borderRight: "1px solid #E2E8F0",
 
-fontSize: "14px",
-
-textAlign: "center" as const,
-
-border: "1px solid #E5E7EB",
-
+  minWidth: "210px",
 };
-
-
 
 const metricColumnStyle = {
+  padding: "14px 18px",
 
-padding: "10px",
+  fontWeight: 700,
 
-fontWeight: 700,
+  background: "#FFFFFF",
 
-background: "#FFFFFF",
+  color: "#334155",
 
-color: "#0F172A",
+  fontSize: "16px",
 
-fontSize:"14px",
+  borderBottom: "1px solid #EEF2F7",
+  borderRight: "1px solid #E2E8F0",
 
-border: "1px solid #E5E7EB",
+  width: "235px",
 
-width: "220px",
+  textAlign: "left" as const,
 
-textAlign: "left" as const,
-
+  verticalAlign: "middle" as const,
 };
-
-
 
 const tableCellStyle = {
+  padding: "14px 18px",
 
-padding: "10px",
+  borderBottom: "1px solid #EEF2F7",
+  borderRight: "1px solid #EEF2F7",
 
-border: "1px solid #E5E7EB",
+  textAlign: "center" as const,
 
-textAlign: "center" as const,
+  color: "#475569",
 
-color: "#334155",
+  fontSize: "16px",
 
-fontSize: "14px",
+  verticalAlign: "middle" as const,
 
-verticalAlign: "top" as const,
+  lineHeight: 1.5,
 
-lineHeight:1.4,
-
+  background: "#FFFFFF",
 };
 
+const legendPillStyle = {
+  display: "inline-flex",
 
+  alignItems: "center",
+
+  gap: "7px",
+
+  padding: "7px 11px",
+
+  borderRadius: "999px",
+
+  fontSize: "14px",
+
+  fontWeight: 700,
+};
+
+/* ============================================================
+   TABLE ROW
+   ============================================================ */
 
 function renderTableRow(
-
-metricName:string,
-values:string[]
-
+  metricName: string,
+  values: string[]
 ) {
+  return (
+    <tr>
+      <td style={metricColumnStyle}>
+        {metricName === "Latest Topic"
+          ? "📖 Latest Topic"
+          : metricName ===
+            "Students Filled Feedback"
+          ? "👥 Students Response"
+          : metricName ===
+            "Feedback Remaining"
+          ? "⏳ Feedback Remaining"
+          : metricName ===
+            "Completely Understood"
+          ? "😊 Understood"
+          : metricName ===
+            "Partially Understood"
+          ? "😐 Partially Understood"
+          : metricName ===
+            "Didn't Understand"
+          ? "☹️ Didn't Understand"
+          : metricName ===
+            "Class Health Score"
+          ? "🛡️ Class Health Score"
+          : metricName ===
+            "Most Difficult Concept"
+          ? "⚠️ Most Difficult Concept"
+          : metricName ===
+            "Students Requiring Attention"
+          ? "👤 Students Requiring Attention"
+          : metricName}
+      </td>
 
-return (
+      {values.map(
+        (value, index) => (
+          <td
+            key={index}
+            style={{
+              ...tableCellStyle,
 
-<tr>
+              color:
+                metricName ===
+                "Completely Understood"
+                  ? "#16A34A"
+                  : metricName ===
+                    "Partially Understood"
+                  ? "#D97706"
+                  : metricName ===
+                    "Didn't Understand"
+                  ? "#DC2626"
+                  : metricName ===
+                    "Most Difficult Concept"
+                  ? "#1D4ED8"
+                  : metricName ===
+                    "Students Requiring Attention"
+                  ? "#DC2626"
+                  : "#475569",
 
-<td style={metricColumnStyle}>
-
-{
-
-metricName === "Latest Topic"
-? "📖 Latest Topic"
-
-:
-
-metricName === "Students Filled Feedback"
-? "👥 Students Filled Feedback"
-
-:
-
-metricName === "Feedback Remaining"
-? "⏳ Feedback Remaining"
-
-:
-
-metricName === "Completely Understood"
-? "😊 Completely Understood"
-
-:
-
-metricName === "Partially Understood"
-? "😐 Partially Understood"
-
-:
-
-metricName === "Didn't Understand"
-? "☹️ Didn't Understand"
-
-:
-
-metricName === "Class Health Score"
-? "🛡️ Class Health Score"
-
-:
-
-metricName === "Most Difficult Concept"
-? "⚠️ Most Difficult Concept"
-
-:
-
-metricName === "Students Requiring Attention"
-? "👤 Students Requiring Attention"
-
-:
-
-metricName
-
+              fontWeight:
+                metricName ===
+                  "Completely Understood" ||
+                metricName ===
+                  "Partially Understood" ||
+                metricName ===
+                  "Didn't Understand"
+                  ? 800
+                  : 500,
+            }}
+          >
+            {value || "-"}
+          </td>
+        )
+      )}
+    </tr>
+  );
 }
 
-</td>
-
-{values.map((value, index) => (
-
-<td
-key={index}
-style={{
-
-...tableCellStyle,
-
-color:
-
-metricName === "Completely Understood"
-? "#16A34A"
-
-:
-
-metricName === "Partially Understood"
-? "#F59E0B"
-
-:
-
-metricName === "Didn't Understand"
-? "#EF4444"
-
-:
-
-metricName === "Most Difficult Concept"
-? "#1E3A8A"
-
-:
-
-metricName === "Students Requiring Attention"
-? "#DC2626"
-
-:
-
-"#334155",
-
-fontWeight:
-
-metricName === "Completely Understood" ||
-metricName === "Partially Understood" ||
-metricName === "Didn't Understand"
-
-? 700
-
-: 500,
-
-}}
->
-
-{value || "-"}
-
-</td>
-
-))}
-
-</tr>
-
-);}
+/* ============================================================
+   HEALTH SCORE ROW
+   Kept because it exists in the current build.
+   ============================================================ */
 
 function renderHealthScoreRow(
-
-dashboardData:
-ClassroomDashboardData[]
-
+  dashboardData: ClassroomDashboardData[]
 ) {
+  return (
+    <tr>
+      <td style={metricColumnStyle}>
+        🛡️ Class Health Score
+      </td>
 
-return (
+      {dashboardData.map(
+        (item, index) => (
+          <td
+            key={index}
+            style={tableCellStyle}
+          >
+            <div
+              style={{
+                fontSize: "23px",
+                fontWeight: 800,
+                color: "#0F172A",
+              }}
+            >
+              {item.classHealthScore}
 
-<tr>
+              <span
+                style={{
+                  fontSize: "16px",
+                  fontWeight: 500,
+                  color: "#64748B",
+                }}
+              >
+                {" "}
+                /100
+              </span>
+            </div>
 
-<td style={metricColumnStyle}>
+            <div
+              style={{
+                marginTop: "9px",
 
-🛡️ Class Health Score
+                display: "inline-block",
 
-</td>
+                padding: "5px 10px",
 
+                borderRadius: "999px",
 
-{dashboardData.map((item,index)=>(
+                fontWeight: 800,
+                fontSize: "13px",
 
-<td
-key={index}
-style={{
+                background: item.classHealthStatus
+                  .toLowerCase()
+                  .includes("good")
+                  ? "#DCFCE7"
+                  : item.classHealthStatus
+                      .toLowerCase()
+                      .includes("average")
+                  ? "#FEF3C7"
+                  : "#FEE2E2",
 
-...tableCellStyle,
-
-}}
-
->
-
-<div
-style={{
-
-fontSize:"22px",
-
-fontWeight:700,
-
-color:"#041B4D",
-
-}}
->
-
-{item.classHealthScore}
-
-<span
-style={{
-
-fontSize:"14px",
-
-fontWeight:500,
-
-}}
-
->
-
- /100
-
-</span>
-
-</div>
-
-
-<div
-style={{
-
-marginTop:"10px",
-
-display:"inline-block",
-
-padding:"5px 10px",
-
-borderRadius:"999px",
-
-fontWeight:700,
-
-fontSize:"11px",
-
-background:
-
-item.classHealthStatus
-.toLowerCase()
-.includes("good")
-
-? "#DCFCE7"
-
-:
-
-item.classHealthStatus
-.toLowerCase()
-.includes("average")
-
-? "#FEF3C7"
-
-:
-
-"#FEE2E2",
-
-
-color:
-
-item.classHealthStatus
-.toLowerCase()
-.includes("good")
-
-? "#16A34A"
-
-:
-
-item.classHealthStatus
-.toLowerCase()
-.includes("average")
-
-? "#D97706"
-
-:
-
-"#DC2626",
-
-}}
-
->
-
-{item.classHealthStatus}
-
-</div>
-
-</td>
-
-))}
-
-</tr>
-
-);
-
+                color: item.classHealthStatus
+                  .toLowerCase()
+                  .includes("good")
+                  ? "#15803D"
+                  : item.classHealthStatus
+                      .toLowerCase()
+                      .includes("average")
+                  ? "#B45309"
+                  : "#DC2626",
+              }}
+            >
+              {item.classHealthStatus}
+            </div>
+          </td>
+        )
+      )}
+    </tr>
+  );
 }

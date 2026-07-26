@@ -11,154 +11,393 @@ export default function TeacherSidebar({
     {
       id: "dashboard",
       label: "Dashboard",
+      icon: "◇",
     },
     {
       id: "daily-log",
       label: "Daily Log",
+      icon: "○",
     },
     {
       id: "teaching-journal",
       label: "Teaching Journal",
+      icon: "□",
     },
     {
-    
-id:"my-classroom",
-label:"My Classroom",
-},
-
-{
-id:"exam-preparation",
-label:"Exam Preparation",
-},
-  
+      id: "my-classroom",
+      label: "My Classroom",
+      icon: "△",
+    },
+    {
+      id: "exam-preparation",
+      label: "Exam Prep",
+      icon: "☆",
+    },
   ];
 
   return (
-    <div
+    <aside
       style={{
-        width: 190,
+        width: 205,
+        minWidth: 205,
         minHeight: "100vh",
-        background:
-          "linear-gradient(180deg,#03122E 0%, #071D46 100%)",
-        color: "white",
-        padding: "24px 16px",
+
+        display: "flex",
+        flexDirection: "column",
+
+        position: "relative",
+        overflow: "hidden",
+
         boxSizing: "border-box",
-        borderRight: "1px solid rgba(255,255,255,0.08)",
+
+        padding: "22px 14px 16px",
+
+        background:
+          "linear-gradient(180deg, #FFFFFF 0%, #FFFCF8 55%, #FFF9F2 100%)",
+
+        borderRight: "1px solid #E2E8F0",
+
+        boxShadow:
+          "8px 0 28px rgba(15, 23, 42, 0.035)",
       }}
     >
-      {/* LOGO */}
-
-      <div
-        style={{
-          marginBottom: 24,
-        }}
-      >
-        <h2
-          style={{
-            margin: 0,
-            fontSize: 18,
-            fontWeight: 700,
-            letterSpacing: 1,
-          }}
-        >
-          Teacher Portal
-        </h2>
-
-        <p
-          style={{
-            marginTop: 4,
-            color: "#94A3B8",
-            fontSize: 10,
-            lineHeight: 1.5,
-          }}
-        >
-          Classroom Intelligence System
-        </p>
-      </div>
-
-      {/* NAVIGATION */}
-
-      <div>
-        {items.map((item) => (
-          <button
-            key={item.id}
-            onClick={() =>
-              onNavigate(item.id)
-            }
-            style={{
-              width: "100%",
-              marginBottom: 10,
-              padding: "12px 14px",
-              borderRadius: 12,
-              border: "none",
-              cursor: "pointer",
-
-              background:
-                activePage === item.id
-                  ? "linear-gradient(90deg,#F59E0B,#FB923C)"
-                  : "transparent",
-
-              color: "white",
-
-              fontSize: 13,
-              fontWeight: 700,
-              letterSpacing: 0.5,
-
-              textAlign: "left",
-
-              transition: "0.2s ease",
-
-              boxShadow:
-                activePage === item.id
-                  ? "0px 8px 18px rgba(245,158,11,0.25)"
-                  : "none",
-            }}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-
-      {/* FOOTER */}
+      {/* DECORATIVE CIRCLES */}
 
       <div
         style={{
           position: "absolute",
-          bottom: 18,
-          width: 150,
+          width: 145,
+          height: 145,
+          borderRadius: "50%",
+          background: "rgba(249, 115, 22, 0.045)",
+          top: -70,
+          right: -75,
+          pointerEvents: "none",
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          width: 100,
+          height: 100,
+          borderRadius: "50%",
+          background: "rgba(59, 130, 246, 0.035)",
+          bottom: 105,
+          left: -65,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* PORTAL IDENTITY */}
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+
+          padding: "3px 8px 20px",
+
+          borderBottom: "1px solid #EEF2F7",
         }}
       >
         <div
           style={{
-            background: "#0F244D",
-            padding: 10,
-            borderRadius: 10,
+            color: "#F97316",
+
+            fontSize: 10,
+            fontWeight: 800,
+
+            letterSpacing: 1.6,
+            textTransform: "uppercase",
+
+            marginBottom: 7,
+          }}
+        >
+          Talent Passport
+        </div>
+
+        <div
+          style={{
+            color: "#0F172A",
+
+            fontSize: 22,
+            fontWeight: 800,
+
+            letterSpacing: "-0.4px",
+          }}
+        >
+          Teacher Portal
+        </div>
+
+        <div
+          style={{
+            marginTop: 6,
+
+            color: "#64748B",
+
+            fontSize: 10,
+            fontWeight: 600,
+
+            lineHeight: 1.45,
+          }}
+        >
+          Classroom Intelligence System
+        </div>
+      </div>
+
+      {/* SECTION LABEL */}
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+
+          padding: "19px 9px 9px",
+
+          color: "#94A3B8",
+
+          fontSize: 10,
+          fontWeight: 800,
+
+          letterSpacing: 1.5,
+          textTransform: "uppercase",
+        }}
+      >
+        Academic Workspace
+      </div>
+
+      {/* NAVIGATION */}
+
+      <nav
+        style={{
+          position: "relative",
+          zIndex: 1,
+
+          display: "flex",
+          flexDirection: "column",
+
+          gap: 7,
+        }}
+      >
+        {items.map((item) => {
+          const isActive =
+            activePage === item.id;
+
+          return (
+            <button
+              key={item.id}
+              onClick={() =>
+                onNavigate(item.id)
+              }
+              style={{
+                width: "100%",
+
+                display: "flex",
+                alignItems: "center",
+
+                gap: 10,
+
+                padding: "10px 11px",
+
+                boxSizing: "border-box",
+
+                background: isActive
+                  ? "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)"
+                  : "transparent",
+
+                border: isActive
+                  ? "1px solid #FDBA74"
+                  : "1px solid transparent",
+
+                borderRadius: 11,
+
+                cursor: "pointer",
+
+                color: isActive
+                  ? "#EA580C"
+                  : "#334155",
+
+                textAlign: "left",
+
+                boxShadow: isActive
+                  ? "0 5px 14px rgba(249, 115, 22, 0.08)"
+                  : "none",
+
+                transition: "all 0.18s ease",
+              }}
+              onMouseEnter={(event) => {
+                if (!isActive) {
+                  event.currentTarget.style.background =
+                    "#F8FAFC";
+                  event.currentTarget.style.borderColor =
+                    "#E2E8F0";
+                }
+              }}
+              onMouseLeave={(event) => {
+                if (!isActive) {
+                  event.currentTarget.style.background =
+                    "transparent";
+                  event.currentTarget.style.borderColor =
+                    "transparent";
+                }
+              }}
+            >
+              {/* ICON */}
+
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+
+                  flexShrink: 0,
+
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+
+                  borderRadius: 8,
+
+                  background: isActive
+                    ? "#FFFFFF"
+                    : "#F8FAFC",
+
+                  border: isActive
+                    ? "1px solid #FED7AA"
+                    : "1px solid #E2E8F0",
+
+                  color: isActive
+                    ? "#F97316"
+                    : "#64748B",
+
+                  fontSize: 18,
+                  fontWeight: 800,
+                }}
+              >
+                {item.icon}
+              </div>
+
+              <span
+                style={{
+                  fontSize: 15,
+                  fontWeight: 800,
+                  lineHeight: 1.25,
+                }}
+              >
+                {item.label}
+              </span>
+
+              {isActive && (
+                <div
+                  style={{
+                    width: 5,
+                    height: 5,
+
+                    borderRadius: "50%",
+
+                    background: "#F97316",
+
+                    marginLeft: "auto",
+
+                    boxShadow:
+                      "0 0 0 3px rgba(249,115,22,0.10)",
+                  }}
+                />
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* FLEX SPACE */}
+
+      <div style={{ flex: 1 }} />
+
+      {/* INTELLIGENCE STATUS */}
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+
+          marginTop: 20,
+
+          padding: 12,
+
+          background:
+            "linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)",
+
+          border: "1px solid #BBF7D0",
+          borderRadius: 12,
+
+          boxShadow:
+            "0 5px 16px rgba(22, 163, 74, 0.045)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
           }}
         >
           <div
             style={{
-              color: "#10B981",
-              fontSize: 8,
-              fontWeight: 700,
-              letterSpacing: 1,
-              marginBottom: 3,
+              width: 6,
+              height: 6,
+
+              borderRadius: "50%",
+
+              background: "#16A34A",
+
+              boxShadow:
+                "0 0 0 3px rgba(22,163,74,0.10)",
             }}
-          >
-            LIVE CLASSROOM STATUS
-          </div>
+          />
 
           <div
             style={{
-              fontSize: 11,
-              fontWeight: 600,
-              lineHeight: 1.4,
+              color: "#15803D",
+
+              fontSize: 9,
+              fontWeight: 800,
+
+              letterSpacing: 1,
+              textTransform: "uppercase",
             }}
           >
-            Academic Intelligence
-            Enabled
+            Live Classroom Status
           </div>
         </div>
+
+        <div
+          style={{
+            marginTop: 8,
+
+            color: "#166534",
+
+            fontSize: 11,
+            fontWeight: 800,
+
+            lineHeight: 1.4,
+          }}
+        >
+          Academic Intelligence
+        </div>
+
+        <div
+          style={{
+            marginTop: 2,
+
+            color: "#16A34A",
+
+            fontSize: 10,
+            fontWeight: 700,
+          }}
+        >
+          Enabled
+        </div>
       </div>
-    </div>
+    </aside>
   );
 }

@@ -545,908 +545,1921 @@ totalScore / count
 
 const summary = getMonthSummary();
 
- return (
+return (
   <div
     style={{
-      padding: 20,
-      background: "#F6F6F3",
+      padding: "20px",
+      background: "#F6F7F9",
       minHeight: "100%",
     }}
   >
-    {/* HEADER */}
+    {/* =====================================================
+        PAGE HERO
+       ===================================================== */}
 
-    <div
-      style={{
-        background: "#04122F",
-        borderRadius: 18,
-        padding: 18,
-        color: "white",
-        marginBottom: 18,
-      }}
-    >
-      <p
-        style={{
-          margin: 0,
-          color: "#F59E0B",
-          fontWeight: 700,
-          letterSpacing: 2,
-          fontSize: 10,
-        }}
-      >
-        CLASSROOM ANALYTICS ENGINE
-      </p>
-
-      <h1
-        style={{
-          marginTop: 8,
-          marginBottom: 8,
-          fontSize: 24,
-        }}
-      >
-        TEACHING JOURNAL
-      </h1>
-
-      <p
-        style={{
-          margin: 0,
-          color: "#D1D5DB",
-          lineHeight: 1.5,
-          fontSize: 13,
-        }}
-      >
-        Review class health, comprehension
-        trends and teaching effectiveness
-        month on month.
-      </p>
-    </div>
-
-    {/* FILTERS */}
-
-    <div style={cardStyle}>
-      <h2
-        style={{
-          fontSize: 20,
-          marginBottom: 12,
-          marginTop: 0,
-        }}
-      >
-        Filters
-      </h2>
+    <div style={heroStyle}>
+      <div style={heroOrangeCircle} />
+      <div style={heroSoftCircle} />
+      <div style={heroBlueCircle} />
 
       <div
         style={{
+          position: "relative",
+          zIndex: 1,
           display: "flex",
-          gap: 12,
-          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "24px",
         }}
       >
-        <select
-          style={dropdownStyle}
-          value={selectedAssignmentId}
-          onChange={(e) => {
-            setSelectedAssignmentId(
-              e.target.value
-            );
-          }}
-        >
-          <option value="">
-            Select Classroom
-          </option>
+        <div>
+          <div style={eyebrowStyle}>
+            CLASSROOM ANALYTICS ENGINE
+          </div>
 
-          {assignments.map((assignment) => (
-            <option
-              key={assignment.id}
-              value={assignment.id}
-            >
-              Class {assignment.className}
-              -
-              Section {assignment.sectionName}
-            </option>
-          ))}
-        </select>
+          <h1
+            style={{
+              margin: "8px 0 8px",
+              color: "#0F172A",
+              fontSize: "31px",
+              lineHeight: 1.15,
+              fontWeight: 800,
+              letterSpacing: "-0.7px",
+            }}
+          >
+            Teaching Journal
+          </h1>
 
-        {/* MONTH */}
+          <p
+            style={{
+              margin: 0,
+              maxWidth: "650px",
+              color: "#64748B",
+              fontSize: "13px",
+              lineHeight: 1.65,
+            }}
+          >
+            Review classroom health,
+            comprehension trends and teaching
+            effectiveness across academics.
+          </p>
 
-        <select
-          style={dropdownStyle}
-          value={selectedMonth}
-          onChange={(e) => {
-            setSelectedMonth(
-              e.target.value
-            );
-          }}
-        >
-          <option>January 2026</option>
-          <option>February 2026</option>
-          <option>March 2026</option>
-          <option>April 2026</option>
-          <option>May 2026</option>
-          <option>June 2026</option>
-          <option>July 2026</option>
-          <option>August 2026</option>
-          <option>September 2026</option>
-          <option>October 2026</option>
-          <option>November 2026</option>
-          <option>December 2026</option>
-        </select>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px",
+              marginTop: "14px",
+            }}
+          >
+            <div style={orangePillStyle}>
+              MONTHLY INTELLIGENCE
+            </div>
+
+            <div style={bluePillStyle}>
+              CLASSROOM HEALTH
+            </div>
+          </div>
+        </div>
+
+        <div style={heroBadgeStyle}>
+          <div
+            style={{
+              fontSize: "28px",
+              lineHeight: 1,
+            }}
+          >
+            ◇
+          </div>
+
+          <div
+            style={{
+              marginTop: "8px",
+              color: "#F97316",
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "1.2px",
+            }}
+          >
+            JOURNAL
+          </div>
+        </div>
       </div>
     </div>
 
-    {/* MONTHLY CALENDAR */}
+    {/* =====================================================
+        JOURNAL CONTROLS
+       ===================================================== */}
 
-    <div style={cardStyle}>
-      <h2
+    <div style={sectionCardStyle}>
+      <div
         style={{
-          marginTop: 0,
-          fontSize: 20,
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: "18px",
+          flexWrap: "wrap",
         }}
       >
-        Monthly Classroom Calendar
+        <div>
+          <div style={eyebrowStyle}>
+            JOURNAL CONTROLS
+          </div>
+
+          <h2 style={sectionTitleStyle}>
+            Explore Classroom History
+          </h2>
+
+          <p style={sectionDescriptionStyle}>
+            Select a classroom and month to
+            review its teaching and comprehension
+            record.
+          </p>
+        </div>
+
+        <div
+          style={{
+            color: "#94A3B8",
+            fontSize: "12px",
+            fontWeight: 800,
+            letterSpacing: "1px",
+          }}
+        >
+          ACADEMIC INTELLIGENCE
+        </div>
+      </div>
+
+   <div
+  style={{
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(4, minmax(0, 1fr))",
+    gap: "14px",
+    marginTop: "20px",
+  }}
+>
+        <div>
+          <div style={fieldLabelStyle}>
+            
+          </div>
+
+          <select
+            style={dropdownStyle}
+            value={selectedAssignmentId}
+            onChange={(e) => {
+              setSelectedAssignmentId(
+                e.target.value
+              );
+            }}
+          >
+            <option value="">
+              Select Classroom
+            </option>
+
+            {assignments.map(
+              (assignment) => (
+                <option
+                  key={assignment.id}
+                  value={assignment.id}
+                >
+                  Class{" "}
+                  {assignment.className} -
+                  Section{" "}
+                  {assignment.sectionName}
+                </option>
+              )
+            )}
+          </select>
+        </div>
+
+        <div>
+          <div style={fieldLabelStyle}>
+            
+          </div>
+
+          <select
+            style={dropdownStyle}
+            value={selectedMonth}
+            onChange={(e) => {
+              setSelectedMonth(
+                e.target.value
+              );
+            }}
+          >
+            <option>January 2026</option>
+            <option>February 2026</option>
+            <option>March 2026</option>
+            <option>April 2026</option>
+            <option>May 2026</option>
+            <option>June 2026</option>
+            <option>July 2026</option>
+            <option>August 2026</option>
+            <option>September 2026</option>
+            <option>October 2026</option>
+            <option>November 2026</option>
+            <option>December 2026</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+   {/* =====================================================
+    MONTHLY CLASSROOM INTELLIGENCE
+   ===================================================== */}
+
+<div
+  style={{
+    position: "relative",
+    overflow: "hidden",
+
+    marginBottom: "18px",
+    padding: "24px",
+
+    background: "#FFFFFF",
+
+    border: "1px solid #E2E8F0",
+    borderRadius: "22px",
+
+    boxShadow:
+      "0 7px 24px rgba(15,23,42,0.035)",
+  }}
+>
+  {/* DECORATIVE TOP-RIGHT CIRCLE */}
+
+  <div
+    style={{
+      position: "absolute",
+
+      width: "125px",
+      height: "125px",
+
+      right: "-38px",
+      top: "-52px",
+
+      borderRadius: "50%",
+
+      background:
+        "rgba(255,237,213,0.48)",
+
+      pointerEvents: "none",
+    }}
+  />
+
+  {/* =====================================================
+      SECTION HEADER
+     ===================================================== */}
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 1,
+
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+
+      gap: "20px",
+    }}
+  >
+    <div>
+      <div
+        style={{
+          color: "#F97316",
+
+          fontSize: "10px",
+          fontWeight: 800,
+
+          letterSpacing: "1.6px",
+          textTransform: "uppercase",
+        }}
+      >
+        LEARNING CONTINUITY
+      </div>
+
+      <h2
+        style={{
+          margin: "7px 0 0",
+
+          color: "#0F172A",
+
+          fontSize: "21px",
+          lineHeight: 1.2,
+
+          fontWeight: 800,
+
+          letterSpacing: "-0.3px",
+        }}
+      >
+        Classroom Comprehension Calendar
       </h2>
 
       <p
         style={{
-          marginTop: 6,
+          margin: "7px 0 0",
+
           color: "#64748B",
-          fontSize: 13,
+
+          fontSize: "14px",
+          lineHeight: 1.55,
         }}
       >
-        Your classroom comprehension heatmap
-        for the month.
+        Daily classroom health based on student comprehension
+        feedback for the selected month.
       </p>
+    </div>
+
+    {/* MONTHLY LEARNING LEDGER */}
+
+    <div
+      style={{
+        position: "relative",
+        zIndex: 1,
+
+        flexShrink: 0,
+
+        padding: "8px 14px",
+
+        background:
+          "linear-gradient(135deg,#FFF7ED,#FFFFFF)",
+
+        border: "1px solid #FED7AA",
+
+        borderRadius: "11px",
+
+        color: "#EA580C",
+
+        fontSize: "10px",
+        fontWeight: 800,
+
+        letterSpacing: "0.7px",
+
+        textTransform: "uppercase",
+      }}
+    >
+      Monthly Learning Ledger
+    </div>
+  </div>
+
+  {/* =====================================================
+      WEEK DAYS
+     ===================================================== */}
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 1,
+
+      display: "grid",
+
+      gridTemplateColumns:
+        "repeat(7, minmax(0,1fr))",
+
+      gap: "12px",
+
+      marginTop: "30px",
+      marginBottom: "12px",
+    }}
+  >
+    {[
+      "MON",
+      "TUE",
+      "WED",
+      "THU",
+      "FRI",
+      "SAT",
+      "SUN",
+    ].map((day) => (
+      <div
+        key={day}
+        style={{
+          textAlign: "center",
+
+          color: "#64748B",
+
+          fontSize: "11px",
+          fontWeight: 800,
+
+          letterSpacing: "1.1px",
+        }}
+      >
+        {day}
+      </div>
+    ))}
+  </div>
+
+  {/* =====================================================
+      CALENDAR GRID
+     ===================================================== */}
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 1,
+
+      display: "grid",
+
+      gridTemplateColumns:
+        "repeat(7, minmax(0,1fr))",
+
+      gap: "12px",
+    }}
+  >
+    {Array.from({
+      length: 31,
+    }).map((_, index) => {
+      const day = index + 1;
+
+      const score =
+        getClassroomHealthScore(day);
+
+      const dayColor =
+        getDayColor(day);
+
+      const isNoLecture =
+        dayColor === "#F3F4F6";
+
+      const isFeedbackPending =
+        dayColor === "#DBEAFE";
+
+      const isUnderstood =
+        dayColor === "#DCFCE7";
+
+      const isPartial =
+        dayColor === "#FEF3C7";
+
+      const isDifficult =
+        dayColor === "#FEE2E2";
+
+      /* =================================================
+         NO LECTURE
+         NEW ORANGE / CREAM THEME
+      ================================================= */
+
+      if (isNoLecture) {
+        return (
+          <div
+            key={day}
+            style={{
+              position: "relative",
+
+              overflow: "hidden",
+
+              minHeight: "116px",
+
+              padding: "14px",
+
+              boxSizing: "border-box",
+
+              background:
+                "linear-gradient(135deg,#FFF9EF 0%,#FFFCF7 100%)",
+
+              border:
+                "1px solid #FDBA74",
+
+              borderRadius: "15px",
+
+              display: "flex",
+              flexDirection: "column",
+
+              boxShadow:
+                "0 2px 6px rgba(15,23,42,0.02)",
+            }}
+          >
+            {/* CORNER CIRCLE */}
+
+            <div
+              style={{
+                position: "absolute",
+
+                width: "54px",
+                height: "54px",
+
+                right: "-18px",
+                top: "-18px",
+
+                borderRadius: "50%",
+
+                background:
+                  "rgba(255,237,213,0.78)",
+
+                pointerEvents: "none",
+              }}
+            />
+
+            {/* DAY */}
+
+            <div
+              style={{
+                position: "relative",
+                zIndex: 1,
+
+                color: "#0F172A",
+
+                fontSize: "14px",
+                lineHeight: 1,
+
+                fontWeight: 800,
+              }}
+            >
+              {day}
+            </div>
+
+            {/* NO LECTURE MESSAGE */}
+
+            <div
+              style={{
+                position: "relative",
+                zIndex: 1,
+
+                flex: 1,
+
+                display: "flex",
+
+                alignItems: "center",
+                justifyContent: "center",
+
+                paddingBottom: "3px",
+              }}
+            >
+              <div
+                style={{
+                  color: "#EA580C",
+
+                  fontSize: "10px",
+                  lineHeight: 1.3,
+
+                  fontWeight: 800,
+
+                  textAlign: "center",
+                }}
+              >
+                No Lecture Conducted
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      /* =================================================
+         FEEDBACK PENDING
+      ================================================= */
+
+      if (isFeedbackPending) {
+        return (
+          <div
+            key={day}
+            style={{
+              position: "relative",
+
+              overflow: "hidden",
+
+              minHeight: "116px",
+
+              padding: "14px",
+
+              boxSizing: "border-box",
+
+              background:
+                "linear-gradient(135deg,#EFF6FF 0%,#F8FBFF 100%)",
+
+              border:
+                "1px solid #BFDBFE",
+
+              borderRadius: "15px",
+
+              display: "flex",
+              flexDirection: "column",
+
+              boxShadow:
+                "0 2px 6px rgba(15,23,42,0.02)",
+            }}
+          >
+            {/* CORNER CIRCLE */}
+
+            <div
+              style={{
+                position: "absolute",
+
+                width: "54px",
+                height: "54px",
+
+                right: "-18px",
+                top: "-18px",
+
+                borderRadius: "50%",
+
+                background:
+                  "rgba(219,234,254,0.92)",
+
+                pointerEvents: "none",
+              }}
+            />
+
+            <div
+              style={{
+                position: "relative",
+                zIndex: 1,
+
+                color: "#0F172A",
+
+                fontSize: "14px",
+                lineHeight: 1,
+
+                fontWeight: 800,
+              }}
+            >
+              {day}
+            </div>
+
+            <div
+              style={{
+                position: "relative",
+                zIndex: 1,
+
+                flex: 1,
+
+                display: "flex",
+                flexDirection: "column",
+
+                alignItems: "center",
+                justifyContent: "center",
+
+                textAlign: "center",
+              }}
+            >
+              <div
+                style={{
+                  width: "13px",
+                  height: "13px",
+
+                  marginBottom: "8px",
+
+                  borderRadius: "50%",
+
+                  background: "#2563EB",
+
+                  boxShadow:
+                    "inset 0 -2px 3px rgba(15,23,42,0.12)",
+                }}
+              />
+
+              <div
+                style={{
+                  color: "#2563EB",
+
+                  fontSize: "10px",
+                  lineHeight: 1.3,
+
+                  fontWeight: 800,
+                }}
+              >
+                Feedback Pending
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      /* =================================================
+         COMPREHENSION RESULT
+      ================================================= */
+
+      const stateBackground =
+        isUnderstood
+          ? "linear-gradient(135deg,#F0FDF4 0%,#F8FFF9 100%)"
+          : isPartial
+          ? "linear-gradient(135deg,#FFFBEB 0%,#FFFDF5 100%)"
+          : "linear-gradient(135deg,#FEF2F2 0%,#FFF9F9 100%)";
+
+      const stateBorder =
+        isUnderstood
+          ? "#BBF7D0"
+          : isPartial
+          ? "#FDE68A"
+          : "#FECACA";
+
+      const stateColor =
+        isUnderstood
+          ? "#16A34A"
+          : isPartial
+          ? "#CA8A04"
+          : "#DC2626";
+
+      const stateCircle =
+        isUnderstood
+          ? "rgba(220,252,231,0.90)"
+          : isPartial
+          ? "rgba(254,243,199,0.90)"
+          : "rgba(254,226,226,0.90)";
+
+      const stateLabel =
+        isUnderstood
+          ? "Most Students Understood"
+          : isPartial
+          ? "Partially Understood"
+          : "Students Struggled";
+
+      return (
+        <div
+          key={day}
+          style={{
+            position: "relative",
+
+            overflow: "hidden",
+
+            minHeight: "116px",
+
+            padding: "14px",
+
+            boxSizing: "border-box",
+
+            background: stateBackground,
+
+            border:
+              `1px solid ${stateBorder}`,
+
+            borderRadius: "15px",
+
+            display: "flex",
+            flexDirection: "column",
+
+            boxShadow:
+              "0 2px 6px rgba(15,23,42,0.02)",
+          }}
+        >
+          {/* DECORATIVE CORNER */}
+
+          <div
+            style={{
+              position: "absolute",
+
+              width: "54px",
+              height: "54px",
+
+              right: "-18px",
+              top: "-18px",
+
+              borderRadius: "50%",
+
+              background: stateCircle,
+
+              pointerEvents: "none",
+            }}
+          />
+
+          {/* DAY */}
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+
+              color: "#0F172A",
+
+              fontSize: "14px",
+              lineHeight: 1,
+
+              fontWeight: 800,
+            }}
+          >
+            {day}
+          </div>
+
+          {/* RESULT */}
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+
+              flex: 1,
+
+              display: "flex",
+              flexDirection: "column",
+
+              alignItems: "center",
+              justifyContent: "center",
+
+              textAlign: "center",
+
+              paddingTop: "4px",
+            }}
+          >
+            {/* STATUS DOT */}
+
+            <div
+              style={{
+                width: "14px",
+                height: "14px",
+
+                marginBottom: "7px",
+
+                borderRadius: "50%",
+
+                background:
+                  getDotColor(day),
+
+                border:
+                  "1px solid rgba(15,23,42,0.08)",
+
+                boxShadow:
+                  "inset 0 -2px 3px rgba(15,23,42,0.12)",
+              }}
+            />
+
+            {/* HEALTH SCORE */}
+
+            {score !== null && (
+              <div
+                style={{
+                  color: stateColor,
+
+                  fontSize: "18px",
+                  lineHeight: 1,
+
+                  fontWeight: 800,
+
+                  letterSpacing: "-0.3px",
+                }}
+              >
+                {score}%
+              </div>
+            )}
+
+            {/* STATUS */}
+
+            <div
+              style={{
+                marginTop: "6px",
+
+                color: stateColor,
+
+                fontSize: "9px",
+                lineHeight: 1.25,
+
+                fontWeight: 800,
+              }}
+            >
+              {stateLabel}
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  {/* =====================================================
+      LEGEND
+     ===================================================== */}
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 1,
+
+      display: "flex",
+
+      alignItems: "center",
+
+      flexWrap: "wrap",
+
+      gap: "18px",
+
+      marginTop: "18px",
+    }}
+  >
+    {/* UNDERSTOOD */}
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "7px",
+
+        color: "#64748B",
+
+        fontSize: "12px",
+        fontWeight: 700,
+      }}
+    >
+      <div
+        style={{
+          width: "9px",
+          height: "9px",
+
+          borderRadius: "50%",
+
+          background: "#22C55E",
+        }}
+      />
+
+      Most Students Understood
+    </div>
+
+    {/* PARTIAL */}
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "7px",
+
+        color: "#64748B",
+
+        fontSize: "12px",
+        fontWeight: 700,
+      }}
+    >
+      <div
+        style={{
+          width: "9px",
+          height: "9px",
+
+          borderRadius: "50%",
+
+          background: "#F59E0B",
+        }}
+      />
+
+      Partially Understood
+    </div>
+
+    {/* STRUGGLED */}
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "7px",
+
+        color: "#64748B",
+
+        fontSize: "12px",
+        fontWeight: 700,
+      }}
+    >
+      <div
+        style={{
+          width: "9px",
+          height: "9px",
+
+          borderRadius: "50%",
+
+          background: "#EF4444",
+        }}
+      />
+
+      Students Struggled
+    </div>
+
+    {/* PENDING */}
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "7px",
+
+        color: "#64748B",
+
+        fontSize: "12px",
+        fontWeight: 700,
+      }}
+    >
+      <div
+        style={{
+          width: "9px",
+          height: "9px",
+
+          borderRadius: "50%",
+
+          background: "#2563EB",
+        }}
+      />
+
+      Feedback Pending
+    </div>
+
+    {/* NO LECTURE */}
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "7px",
+
+        color: "#64748B",
+
+        fontSize: "12px",
+        fontWeight: 700,
+      }}
+    >
+      <div
+        style={{
+          width: "9px",
+          height: "9px",
+
+          borderRadius: "50%",
+
+          background: "#FDBA74",
+        }}
+      />
+
+      No Lecture Conducted
+    </div>
+  </div>
+</div>
+
+    {/* =====================================================
+        MONTHLY SUMMARY
+       ===================================================== */}
+
+    <div style={sectionCardStyle}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: "20px",
+        }}
+      >
+        <div>
+          <div style={eyebrowStyle}>
+            TEACHING INTELLIGENCE
+          </div>
+
+          <h2 style={sectionTitleStyle}>
+            Monthly Health Summary
+          </h2>
+
+          <p style={sectionDescriptionStyle}>
+            A snapshot of classroom
+            comprehension performance across
+            the selected month.
+          </p>
+        </div>
+
+        <div style={ledgerLabelStyle}>
+          CLASSROOM HEALTH LEDGER
+        </div>
+      </div>
 
       <div
         style={{
           display: "grid",
-
           gridTemplateColumns:
-            "repeat(7,1fr)",
-
-          gap: 8,
-
-          marginTop: 18,
-
-          marginBottom: 10,
+            "repeat(4, minmax(0, 1fr))",
+          gap: "12px",
+          marginTop: "18px",
         }}
       >
-{
-
-["MON","TUE","WED","THU","FRI","SAT","SUN"]
-
-.map((day)=>(
-
-<div
-
-key={day}
-
-style={{
-
-textAlign:"center",
-
-fontWeight:700,
-
-fontSize:10,
-
-color:"#64748B",
-
-}}
-
->
-
-{day}
-
-</div>
-
-))
-
-}
-
-</div>
-
-
-<div
-
-style={{
-
-display:"grid",
-
-gridTemplateColumns:"repeat(7,1fr)",
-
-gap:8,
-
-}}
-
->
-
-{
-
-Array.from({length:31}).map((_,index)=>{
-
-const day = index + 1;
-
-return(
-
-<div
-
-key={day}
-
-style={{
-
-...calendarBox,
-
-background:getDayColor(day),
-
-}}
-
->
-
-<div
-style={{
-
-fontSize:13,
-
-fontWeight:700,
-
-}}
->
-
-{day}
-
-</div>
-
-
-{
-
-getClassroomHealthScore(day) && (
-
-<div
-style={{
-
-fontSize:10,
-
-fontWeight:700,
-
-marginTop:3,
-
-color:"#04122F",
-
-}}
->
-
-{getClassroomHealthScore(day)}%
-
-</div>
-
-)
-
-}
-
-
-<div
-
-style={{
-
-marginTop:4,
-
-width:6,
-
-height:6,
-
-borderRadius:"50%",
-
-background:
-
-getDotColor(day),
-
-}}
-
- />
-
-</div>
-
+        <AnalyticsCard
+          eyebrow="STRONG COMPREHENSION"
+          title="Excellent Days"
+          value={String(
+            summary.green
+          )}
+          description={`Average Score : ${getAverageScoreByColor(
+            "#DCFCE7"
+          )}%`}
+          background="#F0FDF4"
+          border="#BBF7D0"
+          color="#16A34A"
+        />
+
+        <AnalyticsCard
+          eyebrow="MODERATE COMPREHENSION"
+          title="Average Days"
+          value={String(
+            summary.yellow
+          )}
+          description={`Average Score : ${getAverageScoreByColor(
+            "#FEF3C7"
+          )}%`}
+          background="#FFFBEB"
+          border="#FDE68A"
+          color="#CA8A04"
+        />
+
+        <AnalyticsCard
+          eyebrow="LEARNING ATTENTION"
+          title="Needs Support"
+          value={String(
+            summary.red
+          )}
+          description={`Average Score : ${getAverageScoreByColor(
+            "#FEE2E2"
+          )}%`}
+          background="#FEF2F2"
+          border="#FECACA"
+          color="#DC2626"
+        />
+
+        <AnalyticsCard
+          eyebrow="AWAITING RESPONSES"
+          title="Feedback Pending"
+          value={String(
+            summary.blue
+          )}
+          description="Feedback not yet submitted."
+          background="#EFF6FF"
+          border="#BFDBFE"
+          color="#2563EB"
+        />
+      </div>
+
+      <div
+        style={{
+          marginTop: "14px",
+          padding: "11px 14px",
+          background: "#F8FAFC",
+          border: "1px solid #E2E8F0",
+          borderRadius: "12px",
+          color: "#64748B",
+          fontSize: "13px",
+          lineHeight: 1.5,
+        }}
+      >
+        Calendar reflects classroom
+        comprehension based on student
+        feedback for the selected month.
+      </div>
+    </div>
+
+    {/* =====================================================
+        CLASSROOM COMPARISON
+       ===================================================== */}
+
+    <div style={sectionCardStyle}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: "20px",
+          marginBottom: "20px",
+        }}
+      >
+        <div>
+          <div style={eyebrowStyle}>
+            BEYOND THE CLASSROOM
+          </div>
+
+          <h2 style={sectionTitleStyle}>
+            Overall Classroom Performance
+            Comparison
+          </h2>
+
+          <p style={sectionDescriptionStyle}>
+            Compare every classroom taught
+            by you during the selected month.
+          </p>
+        </div>
+
+        <div style={ledgerLabelStyle}>
+          TEACHING PERFORMANCE LEDGER
+        </div>
+      </div>
+
+      {overallClassroomComparison.length >
+      0 ? (
+        <div
+          style={{
+            overflowX: "auto",
+            paddingBottom: "3px",
+          }}
+        >
+          <div
+            style={{
+              minWidth:
+                overallClassroomComparison.length >
+                4
+                  ? "900px"
+                  : "100%",
+            }}
+          >
+            {/* CLASSROOM HEADER */}
+
+            <div
+              style={{
+                display: "grid",
+
+                gridTemplateColumns: `190px repeat(${overallClassroomComparison.length}, minmax(120px, 1fr))`,
+
+                gap: "6px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "10px 12px",
+                  color: "#94A3B8",
+                  fontSize: "12px",
+                  fontWeight: 800,
+                  letterSpacing:
+                    "0.8px",
+                }}
+              >
+                PERFORMANCE METRIC
+              </div>
+
+              {overallClassroomComparison.map(
+                (item: any) => (
+                  <div
+                    key={
+                      item.classroom
+                    }
+                    style={
+                      comparisonHeaderStyle
+                    }
+                  >
+                    <div
+                      style={{
+                        color:
+                          "#F97316",
+                        fontSize:
+                          "11px",
+                        fontWeight:
+                          800,
+                        letterSpacing:
+                          "0.8px",
+                        marginBottom:
+                          "3px",
+                      }}
+                    >
+                      CLASSROOM
+                    </div>
+
+                    <div
+                      style={{
+                        overflow:
+                          "hidden",
+                        textOverflow:
+                          "ellipsis",
+                        whiteSpace:
+                          "nowrap",
+                      }}
+                    >
+                      {
+                        item.classroom
+                      }
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+
+            <ComparisonRow
+              title="Average Student Understanding %"
+              data={overallClassroomComparison.map(
+                (item: any) =>
+                  `${item.averageHealthScore}%`
+              )}
+            />
+
+            <ComparisonRow
+              title="Average Doubt %"
+              data={overallClassroomComparison.map(
+                (item: any) =>
+                  `${item.averageDoubtPercentage}%`
+              )}
+            />
+
+            <ComparisonRow
+              title="Average Feedback %"
+              data={overallClassroomComparison.map(
+                (item: any) =>
+                  `${item.averageFeedbackPercentage}%`
+              )}
+            />
+
+            <ComparisonRow
+              title="Low Understanding Student %"
+              data={overallClassroomComparison.map(
+                (item: any) =>
+                  String(
+                    item.studentsAtRisk
+                  )
+              )}
+            />
+          </div>
+        </div>
+      ) : (
+        <div style={emptyStateStyle}>
+          <div
+            style={{
+              width: "42px",
+              height: "42px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 10px",
+              borderRadius: "13px",
+              background: "#FFF7ED",
+              border:
+                "1px solid #FED7AA",
+              color: "#F97316",
+              fontSize: "21px",
+            }}
+          >
+            ◇
+          </div>
+
+          <div
+            style={{
+              color: "#0F172A",
+              fontSize: "16px",
+              fontWeight: 800,
+            }}
+          >
+            No comparison data available
+          </div>
+
+          <div
+            style={{
+              marginTop: "4px",
+              color: "#64748B",
+              fontSize: "14px",
+            }}
+          >
+            Classroom intelligence will
+            appear here when data is
+            available for the selected
+            month.
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
 );
-
-})
-
-}
-
-</div>
-
-
-{/* LEGEND SECTION */}
-
-
-<div
-
-style={{
-
-display:"flex",
-
-gap:16,
-
-marginTop:18,
-
-flexWrap:"wrap",
-
-}}
-
->
-
-<Legend
-color="#DCFCE7"
-label="Most Students Understood"
-/>
-
-<Legend
-color="#FEF3C7"
-label="Partially Understood"
-/>
-
-<Legend
-color="#FEE2E2"
-label="Students Struggled"
-/>
-
-<Legend
-color="#DBEAFE"
-label="Feedback Pending"
-/>
-
-<Legend
-color="#F3F4F6"
-label="No Lecture Conducted"
-/>
-
-</div>
-
-</div>
-
-
-{/* MONTHLY SUMMARY */}
-
-
-<div
-style={{
-
-display:"grid",
-
-gridTemplateColumns:
-"repeat(4,1fr)",
-
-gap:14,
-
-marginTop:18,
-
-}}
->
-
-<AnalyticsCard
-
-title="Excellent Days"
-value={String(summary.green)}
-description={`Average Score : ${getAverageScoreByColor("#DCFCE7")}%`}
-background="#F0FDF4"
-color="#16A34A"
-
-/>
-
-
-<AnalyticsCard
-
-title="Average Days"
-value={String(summary.yellow)}
-description={`Average Score : ${getAverageScoreByColor("#FEF3C7")}%`}
-background="#FEFCE8"
-color="#CA8A04"
-
-/>
-
-
-<AnalyticsCard
-
-title="Needs Support"
-value={String(summary.red)}
-description={`Average Score : ${getAverageScoreByColor("#FEE2E2")}%`}
-background="#FEF2F2"
-color="#DC2626"
-
-/>
-
-
-<AnalyticsCard
-
-title="Feedback Pending"
-value={String(summary.blue)}
-description="Feedback not yet submitted."
-background="#EFF6FF"
-color="#2563EB"
-
-/>
-
-
-<div
-
-style={{
-
-marginTop:18,
-
-textAlign:"center",
-
-color:"#64748B",
-
-fontSize:11,
-
-}}
-
->
-
-Calendar reflects classroom comprehension based on student feedback for the selected month.
-
-</div>
-
-</div>
-
-{/* BEYOND THE CLASSROOM */}
-
-<div
-style={{
-...cardStyle,
-marginTop:18,
-}}
->
-
-<p
-style={{
-margin:0,
-fontSize:10,
-fontWeight:700,
-letterSpacing:1.5,
-color:"#F59E0B",
-}}
->
-
-BEYOND THE CLASSROOM
-
-</p>
-
-
-<h2
-style={{
-marginTop:8,
-marginBottom:8,
-fontSize:20,
-}}
->
-
-Overall Classroom Performance Comparison
-
-</h2>
-
-
-<p
-style={{
-marginBottom:18,
-color:"#64748B",
-fontSize:13,
-}}
->
-
-Compare all classrooms taught by you during the selected month.
-
-</p>
-
-
-{/* HEADER ROW */}
-
-<div
-style={{
-display:"grid",
-
-gridTemplateColumns:
-`170px repeat(${overallClassroomComparison.length},1fr)`,
-
-gap:4,
-}}
->
-
-<div />
-
-{
-
-overallClassroomComparison.map(
-(item:any)=>(
-
-<div
-key={item.classroom}
-style={{
-background:"#04122F",
-padding:"8px 6px",
-borderRadius:8,
-color:"white",
-fontWeight:700,
-fontSize:"11px",
-textAlign:"center",
-whiteSpace:"nowrap",
-overflow:"hidden",
-textOverflow:"ellipsis",
-}}
->
-
-{item.classroom}
-
-</div>
-
-))
-
-}
-
-</div>
-
-
-<ComparisonRow
-
-title="Average Student Understanding %"
-
-data={
-
-overallClassroomComparison.map(
-
-(item:any)=>
-
-`${item.averageHealthScore}%`
-
-)
-
-}
-
-/>
-
-
-<ComparisonRow
-
-title="Average Doubt %"
-
-data={
-
-overallClassroomComparison.map(
-
-(item:any)=>
-
-`${item.averageDoubtPercentage}%`
-
-)
-
-}
-
-/>
-
-
-<ComparisonRow
-
-title="Average Feedback %"
-
-data={
-
-overallClassroomComparison.map(
-
-(item:any)=>
-
-`${item.averageFeedbackPercentage}%`
-
-)
-
-}
-
-/>
-
-
-<ComparisonRow
-
-title="Low Understanding Student %"
-
-data={
-
-overallClassroomComparison.map(
-
-(item:any)=>
-
-String(item.studentsAtRisk)
-
-)
-
-}
-
-/>
-
-</div>
-
-</div>
-
-);
-
 }
 
 
 /* -------------------------------- */
 
-function Legend(props:any){
+function Legend(props: any) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "7px",
 
-return(
+        padding: "7px 10px",
 
-<div
+        background: props.color,
 
-style={{
+        border:
+          "1px solid rgba(148, 163, 184, 0.22)",
 
-display:"flex",
+        borderRadius: "999px",
 
-alignItems:"center",
+        color: "#475569",
 
-gap:6,
+        fontSize: "13px",
+        fontWeight: 700,
+      }}
+    >
+      <div
+        style={{
+          width: "7px",
+          height: "7px",
 
-}}
+          flexShrink: 0,
 
->
+          borderRadius: "50%",
 
-<div
+          background:
+            props.dot ||
+            props.color,
+        }}
+      />
 
-style={{
-
-width:10,
-height:10,
-
-borderRadius:"50%",
-
-background:props.color,
-
-border:"1px solid #CBD5E1",
-
-}}
-
- />
-
-<span
-style={{
-fontSize:"12px",
-}}
->
-
-{props.label}
-
-</span>
-
-</div>
-
-);
-
+      {props.label}
+    </div>
+  );
 }
 
 
 /* -------------------------------- */
 
-function AnalyticsCard(props:any){
+function AnalyticsCard(props: any) {
+  return (
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
 
-return(
+        minHeight: "108px",
+        padding: "14px 16px",
 
-<div
+        background: `linear-gradient(
+          135deg,
+          ${props.background} 0%,
+          #FFFFFF 145%
+        )`,
 
-style={{
+        border: `1px solid ${props.border}`,
+        borderRadius: "16px",
 
-...cardStyle,
+        boxSizing: "border-box",
+      }}
+    >
+      {/* TOP-RIGHT DECORATIVE ARC */}
 
-padding:18,
+      <div
+        style={{
+          position: "absolute",
 
-background:props.background,
+          width: "78px",
+          height: "78px",
 
-}}
+          right: "-27px",
+          top: "-31px",
 
->
+          borderRadius: "50%",
 
-<h1
+          background: props.color,
+          opacity: 0.055,
 
-style={{
+          pointerEvents: "none",
+        }}
+      />
 
-margin:0,
+      {/* CONTENT */}
 
-fontSize:32,
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {/* LABEL */}
 
-color:props.color,
+        <div
+          style={{
+            color: props.color,
 
-}}
+            fontSize: "10px",
+            fontWeight: 800,
 
->
+            letterSpacing: "0.65px",
+            textTransform: "uppercase",
 
-{props.value}
+            marginBottom: "9px",
+          }}
+        >
+          {props.eyebrow}
+        </div>
 
-</h1>
+        {/* VALUE */}
 
+        <div
+          style={{
+            color: props.color,
 
-<h3
+            fontSize: "31px",
+            lineHeight: 1,
 
-style={{
+            fontWeight: 800,
+            letterSpacing: "-0.6px",
+          }}
+        >
+          {props.value}
+        </div>
 
-marginTop:8,
+        {/* TITLE */}
 
-marginBottom:4,
+        <div
+          style={{
+            marginTop: "9px",
 
-fontSize:"16px",
+            color: "#0F172A",
 
-}}
+            fontSize: "14px",
+            lineHeight: 1.25,
 
->
+            fontWeight: 800,
+          }}
+        >
+          {props.title}
+        </div>
 
-{props.title}
+        {/* DESCRIPTION */}
 
-</h3>
+        <div
+          style={{
+            marginTop: "5px",
 
+            color: "#475569",
 
-<p
+            fontSize: "11px",
+            fontWeight: 600,
 
-style={{
-
-margin:0,
-
-color:"#64748B",
-
-fontSize:"13px",
-
-}}
-
->
-
-{props.description}
-
-</p>
-
-</div>
-
-);
-
+            lineHeight: 1.35,
+          }}
+        >
+          {props.description}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 
-/* -------------------------------- */
+/* =========================================================
+   PAGE STYLES
+   ========================================================= */
 
+const heroStyle = {
+  position: "relative",
+  overflow: "hidden",
 
-/* -------------------------------- */
+  marginBottom: "18px",
 
-const cardStyle = {
+  padding: "26px 28px",
 
-background: "white",
+  background:
+    "linear-gradient(135deg, #FFFFFF 0%, #FFFFFF 72%, #FFF9F3 100%)",
 
-padding: 18,
+  border: "1px solid #E2E8F0",
 
-borderRadius: 16,
+  borderRadius: "24px",
 
-boxShadow:
-"0px 8px 18px rgba(0,0,0,0.05)",
-
+  boxShadow:
+    "0 10px 30px rgba(15, 23, 42, 0.045)",
 } as const;
 
 
-/* -------------------------------- */
+const heroOrangeCircle = {
+  position: "absolute",
+
+  width: "180px",
+  height: "180px",
+
+  right: "-60px",
+  top: "-85px",
+
+  borderRadius: "50%",
+
+  background:
+    "rgba(249, 115, 22, 0.06)",
+
+  pointerEvents: "none",
+} as const;
+
+
+const heroSoftCircle = {
+  position: "absolute",
+
+  width: "95px",
+  height: "95px",
+
+  right: "120px",
+  top: "-50px",
+
+  borderRadius: "50%",
+
+  background:
+    "rgba(249, 115, 22, 0.035)",
+
+  pointerEvents: "none",
+} as const;
+
+
+const heroBlueCircle = {
+  position: "absolute",
+
+  width: "150px",
+  height: "150px",
+
+  right: "180px",
+  bottom: "-105px",
+
+  borderRadius: "50%",
+
+  background:
+    "rgba(37, 99, 235, 0.04)",
+
+  pointerEvents: "none",
+} as const;
+
+
+const heroBadgeStyle = {
+  width: "82px",
+  height: "82px",
+
+  flexShrink: 0,
+
+  display: "flex",
+  flexDirection: "column",
+
+  alignItems: "center",
+  justifyContent: "center",
+
+  background:
+    "linear-gradient(145deg, #FFF8F1 0%, #FFFFFF 100%)",
+
+  border: "1px solid #FED7AA",
+
+  borderRadius: "22px",
+
+  color: "#0F172A",
+
+  boxShadow:
+    "0 8px 20px rgba(249, 115, 22, 0.07)",
+} as const;
+
+
+const eyebrowStyle = {
+  color: "#F97316",
+
+  fontSize: "12px",
+  fontWeight: 800,
+
+  letterSpacing: "1.6px",
+
+  textTransform:
+    "uppercase" as const,
+};
+
+
+const orangePillStyle = {
+  padding: "6px 10px",
+
+  background: "#FFF7ED",
+
+  border: "1px solid #FED7AA",
+
+  borderRadius: "999px",
+
+  color: "#C2410C",
+
+  fontSize: "11px",
+  fontWeight: 800,
+
+  letterSpacing: "0.6px",
+} as const;
+
+
+const bluePillStyle = {
+  padding: "6px 10px",
+
+  background: "#EFF6FF",
+
+  border: "1px solid #BFDBFE",
+
+  borderRadius: "999px",
+
+  color: "#1D4ED8",
+
+  fontSize: "11px",
+  fontWeight: 800,
+
+  letterSpacing: "0.6px",
+} as const;
+
+
+const sectionCardStyle = {
+  position: "relative",
+
+  marginBottom: "18px",
+
+  padding: "20px",
+
+  background: "#FFFFFF",
+
+  border: "1px solid #E2E8F0",
+
+  borderRadius: "20px",
+
+  boxShadow:
+    "0 7px 24px rgba(15, 23, 42, 0.035)",
+} as const;
+
+
+const sectionTitleStyle = {
+  margin: "6px 0 0",
+
+  color: "#0F172A",
+
+  fontSize: "21px",
+  fontWeight: 800,
+
+  letterSpacing: "-0.3px",
+} as const;
+
+
+const sectionDescriptionStyle = {
+  margin: "5px 0 0",
+
+  color: "#64748B",
+
+  fontSize: "14px",
+
+  lineHeight: 1.55,
+} as const;
+
+
+const fieldLabelStyle = {
+  marginBottom: "6px",
+
+  color: "#64748B",
+
+  fontSize: "12px",
+  fontWeight: 800,
+
+  letterSpacing: "0.8px",
+} as const;
 
 
 const dropdownStyle = {
+  width: "100%",
 
-padding: "10px",
+  padding: "11px 12px",
 
-minWidth: "170px",
+  background: "#F8FAFC",
 
-borderRadius: "10px",
+  border: "1px solid #CBD5E1",
 
-fontSize:"13px",
+  borderRadius: "11px",
 
-border:
-"1px solid #CBD5E1",
+  color: "#0F172A",
 
+  fontSize: "15px",
+  fontWeight: 600,
+
+  outline: "none",
+
+  boxSizing:
+    "border-box" as const,
+};
+
+
+const calendarBadgeStyle = {
+  display: "flex",
+
+  alignItems: "center",
+
+  gap: "9px",
+
+  flexShrink: 0,
+
+  padding: "9px 12px",
+
+  background:
+    "linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)",
+
+  border: "1px solid #FED7AA",
+
+  borderRadius: "13px",
+
+  color: "#F97316",
 } as const;
 
 
-/* -------------------------------- */
+
+const ledgerLabelStyle = {
+  color: "#94A3B8",
+
+  fontSize: "12px",
+  fontWeight: 800,
+
+  letterSpacing: "1px",
+
+  whiteSpace:
+    "nowrap" as const,
+};
 
 
-const calendarBox = {
+const comparisonHeaderStyle = {
+  padding: "11px 10px",
 
-padding:10,
+  background:
+    "linear-gradient(135deg, #0F172A 0%, #172554 100%)",
 
-height:48,
+  borderRadius: "11px",
 
-borderRadius:10,
+  color: "#FFFFFF",
 
-display:"flex",
+  textAlign:
+    "center" as const,
 
-flexDirection:"column",
+  fontSize: "14px",
 
-justifyContent:"center",
-
-alignItems:"center",
-
-cursor:"pointer",
-
-boxShadow:
-"0px 3px 10px rgba(0,0,0,0.04)",
-
-border:
-"1px solid rgba(0,0,0,0.04)",
-
-} as const;
+  fontWeight: 800,
+};
 
 
-/* -------------------------------- */
+const emptyStateStyle = {
+  padding: "32px 20px",
+
+  background: "#F8FAFC",
+
+  border: "1px dashed #CBD5E1",
+
+  borderRadius: "16px",
+
+  textAlign:
+    "center" as const,
+};
 
 
-function ComparisonRow(props:any){
+/* =========================================================
+   CLASSROOM COMPARISON ROW
+   ========================================================= */
 
-return(
+function ComparisonRow(props: any) {
+  return (
+    <div
+      style={{
+        display: "grid",
 
-<div
-style={{
-display:"grid",
+        gridTemplateColumns: `190px repeat(${props.data.length}, minmax(120px, 1fr))`,
 
-gridTemplateColumns:
-`170px repeat(${props.data.length},1fr)`,
+        gap: "6px",
 
-gap:4,
+        marginTop: "6px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
 
-marginTop:4,
+          minHeight: "45px",
 
-}}
->
+          padding: "10px 12px",
 
-<div
-style={{
-background:"#FFF7ED",
+          background:
+            "linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)",
 
-padding:12,
+          border:
+            "1px solid #FED7AA",
 
-borderRadius:10,
+          borderRadius: "11px",
 
-fontWeight:700,
+          color: "#7C2D12",
 
-fontSize:"13px",
+          fontWeight: 700,
 
-}}
->
+          fontSize: "13px",
 
-{props.title}
+          lineHeight: 1.35,
+        }}
+      >
+        {props.title}
+      </div>
 
-</div>
+      {props.data.map(
+        (
+          item: string,
+          index: number
+        ) => (
+          <div
+            key={index}
+            style={{
+              display: "flex",
 
+              alignItems:
+                "center",
 
-{
+              justifyContent:
+                "center",
 
-props.data.map(
+              minHeight: "45px",
 
-(item:string,index:number)=>(
+              padding:
+                "10px 12px",
 
-<div
-key={index}
-style={{
-background:"#F8FAFC",
+              background:
+                "#F8FAFC",
 
-padding:12,
+              border:
+                "1px solid #E2E8F0",
 
-borderRadius:10,
+              borderRadius:
+                "11px",
 
-fontWeight:700,
+              color:
+                "#0F172A",
 
-fontSize:"13px",
+              fontWeight: 800,
 
-textAlign:"center",
+              fontSize: "15px",
 
-}}
->
-
-{item}
-
-</div>
-
-))
-
+              textAlign:
+                "center",
+            }}
+          >
+            {item}
+          </div>
+        )
+      )}
+    </div>
+  );
 }
 
-</div>
 
-);
-
-}
+/* -------------------------------- */

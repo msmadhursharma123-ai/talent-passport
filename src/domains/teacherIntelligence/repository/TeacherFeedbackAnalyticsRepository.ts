@@ -906,243 +906,486 @@ dailyLogUuid
 }
 
 export async function getStudentsAtRisk(
+  className: string,
+  sectionName: string
+) {
 
-className:string,
-sectionName:string
+  const supabase =
+    getSupabaseClient();
 
-){
 
-const supabase =
-getSupabaseClient();
+  /*
+  =========================================================
+  FETCH CLASSROOM FEEDBACK
+  =========================================================
+  */
 
-const {
+  const {
+    data: feedbacks,
+    error: feedbackError,
+  } = await (supabase as any)
 
-data:feedbacks
+    .from("student_daily_feedback")
 
-} = await (supabase as any)
+    .select("*")
 
-.from("student_daily_feedback")
+    .eq(
+      "class_name",
+      className
+    )
 
-.select("*")
+    .eq(
+      "section_name",
+      sectionName
+    );
 
-.eq(
-"class_name",
-className
-)
 
-.eq(
-"section_name",
-sectionName
-);
+  if (feedbackError) {
 
-console.log("STUDENTS AT RISK FEEDBACKS");
+    console.error(
+      "STUDENTS AT RISK FEEDBACK ERROR",
+      feedbackError
+    );
 
-console.table(feedbacks);
+    return {
+      veryCritical: [],
+      critical: [],
+      moderate: [],
+    };
+  }
 
-if(!feedbacks){
 
-return {
+  console.log(
+    "STUDENTS AT RISK FEEDBACKS"
+  );
 
-veryCritical:[],
-critical:[],
-moderate:[],
+  console.table(
+    feedbacks
+  );
 
-};
 
-}
+  if (
+    !feedbacks ||
+    feedbacks.length === 0
+  ) {
 
-const groupedStudents =
-new Map();
+    return {
+      veryCritical: [],
+      critical: [],
+      moderate: [],
+    };
+  }
 
-feedbacks.forEach((item:any)=>{
 
-if(
+  /*
+  =========================================================
+  GET UNIQUE STUDENT UUIDS
+  =========================================================
+  */
 
-!groupedStudents.has(
-item.student_uuid
-)
+  const studentUuids: string[] =
 
-){
+    Array.from(
 
-groupedStudents.set(
+      new Set<string>(
 
-item.student_uuid,
+        feedbacks
 
-[]
+          .map(
+            (item: any) =>
+              item.student_uuid
+          )
 
-);
+          .filter(
+            (uuid: any): uuid is string =>
+              Boolean(uuid)
+          )
 
-}
+      )
 
-groupedStudents
-.get(item.student_uuid)
-.push(item);
+    );
 
-});
 
-console.log(
-"GROUPED STUDENTS"
-);
+  /*
+  =========================================================
+  FETCH REAL STUDENT NAMES
+  FROM STUDENTS MASTER
+  =========================================================
+  */
 
-console.log(
-groupedStudents
-);
+  const {
+    data: students,
+    error: studentError,
+  } = await (supabase as any)
 
-const veryCritical:any[] = [];
+    .from("students_master")
 
-const critical:any[] = [];
+    .select(
+      "student_uuid,student_name"
+    )
 
-const moderate:any[] = [];
+    .in(
+      "student_uuid",
+      studentUuids
+    );
 
 
+  if (studentError) {
 
-for(
+    console.error(
+      "STUDENT NAME FETCH ERROR",
+      studentError
+    );
+  }
 
-const [
 
-studentUuid,
-responses
+  /*
+  =========================================================
+  BUILD UUID → STUDENT NAME MAP
+  =========================================================
+  */
 
-]
+  const studentNameMap =
+    new Map<string, string>();
 
-of groupedStudents
 
-){
+  (students ?? []).forEach(
+    (student: any) => {
 
-console.log(
-"CURRENT STUDENT UUID"
-);
+      if (
+        student.student_uuid
+      ) {
 
-console.log(
-studentUuid
-);
+        studentNameMap.set(
+          student.student_uuid,
+          student.student_name || "Student"
+        );
 
-console.log(
-"ALL RESPONSES"
-);
+      }
 
-console.table(
-responses
-);
+    }
+  );
 
-responses.sort(
 
-(a:any,b:any)=>
+  console.log(
+    "STUDENTS AT RISK NAME MAP"
+  );
 
-new Date(b.created_at).getTime()
+  console.table(
+    Array.from(
+      studentNameMap.entries()
+    )
+  );
 
--
 
-new Date(a.created_at).getTime()
+  /*
+  =========================================================
+  GROUP ALL FEEDBACK BY STUDENT UUID
+  =========================================================
+  */
 
-);
+  const groupedStudents =
+    new Map<string, any[]>();
 
-const lastThree =
 
-responses
-.slice(0,3)
-.map(
-(item:any)=>
-item.understanding_level
-);
+  feedbacks.forEach(
+    (item: any) => {
 
+      if (
+        !item.student_uuid
+      ) {
 
-if(
+        return;
+      }
 
-lastThree.length < 3
 
-){
+      if (
+        !groupedStudents.has(
+          item.student_uuid
+        )
+      ) {
 
-continue;
+        groupedStudents.set(
+          item.student_uuid,
+          []
+        );
 
-}
+      }
 
-const studentName =
 
-responses[0].student_name ??
-"Student";
+      groupedStudents
+        .get(
+          item.student_uuid
+        )!
+        .push(
+          item
+        );
 
+    }
+  );
 
 
-const didntCount =
+  /*
+  =========================================================
+  FINAL RISK CATEGORIES
+  =========================================================
+  */
 
-lastThree.filter(
+  const veryCritical: string[] = [];
 
-(level:string)=>
+  const critical: string[] = [];
 
-level ===
-"I didn't understand."
+  const moderate: string[] = [];
 
-).length;
 
+  /*
+  =========================================================
+  ANALYSE EACH STUDENT
+  =========================================================
+  */
 
+  for (
+    const [
+      studentUuid,
+      responses,
+    ] of groupedStudents
+  ) {
 
-const partialCount =
 
-lastThree.filter(
+    /*
+    ---------------------------------------------------------
+    SORT RESPONSES
 
-(level:string)=>
+    IMPORTANT:
+    Keep created_at as the chronology used by the
+    existing risk engine.
+    ---------------------------------------------------------
+    */
 
-level ===
-"I partially understood."
+    const sortedResponses =
+      [...responses].sort(
 
-).length;
+        (a: any, b: any) => {
 
+          const aTime =
+            a.created_at
+              ? new Date(
+                  a.created_at
+                ).getTime()
+              : 0;
 
+          const bTime =
+            b.created_at
+              ? new Date(
+                  b.created_at
+                ).getTime()
+              : 0;
 
-if(
 
-didntCount === 3
+          return (
+            bTime - aTime
+          );
 
-){
+        }
 
-veryCritical.push(
+      );
 
-studentName
 
-);
+    /*
+    ---------------------------------------------------------
+    TAKE LATEST 3 SUBMITTED RESPONSES
+    ---------------------------------------------------------
+    */
 
-}
+    const lastThree =
 
+      sortedResponses
 
-else if(
+        .slice(
+          0,
+          3
+        )
 
-didntCount === 2 &&
-partialCount === 1
+        .map(
+          (item: any) =>
+            item.understanding_level
+        );
 
-){
 
-critical.push(
+    /*
+    ---------------------------------------------------------
+    STUDENT NEEDS AT LEAST 3 RESPONSES
+    BEFORE RISK CLASSIFICATION
+    ---------------------------------------------------------
+    */
 
-studentName
+    if (
+      lastThree.length < 3
+    ) {
 
-);
+      continue;
+    }
 
-}
 
+    /*
+    ---------------------------------------------------------
+    RESOLVE REAL STUDENT NAME
+    ---------------------------------------------------------
+    */
 
-else if(
+    const studentName =
 
-partialCount === 3
+      studentNameMap.get(
+        studentUuid
+      )
 
-){
+      ??
 
-moderate.push(
+      sortedResponses[0]
+        ?.student_name
 
-studentName
+      ??
 
-);
+      "Student";
 
-}
 
-}
+    /*
+    ---------------------------------------------------------
+    COUNT UNDERSTANDING LEVELS
+    ---------------------------------------------------------
+    */
 
-return{
+    const didntCount =
 
-veryCritical,
-critical,
-moderate,
+      lastThree.filter(
 
-};
+        (level: string) =>
+
+          level ===
+          "I didn't understand."
+
+      ).length;
+
+
+    const partialCount =
+
+      lastThree.filter(
+
+        (level: string) =>
+
+          level ===
+          "I partially understood."
+
+      ).length;
+
+
+    /*
+    =========================================================
+    VERY CRITICAL
+
+    LAST 3 RESPONSES:
+
+    DIDN'T
+    DIDN'T
+    DIDN'T
+    =========================================================
+    */
+
+    if (
+      didntCount === 3
+    ) {
+
+      veryCritical.push(
+        studentName
+      );
+
+      continue;
+    }
+
+
+    /*
+    =========================================================
+    CRITICAL
+
+    LAST 3 RESPONSES:
+
+    2 × DIDN'T
+    1 × PARTIALLY
+
+    Order does not matter.
+    =========================================================
+    */
+
+    if (
+      didntCount === 2 &&
+      partialCount === 1
+    ) {
+
+      critical.push(
+        studentName
+      );
+
+      continue;
+    }
+
+
+    /*
+    =========================================================
+    MODERATE
+
+    LAST 3 RESPONSES:
+
+    PARTIAL
+    PARTIAL
+    PARTIAL
+    =========================================================
+    */
+
+    if (
+      partialCount === 3
+    ) {
+
+      moderate.push(
+        studentName
+      );
+
+      continue;
+    }
+
+  }
+
+
+  /*
+  =========================================================
+  DEBUG — VERIFY CALCULATION
+  =========================================================
+  */
+
+  console.log(
+    "FINAL STUDENTS AT RISK"
+  );
+
+  console.log({
+    veryCritical,
+    critical,
+    moderate,
+  });
+
+
+  /*
+  =========================================================
+  FINAL RESULT
+  =========================================================
+  */
+
+  return {
+
+    veryCritical,
+
+    critical,
+
+    moderate,
+
+  };
 
 }

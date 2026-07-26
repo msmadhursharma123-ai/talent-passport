@@ -21,7 +21,371 @@ import {
 } from "../../services/identityService";
 
 
+/* =========================================================
+   INCOMING REQUESTS — UI HELPERS
+   ========================================================= */
 
+function RequestMetricCard({
+  label,
+  value,
+  description,
+  tone
+}: {
+  label: string;
+  value: any;
+  description: string;
+  tone: "orange" | "yellow" | "green" | "red";
+}) {
+
+  const palettes = {
+
+    orange: {
+      background:
+        "linear-gradient(135deg,#FFF7ED,#FFFBF5)",
+      border: "#FED7AA",
+      label: "#9A3412",
+      value: "#F97316",
+      circle: "rgba(249,115,22,.08)"
+    },
+
+    yellow: {
+      background:
+        "linear-gradient(135deg,#FEFCE8,#FFFDF4)",
+      border: "#FDE68A",
+      label: "#854D0E",
+      value: "#CA8A04",
+      circle: "rgba(202,138,4,.07)"
+    },
+
+    green: {
+      background:
+        "linear-gradient(135deg,#ECFDF5,#F7FFFB)",
+      border: "#BBF7D0",
+      label: "#166534",
+      value: "#16A34A",
+      circle: "rgba(22,163,74,.07)"
+    },
+
+    red: {
+      background:
+        "linear-gradient(135deg,#FEF2F2,#FFF9F9)",
+      border: "#FECACA",
+      label: "#991B1B",
+      value: "#DC2626",
+      circle: "rgba(220,38,38,.06)"
+    }
+
+  };
+
+  const palette =
+    palettes[tone];
+
+  return (
+
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        minHeight: "108px",
+        borderRadius: "18px",
+        padding: "17px",
+        background: palette.background,
+        border: `1px solid ${palette.border}`
+      }}
+    >
+
+      <div
+        style={{
+          position: "absolute",
+          width: "88px",
+          height: "88px",
+          borderRadius: "50%",
+          right: "-28px",
+          top: "-34px",
+          background: palette.circle
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1
+        }}
+      >
+
+        <div
+          style={{
+            color: palette.label,
+            fontSize: "9px",
+            fontWeight: 850,
+            letterSpacing: ".65px",
+            textTransform: "uppercase"
+          }}
+        >
+          {label}
+        </div>
+
+        <div
+          style={{
+            color: palette.value,
+            fontSize: "30px",
+            fontWeight: 900,
+            lineHeight: 1,
+            marginTop: "9px"
+          }}
+        >
+          {value}
+        </div>
+
+        <div
+          style={{
+            color: "#475569",
+            fontSize: "10px",
+            fontWeight: 600,
+            marginTop: "7px"
+          }}
+        >
+          {description}
+        </div>
+
+      </div>
+
+    </div>
+
+  );
+}
+
+
+function RequestStatusBadge({
+  status
+}: {
+  status: string;
+}) {
+
+  const normalized =
+    String(status || "")
+      .toLowerCase();
+
+  let config = {
+    background: "#FEFCE8",
+    border: "#FDE68A",
+    color: "#A16207",
+    dot: "#EAB308"
+  };
+
+  if (normalized === "accepted") {
+
+    config = {
+      background: "#ECFDF5",
+      border: "#BBF7D0",
+      color: "#15803D",
+      dot: "#22C55E"
+    };
+
+  }
+
+  if (normalized === "rejected") {
+
+    config = {
+      background: "#FEF2F2",
+      border: "#FECACA",
+      color: "#B91C1C",
+      dot: "#EF4444"
+    };
+
+  }
+
+  return (
+
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        padding: "6px 10px",
+        borderRadius: "999px",
+        background: config.background,
+        border: `1px solid ${config.border}`,
+        color: config.color,
+        fontSize: "9px",
+        fontWeight: 800,
+        textTransform: "capitalize"
+      }}
+    >
+
+      <span
+        style={{
+          width: "6px",
+          height: "6px",
+          borderRadius: "50%",
+          background: config.dot
+        }}
+      />
+
+      {status || "pending"}
+
+    </span>
+
+  );
+}
+
+
+function RequestTypeBadge({
+  type
+}: {
+  type: string;
+}) {
+
+  return (
+
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "6px 10px",
+        borderRadius: "999px",
+        background: "#FFF7ED",
+        border: "1px solid #FED7AA",
+        color: "#C2410C",
+        fontSize: "12px",
+        fontWeight: 800,
+        textTransform: "capitalize"
+      }}
+    >
+      {type || "Request"}
+    </span>
+
+  );
+}
+
+
+function RequestActionButton({
+  label,
+  onClick,
+  tone = "neutral",
+  disabled = false
+}: {
+  label: string;
+  onClick: () => void;
+  tone?: "neutral" | "accept" | "reject";
+  disabled?: boolean;
+}) {
+
+  let config = {
+    background: "#FFFFFF",
+    border: "#E2E8F0",
+    color: "#334155"
+  };
+
+  if (tone === "accept") {
+
+    config = {
+      background: "#ECFDF5",
+      border: "#BBF7D0",
+      color: "#15803D"
+    };
+
+  }
+
+  if (tone === "reject") {
+
+    config = {
+      background: "#FEF2F2",
+      border: "#FECACA",
+      color: "#B91C1C"
+    };
+
+  }
+
+  return (
+
+    <button
+      disabled={disabled}
+      onClick={onClick}
+      style={{
+        border: `1px solid ${config.border}`,
+        background: config.background,
+        color: config.color,
+        borderRadius: "9px",
+        padding: "7px 11px",
+        cursor:
+          disabled
+            ? "not-allowed"
+            : "pointer",
+        opacity:
+          disabled
+            ? 0.55
+            : 1,
+        fontSize: "12px",
+        fontWeight: 750
+      }}
+    >
+      {label}
+    </button>
+
+  );
+}
+
+
+function RequestDetailCard({
+  label,
+  value,
+  fullWidth = false
+}: {
+  label: string;
+  value: any;
+  fullWidth?: boolean;
+}) {
+
+  return (
+
+    <div
+      style={{
+        gridColumn:
+          fullWidth
+            ? "1 / -1"
+            : undefined,
+        background:
+          "linear-gradient(145deg,#F8FAFC,#FFFFFF)",
+        border: "1px solid #E2E8F0",
+        borderRadius: "14px",
+        padding: "14px"
+      }}
+    >
+
+      <div
+        style={{
+          color: "#64748B",
+          fontSize: "11px",
+          fontWeight: 800,
+          letterSpacing: ".9px",
+          textTransform: "uppercase",
+          marginBottom: "6px"
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          color: "#0F172A",
+          fontSize: "15px",
+          fontWeight: 700,
+          lineHeight: 1.5,
+          wordBreak: "break-word",
+          whiteSpace:
+            fullWidth
+              ? "pre-wrap"
+              : undefined
+        }}
+      >
+        {value || "-"}
+      </div>
+
+    </div>
+
+  );
+}
 
 export default function IncomingRequests() {
 
@@ -233,282 +597,1173 @@ async function handleAccept(
     }
   }
 
-  return (
+   return (
 
-    <div>
+    <div
+      style={{
+        width: "95%",
+        maxWidth: "1600px",
+        margin: "0 auto",
+        padding: "24px",
+        boxSizing: "border-box"
+      }}
+    >
 
-      {/* HERO */}
+      {/* =========================================================
+          HERO
+         ========================================================= */}
 
       <div
         style={{
+          position: "relative",
+          overflow: "hidden",
           background:
-            "linear-gradient(135deg,#0F172A,#1E293B)",
-          color:
-            "white",
-          padding:
-            "32px",
-          borderRadius:
-            "24px",
-          marginBottom:
-            "24px"
+            "linear-gradient(135deg, #FFFFFF 0%, #FFFCF8 55%, #F7FAFF 100%)",
+          borderRadius: "28px",
+          border: "1px solid #DCE4EE",
+          boxShadow:
+            "0 12px 34px rgba(15,23,42,.06)",
+          padding: "34px 38px",
+          marginBottom: "20px",
+          minHeight: "165px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "30px"
+        }}
+      >
+
+        {/* DECORATIVE CIRCLES */}
+
+        <div
+          style={{
+            position: "absolute",
+            width: "330px",
+            height: "330px",
+            borderRadius: "50%",
+            right: "-105px",
+            top: "-175px",
+            background:
+              "rgba(249,115,22,.065)",
+            pointerEvents: "none"
+          }}
+        />
+
+        <div
+          style={{
+            position: "absolute",
+            width: "240px",
+            height: "240px",
+            borderRadius: "50%",
+            right: "150px",
+            bottom: "-180px",
+            background:
+              "rgba(59,130,246,.055)",
+            pointerEvents: "none"
+          }}
+        />
+
+        <div
+          style={{
+            position: "absolute",
+            width: "115px",
+            height: "115px",
+            borderRadius: "50%",
+            right: "92px",
+            top: "22px",
+            background:
+              "rgba(255,237,213,.55)",
+            pointerEvents: "none"
+          }}
+        />
+
+
+        {/* HERO CONTENT */}
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 2,
+            maxWidth: "850px"
+          }}
+        >
+
+          <div
+            style={{
+              color: "#F97316",
+              fontSize: "15px",
+              letterSpacing: "2.4px",
+              fontWeight: 800,
+              textTransform: "uppercase",
+              marginBottom: "12px"
+            }}
+          >
+            PARTNER CRM
+          </div>
+
+          <h1
+            style={{
+              margin: 0,
+              color: "#0F172A",
+              fontSize: "43px",
+              fontWeight: 800,
+              lineHeight: 1.1,
+              letterSpacing: "-1px"
+            }}
+          >
+            Incoming Requests
+          </h1>
+
+          <p
+            style={{
+              margin: "12px 0 0",
+              color: "#64748B",
+              fontSize: "18px",
+              lineHeight: 1.65,
+              maxWidth: "760px"
+            }}
+          >
+            Review student requests, respond to incoming
+            interest and convert accepted requests into
+            actionable CRM leads.
+          </p>
+
+
+          <div
+            style={{
+              display: "flex",
+              gap: "9px",
+              flexWrap: "wrap",
+              marginTop: "17px"
+            }}
+          >
+
+            <div
+              style={{
+                padding: "7px 11px",
+                borderRadius: "999px",
+                background: "#FFF7ED",
+                border: "1px solid #FED7AA",
+                color: "#C2410C",
+                fontSize: "13px",
+                fontWeight: 800
+              }}
+            >
+              {requests.length} TOTAL REQUESTS
+            </div>
+
+            <div
+              style={{
+                padding: "7px 11px",
+                borderRadius: "999px",
+                background: "#EFF6FF",
+                border: "1px solid #BFDBFE",
+                color: "#1D4ED8",
+                fontSize: "13px",
+                fontWeight: 800
+              }}
+            >
+              CRM INTAKE DESK
+            </div>
+
+          </div>
+
+        </div>
+
+
+        {/* HERO SYMBOL */}
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 2,
+            width: "128px",
+            height: "128px",
+            borderRadius: "32px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background:
+              "linear-gradient(145deg,#FFF7ED,#FFFFFF)",
+            border: "1px solid #FED7AA",
+            boxShadow:
+              "0 12px 30px rgba(249,115,22,.10)",
+            flexShrink: 0
+          }}
+        >
+
+          <div
+            style={{
+              textAlign: "center"
+            }}
+          >
+
+            <div
+              style={{
+                fontSize: "40px",
+                lineHeight: 1
+              }}
+            >
+              ↗
+            </div>
+
+            <div
+              style={{
+                marginTop: "9px",
+                color: "#F97316",
+                fontSize: "9px",
+                fontWeight: 900,
+                letterSpacing: "1.4px"
+              }}
+            >
+              REQUEST INTAKE
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      {/* =========================================================
+          REQUEST INTELLIGENCE
+         ========================================================= */}
+
+      <div
+        style={{
+          background: "#FFFFFF",
+          border: "1px solid #E2E8F0",
+          borderRadius: "24px",
+          padding: "24px",
+          marginBottom: "20px",
+          boxShadow:
+            "0 8px 24px rgba(15,23,42,.035)"
         }}
       >
 
         <div
           style={{
-            color:
-              "#F59E0B",
-            fontWeight:
-              700,
-            letterSpacing:
-              2
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            gap: "20px",
+            marginBottom: "20px"
           }}
         >
-          PARTNER CRM
+
+          <div>
+
+            <div
+              style={{
+                color: "#F97316",
+                fontSize: "13px",
+                fontWeight: 800,
+                letterSpacing: "1.8px",
+                textTransform: "uppercase",
+                marginBottom: "7px"
+              }}
+            >
+              REQUEST INTELLIGENCE
+            </div>
+
+            <h2
+              style={{
+                margin: 0,
+                color: "#0F172A",
+                fontSize: "24px",
+                fontWeight: 800
+              }}
+            >
+              Incoming Request Summary
+            </h2>
+
+            <p
+              style={{
+                margin: "6px 0 0",
+                color: "#64748B",
+                fontSize: "16px"
+              }}
+            >
+              A snapshot of student interest moving through
+              your partner CRM intake pipeline.
+            </p>
+
+          </div>
+
+          <div
+            style={{
+              color: "#94A3B8",
+              fontSize: "14px",
+              fontWeight: 700,
+              letterSpacing: ".8px",
+              whiteSpace: "nowrap"
+            }}
+          >
+            PARTNER REQUEST LEDGER
+          </div>
+
         </div>
 
-        <h1>
-          Incoming Requests
-        </h1>
 
-        <p>
-          Review and convert
-          student requests
-          into CRM leads.
-        </p>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(4,minmax(0,1fr))",
+            gap: "14px"
+          }}
+        >
+
+          <RequestMetricCard
+            label="Total Requests"
+            value={requests.length}
+            description="Requests received from students"
+            tone="orange"
+          />
+
+          <RequestMetricCard
+            label="Pending"
+            value={
+              requests.filter(
+                request =>
+                  request.status === "pending"
+              ).length
+            }
+            description="Waiting for your response"
+            tone="yellow"
+          />
+
+          <RequestMetricCard
+            label="Accepted"
+            value={
+              requests.filter(
+                request =>
+                  request.status === "accepted"
+              ).length
+            }
+            description="Converted into CRM leads"
+            tone="green"
+          />
+
+          <RequestMetricCard
+            label="Rejected"
+            value={
+              requests.filter(
+                request =>
+                  request.status === "rejected"
+              ).length
+            }
+            description="Requests not progressed"
+            tone="red"
+          />
+
+        </div>
 
       </div>
 
-      {/* TABLE */}
+
+      {/* =========================================================
+          REQUEST LEDGER
+         ========================================================= */}
 
       <div
         style={{
-          background:
-            "white",
-          borderRadius:
-            "20px",
-          overflow:
-            "hidden",
-          border:
-            "1px solid #E5E7EB"
+          background: "#FFFFFF",
+          border: "1px solid #E2E8F0",
+          borderRadius: "24px",
+          overflow: "hidden",
+          boxShadow:
+            "0 8px 24px rgba(15,23,42,.035)"
         }}
       >
 
-        <table
+        {/* TABLE HEADER */}
+
+        <div
           style={{
-            width:
-              "100%",
-            borderCollapse:
-              "collapse"
+            position: "relative",
+            overflow: "hidden",
+            padding: "24px",
+            borderBottom:
+              "1px solid #E2E8F0",
+            background:
+              "linear-gradient(135deg,#FFFFFF 0%,#FFFCF8 100%)"
           }}
         >
 
-          <thead>
+          <div
+            style={{
+              position: "absolute",
+              width: "165px",
+              height: "165px",
+              borderRadius: "50%",
+              right: "-55px",
+              top: "-100px",
+              background:
+                "rgba(249,115,22,.055)",
+              pointerEvents: "none"
+            }}
+          />
 
-            <tr
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              gap: "20px"
+            }}
+          >
+
+            <div>
+
+              <div
+                style={{
+                  color: "#F97316",
+                  fontSize: "12px",
+                  fontWeight: 800,
+                  letterSpacing: "1.5px",
+                  marginBottom: "6px"
+                }}
+              >
+                CRM INTAKE PIPELINE
+              </div>
+
+              <h2
+                style={{
+                  margin: 0,
+                  color: "#0F172A",
+                  fontSize: "23px",
+                  fontWeight: 800
+                }}
+              >
+                Student Requests
+              </h2>
+
+              <p
+                style={{
+                  margin: "5px 0 0",
+                  color: "#64748B",
+                  fontSize: "15px"
+                }}
+              >
+                Review each incoming request and decide
+                whether it should move into your CRM.
+              </p>
+
+            </div>
+
+
+            <div
               style={{
-                background:
-                  "#F8FAFC"
+                padding: "7px 11px",
+                borderRadius: "999px",
+                background: "#FFF7ED",
+                border: "1px solid #FED7AA",
+                color: "#C2410C",
+                fontSize: "13px",
+                fontWeight: 800,
+                whiteSpace: "nowrap"
               }}
             >
+              {requests.length} REQUESTS
+            </div>
 
-              <th style={{ padding:"16px", textAlign:"left" }}>
-                Type
-              </th>
+          </div>
 
-              <th style={{ padding:"16px", textAlign:"left" }}>
-                Name
-              </th>
+        </div>
 
-              <th style={{ padding:"16px", textAlign:"left" }}>
-                School
-              </th>
 
-              <th style={{ padding:"16px", textAlign:"left" }}>
-                Status
-              </th>
+        {/* TABLE */}
 
-              <th style={{ padding:"16px", textAlign:"left" }}>
-                Actions
-              </th>
+        <div
+          style={{
+            overflowX: "auto"
+          }}
+        >
 
-            </tr>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              minWidth: "760px"
+            }}
+          >
 
-          </thead>
+            <thead>
 
-          <tbody>
+              <tr
+                style={{
+                  background: "#F8FAFC"
+                }}
+              >
 
-            {requests.map(
-              (
-                request: any
-              ) => (
+                {[
+                  "Type",
+                  "Student",
+                  "School",
+                  "Status",
+                  "Actions"
+                ].map(label => (
 
-                <tr
-                  key={
-                    request.id
-                  }
-                >
+                  <th
+                    key={label}
+                    style={{
+                      padding: "13px 18px",
+                      textAlign: "left",
+                      color: "#64748B",
+                      fontSize: "12px",
+                      letterSpacing: "1px",
+                      textTransform: "uppercase",
+                      fontWeight: 800,
+                      borderBottom:
+                        "1px solid #E2E8F0"
+                    }}
+                  >
+                    {label}
+                  </th>
 
-                  <td style={{ padding:"16px" }}>
-                    {request.request_type}
-                  </td>
+                ))}
 
-                  <td style={{ padding:"16px" }}>
-                    {request.requester_name}
-                  </td>
+              </tr>
 
-                  <td style={{ padding:"16px" }}>
-                    {request.school_name}
-                  </td>
+            </thead>
 
-                  <td style={{ padding:"16px" }}>
 
-                    <span
+            <tbody>
+
+              {requests.map(
+                (
+                  request: any
+                ) => (
+
+                  <tr
+                    key={request.id}
+                    style={{
+                      borderBottom:
+                        "1px solid #F1F5F9"
+                    }}
+                  >
+
+                    {/* TYPE */}
+
+                    <td
                       style={{
-                        padding:
-                          "6px 12px",
-                        borderRadius:
-                          "999px",
-                        background:
-                          getStatusColor(
-                            request.status
-                          )
+                        padding: "15px 18px"
                       }}
                     >
-                      {request.status}
-                    </span>
 
-                  </td>
+                      <RequestTypeBadge
+                        type={
+                          request.request_type
+                        }
+                      />
 
-                  <td style={{ padding:"16px" }}>
+                    </td>
 
-                    <button
-                      onClick={() =>
-                        setSelectedRequest(
-                          request
-                        )
-                      }
+
+                    {/* STUDENT */}
+
+                    <td
+                      style={{
+                        padding: "15px 18px"
+                      }}
                     >
-                      View
-                    </button>
 
-                    {" "}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px"
+                        }}
+                      >
 
-                    {request.status ===
-                      "pending" && (
+                        <div
+                          style={{
+                            width: "34px",
+                            height: "34px",
+                            borderRadius: "11px",
+                            background: "#FFF7ED",
+                            border:
+                              "1px solid #FED7AA",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#F97316",
+                            fontSize: "15px",
+                            fontWeight: 900,
+                            flexShrink: 0
+                          }}
+                        >
+                          {request.requester_name
+                            ?.charAt(0)
+                            .toUpperCase() ||
+                            "S"}
+                        </div>
 
-                      <>
-                        <button
-                          disabled={
-                            loading
-                          }
+                        <div>
+
+                          <div
+                            style={{
+                              color: "#0F172A",
+                              fontSize: "15px",
+                              fontWeight: 750
+                            }}
+                          >
+                            {
+                              request.requester_name
+                            }
+                          </div>
+
+                          <div
+                            style={{
+                              marginTop: "2px",
+                              color: "#94A3B8",
+                              fontSize: "11px"
+                            }}
+                          >
+                            Incoming student
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                    </td>
+
+
+                    {/* SCHOOL */}
+
+                    <td
+                      style={{
+                        padding: "15px 18px",
+                        color: "#475569",
+                        fontSize: "15px",
+                        fontWeight: 600
+                      }}
+                    >
+                      {request.school_name || "-"}
+                    </td>
+
+
+                    {/* STATUS */}
+
+                    <td
+                      style={{
+                        padding: "15px 18px"
+                      }}
+                    >
+
+                      <RequestStatusBadge
+                        status={
+                          request.status
+                        }
+                      />
+
+                    </td>
+
+
+                    {/* ACTIONS */}
+
+                    <td
+                      style={{
+                        padding: "15px 18px"
+                      }}
+                    >
+
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "7px",
+                          flexWrap: "wrap"
+                        }}
+                      >
+
+                        <RequestActionButton
+                          label="View"
                           onClick={() =>
-                            handleAccept(
+                            setSelectedRequest(
                               request
                             )
                           }
-                        >
-                          Accept
-                        </button>
+                        />
 
-                        {" "}
+                        {request.status ===
+                          "pending" && (
 
-                        <button
-                          onClick={() =>
-                            handleReject(
-                              request
-                            )
-                          }
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
+                          <>
 
-                  </td>
+                            <RequestActionButton
+                              label={
+                                loading
+                                  ? "Processing..."
+                                  : "Accept"
+                              }
+                              tone="accept"
+                              disabled={loading}
+                              onClick={() =>
+                                handleAccept(
+                                  request
+                                )
+                              }
+                            />
 
-                </tr>
+                            <RequestActionButton
+                              label="Reject"
+                              tone="reject"
+                              onClick={() =>
+                                handleReject(
+                                  request
+                                )
+                              }
+                            />
 
-              )
-            )}
+                          </>
 
-          </tbody>
+                        )}
 
-        </table>
+                      </div>
+
+                    </td>
+
+                  </tr>
+
+                )
+              )}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+
+        {/* EMPTY STATE */}
+
+        {requests.length === 0 && (
+
+          <div
+            style={{
+              padding: "55px 25px",
+              textAlign: "center",
+              background:
+                "linear-gradient(180deg,#FFFFFF,#FAFCFF)"
+            }}
+          >
+
+            <div
+              style={{
+                width: "54px",
+                height: "54px",
+                borderRadius: "17px",
+                margin: "0 auto 14px",
+                background: "#FFF7ED",
+                border: "1px solid #FED7AA",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#F97316",
+                fontSize: "26px",
+                fontWeight: 800
+              }}
+            >
+              ↗
+            </div>
+
+            <div
+              style={{
+                color: "#0F172A",
+                fontSize: "18px",
+                fontWeight: 800
+              }}
+            >
+              No incoming requests yet
+            </div>
+
+            <div
+              style={{
+                color: "#64748B",
+                fontSize: "14px",
+                marginTop: "5px"
+              }}
+            >
+              Student requests will appear here
+              when they reach your partner CRM.
+            </div>
+
+          </div>
+
+        )}
 
       </div>
 
-      {/* DETAIL MODAL */}
+
+      {/* =========================================================
+          REQUEST DETAIL MODAL
+         ========================================================= */}
 
       {selectedRequest && (
 
         <div
           style={{
-            position:
-              "fixed",
+            position: "fixed",
             inset: 0,
             background:
-              "rgba(0,0,0,.5)",
-            display:
-              "flex",
-            alignItems:
-              "center",
-            justifyContent:
-              "center"
+              "rgba(15,23,42,.55)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+            zIndex: 9999
           }}
         >
 
           <div
             style={{
               width:
-                "600px",
-              background:
-                "white",
-              borderRadius:
-                "20px",
-              padding:
-                "24px"
+                "min(680px, calc(100vw - 40px))",
+              maxHeight: "88vh",
+              overflowY: "auto",
+              background: "#FFFFFF",
+              borderRadius: "26px",
+              border: "1px solid #E2E8F0",
+              boxShadow:
+                "0 28px 80px rgba(15,23,42,.20)"
             }}
           >
 
-            <h2>
-              Request Details
-            </h2>
+            {/* MODAL HEADER */}
 
-            <p>
-              <b>Name:</b>{" "}
-              {selectedRequest.requester_name}
-            </p>
-
-            <p>
-              <b>Email:</b>{" "}
-              {selectedRequest.email}
-            </p>
-
-            <p>
-              <b>Phone:</b>{" "}
-              {selectedRequest.phone}
-            </p>
-
-            <p>
-              <b>School:</b>{" "}
-              {selectedRequest.school_name}
-            </p>
-
-            <p>
-              <b>Message:</b>{" "}
-              {selectedRequest.message}
-            </p>
-
-            <button
-              onClick={() =>
-                setSelectedRequest(
-                  null
-                )
-              }
+            <div
+              style={{
+                position: "relative",
+                overflow: "hidden",
+                padding: "22px",
+                borderBottom:
+                  "1px solid #E2E8F0",
+                background:
+                  "linear-gradient(135deg,#FFFFFF,#FFF9F3)"
+              }}
             >
-              Close
-            </button>
+
+              <div
+                style={{
+                  position: "absolute",
+                  width: "145px",
+                  height: "145px",
+                  borderRadius: "50%",
+                  right: "-50px",
+                  top: "-80px",
+                  background:
+                    "rgba(249,115,22,.07)",
+                  pointerEvents: "none"
+                }}
+              />
+
+              <div
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                  display: "flex",
+                  justifyContent:
+                    "space-between",
+                  alignItems: "flex-start",
+                  gap: "20px"
+                }}
+              >
+
+                <div>
+
+                  <div
+                    style={{
+                      color: "#F97316",
+                      fontSize: "11px",
+                      fontWeight: 850,
+                      letterSpacing: "1.4px",
+                      marginBottom: "6px"
+                    }}
+                  >
+                    INCOMING REQUEST
+                  </div>
+
+                  <h2
+                    style={{
+                      margin: 0,
+                      color: "#0F172A",
+                      fontSize: "24px",
+                      fontWeight: 800
+                    }}
+                  >
+                    Request Details
+                  </h2>
+
+                  <p
+                    style={{
+                      margin: "5px 0 0",
+                      color: "#64748B",
+                      fontSize: "14px",
+                      lineHeight: 1.5
+                    }}
+                  >
+                    Review the student information
+                    attached to this CRM request.
+                  </p>
+
+                </div>
+
+
+                <button
+                  onClick={() =>
+                    setSelectedRequest(
+                      null
+                    )
+                  }
+                  style={{
+                    width: "34px",
+                    height: "34px",
+                    borderRadius: "10px",
+                    border:
+                      "1px solid #E2E8F0",
+                    background: "#FFFFFF",
+                    color: "#64748B",
+                    cursor: "pointer",
+                    fontSize: "21px",
+                    fontWeight: 700,
+                    flexShrink: 0
+                  }}
+                >
+                  ×
+                </button>
+
+              </div>
+
+            </div>
+
+
+            {/* MODAL BODY */}
+
+            <div
+              style={{
+                padding: "22px"
+              }}
+            >
+
+              {/* STUDENT IDENTITY */}
+
+              <div
+                style={{
+                  position: "relative",
+                  overflow: "hidden",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent:
+                    "space-between",
+                  gap: "15px",
+                  padding: "15px",
+                  borderRadius: "17px",
+                  background:
+                    "linear-gradient(135deg,#FFF7ED,#FFFCF8)",
+                  border: "1px solid #FED7AA",
+                  marginBottom: "16px"
+                }}
+              >
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    position: "relative",
+                    zIndex: 1
+                  }}
+                >
+
+                  <div
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      borderRadius: "14px",
+                      background: "#FFFFFF",
+                      border:
+                        "1px solid #FED7AA",
+                      color: "#F97316",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 900,
+                      fontSize: "19px"
+                    }}
+                  >
+                    {selectedRequest
+                      .requester_name
+                      ?.charAt(0)
+                      .toUpperCase() ||
+                      "S"}
+                  </div>
+
+                  <div>
+
+                    <div
+                      style={{
+                        color: "#9A3412",
+                        fontSize: "11px",
+                        fontWeight: 850,
+                        letterSpacing: "1px",
+                        marginBottom: "3px"
+                      }}
+                    >
+                      REQUESTER
+                    </div>
+
+                    <div
+                      style={{
+                        color: "#0F172A",
+                        fontSize: "18px",
+                        fontWeight: 800
+                      }}
+                    >
+                      {
+                        selectedRequest
+                          .requester_name
+                      }
+                    </div>
+
+                    <div
+                      style={{
+                        color: "#64748B",
+                        fontSize: "13px",
+                        marginTop: "2px"
+                      }}
+                    >
+                      {
+                        selectedRequest
+                          .school_name ||
+                        "School not available"
+                      }
+                    </div>
+
+                  </div>
+
+                </div>
+
+
+                <RequestStatusBadge
+                  status={
+                    selectedRequest.status
+                  }
+                />
+
+              </div>
+
+
+              {/* DETAILS GRID */}
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    "1fr 1fr",
+                  gap: "10px"
+                }}
+              >
+
+                <RequestDetailCard
+                  label="Request Type"
+                  value={
+                    selectedRequest
+                      .request_type
+                  }
+                />
+
+                <RequestDetailCard
+                  label="Status"
+                  value={
+                    selectedRequest.status
+                  }
+                />
+
+                <RequestDetailCard
+                  label="Email"
+                  value={
+                    selectedRequest.email
+                  }
+                />
+
+                <RequestDetailCard
+                  label="Phone"
+                  value={
+                    selectedRequest.phone
+                  }
+                />
+
+                <RequestDetailCard
+                  label="School"
+                  value={
+                    selectedRequest
+                      .school_name
+                  }
+                />
+
+                <RequestDetailCard
+                  label="Class"
+                  value={
+                    selectedRequest
+                      .class_name
+                  }
+                />
+
+                <RequestDetailCard
+                  label="Message"
+                  value={
+                    selectedRequest.message
+                  }
+                  fullWidth
+                />
+
+              </div>
+
+
+              {/* FOOTER */}
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "9px",
+                  marginTop: "18px",
+                  paddingTop: "17px",
+                  borderTop:
+                    "1px solid #F1F5F9"
+                }}
+              >
+
+                <button
+                  onClick={() =>
+                    setSelectedRequest(
+                      null
+                    )
+                  }
+                  style={{
+                    padding: "9px 15px",
+                    borderRadius: "10px",
+                    border:
+                      "1px solid #CBD5E1",
+                    background: "#FFFFFF",
+                    color: "#475569",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: 750
+                  }}
+                >
+                  Close
+                </button>
+
+              </div>
+
+            </div>
 
           </div>
 

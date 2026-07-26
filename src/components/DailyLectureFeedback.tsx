@@ -429,19 +429,180 @@ await loadPendingDoubts();
 
   return (
     <div className="space-y-6">
-      {/* Announcement Card */}
+ {/* Announcement Card */}
 
-      <div className="rounded-3xl border border-green-200 bg-green-50 p-6 shadow-sm">
-        <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-green-800">
-          Continuous Daily Check-In Homework Audit
-        </h3>
+<div
+  className="relative overflow-hidden border border-slate-200 bg-white shadow-sm"
+  style={{
+    borderRadius: "24px",
+    padding: "30px 34px",
+    background:
+      "linear-gradient(135deg, #FFFFFF 0%, #FFFFFF 72%, #FFF9F3 100%)",
+    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.045)",
+  }}
+>
+  {/* Decorative orange circle */}
 
-        <p className="mt-3 text-base text-slate-600">
-          Spend a few minutes reviewing today's classroom topics
-          covered by your teachers and submit your learning audit
-          once the Daily Lecture Logs are available.
-        </p>
+  <div
+    className="pointer-events-none absolute rounded-full"
+    style={{
+      width: "180px",
+      height: "180px",
+      right: "-60px",
+      top: "-85px",
+      background: "rgba(249, 115, 22, 0.06)",
+    }}
+  />
+
+  {/* Decorative soft orange circle */}
+
+  <div
+    className="pointer-events-none absolute rounded-full"
+    style={{
+      width: "95px",
+      height: "95px",
+      right: "120px",
+      top: "-50px",
+      background: "rgba(249, 115, 22, 0.035)",
+    }}
+  />
+
+  {/* Decorative blue circle */}
+
+  <div
+    className="pointer-events-none absolute rounded-full"
+    style={{
+      width: "150px",
+      height: "150px",
+      right: "180px",
+      bottom: "-105px",
+      background: "rgba(37, 99, 235, 0.04)",
+    }}
+  />
+
+  <div className="relative z-10 flex items-center justify-between gap-8">
+
+    {/* LEFT CONTENT */}
+
+    <div className="flex-1">
+      <div
+        style={{
+          color: "#F97316",
+          fontSize: "11px",
+          fontWeight: 800,
+          letterSpacing: "2px",
+          textTransform: "uppercase",
+        }}
+      >
+        DAILY LEARNING ROUTINE
       </div>
+
+      <h2
+        style={{
+          margin: "9px 0 8px",
+          color: "#0F172A",
+          fontSize: "27px",
+          lineHeight: 1.15,
+          fontWeight: 800,
+          letterSpacing: "-0.6px",
+        }}
+      >
+        Continuous Daily Check-In
+      </h2>
+
+      <p
+        style={{
+          margin: 0,
+          maxWidth: "900px",
+          color: "#64748B",
+          fontSize: "14px",
+          lineHeight: 1.65,
+        }}
+      >
+        Spend a few minutes reviewing today's classroom topics
+        covered by your teachers and submit your learning audit
+        once the Daily Lecture Logs are available.
+      </p>
+
+      <div
+        className="flex flex-wrap"
+        style={{
+          gap: "8px",
+          marginTop: "16px",
+        }}
+      >
+        <div
+          style={{
+            padding: "6px 10px",
+            background: "#FFF7ED",
+            border: "1px solid #FED7AA",
+            borderRadius: "999px",
+            color: "#C2410C",
+            fontSize: "9px",
+            fontWeight: 800,
+            letterSpacing: "0.6px",
+          }}
+        >
+          HOMEWORK AUDIT
+        </div>
+
+        <div
+          style={{
+            padding: "6px 10px",
+            background: "#EFF6FF",
+            border: "1px solid #BFDBFE",
+            borderRadius: "999px",
+            color: "#1D4ED8",
+            fontSize: "9px",
+            fontWeight: 800,
+            letterSpacing: "0.6px",
+          }}
+        >
+          DAILY FEEDBACK
+        </div>
+      </div>
+    </div>
+
+    {/* RIGHT BADGE */}
+
+    <div
+      className="flex flex-shrink-0 flex-col items-center justify-center"
+      style={{
+        width: "90px",
+        height: "90px",
+        background:
+          "linear-gradient(145deg, #FFF8F1 0%, #FFFFFF 100%)",
+        border: "1px solid #FED7AA",
+        borderRadius: "22px",
+        boxShadow: "0 8px 20px rgba(249, 115, 22, 0.07)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "28px",
+          lineHeight: 1,
+        }}
+      >
+        ✓
+      </div>
+
+      <div
+        style={{
+          marginTop: "9px",
+          color: "#F97316",
+          fontSize: "8px",
+          fontWeight: 800,
+          letterSpacing: "1.1px",
+          textAlign: "center",
+        }}
+      >
+        DAILY
+        <br />
+        CHECK-IN
+      </div>
+    </div>
+  </div>
+</div>
 
 
 {

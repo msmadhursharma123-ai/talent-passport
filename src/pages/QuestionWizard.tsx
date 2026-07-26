@@ -329,43 +329,164 @@ option,
               </div>
             )}
 
-          {/* SLIDER */}
+        {/* SLIDER */}
 
-          {current.type === "slider" && (
-            <div
+{current.type === "slider" && (
+  <div
+    style={{
+      marginTop: "50px",
+      width: "100%",
+    }}
+  >
+    {/* CURRENT RATING */}
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: "20px",
+      }}
+    >
+      <div
+        style={{
+          color: "#64748B",
+          fontSize: "15px",
+          fontWeight: 600,
+        }}
+      >
+        Select your rating
+      </div>
+
+      <div
+        style={{
+          minWidth: "62px",
+          padding: "8px 14px",
+          borderRadius: "12px",
+          background: "#FFF7E8",
+          border: "1px solid #F4A623",
+          color: "#143B73",
+          fontSize: "17px",
+          fontWeight: 800,
+          textAlign: "center",
+        }}
+      >
+        {answers[current.id] || 5}/10
+      </div>
+    </div>
+
+    {/* SLIDER */}
+
+    <input
+      type="range"
+      min={1}
+      max={10}
+      step={1}
+      value={answers[current.id] || 5}
+      onChange={(e) =>
+        setAnswers({
+          ...answers,
+          [current.id]: Number(
+            e.target.value
+          ),
+        })
+      }
+      style={{
+        width: "100%",
+        cursor: "pointer",
+        accentColor: "#F4A623",
+      }}
+    />
+
+    {/* SCALE 1 — 10 */}
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns:
+          "repeat(10, 1fr)",
+        marginTop: "12px",
+        width: "100%",
+      }}
+    >
+      {Array.from(
+        { length: 10 },
+        (_, index) => index + 1
+      ).map((number) => {
+
+        const selected =
+          (answers[current.id] || 5) ===
+          number;
+
+        return (
+          <div
+            key={number}
+            style={{
+              display: "flex",
+              justifyContent:
+                number === 1
+                  ? "flex-start"
+                  : number === 10
+                  ? "flex-end"
+                  : "center",
+            }}
+          >
+            <span
               style={{
-                marginTop: "50px",
+                width: "30px",
+                height: "30px",
+
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+
+                borderRadius: "50%",
+
+                background: selected
+                  ? "#F4A623"
+                  : "#F8FAFC",
+
+                border: selected
+                  ? "1px solid #F4A623"
+                  : "1px solid #E2E8F0",
+
+                color: selected
+                  ? "#FFFFFF"
+                  : "#64748B",
+
+                fontSize: "13px",
+                fontWeight: selected
+                  ? 800
+                  : 600,
+
+                transition: "all 0.2s ease",
               }}
             >
-            <input
-  type="range"
-  min={1}
-  max={10}
-  value={answers[current.id] || 5}
-  onChange={(e) =>
-    setAnswers({
-      ...answers,
-      [current.id]: Number(
-        e.target.value
-      ),
-    })
-  }
-                style={{
-                  width: "100%",
-                }}
-              />
+              {number}
+            </span>
+          </div>
+        );
+      })}
+    </div>
 
-              <div
-                style={{
-                  marginTop: "10px",
-                  color: "#666",
-                }}
-              >
-                Current Rating:
-{answers[current.id] || 5}/10
-              </div>
-            </div>
-          )}
+    {/* SCALE LABELS */}
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        marginTop: "10px",
+
+        color: "#94A3B8",
+        fontSize: "12px",
+        fontWeight: 600,
+      }}
+    >
+      <span>1</span>
+      <span>10</span>
+    </div>
+  </div>
+)}
 
           {/* Buttons */}
 

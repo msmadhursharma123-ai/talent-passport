@@ -24,143 +24,271 @@ export default function TeacherHeader({
     });
 
   return (
-    <div
+    <header
       style={{
-        height: 72,
-        background: "white",
+        minHeight: 82,
+
+        background:
+          "linear-gradient(135deg, #FFFFFF 0%, #FFFCF8 72%, #FFF7ED 100%)",
+
         borderBottom: "1px solid #E2E8F0",
-        display: "flex",
+
+        display: "grid",
+        gridTemplateColumns: "1fr auto 1fr",
         alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0px 24px",
+
+        padding: "0 26px",
+
+        boxSizing: "border-box",
+
         boxShadow:
-          "0px 4px 20px rgba(0,0,0,0.03)",
+          "0 8px 24px rgba(15, 23, 42, 0.035)",
+
+        position: "relative",
+        overflow: "hidden",
+
+        zIndex: 20,
       }}
     >
-      {/* LEFT SECTION */}
-
-      <div>
-        <h1
-          style={{
-            margin: 0,
-            color: "#03122E",
-            fontSize: 20,
-            fontWeight: 700,
-          }}
-        >
-          Teacher Portal
-        </h1>
-
-        <p
-          style={{
-            marginTop: 4,
-            color: "#64748B",
-            fontSize: 11,
-          }}
-        >
-          Classroom Intelligence &
-          Academic Growth System
-        </p>
-      </div>
-
-      {/* CENTER SECTION */}
+      {/* =====================================================
+          DECORATIVE BACKGROUND
+         ===================================================== */}
 
       <div
         style={{
-          background: "#F8FAFC",
-          padding: "9px 16px",
-          borderRadius: 12,
-          textAlign: "center",
+          position: "absolute",
+
+          width: 150,
+          height: 150,
+
+          borderRadius: "50%",
+
+          background:
+            "rgba(249, 115, 22, 0.045)",
+
+          right: 175,
+          top: -100,
+
+          pointerEvents: "none",
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+
+          width: 100,
+          height: 100,
+
+          borderRadius: "50%",
+
+          background:
+            "rgba(59, 130, 246, 0.035)",
+
+          left: "31%",
+          bottom: -72,
+
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* =====================================================
+          LEFT
+
+          Intentionally empty.
+
+          Portal identity already exists in TeacherSidebar.
+          Keeping this column preserves true center alignment
+          for the date card.
+         ===================================================== */}
+
+      <div />
+
+      {/* =====================================================
+          CENTER — CURRENT DATE
+         ===================================================== */}
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+
           minWidth: 190,
+
+          padding: "10px 20px",
+
+          background:
+            "linear-gradient(135deg, #FFF9F2 0%, #FFFFFF 100%)",
+
+          border: "1px solid #FDBA74",
+
+          borderRadius: 14,
+
+          textAlign: "center",
+
+          boxShadow:
+            "0 6px 18px rgba(249, 115, 22, 0.055)",
         }}
       >
-        <p
+        <div
           style={{
-            margin: 0,
-            color: "#F59E0B",
-            fontWeight: 700,
-            fontSize: 9,
-            letterSpacing: 1,
+            color: "#F97316",
+
+            fontSize: 11,
+            fontWeight: 800,
+
+            letterSpacing: 1.5,
+
+            textTransform: "uppercase",
           }}
         >
-          TODAY
-        </p>
+          Today
+        </div>
 
-        <p
+        <div
           style={{
-            marginTop: 4,
-            marginBottom: 0,
-            color: "#1E293B",
-            fontWeight: 600,
-            fontSize: 12,
+            marginTop: 5,
+
+            color: "#0F172A",
+
+            fontSize: 14,
+            fontWeight: 700,
           }}
         >
           {formattedDate}
-        </p>
+        </div>
       </div>
 
-      {/* RIGHT SECTION */}
+      {/* =====================================================
+          RIGHT — SCHOOL IDENTITY + LOGOUT
+         ===================================================== */}
 
-<div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: 14,
-  }}
->
-  <div
-    style={{
-      textAlign: "right",
-      maxWidth: 280,
-    }}
-  >
-    <p
-      style={{
-        margin: 0,
-        fontWeight: 700,
-        fontSize: 14,
-        color: "#03122E",
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-      }}
-      title={schoolName}
-    >
-      {schoolName}
-    </p>
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
 
-    <p
-      style={{
-        marginTop: 3,
-        marginBottom: 0,
-        color: "#64748B",
-        fontSize: 10,
-      }}
-    >
-      Academic Workspace
-    </p>
-  </div>
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
 
-  <button
-    onClick={onLogout}
-    style={{
-      background:
-        "linear-gradient(90deg,#EF4444,#DC2626)",
-      color: "white",
-      border: "none",
-      padding: "9px 16px",
-      borderRadius: 10,
-      cursor: "pointer",
-      fontWeight: 700,
-      fontSize: 12,
-      boxShadow:
-        "0px 8px 18px rgba(220,38,38,0.25)",
-    }}
-  >
-    Logout
-  </button>
-</div>
+          gap: 14,
 
-    </div>
+          minWidth: 0,
+        }}
+      >
+        {/* SCHOOL */}
+
+        <div
+          style={{
+            textAlign: "right",
+
+            maxWidth: 280,
+            minWidth: 0,
+          }}
+        >
+          <div
+            style={{
+              color: "#0F172A",
+
+              fontSize: 17,
+              fontWeight: 800,
+
+              lineHeight: 1.2,
+
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+            title={schoolName}
+          >
+            {schoolName}
+          </div>
+
+          <div
+            style={{
+              marginTop: 5,
+
+              color: "#64748B",
+
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            Academic Workspace
+          </div>
+        </div>
+
+        {/* SEPARATOR */}
+
+        <div
+          style={{
+            width: 1,
+            height: 30,
+
+            background: "#E2E8F0",
+          }}
+        />
+
+        {/* LOGOUT */}
+
+        <button
+          onClick={onLogout}
+          style={{
+            padding: "10px 17px",
+
+            background:
+              "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)",
+
+            color: "#EA580C",
+
+            border: "1px solid #FDBA74",
+
+            borderRadius: 11,
+
+            cursor: "pointer",
+
+            fontSize: 14,
+            fontWeight: 800,
+
+            boxShadow:
+              "0 6px 16px rgba(249, 115, 22, 0.08)",
+
+            transition:
+              "all 0.2s ease",
+
+            whiteSpace: "nowrap",
+          }}
+          onMouseEnter={(event) => {
+            event.currentTarget.style.background =
+              "#F97316";
+
+            event.currentTarget.style.color =
+              "#FFFFFF";
+
+            event.currentTarget.style.transform =
+              "translateY(-1px)";
+
+            event.currentTarget.style.boxShadow =
+              "0 8px 20px rgba(249, 115, 22, 0.18)";
+          }}
+          onMouseLeave={(event) => {
+            event.currentTarget.style.background =
+              "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)";
+
+            event.currentTarget.style.color =
+              "#EA580C";
+
+            event.currentTarget.style.transform =
+              "translateY(0)";
+
+            event.currentTarget.style.boxShadow =
+              "0 6px 16px rgba(249, 115, 22, 0.08)";
+          }}
+        >
+          Logout
+        </button>
+      </div>
+    </header>
   );
 }

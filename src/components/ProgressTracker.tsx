@@ -165,7 +165,7 @@ export default function ProgressTracker() {
 
     {
 
-      title: "Partially Understood",
+      title: " Partially Understood",
 
       value: progress?.stats.partiallyUnderstood ?? 0,
 
@@ -185,237 +185,483 @@ export default function ProgressTracker() {
 
     <div className="space-y-6">
 
-      {/* Header */}
+     {/* Header */}
 
-      <div className="rounded-3xl bg-[#07142D] p-8 text-white shadow-lg">
+<div
+  className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 shadow-sm"
+  style={{
+    background:
+      "linear-gradient(135deg, #FFFFFF 0%, #FFFCF8 68%, #FFF5EA 100%)",
+  }}
+>
+  {/* decorative circles */}
 
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-orange-400">
+  <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-orange-100/60" />
 
-          Student Academic Continuity
+  <div className="pointer-events-none absolute right-32 -top-20 h-36 w-36 rounded-full bg-orange-50/80" />
 
+  <div className="pointer-events-none absolute bottom-[-90px] right-[25%] h-48 w-48 rounded-full bg-blue-50/70" />
+
+  <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+
+    {/* LEFT */}
+
+    <div>
+
+      <p className="text-[11px] font-black uppercase tracking-[0.22em] text-orange-500">
+        Student Academic Continuity
+      </p>
+
+      <h1 className="mt-3 text-3xl font-black text-slate-900 lg:text-4xl">
+        Study Progress Tracker
+      </h1>
+
+      <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+        Track your classroom understanding, learning consistency and academic progress over time.
+      </p>
+
+    </div>
+
+    {/* FILTERS */}
+
+    <div className="flex flex-wrap items-end gap-3">
+
+      {/* SUBJECT */}
+
+      <div>
+
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+          Subject
         </p>
 
-        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <select
+          value={selectedSubject}
+          onChange={(e) =>
+            setSelectedSubject(
+              e.target.value
+            )
+          }
+          className="h-11 min-w-[190px] rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-orange-300"
+        >
 
-          <h1 className="text-3xl font-black uppercase">
+          {subjects.map(
+            (subject) => (
 
-            Focus Progress Tracker Dashboard
+              <option
+                key={subject}
+                value={subject}
+              >
+                {subject}
+              </option>
 
-          </h1>
-<div className="flex items-end gap-4">
+            )
+          )}
 
-  {/* SUBJECT */}
+        </select>
 
-  <div>
+      </div>
 
-    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
-      Subject
-    </p>
+      {/* MONTH */}
 
-    <select
-      value={selectedSubject}
-      onChange={(e) =>
-        setSelectedSubject(
-          e.target.value
-        )
-      }
-      className="h-12 w-56 rounded-xl border border-white/20 bg-white/10 px-4 text-base text-white outline-none"
-    >
+      <div>
 
-      {subjects.map(
-        (subject) => (
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+          Month
+        </p>
 
-          <option
-            key={subject}
-            value={subject}
-            className="text-black"
-          >
-            {subject}
+        <select
+          value={selectedMonth}
+          onChange={(e) =>
+            setSelectedMonth(
+              e.target.value
+            )
+          }
+          className="h-11 min-w-[160px] rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-orange-300"
+        >
+
+          <option value="July 2026">
+            July 2026
           </option>
 
-        )
-      )}
+          <option value="August 2026">
+            August 2026
+          </option>
 
-    </select>
+          <option value="September 2026">
+            September 2026
+          </option>
 
-  </div>
+          <option value="October 2026">
+            October 2026
+          </option>
 
+          <option value="November 2026">
+            November 2026
+          </option>
 
-  {/* MONTH */}
+          <option value="December 2026">
+            December 2026
+          </option>
 
-  <div>
+          <option value="January 2027">
+            January 2027
+          </option>
 
-    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
-      Month
-    </p>
+          <option value="February 2027">
+            February 2027
+          </option>
 
-    <select
-      value={selectedMonth}
-      onChange={(e) =>
-        setSelectedMonth(
-          e.target.value
-        )
-      }
-      className="h-12 w-44 rounded-xl border border-white/20 bg-white/10 px-4 text-base text-white outline-none"
-    >
+          <option value="March 2027">
+            March 2027
+          </option>
 
-      <option value="July 2026" className="text-black">
-        July 2026
-      </option>
+          <option value="April 2027">
+            April 2027
+          </option>
 
-      <option value="August 2026" className="text-black">
-        August 2026
-      </option>
+        </select>
 
-      <option value="September 2026" className="text-black">
-        September 2026
-      </option>
+      </div>
 
-      <option value="October 2026" className="text-black">
-        October 2026
-      </option>
+      {/* ICON */}
 
-      <option value="November 2026" className="text-black">
-        November 2026
-      </option>
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-orange-200 bg-white/80 text-2xl shadow-sm">
+        📊
+      </div>
 
-      <option value="December 2026" className="text-black">
-        December 2026
-      </option>
-
-      <option value="January 2027" className="text-black">
-        January 2027
-      </option>
-
-      <option value="February 2027" className="text-black">
-        February 2027
-      </option>
-
-      <option value="March 2027" className="text-black">
-        March 2027
-      </option>
-
-      <option value="April 2027" className="text-black">
-        April 2027
-      </option>
-
-    </select>
+    </div>
 
   </div>
 
 </div>
 
-        </div>
-
-      </div>
 
 
+    {/* Calendar */}
 
-     {/* Calendar */}
+<div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
 
-     
+  {/* HEADER */}
 
-<div className="rounded-3xl bg-white p-8 shadow-sm">
+  <div className="flex items-start justify-between gap-4">
 
-  <h2 className="text-xl font-bold uppercase text-slate-800">
-    Monthly Classroom Check-In Calendar
-  </h2>
+    <div>
 
-  <p className="mt-2 text-slate-500">
-    Daily learning consistency and feedback tracking calendar.
-  </p>
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+        Learning Continuity
+      </p>
+
+      <h2 className="mt-2 text-xl font-black text-slate-900">
+        See Your Classroom Stats
+      </h2>
+
+      <p className="mt-2 text-sm text-slate-500">
+        Shows Daily learning consistency and feedback of your understanding across topics taught in the classroom
+      </p>
+
+    </div>
+
+    <div className="hidden rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-orange-600 md:block">
+      Monthly Learning Ledger
+    </div>
+
+  </div>
 
   {loading && (
-    <div className="mt-5 rounded-xl bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-600">
+    <div className="mt-5 rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-600">
       Loading Metrics...
     </div>
   )}
 
-<div className="mt-6 grid grid-cols-7 gap-3 mb-3">
+  {/* WEEK DAYS */}
 
-  {["MON","TUE","WED","THU","FRI","SAT","SUN"].map(day => (
+  <div className="mt-7 grid grid-cols-7 gap-3">
 
-    <div
-      key={day}
-      className="text-center text-sm font-bold uppercase tracking-wide text-slate-700"
-    >
-      {day}
-    </div>
+    {[
+      "MON",
+      "TUE",
+      "WED",
+      "THU",
+      "FRI",
+      "SAT",
+      "SUN",
+    ].map((day) => (
 
-  ))}
+      <div
+        key={day}
+        className="py-2 text-center text-[11px] font-black uppercase tracking-[0.14em] text-slate-500"
+      >
+        {day}
+      </div>
+
+    ))}
+
+  </div>
+
+  {/* CALENDAR */}
+
+  <div className="mt-1 grid grid-cols-7 gap-3">
+
+    {(progress?.calendar ?? []).map(
+      (item, index) => {
+
+        const complete =
+          !loading &&
+          item?.understandingLevel ===
+            "I completely understood.";
+
+        const partial =
+          !loading &&
+          item?.understandingLevel ===
+            "I partially understood.";
+
+        const support =
+          !loading &&
+          item?.understandingLevel ===
+            "I didn't understand.";
+
+        return (
+
+          <div
+            key={index}
+            className={`relative min-h-[112px] overflow-hidden rounded-2xl border p-4 transition-all duration-200
+
+              ${
+                complete
+                  ? "border-green-200 bg-green-50"
+                  : partial
+                  ? "border-amber-200 bg-amber-50"
+                  : support
+                  ? "border-red-200 bg-red-50"
+                  : "border-orange-200 bg-orange-50"
+              }
+            `}
+          >
+
+            {/* SOFT DECORATION */}
+
+            <div
+              className={`pointer-events-none absolute -right-5 -top-5 h-14 w-14 rounded-full
+
+                ${
+                  complete
+                    ? "bg-green-100/70"
+                    : partial
+                    ? "bg-amber-100/70"
+                    : support
+                    ? "bg-red-100/70"
+                    : "bg-orange-100/70"
+                }
+              `}
+            />
+
+            {/* DATE */}
+
+            <div className="relative z-10 text-sm font-black text-slate-800">
+
+              {Number(
+                item.date.split("-")[2]
+              )}
+
+            </div>
+
+            {/* STATUS */}
+
+            <div className="relative z-10 mt-5 flex min-h-[44px] flex-col items-center justify-center text-center">
+
+              {!loading &&
+              item?.understandingLevel ? (
+
+                <>
+
+                  <span className="text-lg">
+
+                    {complete
+                      ? "🟢"
+                      : partial
+                      ? "🟡"
+                      : "🔴"}
+
+                  </span>
+
+                  <p
+                    className={`mt-2 text-[10px] font-bold leading-4
+
+                      ${
+                        complete
+                          ? "text-green-700"
+                          : partial
+                          ? "text-amber-700"
+                          : "text-red-700"
+                      }
+                    `}
+                  >
+
+                    {complete
+                      ? "Excellent"
+                      : partial
+                      ? "Partially Understood"
+                      : "Needs Support"}
+
+                  </p>
+
+                </>
+
+              ) : (
+
+                !loading && (
+
+                  <p className="text-[10px] font-bold leading-4 text-orange-500">
+                    Not Submitted Yet
+                  </p>
+
+                )
+
+              )}
+
+            </div>
+
+          </div>
+
+        );
+
+      }
+    )}
+
+  </div>
 
 </div>
 
-  <div className="mt-6 grid grid-cols-7 gap-3">
+{/* Stats */}
 
-{(progress?.calendar ?? []).map((item, index) => {
+<div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+
+  <div className="flex items-end justify-between gap-4">
+
+    <div>
+
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+        Progress Intelligence
+      </p>
+
+      <h2 className="mt-2 text-xl font-black text-slate-900">
+        Monthly Stats Consolidation
+      </h2>
+
+      <p className="mt-2 text-sm text-slate-500">
+        Your consolidated learning activity and classroom understanding for the selected month.
+      </p>
+
+    </div>
+
+    <p className="hidden text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 lg:block">
+      Academic Progress Ledger
+    </p>
+
+  </div>
+
+  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+
+    {stats.map((item, index) => {
+
+      const cards = [
+
+        {
+          background:
+            "linear-gradient(135deg,#FFF9F2,#FFFFFF)",
+          border: "#FED7AA",
+          label: "#C2410C",
+          value: "#F97316",
+          bubble: "#FFEDD5",
+        },
+
+        {
+          background:
+            "linear-gradient(135deg,#EFF6FF,#FFFFFF)",
+          border: "#BFDBFE",
+          label: "#1D4ED8",
+          value: "#2563EB",
+          bubble: "#DBEAFE",
+        },
+
+        {
+          background:
+            "linear-gradient(135deg,#FEF2F2,#FFFFFF)",
+          border: "#FECACA",
+          label: "#B91C1C",
+          value: "#DC2626",
+          bubble: "#FEE2E2",
+        },
+
+        {
+          background:
+            "linear-gradient(135deg,#FFFBEB,#FFFFFF)",
+          border: "#FDE68A",
+          label: "#B45309",
+          value: "#D97706",
+          bubble: "#FEF3C7",
+        },
+
+        {
+          background:
+            "linear-gradient(135deg,#FAF5FF,#FFFFFF)",
+          border: "#E9D5FF",
+          label: "#7E22CE",
+          value: "#9333EA",
+          bubble: "#F3E8FF",
+        },
+
+      ];
+
+      const card =
+        cards[index];
 
       return (
 
-     <div
-  key={index}
-  className={`rounded-xl border p-4 text-center transition-all duration-200
+        <div
+          key={item.title}
+          className="relative overflow-hidden rounded-2xl border p-5"
+          style={{
+            background:
+              card.background,
+            borderColor:
+              card.border,
+          }}
+        >
 
-    ${
-      !loading && item?.understandingLevel === "I completely understood."
-        ? "border-green-300 bg-green-100 text-green-900"
-        : !loading &&
-          item?.understandingLevel === "I partially understood."
-        ? "border-yellow-300 bg-yellow-100 text-yellow-900"
-        : !loading &&
-          item?.understandingLevel === "I didn't understand."
-        ? "border-red-300 bg-red-100 text-red-900"
-        : "border-yellow-300 bg-yellow-50 text-slate-700"
-    }
-  `}
->
+          <div
+            className="pointer-events-none absolute -right-5 -top-5 h-16 w-16 rounded-full"
+            style={{
+              background:
+                card.bubble,
+            }}
+          />
 
-  <div className="text-base font-bold">
-  {Number(item.date.split("-")[2])}
-</div>
+          <h3
+            className="relative z-10 text-[10px] font-black uppercase tracking-wide"
+            style={{
+              color:
+                card.label,
+            }}
+          >
+            {item.title}
+          </h3>
 
-<div className="mt-3 flex flex-col items-center justify-center min-h-[52px]">
+          <p
+            className="relative z-10 mt-4 text-3xl font-black"
+            style={{
+              color:
+                card.value,
+            }}
+          >
 
-  {!loading && item?.understandingLevel ? (
+            {loading
+              ? "--"
+              : item.value}
 
-    <>
-      <span className="text-xl">
-        {item.understandingLevel === "I completely understood."
-          ? "🟢"
-          : item.understandingLevel === "I partially understood."
-          ? "🟡"
-          : "🔴"}
-      </span>
+          </p>
 
-      <p className="mt-2 text-[11px] font-semibold">
-
-        {item.understandingLevel === "I completely understood."
-          ? "Excellent"
-          : item.understandingLevel === "I partially understood."
-          ? "Partially Understood"
-          : "Needs Support"}
-
-      </p>
-
-    </>
-
-  ) : (
-
-    !loading && (
-
-      <p className="text-[11px] font-semibold leading-4 text-amber-600 text-center">
-
-        Not Submitted Yet
-
-      </p>
-
-    )
-
-  )}
-
-</div>
-
-</div>
+        </div>
 
       );
 
@@ -425,160 +671,157 @@ export default function ProgressTracker() {
 
 </div>
 
-{/* Stats */}
+     {/* Weekly Breakdown */}
 
-      <div className="rounded-3xl bg-white p-8 shadow-sm">
+<div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
 
-        <h2 className="text-xl font-bold uppercase text-slate-800">
+  <div className="flex items-start justify-between gap-4">
 
-          Monthly Stats Consolidation
+    <div>
 
-        </h2>
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+        Weekly Learning Intelligence
+      </p>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <h2 className="mt-2 text-xl font-black text-slate-900">
+        Weekly Feedback Reports Breakdown
+      </h2>
 
-        {stats.map((item, index) => {
-
-  const colors = [
-
-    {
-      bg: "bg-green-50",
-      border: "border-green-200",
-      text: "text-green-700",
-      value: "text-green-600",
-    },
-
-    {
-      bg: "bg-blue-50",
-      border: "border-blue-200",
-      text: "text-blue-700",
-      value: "text-blue-600",
-    },
-
-    {
-      bg: "bg-red-50",
-      border: "border-red-200",
-      text: "text-red-700",
-      value: "text-red-600",
-    },
-
-    {
-      bg: "bg-yellow-50",
-      border: "border-yellow-200",
-      text: "text-yellow-700",
-      value: "text-yellow-600",
-    },
-
-    {
-      bg: "bg-purple-50",
-      border: "border-purple-200",
-      text: "text-purple-700",
-      value: "text-purple-600",
-    },
-
-  ];
-
-  const color = colors[index];
-
-  return (
-
-    <div
-
-      key={item.title}
-
-      className={`rounded-2xl border p-5 shadow-sm ${color.bg} ${color.border}`}
-
-    >
-
-      <h3 className={`text-sm font-semibold uppercase ${color.text}`}>
-
-        {item.title}
-
-      </h3>
-
-      <p className={`mt-4 text-4xl font-black ${color.value}`}>
-
-        {loading
-
-          ? "--"
-
-          : item.value}
-
+      <p className="mt-2 text-sm text-slate-500">
+        Review your learning consistency and classroom understanding week by week.
       </p>
 
     </div>
 
-  );
+    <div className="hidden rounded-xl border border-blue-100 bg-blue-50 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-blue-600 md:block">
+      Weekly Ledger
+    </div>
 
-})}
+  </div>
 
-        </div>
+  <div className="mt-6 grid gap-4 lg:grid-cols-2">
 
-      </div>
+    {(loading
+      ? [1, 2, 3, 4]
+      : progress?.weeklyBreakdown ?? []
+    ).map((week: any, index) => (
 
-      {/* Weekly Breakdown */}
+      <div
+        key={index}
+        className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5"
+      >
 
-      <div className="rounded-3xl bg-white p-8 shadow-sm">
+        <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-orange-50" />
 
-        <h2 className="text-xl font-bold uppercase text-slate-800">
+        <div className="relative z-10">
 
-          Weekly Feedback Reports Breakdown
+          <div className="flex items-center justify-between">
 
-        </h2>
+            <div>
 
-        <div className="mt-6 space-y-4">
+              <p className="text-[9px] font-black uppercase tracking-[0.18em] text-orange-500">
+                Weekly Check-In
+              </p>
 
-          {(loading
+              <h3 className="mt-1 text-lg font-black text-slate-900">
 
-            ? [1, 2, 3, 4]
-
-            : progress?.weeklyBreakdown ?? []
-
-          ).map((week: any, index) => (
-
-            <div
-
-              key={index}
-
-              className="rounded-2xl border border-gray-200 bg-gray-50 p-5"
-
-            >
-
-              <h3 className="font-bold text-slate-800">
-
-                {
-
-                  loading
-
-                    ? `Week ${week}`
-
-                    : week.week
-
-                }
+                {loading
+                  ? `Week ${week}`
+                  : week.week}
 
               </h3>
 
-              <p className="mt-2 text-slate-500">
+            </div>
 
-                {
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-orange-100 bg-orange-50 text-lg">
+              📅
+            </div>
 
-                  loading
+          </div>
 
-                    ? "Loading weekly classroom insights..."
+          {loading ? (
 
-                    : `Tracked ${week.trackedDays} day(s) • Health Score ${week.healthScore}% • Completely Understood ${week.completelyUnderstood} • Partially Understood ${week.partiallyUnderstood} • Didn't Understand ${week.didntUnderstand}`
+            <p className="mt-5 text-sm text-slate-500">
+              Loading weekly classroom insights...
+            </p>
 
-                }
+          ) : (
 
-              </p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+
+              <div className="rounded-xl bg-slate-50 p-3">
+
+                <p className="text-[9px] font-bold uppercase text-slate-400">
+                  Tracked Days
+                </p>
+
+                <p className="mt-1 font-black text-slate-800">
+                  {week.trackedDays}
+                </p>
+
+              </div>
+
+              <div className="rounded-xl bg-blue-50 p-3">
+
+                <p className="text-[9px] font-bold uppercase text-blue-500">
+                  Health Score
+                </p>
+
+                <p className="mt-1 font-black text-blue-700">
+                  {week.healthScore}%
+                </p>
+
+              </div>
+
+              <div className="rounded-xl bg-green-50 p-3">
+
+                <p className="text-[9px] font-bold uppercase text-green-600">
+                  Understood
+                </p>
+
+                <p className="mt-1 font-black text-green-700">
+                  {week.completelyUnderstood}
+                </p>
+
+              </div>
+
+              <div className="rounded-xl bg-amber-50 p-3">
+
+                <p className="text-[9px] font-bold uppercase text-amber-600">
+                  Partial
+                </p>
+
+                <p className="mt-1 font-black text-amber-700">
+                  {week.partiallyUnderstood}
+                </p>
+
+              </div>
+
+              <div className="col-span-2 rounded-xl bg-red-50 p-3">
+
+                <p className="text-[9px] font-bold uppercase text-red-500">
+                  Didn't Understand
+                </p>
+
+                <p className="mt-1 font-black text-red-700">
+                  {week.didntUnderstand}
+                </p>
+
+              </div>
 
             </div>
 
-          ))}
+          )}
 
         </div>
 
       </div>
+
+    ))}
+
+  </div>
+
+</div>
 
       {/* Academic Ledger */}
 

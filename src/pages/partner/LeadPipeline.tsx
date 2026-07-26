@@ -366,559 +366,1171 @@ const counsellingCount =
     }
   }
 
-  return (
+   return (
 
-    <div>
+    <div
+      style={{
+        width: "95%",
+        maxWidth: "1600px",
+        margin: "0 auto",
+        padding: "24px",
+        boxSizing: "border-box"
+      }}
+    >
 
-      {/* HERO */}
+      {/* =========================================================
+          HERO
+         ========================================================= */}
 
       <div
         style={{
+          position: "relative",
+          overflow: "hidden",
           background:
-            "linear-gradient(135deg,#0F172A,#1E293B)",
-          color:
-            "white",
-          padding:
-            "32px",
-          borderRadius:
-            "24px",
-          marginBottom:
-            "24px"
+            "linear-gradient(135deg,#FFFFFF 0%,#FFFCF8 55%,#F7FAFF 100%)",
+          borderRadius: "28px",
+          border: "1px solid #DCE4EE",
+          boxShadow:
+            "0 12px 34px rgba(15,23,42,.06)",
+          padding: "34px 38px",
+          marginBottom: "20px",
+          minHeight: "165px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "30px"
         }}
       >
 
         <div
           style={{
-            color:
-              "#F59E0B",
-            fontWeight:
-              700,
-            letterSpacing:
-              2
+            position: "absolute",
+            width: "330px",
+            height: "330px",
+            borderRadius: "50%",
+            right: "-105px",
+            top: "-175px",
+            background: "rgba(249,115,22,.065)",
+            pointerEvents: "none"
           }}
-        >
-          PARTNER CRM
-        </div>
-
-        <h1>
-          Lead Pipeline
-        </h1>
-
-        <p>
-          Manage enquiries,
-          admissions and
-          follow-ups.
-        </p>
-
-      </div>
-
-      {/* KPI CARDS */}
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-  "repeat(9,1fr)",
-          gap: "16px",
-          marginBottom: "24px"
-        }}
-      >
-
-        <StatCard
-          title="Total Leads"
-          value={metrics.total}
         />
 
-        <StatCard
-          title="Incoming"
-          value={metrics.incoming}
-        />
-
-        <StatCard
-          title="Outgoing"
-          value={metrics.outgoing}
-        />
-
-        <StatCard
-          title="Admissions"
-          value={metrics.admissions}
-        />
-
-        <StatCard
-          title="Rejected"
-          value={metrics.rejected}
-        />
-
-<StatCard
-  title="Due Today"
-  value={dueTodayCount}
-/>
-
-<StatCard
-  title="Overdue"
-  value={overdueCount}
-/>
-
-<StatCard
-  title="Interested"
-  value={interestedCount}
-/>
-
-<StatCard
-  title="Counselling"
-  value={counsellingCount}
-/>
-
-      </div>
-
-      {/* FILTERS */}
-
-      <div
-        style={{
-          background: "white",
-          padding: "20px",
-          borderRadius: "20px",
-          marginBottom: "20px",
-          display: "flex",
-          gap: "12px",
-          flexWrap: "wrap"
-        }}
-      >
-
-        <input
-          value={search}
-          onChange={(e) =>
-            setSearch(
-              e.target.value
-            )
-          }
-          placeholder="Search Student / School / Phone"
+        <div
           style={{
-            padding: "12px",
-            minWidth: "280px"
+            position: "absolute",
+            width: "240px",
+            height: "240px",
+            borderRadius: "50%",
+            right: "150px",
+            bottom: "-180px",
+            background: "rgba(59,130,246,.055)",
+            pointerEvents: "none"
           }}
         />
 
-        <select
-          value={statusFilter}
-          onChange={(e) =>
-            setStatusFilter(
-              e.target.value
-            )
-          }
+        <div
+          style={{
+            position: "absolute",
+            width: "115px",
+            height: "115px",
+            borderRadius: "50%",
+            right: "92px",
+            top: "22px",
+            background: "rgba(255,237,213,.55)",
+            pointerEvents: "none"
+          }}
+        />
+
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 2,
+            maxWidth: "850px"
+          }}
         >
 
-          <option value="all">
-            All Statuses
-          </option>
-
-          {STATUS_OPTIONS.map(
-            status => (
-
-              <option
-                key={status}
-                value={status}
-              >
-                {status}
-              </option>
-
-            )
-          )}
-
-        </select>
-
-        <select
-          value={sourceFilter}
-          onChange={(e) =>
-            setSourceFilter(
-              e.target.value
-            )
-          }
-        >
-
-          <option value="all">
-            All Sources
-          </option>
-
-          <option value="incoming">
-            Incoming
-          </option>
-
-          <option value="outgoing">
-            Outgoing
-          </option>
-
-          <option value="admin_assigned">
-            Admin Assigned
-          </option>
-
-        </select>
-
-      </div>
-
- {/* TABLE */}
-
-<div
-  style={{
-    background: "white",
-    borderRadius: "24px",
-    overflow: "hidden",
-    border: "1px solid #E2E8F0",
-    boxShadow:
-      "0 10px 30px rgba(15,23,42,0.06)"
-  }}
->
-
-  <table
-    style={{
-      width: "100%",
-      borderCollapse: "collapse"
-    }}
-  >
-
-    <thead>
-
-      <tr
-        style={{
-          background:
-            "linear-gradient(90deg,#071A44,#102A5C)",
-          color: "white",
-          height: "64px"
-        }}
-      >
-
-        <th style={{padding:"18px 24px",textAlign:"left",width:"18%"}}>
-          Student
-        </th>
-
-        <th style={{padding:"18px 24px",textAlign:"left",width:"16%"}}>
-          School
-        </th>
-
-        <th style={{padding:"18px 24px",textAlign:"left",width:"12%"}}>
-          Phone
-        </th>
-
-        <th style={{padding:"18px 24px",textAlign:"left",width:"18%"}}>
-          Email
-        </th>
-
-        <th style={{padding:"18px 24px",textAlign:"center",width:"10%"}}>
-          Source
-        </th>
-
-        <th style={{padding:"18px 24px",textAlign:"center",width:"14%"}}>
-          Status
-        </th>
-
-        <th style={{padding:"18px 24px",textAlign:"center",width:"12%"}}>
-          Follow Up
-        </th>
-
-        <th style={{padding:"18px 24px",textAlign:"center",width:"10%"}}>
-          Actions
-        </th>
-
-      </tr>
-
-    </thead>
-
-    <tbody>
-
-      {filteredLeads.map(
-        (lead:any,index:number) => (
-
-          <tr
-            key={lead.id}
+          <div
             style={{
+              color: "#F97316",
+              fontSize: "12px",
+              letterSpacing: "2.4px",
+              fontWeight: 800,
+              textTransform: "uppercase",
+              marginBottom: "12px"
+            }}
+          >
+            PARTNER CRM
+          </div>
 
-              background:
+          <h1
+            style={{
+              margin: 0,
+              color: "#0F172A",
+              fontSize: "40px",
+              fontWeight: 800,
+              lineHeight: 1.1,
+              letterSpacing: "-1px"
+            }}
+          >
+            Lead Pipeline
+          </h1>
 
-                lead.next_followup_date &&
-                lead.next_followup_date <
-                today
+          <p
+            style={{
+              margin: "12px 0 0",
+              color: "#64748B",
+              fontSize: "18px",
+              lineHeight: 1.65,
+              maxWidth: "760px"
+            }}
+          >
+            Manage enquiries, admissions and follow-ups.
+          </p>
 
-                  ? "#FEF2F2"
-
-                  :
-
-                lead.next_followup_date ===
-                today
-
-                  ? "#FFFBEB"
-
-                  :
-
-                index % 2 === 0
-
-                  ? "#FFFFFF"
-
-                  : "#FAFBFC",
-
-              borderBottom:
-                "1px solid #E2E8F0"
-
+          <div
+            style={{
+              display: "flex",
+              gap: "9px",
+              flexWrap: "wrap",
+              marginTop: "17px"
             }}
           >
 
-            {/* STUDENT */}
-
-            <td
+            <div
               style={{
-                padding:"20px 24px"
+                padding: "7px 11px",
+                borderRadius: "999px",
+                background: "#FFF7ED",
+                border: "1px solid #FED7AA",
+                color: "#C2410C",
+                fontSize: "13px",
+                fontWeight: 800
               }}
             >
+              {metrics.total} TOTAL LEADS
+            </div>
+
+            <div
+              style={{
+                padding: "7px 11px",
+                borderRadius: "999px",
+                background: "#EFF6FF",
+                border: "1px solid #BFDBFE",
+                color: "#1D4ED8",
+                fontSize: "13px",
+                fontWeight: 800
+              }}
+            >
+              CRM PIPELINE
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 2,
+            width: "128px",
+            height: "128px",
+            borderRadius: "32px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background:
+              "linear-gradient(145deg,#FFF7ED,#FFFFFF)",
+            border: "1px solid #FED7AA",
+            boxShadow:
+              "0 12px 30px rgba(249,115,22,.10)",
+            flexShrink: 0
+          }}
+        >
+
+          <div
+            style={{
+              textAlign: "center"
+            }}
+          >
+
+            <div
+              style={{
+                fontSize: "38px",
+                lineHeight: 1
+              }}
+            >
+              ◇
+            </div>
+
+            <div
+              style={{
+                marginTop: "9px",
+                color: "#F97316",
+                fontSize: "12px",
+                fontWeight: 900,
+                letterSpacing: "1.4px"
+              }}
+            >
+              LEAD CRM
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      {/* =========================================================
+          PIPELINE INTELLIGENCE
+         ========================================================= */}
+
+      <div
+        style={{
+          background: "#FFFFFF",
+          border: "1px solid #E2E8F0",
+          borderRadius: "24px",
+          padding: "24px",
+          marginBottom: "20px",
+          boxShadow:
+            "0 8px 24px rgba(15,23,42,.035)"
+        }}
+      >
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            gap: "20px",
+            marginBottom: "20px"
+          }}
+        >
+
+          <div>
+
+            <div
+              style={{
+                color: "#F97316",
+                fontSize: "13px",
+                fontWeight: 800,
+                letterSpacing: "1.8px",
+                textTransform: "uppercase",
+                marginBottom: "7px"
+              }}
+            >
+              CRM INTELLIGENCE
+            </div>
+
+            <h2
+              style={{
+                margin: 0,
+                color: "#0F172A",
+                fontSize: "24px",
+                fontWeight: 800
+              }}
+            >
+              Lead Pipeline Summary
+            </h2>
+
+            <p
+              style={{
+                margin: "6px 0 0",
+                color: "#64748B",
+                fontSize: "16px"
+              }}
+            >
+              Track lead activity, admissions and
+              follow-up priorities across your pipeline.
+            </p>
+
+          </div>
+
+          <div
+            style={{
+              color: "#94A3B8",
+              fontSize: "14px",
+              fontWeight: 700,
+              letterSpacing: ".8px",
+              whiteSpace: "nowrap"
+            }}
+          >
+            PARTNER CRM LEDGER
+          </div>
+
+        </div>
+
+
+        {/* PRIMARY METRICS */}
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(5,minmax(0,1fr))",
+            gap: "12px",
+            marginBottom: "12px"
+          }}
+        >
+
+          <StatCard
+            title="Total Leads"
+            value={metrics.total}
+            tone="orange"
+            description="All CRM opportunities"
+          />
+
+          <StatCard
+            title="Incoming"
+            value={metrics.incoming}
+            tone="blue"
+            description="Student initiated leads"
+          />
+
+          <StatCard
+            title="Outgoing"
+            value={metrics.outgoing}
+            tone="purple"
+            description="Partner initiated leads"
+          />
+
+          <StatCard
+            title="Admissions"
+            value={metrics.admissions}
+            tone="green"
+            description="Completed admissions"
+          />
+
+          <StatCard
+            title="Rejected"
+            value={metrics.rejected}
+            tone="red"
+            description="Leads not progressed"
+          />
+
+        </div>
+
+
+        {/* ACTION METRICS */}
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(4,minmax(0,1fr))",
+            gap: "12px"
+          }}
+        >
+
+          <StatCard
+            title="Due Today"
+            value={dueTodayCount}
+            tone="yellow"
+            description="Follow-ups scheduled today"
+          />
+
+          <StatCard
+            title="Overdue"
+            value={overdueCount}
+            tone="red"
+            description="Follow-ups needing attention"
+          />
+
+          <StatCard
+            title="Interested"
+            value={interestedCount}
+            tone="green"
+            description="Leads showing interest"
+          />
+
+          <StatCard
+            title="Counselling"
+            value={counsellingCount}
+            tone="blue"
+            description="Counselling scheduled"
+          />
+
+        </div>
+
+      </div>
+
+
+      {/* =========================================================
+          FILTER DESK
+         ========================================================= */}
+
+      <div
+        style={{
+          background:
+            "linear-gradient(135deg,#FFFFFF,#FFFCF8)",
+          padding: "18px",
+          borderRadius: "20px",
+          marginBottom: "20px",
+          border: "1px solid #E2E8F0",
+          boxShadow:
+            "0 6px 18px rgba(15,23,42,.025)"
+        }}
+      >
+
+        <div
+          style={{
+            color: "#F97316",
+            fontSize: "12px",
+            fontWeight: 850,
+            letterSpacing: "1.4px",
+            marginBottom: "11px"
+          }}
+        >
+          PIPELINE FILTERS
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "minmax(300px,1.6fr) minmax(180px,.7fr) minmax(180px,.7fr)",
+            gap: "10px"
+          }}
+        >
+
+          <input
+            value={search}
+            onChange={(e) =>
+              setSearch(
+                e.target.value
+              )
+            }
+            placeholder="Search Student / School / Phone"
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "12px 14px",
+              borderRadius: "12px",
+              border: "1px solid #CBD5E1",
+              background: "#FFFFFF",
+              color: "#0F172A",
+              fontSize: "15px",
+              outline: "none"
+            }}
+          />
+
+
+          <select
+            value={statusFilter}
+            onChange={(e) =>
+              setStatusFilter(
+                e.target.value
+              )
+            }
+            style={{
+              width: "100%",
+              padding: "12px 14px",
+              borderRadius: "12px",
+              border: "1px solid #CBD5E1",
+              background: "#FFFFFF",
+              color: "#334155",
+              fontSize: "15px",
+              fontWeight: 600,
+              outline: "none"
+            }}
+          >
+
+            <option value="all">
+              All Statuses
+            </option>
+
+            {STATUS_OPTIONS.map(
+              status => (
+
+                <option
+                  key={status}
+                  value={status}
+                >
+                  {status}
+                </option>
+
+              )
+            )}
+
+          </select>
+
+
+          <select
+            value={sourceFilter}
+            onChange={(e) =>
+              setSourceFilter(
+                e.target.value
+              )
+            }
+            style={{
+              width: "100%",
+              padding: "12px 14px",
+              borderRadius: "12px",
+              border: "1px solid #CBD5E1",
+              background: "#FFFFFF",
+              color: "#334155",
+              fontSize: "15px",
+              fontWeight: 600,
+              outline: "none"
+            }}
+          >
+
+            <option value="all">
+              All Sources
+            </option>
+
+            <option value="incoming">
+              Incoming
+            </option>
+
+            <option value="outgoing">
+              Outgoing
+            </option>
+
+            <option value="admin_assigned">
+              Admin Assigned
+            </option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+
+      {/* =========================================================
+          LEAD LEDGER
+         ========================================================= */}
+
+      <div
+        style={{
+          background: "#FFFFFF",
+          borderRadius: "24px",
+          overflow: "hidden",
+          border: "1px solid #E2E8F0",
+          boxShadow:
+            "0 8px 24px rgba(15,23,42,.035)"
+        }}
+      >
+
+        {/* LEDGER HEADER */}
+
+        <div
+          style={{
+            position: "relative",
+            overflow: "hidden",
+            padding: "24px",
+            borderBottom: "1px solid #E2E8F0",
+            background:
+              "linear-gradient(135deg,#FFFFFF 0%,#FFFCF8 100%)"
+          }}
+        >
+
+          <div
+            style={{
+              position: "absolute",
+              width: "165px",
+              height: "165px",
+              borderRadius: "50%",
+              right: "-55px",
+              top: "-100px",
+              background: "rgba(249,115,22,.055)",
+              pointerEvents: "none"
+            }}
+          />
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              gap: "20px"
+            }}
+          >
+
+            <div>
 
               <div
                 style={{
-                  fontWeight:700,
-                  color:"#0F172A"
+                  color: "#F97316",
+                  fontSize: "12px",
+                  fontWeight: 800,
+                  letterSpacing: "1.5px",
+                  marginBottom: "6px"
                 }}
               >
-                {lead.student_name}
+                CRM OPPORTUNITY PIPELINE
               </div>
 
-              <div
+              <h2
                 style={{
-                  fontSize:"12px",
-                  color:"#64748B",
-                  marginTop:"4px"
+                  margin: 0,
+                  color: "#0F172A",
+                  fontSize: "23px",
+                  fontWeight: 800
                 }}
               >
-                {lead.request_type}
-              </div>
+                Lead Ledger
+              </h2>
 
-            </td>
-
-            {/* SCHOOL */}
-
-            <td
-              style={{
-                padding:"20px 24px",
-                color:"#334155"
-              }}
-            >
-              {lead.school_name}
-            </td>
-
-            {/* PHONE */}
-
-            <td
-              style={{
-                padding:"20px 24px",
-                color:"#475569"
-              }}
-            >
-              {lead.phone || "-"}
-            </td>
-
-            {/* EMAIL */}
-
-            <td
-              style={{
-                padding:"20px 24px",
-                color:"#475569",
-                fontSize:"13px"
-              }}
-            >
-              {lead.email || "-"}
-            </td>
-
-            {/* SOURCE */}
-
-            <td
-              style={{
-                padding:"20px 24px",
-                textAlign:"center"
-              }}
-            >
-
-              {lead.lead_source ===
-              "incoming" && (
-
-                <span
-                  style={{
-                    background:"#DBEAFE",
-                    color:"#1E40AF",
-                    padding:"8px 14px",
-                    borderRadius:"999px",
-                    fontSize:"12px",
-                    fontWeight:600
-                  }}
-                >
-                  ⬇ Incoming
-                </span>
-
-              )}
-
-              {lead.lead_source ===
-              "outgoing" && (
-
-                <span
-                  style={{
-                    background:"#DCFCE7",
-                    color:"#166534",
-                    padding:"8px 14px",
-                    borderRadius:"999px",
-                    fontSize:"12px",
-                    fontWeight:600
-                  }}
-                >
-                  ⬆ Outgoing
-                </span>
-
-              )}
-
-              {lead.lead_source ===
-              "admin_assigned" && (
-
-                <span
-                  style={{
-                    background:"#FEF3C7",
-                    color:"#92400E",
-                    padding:"8px 14px",
-                    borderRadius:"999px",
-                    fontSize:"12px",
-                    fontWeight:600
-                  }}
-                >
-                  ⭐ Assigned
-                </span>
-
-              )}
-
-            </td>
-
-            {/* STATUS */}
-
-            <td
-              style={{
-                padding:"20px 24px",
-                textAlign:"center"
-              }}
-            >
-
-              <select
-                value={lead.status}
-                onChange={(e)=>
-                  handleStatusChange(
-                    lead.id,
-                    e.target.value
-                  )
-                }
+              <p
                 style={{
-                  padding:"10px 12px",
-                  borderRadius:"10px",
-                  border:"1px solid #CBD5E1",
-                  minWidth:"190px",
-                  fontWeight:600,
-                  background:"white"
+                  margin: "5px 0 0",
+                  color: "#64748B",
+                  fontSize: "15px"
+                }}
+              >
+                Manage every lead from initial interest
+                through follow-up and admission.
+              </p>
+
+            </div>
+
+
+            <div
+              style={{
+                padding: "7px 11px",
+                borderRadius: "999px",
+                background: "#FFF7ED",
+                border: "1px solid #FED7AA",
+                color: "#C2410C",
+                fontSize: "13px",
+                fontWeight: 800,
+                whiteSpace: "nowrap"
+              }}
+            >
+              {filteredLeads.length} LEADS
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div
+          style={{
+            overflowX: "auto"
+          }}
+        >
+
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              minWidth: "1250px"
+            }}
+          >
+
+            <thead>
+
+              <tr
+                style={{
+                  background: "#F8FAFC"
                 }}
               >
 
-                {STATUS_OPTIONS.map(
-                  status => (
+                {[
+                  "Student",
+                  "School",
+                  "Phone",
+                  "Email",
+                  "Source",
+                  "Status",
+                  "Follow Up",
+                  "Actions"
+                ].map(label => (
 
-                    <option
-                      key={status}
-                      value={status}
+                  <th
+                    key={label}
+                    style={{
+                      padding: "13px 16px",
+                      textAlign:
+                        [
+                          "Source",
+                          "Status",
+                          "Follow Up",
+                          "Actions"
+                        ].includes(label)
+                          ? "center"
+                          : "left",
+                      color: "#64748B",
+                      fontSize: "12px",
+                      letterSpacing: "1px",
+                      textTransform: "uppercase",
+                      fontWeight: 800,
+                      borderBottom:
+                        "1px solid #E2E8F0"
+                    }}
+                  >
+                    {label}
+                  </th>
+
+                ))}
+
+              </tr>
+
+            </thead>
+
+
+            <tbody>
+
+              {filteredLeads.map(
+                (
+                  lead: any,
+                  index: number
+                ) => {
+
+                  const isOverdue =
+                    lead.next_followup_date &&
+                    lead.next_followup_date <
+                    today;
+
+                  const isDueToday =
+                    lead.next_followup_date ===
+                    today;
+
+                  return (
+
+                    <tr
+                      key={lead.id}
+                      style={{
+                        background:
+                          isOverdue
+                            ? "#FFF9F9"
+                            : isDueToday
+                            ? "#FFFDF5"
+                            : index % 2 === 0
+                            ? "#FFFFFF"
+                            : "#FCFDFE",
+                        borderBottom:
+                          "1px solid #F1F5F9"
+                      }}
                     >
-                      {status}
-                    </option>
 
-                  )
-                )}
+                      {/* STUDENT */}
 
-              </select>
+                      <td
+                        style={{
+                          padding: "15px 16px"
+                        }}
+                      >
 
-            </td>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px"
+                          }}
+                        >
 
-            {/* FOLLOWUP */}
+                          <div
+                            style={{
+                              width: "35px",
+                              height: "35px",
+                              borderRadius: "11px",
+                              background: "#FFF7ED",
+                              border:
+                                "1px solid #FED7AA",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#F97316",
+                              fontSize: "15px",
+                              fontWeight: 900,
+                              flexShrink: 0
+                            }}
+                          >
+                            {lead.student_name
+                              ?.charAt(0)
+                              .toUpperCase() ||
+                              "S"}
+                          </div>
 
-            <td
-              style={{
-                padding:"20px 24px",
-                textAlign:"center"
-              }}
-            >
+                          <div>
 
-              {lead.next_followup_date ? (
+                            <div
+                              style={{
+                                fontWeight: 750,
+                                color: "#0F172A",
+                                fontSize: "15px"
+                              }}
+                            >
+                              {lead.student_name}
+                            </div>
 
-                <span
-                  style={{
-                    background:"#EFF6FF",
-                    color:"#1E40AF",
-                    padding:"8px 12px",
-                    borderRadius:"999px",
-                    fontSize:"12px",
-                    fontWeight:600
-                  }}
-                >
-                  {lead.next_followup_date}
-                </span>
+                            <div
+                              style={{
+                                fontSize: "12px",
+                                color: "#94A3B8",
+                                marginTop: "3px"
+                              }}
+                            >
+                              {lead.request_type ||
+                                "Lead"}
+                            </div>
 
-              ) : (
+                          </div>
 
-                <span
-                  style={{
-                    color:"#94A3B8"
-                  }}
-                >
-                  Not Set
-                </span>
+                        </div>
 
+                      </td>
+
+
+                      {/* SCHOOL */}
+
+                      <td
+                        style={{
+                          padding: "15px 16px",
+                          color: "#475569",
+                          fontSize: "14px",
+                          fontWeight: 600
+                        }}
+                      >
+                        {lead.school_name || "-"}
+                      </td>
+
+
+                      {/* PHONE */}
+
+                      <td
+                        style={{
+                          padding: "15px 16px",
+                          color: "#475569",
+                          fontSize: "14px"
+                        }}
+                      >
+                        {lead.phone || "-"}
+                      </td>
+
+
+                      {/* EMAIL */}
+
+                      <td
+                        style={{
+                          padding: "15px 16px",
+                          color: "#475569",
+                          fontSize: "13px"
+                        }}
+                      >
+                        {lead.email || "-"}
+                      </td>
+
+
+                      {/* SOURCE */}
+
+                      <td
+                        style={{
+                          padding: "15px 16px",
+                          textAlign: "center"
+                        }}
+                      >
+
+                        {lead.lead_source ===
+                          "incoming" && (
+
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              padding: "6px 9px",
+                              borderRadius: "999px",
+                              background: "#EFF6FF",
+                              border:
+                                "1px solid #BFDBFE",
+                              color: "#1D4ED8",
+                              fontSize: "12px",
+                              fontWeight: 750
+                            }}
+                          >
+                            ↓ Incoming
+                          </span>
+
+                        )}
+
+
+                        {lead.lead_source ===
+                          "outgoing" && (
+
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              padding: "6px 9px",
+                              borderRadius: "999px",
+                              background: "#ECFDF5",
+                              border:
+                                "1px solid #BBF7D0",
+                              color: "#15803D",
+                              fontSize: "12px",
+                              fontWeight: 750
+                            }}
+                          >
+                            ↑ Outgoing
+                          </span>
+
+                        )}
+
+
+                        {lead.lead_source ===
+                          "admin_assigned" && (
+
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              padding: "6px 9px",
+                              borderRadius: "999px",
+                              background: "#FEFCE8",
+                              border:
+                                "1px solid #FDE68A",
+                              color: "#A16207",
+                              fontSize: "12px",
+                              fontWeight: 750
+                            }}
+                          >
+                            ★ Assigned
+                          </span>
+
+                        )}
+
+                      </td>
+
+
+                      {/* STATUS */}
+
+                      <td
+                        style={{
+                          padding: "15px 16px",
+                          textAlign: "center"
+                        }}
+                      >
+
+                        <select
+                          value={lead.status}
+                          onChange={(e) =>
+                            handleStatusChange(
+                              lead.id,
+                              e.target.value
+                            )
+                          }
+                          style={{
+                            padding: "8px 10px",
+                            borderRadius: "9px",
+                            border:
+                              "1px solid #CBD5E1",
+                            minWidth: "165px",
+                            fontSize: "13px",
+                            fontWeight: 650,
+                            color: "#334155",
+                            background: "#FFFFFF",
+                            outline: "none"
+                          }}
+                        >
+
+                          {STATUS_OPTIONS.map(
+                            status => (
+
+                              <option
+                                key={status}
+                                value={status}
+                              >
+                                {status}
+                              </option>
+
+                            )
+                          )}
+
+                        </select>
+
+                      </td>
+
+
+                      {/* FOLLOW-UP */}
+
+                      <td
+                        style={{
+                          padding: "15px 16px",
+                          textAlign: "center"
+                        }}
+                      >
+
+                        {lead.next_followup_date ? (
+
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              padding: "6px 9px",
+                              borderRadius: "999px",
+
+                              background:
+                                isOverdue
+                                  ? "#FEF2F2"
+                                  : isDueToday
+                                  ? "#FEFCE8"
+                                  : "#EFF6FF",
+
+                              border:
+                                isOverdue
+                                  ? "1px solid #FECACA"
+                                  : isDueToday
+                                  ? "1px solid #FDE68A"
+                                  : "1px solid #BFDBFE",
+
+                              color:
+                                isOverdue
+                                  ? "#B91C1C"
+                                  : isDueToday
+                                  ? "#A16207"
+                                  : "#1D4ED8",
+
+                              fontSize: "12px",
+                              fontWeight: 750
+                            }}
+                          >
+                            {lead.next_followup_date}
+                          </span>
+
+                        ) : (
+
+                          <span
+                            style={{
+                              color: "#94A3B8",
+                              fontSize: "13px",
+                              fontWeight: 600
+                            }}
+                          >
+                            Not Set
+                          </span>
+
+                        )}
+
+                      </td>
+
+
+                      {/* ACTION */}
+
+                      <td
+                        style={{
+                          padding: "15px 16px",
+                          textAlign: "center"
+                        }}
+                      >
+
+                        <button
+                          onClick={() => {
+
+                            setSelectedLead(
+                              lead
+                            );
+
+                            setDrawerOpen(
+                              true
+                            );
+
+                          }}
+                          style={{
+                            background:
+                              "linear-gradient(135deg,#F97316,#FB923C)",
+                            color: "#FFFFFF",
+                            border: "none",
+                            borderRadius: "9px",
+                            padding: "8px 14px",
+                            fontWeight: 750,
+                            fontSize: "13px",
+                            cursor: "pointer",
+                            boxShadow:
+                              "0 5px 12px rgba(249,115,22,.16)"
+                          }}
+                        >
+                          View
+                        </button>
+
+                      </td>
+
+                    </tr>
+
+                  );
+
+                }
               )}
 
-            </td>
+            </tbody>
 
-            {/* ACTION */}
+          </table>
 
-            <td
+        </div>
+
+
+        {/* EMPTY STATE */}
+
+        {filteredLeads.length === 0 && (
+
+          <div
+            style={{
+              padding: "55px 25px",
+              textAlign: "center",
+              background:
+                "linear-gradient(180deg,#FFFFFF,#FAFCFF)"
+            }}
+          >
+
+            <div
               style={{
-                padding:"20px 24px",
-                textAlign:"center"
+                width: "54px",
+                height: "54px",
+                borderRadius: "17px",
+                margin: "0 auto 14px",
+                background: "#FFF7ED",
+                border: "1px solid #FED7AA",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#F97316",
+                fontSize: "26px",
+                fontWeight: 800
               }}
             >
+              ◇
+            </div>
 
-              <button
-                onClick={() => {
+            <div
+              style={{
+                color: "#0F172A",
+                fontSize: "18px",
+                fontWeight: 800
+              }}
+            >
+              No leads found
+            </div>
 
-                  setSelectedLead(
-                    lead
-                  );
+            <div
+              style={{
+                color: "#64748B",
+                fontSize: "14px",
+                marginTop: "5px"
+              }}
+            >
+              No leads match the current search
+              and filter combination.
+            </div>
 
-                  setDrawerOpen(
-                    true
-                  );
+          </div>
 
-                }}
-                style={{
-                  background:"#FBBF24",
-                  color:"#071A44",
-                  border:"none",
-                  borderRadius:"10px",
-                  padding:"10px 18px",
-                  fontWeight:700,
-                  cursor:"pointer"
-                }}
-              >
-                View
-              </button>
+        )}
 
-            </td>
+      </div>
 
-          </tr>
 
-        )
-      )}
+      {/* =========================================================
+          EXISTING CRM DRAWER — FUNCTIONALITY UNCHANGED
+         ========================================================= */}
 
-    </tbody>
-
-  </table>
-
-</div>
-
-            <LeadCRMDrawer
+      <LeadCRMDrawer
         lead={selectedLead}
         open={drawerOpen}
         onClose={() => {
@@ -938,6 +1550,7 @@ const counsellingCount =
 
         }}
       />
+
     </div>
 
   );
@@ -945,33 +1558,151 @@ const counsellingCount =
 
 function StatCard({
   title,
-  value
-}: any) {
+  value,
+  tone = "blue",
+  description
+}: {
+  title: string;
+  value: any;
+  tone?: "orange" | "blue" | "green" | "red" | "purple" | "yellow";
+  description?: string;
+}) {
+
+  const palettes = {
+
+    orange: {
+      background:
+        "linear-gradient(135deg,#FFF7ED,#FFFBF5)",
+      border: "#FED7AA",
+      label: "#9A3412",
+      value: "#F97316",
+      circle: "rgba(249,115,22,.08)"
+    },
+
+    blue: {
+      background:
+        "linear-gradient(135deg,#EFF6FF,#F8FBFF)",
+      border: "#BFDBFE",
+      label: "#1E40AF",
+      value: "#2563EB",
+      circle: "rgba(37,99,235,.07)"
+    },
+
+    green: {
+      background:
+        "linear-gradient(135deg,#ECFDF5,#F7FFFB)",
+      border: "#BBF7D0",
+      label: "#166534",
+      value: "#16A34A",
+      circle: "rgba(22,163,74,.07)"
+    },
+
+    red: {
+      background:
+        "linear-gradient(135deg,#FEF2F2,#FFF9F9)",
+      border: "#FECACA",
+      label: "#991B1B",
+      value: "#DC2626",
+      circle: "rgba(220,38,38,.06)"
+    },
+
+    purple: {
+      background:
+        "linear-gradient(135deg,#F5F3FF,#FBFAFF)",
+      border: "#DDD6FE",
+      label: "#6D28D9",
+      value: "#7C3AED",
+      circle: "rgba(124,58,237,.07)"
+    },
+
+    yellow: {
+      background:
+        "linear-gradient(135deg,#FEFCE8,#FFFDF4)",
+      border: "#FDE68A",
+      label: "#854D0E",
+      value: "#CA8A04",
+      circle: "rgba(202,138,4,.07)"
+    }
+
+  };
+
+  const palette =
+    palettes[tone];
 
   return (
 
     <div
       style={{
-        background:"white",
-        padding:"20px",
-        borderRadius:"20px"
+        position: "relative",
+        overflow: "hidden",
+        minHeight: "105px",
+        padding: "17px",
+        borderRadius: "18px",
+        background: palette.background,
+        border: `1px solid ${palette.border}`
       }}
     >
 
-      <div>
-        {title}
-      </div>
+      <div
+        style={{
+          position: "absolute",
+          width: "82px",
+          height: "82px",
+          borderRadius: "50%",
+          right: "-25px",
+          top: "-32px",
+          background: palette.circle,
+          pointerEvents: "none"
+        }}
+      />
 
       <div
         style={{
-          fontSize:"32px",
-          fontWeight:700,
-          marginTop:"8px"
+          position: "relative",
+          zIndex: 1
         }}
       >
-        {value}
-      </div>
 
+        <div
+          style={{
+            color: palette.label,
+            fontSize: "11px",
+            fontWeight: 850,
+            letterSpacing: ".7px",
+            textTransform: "uppercase"
+          }}
+        >
+          {title}
+        </div>
+
+        <div
+          style={{
+            color: palette.value,
+            fontSize: "31px",
+            fontWeight: 900,
+            lineHeight: 1,
+            marginTop: "9px"
+          }}
+        >
+          {value}
+        </div>
+
+        {description && (
+
+          <div
+            style={{
+              color: "#475569",
+              fontSize: "12px",
+              fontWeight: 600,
+              marginTop: "7px"
+            }}
+          >
+            {description}
+          </div>
+
+        )}
+
+      </div>
 
     </div>
 
