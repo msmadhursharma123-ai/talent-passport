@@ -488,270 +488,911 @@ const demoPartners: MarketplacePartner[] = [
     border: "1px solid #E2E8F0"
   }}
 >
-    {/* HEADER */}
+{/* ==========================================================
+    CREDIT DASHBOARD HERO
+========================================================== */}
+
+<div
+  style={{
+    position: "relative",
+    overflow: "hidden",
+    background:
+      "linear-gradient(120deg, #FFFFFF 0%, #FFFFFF 58%, #FFF9F4 82%, #F4F7FF 100%)",
+    border: "1px solid #E2E8F0",
+    borderRadius: 28,
+    padding: "38px 42px",
+    marginBottom: 30,
+    minHeight: 190,
+    display: "flex",
+    alignItems: "center",
+    boxShadow: "0 10px 30px rgba(15,23,42,.045)"
+  }}
+>
+  {/* DECORATIVE BLUE CIRCLE */}
+
+  <div
+    style={{
+      position: "absolute",
+      width: 250,
+      height: 250,
+      borderRadius: "50%",
+      right: 120,
+      bottom: -185,
+      background: "rgba(37,99,235,.045)",
+      pointerEvents: "none"
+    }}
+  />
+
+  {/* DECORATIVE ORANGE CIRCLE */}
+
+  <div
+    style={{
+      position: "absolute",
+      width: 270,
+      height: 270,
+      borderRadius: "50%",
+      right: -70,
+      top: -105,
+      background: "rgba(249,115,22,.055)",
+      pointerEvents: "none"
+    }}
+  />
+
+  {/* SMALL DECORATIVE CIRCLE */}
+
+  <div
+    style={{
+      position: "absolute",
+      width: 125,
+      height: 125,
+      borderRadius: "50%",
+      right: 300,
+      top: -75,
+      background: "rgba(249,115,22,.03)",
+      pointerEvents: "none"
+    }}
+  />
+
+  {/* LEFT CONTENT */}
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 2,
+      maxWidth: 900
+    }}
+  >
+    {/* EYEBROW */}
 
     <div
       style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 30
+        color: "#F97316",
+        fontSize: 11,
+        fontWeight: 800,
+        letterSpacing: 2.2,
+        marginBottom: 13
       }}
     >
-      <div>
-        <div
-          style={{
-            color: "#FF8A00",
-            fontSize: 22,
-            letterSpacing: 2,
-            fontWeight: 700,
-            marginBottom: 8
-          }}
-        >
-          YOUR OPPORTUNITIES ARE IN YOUR HAND 
-
-        </div>
-
-        <h2
-          style={{
-            margin: 0,
-            fontSize: 40,
-            fontWeight: 500
-          }}
-        >
-          Earn Credits and Learn From The Best  🚀
-        </h2>
-      </div>
+      YOUR OPPORTUNITIES ARE IN YOUR HAND
     </div>
+
+    {/* TITLE */}
+
+    <h1
+      style={{
+        margin: 0,
+        color: "#0F172A",
+        fontSize: 38,
+        lineHeight: 1.15,
+        fontWeight: 800,
+        letterSpacing: "-0.7px"
+      }}
+    >
+      Earn Credits and Learn From The Best
+    </h1>
+
+    {/* DESCRIPTION */}
+
+    <p
+      style={{
+        margin: "14px 0 0",
+        maxWidth: 720,
+        color: "#64748B",
+        fontSize: 15,
+        lineHeight: 1.65,
+        fontWeight: 500
+      }}
+    >
+      Turn your Talent Passport journey into
+      real opportunities. Earn credits through
+      achievements, competitions and portfolio
+      activities, then use them to access experts,
+      mentors and growth experiences.
+    </p>
+  </div>
+
+  {/* RIGHT VISUAL */}
+
+  <div
+    style={{
+      position: "absolute",
+      zIndex: 2,
+      right: 52,
+      top: "50%",
+      transform: "translateY(-50%)",
+      width: 94,
+      height: 94,
+      borderRadius: "50%",
+      background: "rgba(249,115,22,.09)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }}
+  >
+    <div
+      style={{
+        width: 64,
+        height: 64,
+        borderRadius: "50%",
+        background: "#FFFFFF",
+        border: "1px solid #FED7AA",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 31,
+        boxShadow:
+          "0 8px 22px rgba(249,115,22,.10)"
+      }}
+    >
+      🚀
+    </div>
+  </div>
+</div>
  
   
-    {/* CREDIT SUMMARY */}
+  {/* ==========================================================
+    CREDIT INTELLIGENCE
+========================================================== */}
+
+<div
+  style={{
+    marginBottom: 30,
+    background: "#FFFFFF",
+    border: "1px solid #E2E8F0",
+    borderRadius: 24,
+    padding: "26px 28px",
+    boxShadow: "0 8px 28px rgba(15,23,42,.045)"
+  }}
+>
+  {/* HEADER */}
+
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+      gap: 20,
+      marginBottom: 22
+    }}
+  >
+    <div>
+      <div
+        style={{
+          color: "#F97316",
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: 2,
+          marginBottom: 8
+        }}
+      >
+        CREDIT INTELLIGENCE
+      </div>
+
+      <h2
+        style={{
+          margin: 0,
+          color: "#0F172A",
+          fontSize: 24,
+          fontWeight: 800,
+          lineHeight: 1.2
+        }}
+      >
+        Talent Passport Credit Ledger
+      </h2>
+
+      <p
+        style={{
+          margin: "9px 0 0",
+          color: "#64748B",
+          fontSize: 14,
+          lineHeight: 1.5
+        }}
+      >
+        Your accumulated credits across competitions,
+        achievements and portfolio activities.
+      </p>
+    </div>
 
     <div
       style={{
-        display: "grid",
-        gridTemplateColumns:
-          "repeat(3,1fr)",
-        gap: 20,
-        marginBottom: 24
+        color: "#94A3B8",
+        fontSize: 11,
+        fontWeight: 800,
+        letterSpacing: 1,
+        whiteSpace: "nowrap"
+      }}
+    >
+      TALENT PASSPORT LEDGER
+    </div>
+  </div>
+
+  {/* PRIMARY CREDIT CARDS */}
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+      gap: 14,
+      marginBottom: 14
+    }}
+  >
+    {/* TOTAL EARNED */}
+
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        minHeight: 118,
+        background:
+          "linear-gradient(135deg, #FFF8EF 0%, #FFFCF7 100%)",
+        border: "1px solid #FED7AA",
+        borderRadius: 18,
+        padding: "18px 20px"
       }}
     >
       <div
         style={{
-          background: "#FFF8EC",
-          border: "1px solid #5E2D00",
-          borderRadius: 18,
-          padding: 24
+          position: "absolute",
+          width: 100,
+          height: 100,
+          borderRadius: "50%",
+          right: -34,
+          top: -42,
+          background: "rgba(249,115,22,.08)",
+          pointerEvents: "none"
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1
         }}
       >
-        <div>Total Earned Credits</div>
-
-        <h1
+        <div
           style={{
-            marginTop: 12
-    
+            color: "#9A3412",
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: 0.7
+          }}
+        >
+          TOTAL EARNED CREDITS
+        </div>
+
+        <div
+          style={{
+            marginTop: 12,
+            color: "#F97316",
+            fontSize: 32,
+            lineHeight: 1,
+            fontWeight: 900
           }}
         >
           {walletBalance}
-        </h1>
+        </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            color: "#475569",
+            fontSize: 11,
+            fontWeight: 600,
+            lineHeight: 1.4
+          }}
+        >
+          Credits earned across your Talent Passport
+        </div>
       </div>
+    </div>
+
+    {/* SPENT CREDITS */}
+
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        minHeight: 118,
+        background:
+          "linear-gradient(135deg, #EFF6FF 0%, #F8FBFF 100%)",
+        border: "1px solid #BFDBFE",
+        borderRadius: 18,
+        padding: "18px 20px"
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          width: 100,
+          height: 100,
+          borderRadius: "50%",
+          right: -34,
+          top: -42,
+          background: "rgba(37,99,235,.07)",
+          pointerEvents: "none"
+        }}
+      />
 
       <div
         style={{
-          background: "#EEF4FF",
-          border: "1px solid #5E2D00",
-          borderRadius: 18,
-          padding: 24
+          position: "relative",
+          zIndex: 1
         }}
       >
-        <div>Spent Credits</div>
-
-        <h1
+        <div
           style={{
-            marginTop: 12
+            color: "#1E40AF",
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: 0.7
+          }}
+        >
+          SPENT CREDITS
+        </div>
+
+        <div
+          style={{
+            marginTop: 12,
+            color: "#2563EB",
+            fontSize: 32,
+            lineHeight: 1,
+            fontWeight: 900
           }}
         >
           0
-        </h1>
+        </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            color: "#475569",
+            fontSize: 11,
+            fontWeight: 600,
+            lineHeight: 1.4
+          }}
+        >
+          Credits redeemed across opportunities
+        </div>
       </div>
+    </div>
+
+    {/* AVAILABLE BALANCE */}
+
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        minHeight: 118,
+        background:
+          "linear-gradient(135deg, #ECFDF5 0%, #F7FFFB 100%)",
+        border: "1px solid #BBF7D0",
+        borderRadius: 18,
+        padding: "18px 20px"
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          width: 100,
+          height: 100,
+          borderRadius: "50%",
+          right: -34,
+          top: -42,
+          background: "rgba(22,163,74,.07)",
+          pointerEvents: "none"
+        }}
+      />
 
       <div
         style={{
-          background: "#E8F5EE",
-          border: "1px solid #5E2D00",
-          borderRadius: 18,
-          padding: 24
+          position: "relative",
+          zIndex: 1
         }}
       >
-        <div>
-          Available Balance
+        <div
+          style={{
+            color: "#166534",
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: 0.7
+          }}
+        >
+          AVAILABLE BALANCE
         </div>
 
-        <h1
+        <div
           style={{
-            marginTop: 12
+            marginTop: 12,
+            color: "#16A34A",
+            fontSize: 32,
+            lineHeight: 1,
+            fontWeight: 900
           }}
         >
           {totalCredits}
-        </h1>
+        </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            color: "#475569",
+            fontSize: 11,
+            fontWeight: 600,
+            lineHeight: 1.4
+          }}
+        >
+          Credits currently available to use
+        </div>
       </div>
     </div>
+  </div>
 
-    {/* BREAKDOWN */}
+  {/* CREDIT BREAKDOWN */}
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+      gap: 14
+    }}
+  >
+    {/* COMPETITION */}
 
     <div
       style={{
-        display: "grid",
-        gridTemplateColumns:
-          "repeat(3,1fr)",
-        gap: 20,
-        marginBottom: 30
+        position: "relative",
+        overflow: "hidden",
+        minHeight: 102,
+        background:
+          "linear-gradient(135deg, #FFF8EF 0%, #FFFCF7 100%)",
+        border: "1px solid #FED7AA",
+        borderRadius: 18,
+        padding: "17px 20px"
       }}
     >
       <div
         style={{
-          background: "#FFFFFF",
-border: "1px solid #5E2D00",
-          borderRadius: 18,
-          padding: 20
+          position: "absolute",
+          width: 82,
+          height: 82,
+          borderRadius: "50%",
+          right: -26,
+          top: -34,
+          background: "rgba(249,115,22,.07)",
+          pointerEvents: "none"
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1
         }}
       >
         <div
           style={{
-            color: "#0e131b"
+            color: "#9A3412",
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: 0.7
           }}
         >
-          Competition Credits
+          COMPETITION CREDITS
         </div>
 
-        <h2>
+        <div
+          style={{
+            marginTop: 11,
+            color: "#F97316",
+            fontSize: 27,
+            fontWeight: 900,
+            lineHeight: 1
+          }}
+        >
           {competitionCredits}
-        </h2>
+        </div>
+
+        <div
+          style={{
+            marginTop: 9,
+            color: "#64748B",
+            fontSize: 11,
+            fontWeight: 600
+          }}
+        >
+          Earned through competition submissions
+        </div>
       </div>
+    </div>
+
+    {/* ACHIEVEMENT */}
+
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        minHeight: 102,
+        background:
+          "linear-gradient(135deg, #EFF6FF 0%, #F8FBFF 100%)",
+        border: "1px solid #BFDBFE",
+        borderRadius: 18,
+        padding: "17px 20px"
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          width: 82,
+          height: 82,
+          borderRadius: "50%",
+          right: -26,
+          top: -34,
+          background: "rgba(37,99,235,.07)",
+          pointerEvents: "none"
+        }}
+      />
 
       <div
         style={{
-          background: "#FFFFFF",
-border: "1px solid #5E2D00",
-          borderRadius: 18,
-          padding: 20
+          position: "relative",
+          zIndex: 1
         }}
       >
         <div
           style={{
-            color: "#0e131b"
+            color: "#1E40AF",
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: 0.7
           }}
         >
-          Achievement Credits
+          ACHIEVEMENT CREDITS
         </div>
 
-        <h2>
+        <div
+          style={{
+            marginTop: 11,
+            color: "#2563EB",
+            fontSize: 27,
+            fontWeight: 900,
+            lineHeight: 1
+          }}
+        >
           {achievementCredits}
-        </h2>
+        </div>
+
+        <div
+          style={{
+            marginTop: 9,
+            color: "#64748B",
+            fontSize: 11,
+            fontWeight: 600
+          }}
+        >
+          Earned through achievements and verification
+        </div>
       </div>
+    </div>
+
+    {/* PORTFOLIO */}
+
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        minHeight: 102,
+        background:
+          "linear-gradient(135deg, #F5F3FF 0%, #FBFAFF 100%)",
+        border: "1px solid #DDD6FE",
+        borderRadius: 18,
+        padding: "17px 20px"
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          width: 82,
+          height: 82,
+          borderRadius: "50%",
+          right: -26,
+          top: -34,
+          background: "rgba(124,58,237,.07)",
+          pointerEvents: "none"
+        }}
+      />
 
       <div
         style={{
-          background: "#FFFFFF",
-border: "1px solid #5E2D00",
-          borderRadius: 18,
-          padding: 20
+          position: "relative",
+          zIndex: 1
         }}
       >
         <div
           style={{
-            color: "#0e131b"
+            color: "#6D28D9",
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: 0.7
           }}
         >
-          Portfolio Credits
+          PORTFOLIO CREDITS
         </div>
 
-        <h2>
+        <div
+          style={{
+            marginTop: 11,
+            color: "#7C3AED",
+            fontSize: 27,
+            fontWeight: 900,
+            lineHeight: 1
+          }}
+        >
           {portfolioCredits}
-        </h2>
+        </div>
+
+        <div
+          style={{
+            marginTop: 9,
+            color: "#64748B",
+            fontSize: 11,
+            fontWeight: 600
+          }}
+        >
+          Earned through portfolio activity
+        </div>
       </div>
     </div>
+  </div>
+</div>
 
-    {/* TOGGLE */}
+   {/* ==========================================================
+    CREDIT GUIDE + REWARDS
+========================================================== */}
 
-    <div
+<div
+  style={{
+    marginBottom: 32
+  }}
+>
+  {/* PREMIUM TOGGLE */}
+
+  <div
+    style={{
+      display: "inline-flex",
+      gap: 6,
+      padding: 5,
+      marginBottom: 18,
+      background: "#FFFFFF",
+      border: "1px solid #E2E8F0",
+      borderRadius: 14,
+      boxShadow: "0 4px 14px rgba(15,23,42,.04)"
+    }}
+  >
+    <button
+      onClick={() =>
+        setCreditView("guidelines")
+      }
       style={{
-        display: "flex",
-        gap: 12,
-        marginBottom: 24
+        background:
+          creditView === "guidelines"
+            ? "#143B73"
+            : "transparent",
+        color:
+          creditView === "guidelines"
+            ? "#FFFFFF"
+            : "#64748B",
+        border: "none",
+        padding: "11px 18px",
+        borderRadius: 10,
+        cursor: "pointer",
+        fontSize: 13,
+        fontWeight: 800,
+        transition: "all .2s ease"
       }}
     >
-      <button
-        onClick={() =>
-          setCreditView(
-            "guidelines"
-          )
-        }
-        style={{
-          background:
-            creditView ===
-            "guidelines"
-              ? "#FF6B00"
-              : "#16223D",
-          color: "white",
-          border: "none",
-          padding:
-            "12px 18px",
-          borderRadius: 12,
-          cursor: "pointer"
-        }}
-      >
-        Credit Guidelines
-      </button>
+      Credit Guidelines
+    </button>
 
-      <button
-        onClick={() =>
-          setCreditView(
-            "rewards"
-          )
-        }
-        style={{
-          background:
-            creditView ===
-            "rewards"
-              ? "#FF6B00"
-              : "#16223D",
-          color: "white",
-          border: "none",
-          padding:
-            "12px 18px",
-          borderRadius: 12,
-          cursor: "pointer"
-        }}
-      >
-        Rewards Marketplace
-      </button>
-    </div>
-
-    {/* CONTENT */}
-
-    <div
+    <button
+      onClick={() =>
+        setCreditView("rewards")
+      }
       style={{
-        background: "#FFFFFF",
-border: "1px solid #E2E8F0",
-        borderRadius: 24,
-        padding: 28
+        background:
+          creditView === "rewards"
+            ? "#F97316"
+            : "transparent",
+        color:
+          creditView === "rewards"
+            ? "#FFFFFF"
+            : "#64748B",
+        border: "none",
+        padding: "11px 18px",
+        borderRadius: 10,
+        cursor: "pointer",
+        fontSize: 13,
+        fontWeight: 800,
+        transition: "all .2s ease"
       }}
     >
-      {creditView ===
-      "guidelines" ? (
+      Rewards Marketplace
+    </button>
+  </div>
+
+  {/* MAIN CONTAINER */}
+
+  <div
+    style={{
+      background: "#FFFFFF",
+      border: "1px solid #E2E8F0",
+      borderRadius: 24,
+      padding: "26px 28px",
+      boxShadow:
+        "0 8px 28px rgba(15,23,42,.045)"
+    }}
+  >
+    {creditView === "guidelines" ? (
+
+      /* ======================================================
+          CREDIT GUIDELINES
+      ====================================================== */
+
+      <div>
+        {/* HEADER */}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            gap: 20,
+            marginBottom: 22
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#F97316",
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: 2,
+                marginBottom: 8
+              }}
+            >
+              CREDIT GUIDE
+            </div>
+
+            <h2
+              style={{
+                margin: 0,
+                color: "#0F172A",
+                fontSize: 24,
+                fontWeight: 800
+              }}
+            >
+              How Your Credits Work
+            </h2>
+
+            <p
+              style={{
+                margin: "8px 0 0",
+                color: "#64748B",
+                fontSize: 14,
+                lineHeight: 1.5
+              }}
+            >
+              Build your credit balance through
+              participation and use it to unlock
+              opportunities across Talent Passport.
+            </p>
+          </div>
+
+          <div
+            style={{
+              color: "#94A3B8",
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: 1,
+              whiteSpace: "nowrap"
+            }}
+          >
+            CREDIT ECONOMY
+          </div>
+        </div>
+
+        {/* EARN + SPEND */}
+
         <div
           style={{
             display: "grid",
             gridTemplateColumns:
-              "1fr 1fr",
-            gap: 24
+              "repeat(2, minmax(0, 1fr))",
+            gap: 18
           }}
         >
-          <div>
-            <h3>
-              📈 Ways To Earn Credits
-            </h3>
+          {/* =========================
+              EARN CREDITS
+          ========================= */}
+
+          <div
+            style={{
+              border: "1px solid #BBF7D0",
+              borderRadius: 20,
+              padding: 20,
+              background:
+                "linear-gradient(145deg, #F0FDF4 0%, #FBFFFC 100%)"
+            }}
+          >
+            {/* EARN HEADER */}
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 18
+              }}
+            >
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 12,
+                  background: "#FFFFFF",
+                  border: "1px solid #BBF7D0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 20
+                }}
+              >
+                ↗
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    color: "#15803D",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    letterSpacing: 1.2,
+                    marginBottom: 3
+                  }}
+                >
+                  BUILD YOUR BALANCE
+                </div>
+
+                <div
+                  style={{
+                    color: "#0F172A",
+                    fontSize: 18,
+                    fontWeight: 800
+                  }}
+                >
+                  Ways To Earn Credits
+                </div>
+              </div>
+            </div>
 
             {[
               [
@@ -774,38 +1415,141 @@ border: "1px solid #E2E8F0",
                 "Portfolio Upload",
                 "+10"
               ]
-            ].map(
-              (item) => (
+            ].map((item, index) => (
+
+              <div
+                key={item[0]}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 18,
+                  padding: "14px 16px",
+                  marginBottom:
+                    index === 4 ? 0 : 9,
+                  background: "#FFFFFF",
+                  border: "1px solid #DCFCE7",
+                  borderRadius: 13
+                }}
+              >
                 <div
-                  key={item[0]}
                   style={{
-                    background:
-                      "#F8FAFC",
-                    padding: 16,
-                    borderRadius: 14,
-                    marginBottom: 12,
-                    display:
-                      "flex",
-                    justifyContent:
-                      "space-between"
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12
                   }}
                 >
-                  <span>
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 8,
+                      background: "#F0FDF4",
+                      color: "#16A34A",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 12,
+                      fontWeight: 900,
+                      flexShrink: 0
+                    }}
+                  >
+                    +
+                  </div>
+
+                  <span
+                    style={{
+                      color: "#334155",
+                      fontSize: 13,
+                      fontWeight: 700
+                    }}
+                  >
                     {item[0]}
                   </span>
-
-                  <strong>
-                    {item[1]}
-                  </strong>
                 </div>
-              )
-            )}
+
+                <div
+                  style={{
+                    background: "#DCFCE7",
+                    color: "#15803D",
+                    padding: "6px 10px",
+                    borderRadius: 999,
+                    fontSize: 12,
+                    fontWeight: 900,
+                    minWidth: 42,
+                    textAlign: "center"
+                  }}
+                >
+                  {item[1]}
+                </div>
+              </div>
+
+            ))}
           </div>
 
-          <div>
-            <h3>
-              🎁 Ways To Spend Credits
-            </h3>
+          {/* =========================
+              SPEND CREDITS
+          ========================= */}
+
+          <div
+            style={{
+              border: "1px solid #FED7AA",
+              borderRadius: 20,
+              padding: 20,
+              background:
+                "linear-gradient(145deg, #FFF7ED 0%, #FFFCF8 100%)"
+            }}
+          >
+            {/* SPEND HEADER */}
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 18
+              }}
+            >
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 12,
+                  background: "#FFFFFF",
+                  border: "1px solid #FED7AA",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 20
+                }}
+              >
+                ✦
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    color: "#C2410C",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    letterSpacing: 1.2,
+                    marginBottom: 3
+                  }}
+                >
+                  UNLOCK OPPORTUNITIES
+                </div>
+
+                <div
+                  style={{
+                    color: "#0F172A",
+                    fontSize: 18,
+                    fontWeight: 800
+                  }}
+                >
+                  Ways To Spend Credits
+                </div>
+              </div>
+            </div>
 
             {[
               [
@@ -824,112 +1568,325 @@ border: "1px solid #E2E8F0",
                 "Principal Roundtable",
                 "-300"
               ]
-            ].map(
-              (item) => (
+            ].map((item, index) => (
+
+              <div
+                key={item[0]}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 18,
+                  padding: "14px 16px",
+                  marginBottom:
+                    index === 3 ? 0 : 9,
+                  background: "#FFFFFF",
+                  border: "1px solid #FFEDD5",
+                  borderRadius: 13
+                }}
+              >
                 <div
-                  key={item[0]}
                   style={{
-                    background:
-                      "#F8FAFC",
-                    padding: 16,
-                    borderRadius: 14,
-                    marginBottom: 12,
-                    display:
-                      "flex",
-                    justifyContent:
-                      "space-between"
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12
                   }}
                 >
-                  <span>
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 8,
+                      background: "#FFF7ED",
+                      color: "#F97316",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 13,
+                      fontWeight: 900,
+                      flexShrink: 0
+                    }}
+                  >
+                    −
+                  </div>
+
+                  <span
+                    style={{
+                      color: "#334155",
+                      fontSize: 13,
+                      fontWeight: 700
+                    }}
+                  >
                     {item[0]}
                   </span>
-
-                  <strong>
-                    {item[1]}
-                  </strong>
                 </div>
-              )
-            )}
+
+                <div
+                  style={{
+                    background: "#FFEDD5",
+                    color: "#C2410C",
+                    padding: "6px 10px",
+                    borderRadius: 999,
+                    fontSize: 12,
+                    fontWeight: 900,
+                    minWidth: 48,
+                    textAlign: "center"
+                  }}
+                >
+                  {item[1]}
+                </div>
+              </div>
+
+            ))}
           </div>
         </div>
-      ) : (
+      </div>
+
+    ) : (
+
+      /* ======================================================
+          REWARDS MARKETPLACE
+      ====================================================== */
+
+      <div>
+        {/* HEADER */}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            gap: 20,
+            marginBottom: 22
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#F97316",
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: 2,
+                marginBottom: 8
+              }}
+            >
+              REWARDS MARKETPLACE
+            </div>
+
+            <h2
+              style={{
+                margin: 0,
+                color: "#0F172A",
+                fontSize: 24,
+                fontWeight: 800
+              }}
+            >
+              Turn Credits Into Opportunities
+            </h2>
+
+            <p
+              style={{
+                margin: "8px 0 0",
+                color: "#64748B",
+                fontSize: 14,
+                lineHeight: 1.5
+              }}
+            >
+              Use your earned credits to unlock
+              mentorship, access and growth
+              opportunities.
+            </p>
+          </div>
+
+          <div
+            style={{
+              background: "#ECFDF5",
+              border: "1px solid #BBF7D0",
+              padding: "8px 13px",
+              borderRadius: 999,
+              color: "#15803D",
+              fontSize: 11,
+              fontWeight: 800,
+              whiteSpace: "nowrap"
+            }}
+          >
+            {walletBalance} CREDITS AVAILABLE
+          </div>
+        </div>
+
+        {/* REWARD CARDS */}
+
         <div
           style={{
             display: "grid",
+            gridTemplateColumns:
+              "repeat(2, minmax(0, 1fr))",
             gap: 14
           }}
         >
           {[
             [
               "Expert Consultation",
-              "60 Credits"
+              "60 Credits",
+              "🎓",
+              "One-on-one guidance from verified experts.",
+              "#EFF6FF",
+              "#BFDBFE",
+              "#2563EB"
             ],
             [
               "Partner Reach-Out",
-              "80 Credits"
+              "80 Credits",
+              "🤝",
+              "Connect directly with relevant partner organisations.",
+              "#F0FDFA",
+              "#99F6E4",
+              "#0F766E"
             ],
             [
               "Leadership Eligibility",
-              "250 Credits"
+              "250 Credits",
+              "🏅",
+              "Unlock access to leadership opportunities.",
+              "#FFF7ED",
+              "#FED7AA",
+              "#F97316"
             ],
             [
               "Principal Roundtable",
-              "300 Credits"
+              "300 Credits",
+              "✦",
+              "Access exclusive high-value leadership conversations.",
+              "#F5F3FF",
+              "#DDD6FE",
+              "#7C3AED"
             ]
-          ].map(
-            (item) => (
+          ].map((item) => (
+
+            <div
+              key={item[0]}
+              style={{
+                position: "relative",
+                overflow: "hidden",
+                background: item[4],
+                border: `1px solid ${item[5]}`,
+                borderRadius: 18,
+                padding: 20,
+                minHeight: 145,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 20
+              }}
+            >
+              {/* DECORATIVE CIRCLE */}
+
               <div
-                key={item[0]}
                 style={{
+                  position: "absolute",
+                  width: 110,
+                  height: 110,
+                  borderRadius: "50%",
+                  right: -42,
+                  top: -52,
                   background:
-                    "#F8FAFC",
-                  padding: 20,
-                  borderRadius: 14,
-                  display:
-                    "flex",
-                  justifyContent:
-                    "space-between",
-                  alignItems:
-                    "center"
+                    "rgba(255,255,255,.45)",
+                  pointerEvents: "none"
+                }}
+              />
+
+              <div
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                  display: "flex",
+                  gap: 15,
+                  alignItems: "flex-start"
                 }}
               >
+                {/* ICON */}
+
+                <div
+                  style={{
+                    width: 46,
+                    height: 46,
+                    borderRadius: 13,
+                    background: "#FFFFFF",
+                    border:
+                      `1px solid ${item[5]}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 21,
+                    flexShrink: 0
+                  }}
+                >
+                  {item[2]}
+                </div>
+
                 <div>
                   <div
                     style={{
-                      fontWeight:
-                        700
+                      color: "#0F172A",
+                      fontSize: 16,
+                      fontWeight: 800,
+                      marginBottom: 5
                     }}
                   >
                     {item[0]}
                   </div>
 
-                  <div>
-                    Cost:
-                    {" "}
+                  <div
+                    style={{
+                      color: "#64748B",
+                      fontSize: 12,
+                      lineHeight: 1.5,
+                      maxWidth: 330
+                    }}
+                  >
+                    {item[3]}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 12,
+                      color: item[6],
+                      fontSize: 17,
+                      fontWeight: 900
+                    }}
+                  >
                     {item[1]}
                   </div>
                 </div>
-
-                <button
-                  style={{
-                    background:
-                      "#FF6B00",
-                    border: "none",
-                    color:
-                      "white",
-                    padding:
-                      "10px 18px",
-                    borderRadius:
-                      10
-                  }}
-                >
-                  Redeem
-                </button>
               </div>
-            )
-          )}
+
+              {/* KEEPING EXISTING REDEEM BUTTON */}
+
+              <button
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                  background: item[6],
+                  border: "none",
+                  color: "#FFFFFF",
+                  padding: "10px 16px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  flexShrink: 0
+                }}
+              >
+                Redeem
+              </button>
+            </div>
+
+          ))}
         </div>
-      )}
+      </div>
+
+    )}
+  </div>
 </div>
 
 
@@ -946,23 +1903,80 @@ border: "1px solid #E2E8F0",
     overflow: "hidden"
   }}
 >
-  {/* HERO */}
+ {/* HERO */}
+
+<div
+  style={{
+    position: "relative",
+    overflow: "hidden",
+    background:
+      "linear-gradient(120deg, #FFFFFF 0%, #FFFFFF 58%, #FFF9F4 82%, #F4F7FF 100%)",
+    padding: "38px 42px",
+    borderBottom: "1px solid #E2E8F0",
+    minHeight: 250
+  }}
+>
+  {/* DECORATIVE BLUE CIRCLE */}
 
   <div
     style={{
-      background:
-        "linear-gradient(135deg,#FFEDD5,#FFF7ED)",
-      padding: 36,
-      borderBottom: "1px solid #F1F5F9"
+      position: "absolute",
+      width: 250,
+      height: 250,
+      borderRadius: "50%",
+      right: 120,
+      bottom: -185,
+      background: "rgba(37,99,235,.045)",
+      pointerEvents: "none"
+    }}
+  />
+
+  {/* DECORATIVE ORANGE CIRCLE */}
+
+  <div
+    style={{
+      position: "absolute",
+      width: 270,
+      height: 270,
+      borderRadius: "50%",
+      right: -70,
+      top: -105,
+      background: "rgba(249,115,22,.055)",
+      pointerEvents: "none"
+    }}
+  />
+
+  {/* SMALL DECORATIVE CIRCLE */}
+
+  <div
+    style={{
+      position: "absolute",
+      width: 125,
+      height: 125,
+      borderRadius: "50%",
+      right: 300,
+      top: -75,
+      background: "rgba(249,115,22,.03)",
+      pointerEvents: "none"
+    }}
+  />
+
+  {/* CONTENT */}
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 2
     }}
   >
     <div
       style={{
-        color: "#EA580C",
-        fontWeight: 700,
-        fontSize: 15,
-        letterSpacing: 1.5,
-        textTransform: "uppercase"
+        color: "#F97316",
+        fontWeight: 800,
+        fontSize: 11,
+        letterSpacing: 2.2,
+        textTransform: "uppercase",
+        marginBottom: 13
       }}
     >
       CONSULTATION MARKETPLACE
@@ -970,11 +1984,12 @@ border: "1px solid #E2E8F0",
 
     <h2
       style={{
-        marginTop: 10,
-        marginBottom: 10,
-        fontSize: 34,
+        margin: 0,
         color: "#0F172A",
-        fontWeight: 600
+        fontSize: 34,
+        lineHeight: 1.18,
+        fontWeight: 800,
+        letterSpacing: "-0.6px"
       }}
     >
       Learn From Experts Using Your Earned Credits
@@ -982,37 +1997,49 @@ border: "1px solid #E2E8F0",
 
     <div
       style={{
+        marginTop: 14,
         maxWidth: 850,
-        color: "#475569",
-        fontSize: 17,
-        lineHeight: 1.7
+        color: "#64748B",
+        fontSize: 15,
+        lineHeight: 1.65,
+        fontWeight: 500
       }}
     >
       Unlock one-on-one guidance from verified
       mentors, institutes and professionals across
       academics, performing arts, leadership,
       competitions and career development.
-      <br /><br />
-      Every consultation is booked using the
-      credits you earn throughout your Talent
-      Passport journey.
+
+      <div
+        style={{
+          marginTop: 15
+        }}
+      >
+        Every consultation is booked using the
+        credits you earn throughout your Talent
+        Passport journey.
+      </div>
     </div>
+
+    {/* BENEFIT PILLS */}
 
     <div
       style={{
         display: "flex",
-        gap: 16,
-        marginTop: 26,
+        gap: 10,
+        marginTop: 22,
         flexWrap: "wrap"
       }}
     >
       <div
         style={{
-          background: "#FFFFFF",
-          padding: "10px 18px",
+          background: "#FFF7ED",
+          border: "1px solid #FED7AA",
+          padding: "8px 13px",
           borderRadius: 999,
-          fontWeight: 700,
-          color: "#EA580C"
+          fontWeight: 800,
+          fontSize: 12,
+          color: "#C2410C"
         }}
       >
         🎯 Credit Based
@@ -1020,11 +2047,13 @@ border: "1px solid #E2E8F0",
 
       <div
         style={{
-          background: "#FFFFFF",
-          padding: "10px 18px",
+          background: "#EFF6FF",
+          border: "1px solid #BFDBFE",
+          padding: "8px 13px",
           borderRadius: 999,
-          fontWeight: 700,
-          color: "#EA580C"
+          fontWeight: 800,
+          fontSize: 12,
+          color: "#1D4ED8"
         }}
       >
         ⭐ Verified Experts
@@ -1032,17 +2061,57 @@ border: "1px solid #E2E8F0",
 
       <div
         style={{
-          background: "#FFFFFF",
-          padding: "10px 18px",
+          background: "#F0FDFA",
+          border: "1px solid #99F6E4",
+          padding: "8px 13px",
           borderRadius: 999,
-          fontWeight: 700,
-          color: "#EA580C"
+          fontWeight: 800,
+          fontSize: 12,
+          color: "#0F766E"
         }}
       >
         🤝 One-on-One Guidance
       </div>
     </div>
   </div>
+
+  {/* RIGHT VISUAL */}
+
+  <div
+    style={{
+      position: "absolute",
+      zIndex: 2,
+      right: 52,
+      top: "50%",
+      transform: "translateY(-50%)",
+      width: 94,
+      height: 94,
+      borderRadius: "50%",
+      background: "rgba(249,115,22,.09)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }}
+  >
+    <div
+      style={{
+        width: 64,
+        height: 64,
+        borderRadius: "50%",
+        background: "#FFFFFF",
+        border: "1px solid #FED7AA",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 30,
+        boxShadow:
+          "0 8px 22px rgba(249,115,22,.10)"
+      }}
+    >
+      🎓
+    </div>
+  </div>
+</div>
 
   {/* CATEGORY CARDS */}
 
@@ -1057,7 +2126,9 @@ border: "1px solid #E2E8F0",
   >
     {/* ACTIVITY */}
 
-{/* ACTIVITY */}
+{/* =========================================================
+    ACTIVITY COACHING
+========================================================= */}
 
 <div
   onClick={() => {
@@ -1068,38 +2139,103 @@ border: "1px solid #E2E8F0",
     setConsultationDescription("");
   }}
   style={{
+    position: "relative",
+    overflow: "hidden",
     border:
       selectedCategory === "Activity Coaching"
-        ? "2px solid #FF6B00"
-        : "1px solid #E2E8F0",
-    borderRadius: 22,
+        ? "1.5px solid #F97316"
+        : "1px solid #FED7AA",
+    borderRadius: 24,
     padding: 26,
     background:
-      selectedCategory === "Activity Coaching"
-        ? "#FFF7ED"
-        : "#FFFDF8",
-    transition: ".25s",
+      "linear-gradient(145deg, #FFF8EF 0%, #FFFCF7 62%, #FFF4E5 100%)",
+    transition: "all .25s ease",
     cursor: "pointer",
     boxShadow:
       selectedCategory === "Activity Coaching"
-        ? "0 12px 30px rgba(255,107,0,.12)"
-        : "none",
+        ? "0 14px 32px rgba(249,115,22,.14)"
+        : "0 8px 24px rgba(15,23,42,.045)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    minHeight: 360
+    minHeight: 320
   }}
 >
-  <div>
-    <div style={{ fontSize: 52 }}>
+  {/* DECORATIVE CIRCLE */}
+
+  <div
+    style={{
+      position: "absolute",
+      width: 150,
+      height: 150,
+      borderRadius: "50%",
+      right: -50,
+      top: -58,
+      background: "rgba(249,115,22,.075)",
+      pointerEvents: "none"
+    }}
+  />
+
+  <div
+    style={{
+      position: "absolute",
+      width: 90,
+      height: 90,
+      borderRadius: "50%",
+      right: 52,
+      top: -55,
+      background: "rgba(249,115,22,.035)",
+      pointerEvents: "none"
+    }}
+  />
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 1
+    }}
+  >
+    {/* ICON */}
+
+    <div
+      style={{
+        width: 58,
+        height: 58,
+        borderRadius: 16,
+        background: "#FFFFFF",
+        border: "1px solid #FED7AA",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 29,
+        boxShadow: "0 6px 16px rgba(249,115,22,.08)",
+        marginBottom: 22
+      }}
+    >
       🎭
+    </div>
+
+    {/* EYEBROW */}
+
+    <div
+      style={{
+        color: "#C2410C",
+        fontSize: 10,
+        fontWeight: 800,
+        letterSpacing: 1.4,
+        marginBottom: 8
+      }}
+    >
+      CREATIVE & PERFORMANCE
     </div>
 
     <h3
       style={{
-        marginTop: 18,
-        marginBottom: 14,
-        color: "#0F172A"
+        margin: "0 0 12px",
+        color: "#0F172A",
+        fontSize: 21,
+        fontWeight: 800,
+        lineHeight: 1.25
       }}
     >
       Activity Coaching
@@ -1108,7 +2244,9 @@ border: "1px solid #E2E8F0",
     <div
       style={{
         color: "#64748B",
-        lineHeight: 1.7
+        fontSize: 14,
+        lineHeight: 1.65,
+        maxWidth: 430
       }}
     >
       Learn directly from verified Debate,
@@ -1119,19 +2257,24 @@ border: "1px solid #E2E8F0",
 
   <button
     style={{
-      marginTop: 30,
+      position: "relative",
+      zIndex: 1,
+      marginTop: 26,
       width: "100%",
-      padding: 15,
+      padding: "13px 18px",
       background:
         selectedCategory === "Activity Coaching"
           ? "#EA580C"
-          : "#FF6B00",
+          : "#F97316",
       color: "#FFFFFF",
       border: "none",
-      borderRadius: 14,
+      borderRadius: 12,
       cursor: "pointer",
-      fontWeight: 700,
-      fontSize: 15
+      fontWeight: 800,
+      fontSize: 13,
+      boxShadow:
+        "0 6px 14px rgba(249,115,22,.15)",
+      transition: "all .2s ease"
     }}
   >
     {selectedCategory === "Activity Coaching"
@@ -1140,7 +2283,10 @@ border: "1px solid #E2E8F0",
   </button>
 </div>
 
-  {/* CAREER */}
+
+{/* =========================================================
+    CAREER GUIDANCE
+========================================================= */}
 
 <div
   onClick={() => {
@@ -1151,38 +2297,103 @@ border: "1px solid #E2E8F0",
     setConsultationDescription("");
   }}
   style={{
+    position: "relative",
+    overflow: "hidden",
     border:
       selectedCategory === "Career Guidance"
-        ? "2px solid #143B73"
-        : "1px solid #E2E8F0",
-    borderRadius: 22,
+        ? "1.5px solid #2563EB"
+        : "1px solid #BFDBFE",
+    borderRadius: 24,
     padding: 26,
     background:
-      selectedCategory === "Career Guidance"
-        ? "#EEF4FF"
-        : "#FCFCFF",
-    transition: ".25s",
+      "linear-gradient(145deg, #EFF6FF 0%, #F8FBFF 62%, #EDF4FF 100%)",
+    transition: "all .25s ease",
     cursor: "pointer",
     boxShadow:
       selectedCategory === "Career Guidance"
-        ? "0 12px 30px rgba(20,59,115,.15)"
-        : "none",
+        ? "0 14px 32px rgba(37,99,235,.14)"
+        : "0 8px 24px rgba(15,23,42,.045)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    minHeight: 360
+    minHeight: 320
   }}
 >
-  <div>
-    <div style={{ fontSize: 52 }}>
+  {/* DECORATIVE CIRCLE */}
+
+  <div
+    style={{
+      position: "absolute",
+      width: 150,
+      height: 150,
+      borderRadius: "50%",
+      right: -50,
+      top: -58,
+      background: "rgba(37,99,235,.07)",
+      pointerEvents: "none"
+    }}
+  />
+
+  <div
+    style={{
+      position: "absolute",
+      width: 90,
+      height: 90,
+      borderRadius: "50%",
+      right: 52,
+      top: -55,
+      background: "rgba(37,99,235,.035)",
+      pointerEvents: "none"
+    }}
+  />
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 1
+    }}
+  >
+    {/* ICON */}
+
+    <div
+      style={{
+        width: 58,
+        height: 58,
+        borderRadius: 16,
+        background: "#FFFFFF",
+        border: "1px solid #BFDBFE",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 29,
+        boxShadow: "0 6px 16px rgba(37,99,235,.08)",
+        marginBottom: 22
+      }}
+    >
       🎓
+    </div>
+
+    {/* EYEBROW */}
+
+    <div
+      style={{
+        color: "#1D4ED8",
+        fontSize: 10,
+        fontWeight: 800,
+        letterSpacing: 1.4,
+        marginBottom: 8
+      }}
+    >
+      FUTURE PATHWAYS
     </div>
 
     <h3
       style={{
-        marginTop: 18,
-        marginBottom: 14,
-        color: "#0F172A"
+        margin: "0 0 12px",
+        color: "#0F172A",
+        fontSize: 21,
+        fontWeight: 800,
+        lineHeight: 1.25
       }}
     >
       Career Guidance
@@ -1191,7 +2402,9 @@ border: "1px solid #E2E8F0",
     <div
       style={{
         color: "#64748B",
-        lineHeight: 1.7
+        fontSize: 14,
+        lineHeight: 1.65,
+        maxWidth: 430
       }}
     >
       Receive guidance on scholarships,
@@ -1204,19 +2417,24 @@ border: "1px solid #E2E8F0",
 
   <button
     style={{
-      marginTop: 30,
+      position: "relative",
+      zIndex: 1,
+      marginTop: 26,
       width: "100%",
-      padding: 15,
+      padding: "13px 18px",
       background:
         selectedCategory === "Career Guidance"
-          ? "#0F3D91"
+          ? "#1D4ED8"
           : "#143B73",
       color: "#FFFFFF",
       border: "none",
-      borderRadius: 14,
+      borderRadius: 12,
       cursor: "pointer",
-      fontWeight: 700,
-      fontSize: 15
+      fontWeight: 800,
+      fontSize: 13,
+      boxShadow:
+        "0 6px 14px rgba(20,59,115,.14)",
+      transition: "all .2s ease"
     }}
   >
     {selectedCategory === "Career Guidance"
@@ -1225,7 +2443,10 @@ border: "1px solid #E2E8F0",
   </button>
 </div>
 
-    {/* PARENT */}
+
+{/* =========================================================
+    PARENT SUPPORT
+========================================================= */}
 
 <div
   onClick={() => {
@@ -1236,38 +2457,103 @@ border: "1px solid #E2E8F0",
     setConsultationDescription("");
   }}
   style={{
+    position: "relative",
+    overflow: "hidden",
     border:
       selectedCategory === "Parent Support"
-        ? "2px solid #0F766E"
-        : "1px solid #E2E8F0",
-    borderRadius: 22,
+        ? "1.5px solid #0F766E"
+        : "1px solid #99F6E4",
+    borderRadius: 24,
     padding: 26,
     background:
-      selectedCategory === "Parent Support"
-        ? "#F0FDFA"
-        : "#FFFCF5",
-    transition: ".25s",
+      "linear-gradient(145deg, #F0FDFA 0%, #F8FFFD 62%, #ECFDF5 100%)",
+    transition: "all .25s ease",
     cursor: "pointer",
     boxShadow:
       selectedCategory === "Parent Support"
-        ? "0 12px 30px rgba(15,118,110,.15)"
-        : "none",
+        ? "0 14px 32px rgba(15,118,110,.14)"
+        : "0 8px 24px rgba(15,23,42,.045)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    minHeight: 360
+    minHeight: 320
   }}
 >
-  <div>
-    <div style={{ fontSize: 52 }}>
+  {/* DECORATIVE CIRCLE */}
+
+  <div
+    style={{
+      position: "absolute",
+      width: 150,
+      height: 150,
+      borderRadius: "50%",
+      right: -50,
+      top: -58,
+      background: "rgba(15,118,110,.07)",
+      pointerEvents: "none"
+    }}
+  />
+
+  <div
+    style={{
+      position: "absolute",
+      width: 90,
+      height: 90,
+      borderRadius: "50%",
+      right: 52,
+      top: -55,
+      background: "rgba(15,118,110,.035)",
+      pointerEvents: "none"
+    }}
+  />
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 1
+    }}
+  >
+    {/* ICON */}
+
+    <div
+      style={{
+        width: 58,
+        height: 58,
+        borderRadius: 16,
+        background: "#FFFFFF",
+        border: "1px solid #99F6E4",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 29,
+        boxShadow: "0 6px 16px rgba(15,118,110,.08)",
+        marginBottom: 22
+      }}
+    >
       👨‍👩‍👧
+    </div>
+
+    {/* EYEBROW */}
+
+    <div
+      style={{
+        color: "#0F766E",
+        fontSize: 10,
+        fontWeight: 800,
+        letterSpacing: 1.4,
+        marginBottom: 8
+      }}
+    >
+      STUDENT & FAMILY GROWTH
     </div>
 
     <h3
       style={{
-        marginTop: 18,
-        marginBottom: 14,
-        color: "#0F172A"
+        margin: "0 0 12px",
+        color: "#0F172A",
+        fontSize: 21,
+        fontWeight: 800,
+        lineHeight: 1.25
       }}
     >
       Parent Support
@@ -1276,7 +2562,9 @@ border: "1px solid #E2E8F0",
     <div
       style={{
         color: "#64748B",
-        lineHeight: 1.7
+        fontSize: 14,
+        lineHeight: 1.65,
+        maxWidth: 430
       }}
     >
       Connect with experienced mentors
@@ -1289,19 +2577,24 @@ border: "1px solid #E2E8F0",
 
   <button
     style={{
-      marginTop: 30,
+      position: "relative",
+      zIndex: 1,
+      marginTop: 26,
       width: "100%",
-      padding: 15,
+      padding: "13px 18px",
       background:
         selectedCategory === "Parent Support"
           ? "#0B5F59"
           : "#0F766E",
       color: "#FFFFFF",
       border: "none",
-      borderRadius: 14,
+      borderRadius: 12,
       cursor: "pointer",
-      fontWeight: 700,
-      fontSize: 15
+      fontWeight: 800,
+      fontSize: 13,
+      boxShadow:
+        "0 6px 14px rgba(15,118,110,.14)",
+      transition: "all .2s ease"
     }}
   >
     {selectedCategory === "Parent Support"

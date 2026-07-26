@@ -10,68 +10,277 @@ export default function GrowthPlan() {
   const [activeTab, setActiveTab] = useState<TabType>("daily");
 
   return (
-    <div className="min-h-screen overflow-hidden rounded-3xl border border-gray-200 bg-[#F7FAF9]">
+    <div className="min-h-screen overflow-hidden rounded-3xl border border-gray-200 bg-[#F8F7F4]">
 
-      {/* Header */}
+      {/* ==========================================================
+          ACADEMIC PASSPORT HERO
+      ========================================================== */}
 
-      <div className="border-b border-gray-200 bg-white px-6 py-4">
+      <div className="px-6 pt-6">
 
-        <div className="inline-flex items-center rounded-lg bg-green-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-green-700">
-          Portal : Student / Parent
-        </div>
+        <div
+          style={{
+            position: "relative",
+            overflow: "hidden",
+            background:
+              "linear-gradient(120deg, #FFFFFF 0%, #FFFFFF 58%, #FFF9F4 82%, #F4F7FF 100%)",
+            border: "1px solid #E2E8F0",
+            borderRadius: 28,
+            padding: "38px 42px 30px",
+            minHeight: 210,
+            boxShadow: "0 10px 30px rgba(15,23,42,.045)"
+          }}
+        >
 
-        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          {/* DECORATIVE BLUE CIRCLE */}
 
-          {/* Left Section */}
+          <div
+            style={{
+              position: "absolute",
+              width: 250,
+              height: 250,
+              borderRadius: "50%",
+              right: 120,
+              bottom: -185,
+              background: "rgba(37,99,235,.045)",
+              pointerEvents: "none"
+            }}
+          />
 
-          <div className="lg:w-[34%]">
+          {/* DECORATIVE ORANGE CIRCLE */}
 
-            <h1 className="text-[28px] font-black uppercase leading-tight tracking-tight text-slate-900">
+          <div
+            style={{
+              position: "absolute",
+              width: 270,
+              height: 270,
+              borderRadius: "50%",
+              right: -70,
+              top: -105,
+              background: "rgba(249,115,22,.055)",
+              pointerEvents: "none"
+            }}
+          />
+
+          {/* SMALL DECORATIVE CIRCLE */}
+
+          <div
+            style={{
+              position: "absolute",
+              width: 125,
+              height: 125,
+              borderRadius: "50%",
+              right: 300,
+              top: -75,
+              background: "rgba(249,115,22,.03)",
+              pointerEvents: "none"
+            }}
+          />
+
+          {/* HEADER CONTENT */}
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 2,
+              paddingRight: 130
+            }}
+          >
+
+            {/* EYEBROW */}
+
+            <div
+              style={{
+                color: "#F97316",
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: 2.2,
+                marginBottom: 13
+              }}
+            >
+              ACADEMIC GROWTH JOURNEY
+            </div>
+
+            {/* TITLE */}
+
+            <h1
+              style={{
+                margin: 0,
+                color: "#0F172A",
+                fontSize: 38,
+                lineHeight: 1.15,
+                fontWeight: 800,
+                letterSpacing: "-0.7px"
+              }}
+            >
               Academic Passport
             </h1>
 
+            {/* DESCRIPTION */}
+
+            <p
+              style={{
+                margin: "14px 0 0",
+                maxWidth: 720,
+                color: "#64748B",
+                fontSize: 15,
+                lineHeight: 1.65,
+                fontWeight: 500
+              }}
+            >
+              Track daily learning, understand your academic progress
+              and build a continuous record of your classroom journey.
+            </p>
+
           </div>
 
-          {/* Right Section */}
+          {/* RIGHT VISUAL */}
 
-          <div className="lg:w-[64%]">
-
-            <div className="flex flex-nowrap gap-2 rounded-xl bg-gray-100 p-2">
-
-              <button
-                onClick={() => setActiveTab("daily")}
-                className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wide transition-all ${
-                  activeTab === "daily"
-                    ? "bg-orange-500 text-white shadow"
-                    : "text-slate-700 hover:bg-white"
-                }`}
-              >
-                Daily Lecture Feedback
-              </button>
-
-              <button
-                onClick={() => setActiveTab("progress")}
-                className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wide transition-all ${
-                  activeTab === "progress"
-                    ? "bg-orange-500 text-white shadow"
-                    : "text-slate-700 hover:bg-white"
-                }`}
-              >
-                Progress Tracker
-              </button>
-
-              <button
-                onClick={() => setActiveTab("calendar")}
-                className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wide transition-all ${
-                  activeTab === "calendar"
-                    ? "bg-orange-500 text-white shadow"
-                    : "text-slate-700 hover:bg-white"
-                }`}
-              >
-                Continuous Calendar
-              </button>
-
+          <div
+            style={{
+              position: "absolute",
+              zIndex: 2,
+              right: 52,
+              top: 42,
+              width: 94,
+              height: 94,
+              borderRadius: "50%",
+              background: "rgba(249,115,22,.09)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                background: "#FFFFFF",
+                border: "1px solid #FED7AA",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 30,
+                boxShadow:
+                  "0 8px 22px rgba(249,115,22,.10)"
+              }}
+            >
+              📚
             </div>
+          </div>
+
+          {/* ======================================================
+              TAB NAVIGATION
+          ====================================================== */}
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 3,
+              display: "flex",
+              gap: 6,
+              marginTop: 28,
+              padding: 5,
+              background: "rgba(248,250,252,.92)",
+              border: "1px solid #E2E8F0",
+              borderRadius: 14,
+              maxWidth: 900
+            }}
+          >
+
+            {/* DAILY */}
+
+            <button
+              onClick={() => setActiveTab("daily")}
+              style={{
+                flex: 1,
+                border: "none",
+                borderRadius: 10,
+                padding: "12px 18px",
+                cursor: "pointer",
+                background:
+                  activeTab === "daily"
+                    ? "#F97316"
+                    : "transparent",
+                color:
+                  activeTab === "daily"
+                    ? "#FFFFFF"
+                    : "#475569",
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: 0.4,
+                transition: "all .2s ease",
+                boxShadow:
+                  activeTab === "daily"
+                    ? "0 5px 14px rgba(249,115,22,.18)"
+                    : "none"
+              }}
+            >
+              DAILY LECTURE FEEDBACK
+            </button>
+
+            {/* PROGRESS */}
+
+            <button
+              onClick={() => setActiveTab("progress")}
+              style={{
+                flex: 1,
+                border: "none",
+                borderRadius: 10,
+                padding: "12px 18px",
+                cursor: "pointer",
+                background:
+                  activeTab === "progress"
+                    ? "#F97316"
+                    : "transparent",
+                color:
+                  activeTab === "progress"
+                    ? "#FFFFFF"
+                    : "#475569",
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: 0.4,
+                transition: "all .2s ease",
+                boxShadow:
+                  activeTab === "progress"
+                    ? "0 5px 14px rgba(249,115,22,.18)"
+                    : "none"
+              }}
+            >
+              PROGRESS TRACKER
+            </button>
+
+            {/* CALENDAR */}
+
+            <button
+              onClick={() => setActiveTab("calendar")}
+              style={{
+                flex: 1,
+                border: "none",
+                borderRadius: 10,
+                padding: "12px 18px",
+                cursor: "pointer",
+                background:
+                  activeTab === "calendar"
+                    ? "#F97316"
+                    : "transparent",
+                color:
+                  activeTab === "calendar"
+                    ? "#FFFFFF"
+                    : "#475569",
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: 0.4,
+                transition: "all .2s ease",
+                boxShadow:
+                  activeTab === "calendar"
+                    ? "0 5px 14px rgba(249,115,22,.18)"
+                    : "none"
+              }}
+            >
+              CONTINUOUS CALENDAR
+            </button>
 
           </div>
 
@@ -79,15 +288,23 @@ export default function GrowthPlan() {
 
       </div>
 
-      {/* Tab Content */}
+      {/* ==========================================================
+          TAB CONTENT
+      ========================================================== */}
 
       <div className="p-6">
 
-        {activeTab === "daily" && <DailyLectureFeedback />}
+        {activeTab === "daily" && (
+          <DailyLectureFeedback />
+        )}
 
-        {activeTab === "progress" && <ProgressTracker />}
+        {activeTab === "progress" && (
+          <ProgressTracker />
+        )}
 
-        {activeTab === "calendar" && <ContinuousCalendar />}
+        {activeTab === "calendar" && (
+          <ContinuousCalendar />
+        )}
 
       </div>
 

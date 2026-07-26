@@ -150,10 +150,16 @@ export default function App() {
   useState<string>("");
   const [userType, setUserType] =
 useState<"new" | "existing" | null>(null);
- const [activeTab, setActiveTab] =
+
+const [activeTab, setActiveTab] =
   useState<string>("identity");
 
+const [studentSchoolName, setStudentSchoolName] =
+  useState<string | null>(null);
+
 const adminIdentity = getCurrentAdmin();
+
+
 
 const routeTeacherAfterLogin = async () => {
 
@@ -225,62 +231,73 @@ setActiveTab("teacher");
 const routeStudentAfterLogin =
 async () => {
 
-const user =
-await getCurrentUser();
+  const user =
+    await getCurrentUser();
 
-if (!user) {
-return;
-}
+  if (!user) {
+    setStudentSchoolName(null);
+    return;
+  }
 
-const profileExists =
-await doesStudentProfileExist(
-user.id
-);
+  const profileExists =
+    await doesStudentProfileExist(
+      user.id
+    );
 
-if (!profileExists) {
+  if (!profileExists) {
 
-setActiveTab(
-"student-profile"
-);
+    setStudentSchoolName(null);
 
-return;
+    setActiveTab(
+      "student-profile"
+    );
 
-}
+    return;
+  }
 
-const identity =
-await getCurrentIdentity();
+  const identity =
+    await getCurrentIdentity();
 
-if (!identity) {
+  if (!identity) {
 
-setActiveTab(
-"student-profile"
-);
+    setStudentSchoolName(null);
 
-return;
+    setActiveTab(
+      "student-profile"
+    );
 
-}
+    return;
+  }
 
-const studentIdentity =
-identity as any;
+  const studentIdentity =
+    identity as any;
 
-const questionnaireCompleted =
-await isQuestionnaireCompleted(
-studentIdentity.studentUuid
-);
+  /*
+   * Keep the school identity in App state.
+   * AppHeader will receive it only when
+   * Student Portal itself is active.
+   */
+  setStudentSchoolName(
+    studentIdentity.schoolName?.trim() || null
+  );
 
-if (!questionnaireCompleted) {
+  const questionnaireCompleted =
+    await isQuestionnaireCompleted(
+      studentIdentity.studentUuid
+    );
 
-setActiveTab(
-"wizard"
-);
+  if (!questionnaireCompleted) {
 
-return;
+    setActiveTab(
+      "wizard"
+    );
 
-}
+    return;
+  }
 
-setActiveTab(
-"passport"
-);
+  setActiveTab(
+    "passport"
+  );
 
 };
 
@@ -329,9 +346,11 @@ const handleLogout = async () => {
   "userRole"
 );
 
-  setSelectedRole("");
+setSelectedRole("");
 
-  setUserType(null);
+setUserType(null);
+
+setStudentSchoolName(null);
 
 await signOut();
 
@@ -573,9 +592,13 @@ schoolName: string;
  return (
   <div>
 
-    {activeTab !== "identity" && (
-      <AppHeader />
-    )}
+<AppHeader
+  schoolName={
+    activeTab === "passport"
+      ? studentSchoolName
+      : null
+  }
+/>
 
    {activeTab === "identity" && (
   <IdentityWorld

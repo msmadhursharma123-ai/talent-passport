@@ -934,133 +934,325 @@ const closeVideo = () =>
 
 {submissions.length > 0 && (
 
-<div
-  style={{
-    marginTop: 24,
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-    gap: 16
-  }}
->
-
-  {/* TOTAL SUBMISSIONS */}
-
   <div
     style={{
-      background: "#E8E1D6",
-      borderRadius: 16,
+      marginTop: 24,
+      background: "#FFFFFF",
       border: "1px solid #E2E8F0",
-      padding: "16px 18px"
+      borderRadius: 24,
+      padding: "26px 28px",
+      boxShadow:
+        "0 8px 28px rgba(15,23,42,.045)"
     }}
   >
+
+    {/* HEADER */}
+
     <div
       style={{
         display: "flex",
         justifyContent: "space-between",
-        alignItems: "center"
+        alignItems: "flex-end",
+        gap: 20,
+        marginBottom: 22
       }}
     >
-      <div
-        style={{
-          fontSize: 14,
-          fontWeight: 600,
-          color: "#64748B"
-        }}
-      >
-        📤 Total Submissions
+      <div>
+
+        <div
+          style={{
+            color: "#F97316",
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: 2,
+            marginBottom: 8
+          }}
+        >
+          SUBMISSION INTELLIGENCE
+        </div>
+
+        <h2
+          style={{
+            margin: 0,
+            color: "#0F172A",
+            fontSize: 24,
+            fontWeight: 800,
+            lineHeight: 1.2
+          }}
+        >
+          Submission Credit Summary
+        </h2>
+
+        <p
+          style={{
+            margin: "9px 0 0",
+            color: "#64748B",
+            fontSize: 14,
+            lineHeight: 1.5
+          }}
+        >
+          Your accumulated credits from verified competition
+          submissions across your Talent Passport journey.
+        </p>
+
       </div>
 
       <div
         style={{
-          fontSize: 28,
+          color: "#94A3B8",
+          fontSize: 11,
           fontWeight: 800,
-          color: "#111827"
+          letterSpacing: 1,
+          whiteSpace: "nowrap"
         }}
       >
-        {totalSubmissions}
+        TALENT PASSPORT LEDGER
       </div>
+
     </div>
-  </div>
 
-  {/* CREDIT PER SUBMISSION */}
 
-  <div
-    style={{
-      background: "#DCE3EF",
-      borderRadius: 16,
-      border: "1px solid #E2E8F0",
-      padding: "16px 18px"
-    }}
-  >
+    {/* CREDIT CARDS */}
+
     <div
       style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center"
+        display: "grid",
+        gridTemplateColumns:
+          "repeat(3, minmax(0, 1fr))",
+        gap: 14
       }}
     >
-      <div
-        style={{
-          fontSize: 14,
-          fontWeight: 600,
-          color: "#64748B"
-        }}
-      >
-        🪙 Credits / Submission
-      </div>
+
+      {/* TOTAL SUBMISSIONS */}
 
       <div
         style={{
-          fontSize: 28,
-          fontWeight: 800,
-          color: "#111827"
+          position: "relative",
+          overflow: "hidden",
+          minHeight: 118,
+          background:
+            "linear-gradient(135deg, #FFF8EF 0%, #FFFCF7 100%)",
+          border: "1px solid #FED7AA",
+          borderRadius: 18,
+          padding: "18px 20px"
         }}
       >
-        10
+
+        <div
+          style={{
+            position: "absolute",
+            width: 100,
+            height: 100,
+            borderRadius: "50%",
+            right: -34,
+            top: -42,
+            background:
+              "rgba(249,115,22,.08)",
+            pointerEvents: "none"
+          }}
+        />
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1
+          }}
+        >
+
+          <div
+            style={{
+              color: "#9A3412",
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: 0.7
+            }}
+          >
+            TOTAL SUBMISSIONS
+          </div>
+
+          <div
+            style={{
+              marginTop: 12,
+              color: "#F97316",
+              fontSize: 32,
+              lineHeight: 1,
+              fontWeight: 900
+            }}
+          >
+            {totalSubmissions}
+          </div>
+
+          <div
+            style={{
+              marginTop: 10,
+              color: "#475569",
+              fontSize: 11,
+              fontWeight: 600,
+              lineHeight: 1.4
+            }}
+          >
+            Verified competition submissions
+          </div>
+
+        </div>
+
       </div>
+
+
+      {/* CREDITS PER SUBMISSION */}
+
+      <div
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          minHeight: 118,
+          background:
+            "linear-gradient(135deg, #EFF6FF 0%, #F8FBFF 100%)",
+          border: "1px solid #BFDBFE",
+          borderRadius: 18,
+          padding: "18px 20px"
+        }}
+      >
+
+        <div
+          style={{
+            position: "absolute",
+            width: 100,
+            height: 100,
+            borderRadius: "50%",
+            right: -34,
+            top: -42,
+            background:
+              "rgba(37,99,235,.07)",
+            pointerEvents: "none"
+          }}
+        />
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1
+          }}
+        >
+
+          <div
+            style={{
+              color: "#1E40AF",
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: 0.7
+            }}
+          >
+            CREDITS / SUBMISSION
+          </div>
+
+          <div
+            style={{
+              marginTop: 12,
+              color: "#2563EB",
+              fontSize: 32,
+              lineHeight: 1,
+              fontWeight: 900
+            }}
+          >
+            10
+          </div>
+
+          <div
+            style={{
+              marginTop: 10,
+              color: "#475569",
+              fontSize: 11,
+              fontWeight: 600,
+              lineHeight: 1.4
+            }}
+          >
+            Credits awarded per verified submission
+          </div>
+
+        </div>
+
+      </div>
+
+
+      {/* TOTAL CREDITS EARNED */}
+
+      <div
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          minHeight: 118,
+          background:
+            "linear-gradient(135deg, #ECFDF5 0%, #F7FFFB 100%)",
+          border: "1px solid #BBF7D0",
+          borderRadius: 18,
+          padding: "18px 20px"
+        }}
+      >
+
+        <div
+          style={{
+            position: "absolute",
+            width: 100,
+            height: 100,
+            borderRadius: "50%",
+            right: -34,
+            top: -42,
+            background:
+              "rgba(22,163,74,.07)",
+            pointerEvents: "none"
+          }}
+        />
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1
+          }}
+        >
+
+          <div
+            style={{
+              color: "#166534",
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: 0.7
+            }}
+          >
+            TOTAL CREDITS EARNED
+          </div>
+
+          <div
+            style={{
+              marginTop: 12,
+              color: "#16A34A",
+              fontSize: 32,
+              lineHeight: 1,
+              fontWeight: 900
+            }}
+          >
+            {submissionCredits}
+          </div>
+
+          <div
+            style={{
+              marginTop: 10,
+              color: "#475569",
+              fontSize: 11,
+              fontWeight: 600,
+              lineHeight: 1.4
+            }}
+          >
+            Accumulated submission ledger credits
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
+
   </div>
-
-  {/* TOTAL CREDITS */}
-
-  <div
-    style={{
-      background: "#D9ECE6",
-      borderRadius: 16,
-      border: "1px solid #E2E8F0",
-      padding: "16px 18px"
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center"
-      }}
-    >
-      <div
-        style={{
-          fontSize: 14,
-          fontWeight: 600,
-          color: "#64748B"
-        }}
-      >
-        ⭐ Total Credits Earned
-      </div>
-
-      <div
-        style={{
-          fontSize: 28,
-          fontWeight: 800,
-          color: "#111827"
-        }}
-      >
-        {submissionCredits}
-      </div>
-    </div>
-  </div>
-
-</div>
 
 )}
 

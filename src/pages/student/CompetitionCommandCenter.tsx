@@ -322,611 +322,957 @@ const handleSubmit = async () => {
   }
 };
 
-  return (
+return (
   <div>
-    {/* HERO */}
-
-<div
-  style={{
-    background: "#FFF8F2",
-    border: "1px solid #ffffff",
-    borderRadius: 24,
-    padding: 28,
-    marginBottom: 28
-  }}
->
-  <div
-    style={{
-      display: "inline-block",
-      background: "#ffffff",
-      border: "1px solid #F2D8B5",
-      borderRadius: 999,
-      padding: "6px 12px",
-      fontSize: 11,
-      fontWeight: 700,
-      letterSpacing: 2,
-      color: "#F97316",
-      marginBottom: 12
-    }}
-  >
-    TRYOUT REGISTER DESK
-  </div>
-
-  <h2
-    style={{
-      margin: 0,
-      fontSize: 34,
-      fontWeight: 700,
-      color: "#1E293B"
-    }}
-  >
-    Co-curricular Pathway Auditions & Tryouts
-  </h2>
-
-  <p
-    style={{
-      color: "#64748B",
-      marginTop: 10,
-      fontSize: 15
-    }}
-  >
-    Submit video clips, audio briefings or project demonstrations.
-  </p>
-</div>
-
-    {/* MAIN GRID */}
-
-    <div
-      style={{
-       display: "grid",
-gridTemplateColumns: "1.7fr 1fr",
-gap: 24,
-alignItems: "start"
-      }}
-    >
-      {/* LEFT PANEL */}
-
-      <div
-        style={{
-          background: "#FFFFFF",
-border: "1px solid #E2E8F0",
-borderRadius: 28,
-padding: 28
-        }}
-      >
-        <h3
-          style={{
-            marginTop: 0,
-            marginBottom: 24
-          }}
-        >
-          Submit Performance Audition
-        </h3>
-
-        {/* PATHWAYS */}
-
-        <div
-          style={{
-            marginBottom: 24
-          }}
-        >
-          <div
-            style={{
-            fontSize: 11,
-fontWeight: 700,
-letterSpacing: 1.5,
-color: "#94A3B8",
-marginBottom: 12,
-textTransform: "uppercase",
-fontFamily: "'IBM Plex Mono', monospace"
-            }}
-          >
-            STEP 1: SELECT BROAD PATHWAY
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(4,1fr)",
-              gap: 12
-            }}
-          >
-            {[
-  ["Communication", "🗣"],
-  ["Creativity", "🎨"],
-  ["Thinking", "💡"],
-  ["Team Event", "🤝"]
-].map(([item, icon]) => (
-  <button
-    key={item}
-    onClick={() => {
-      setPathway(item);
-
-      const newEvents =
-        Object.keys(
-          pathwayData[
-            item as keyof typeof pathwayData
-          ].events
-        );
-
-      setSelectedEvent(newEvents[0]);
-    }}
-    style={{
-      padding: 16,
-      borderRadius: 14,
-
-      background:
-        pathway === item
-          ? "#FFF8F1"
-          : "#FFFFFF",
-
-      color:
-        pathway === item
-          ? "#F97316"
-          : "#334155",
-
-      border:
-        pathway === item
-          ? "1px solid #F97316"
-          : "1px solid #E2E8F0",
-
-      cursor: "pointer",
-      fontWeight: 600,
-
-      fontFamily:
-        "'IBM Plex Mono', monospace"
-    }}
-  >
-    {icon} {item}
-  </button>
-))}
-          </div>
-        </div>
-
-        {/* STEP 2 */}
-
-<div
-  style={{
-    marginTop: 26
-  }}
->
-  <div
-    style={{
-      fontSize: 12,
-      fontWeight: 700,
-      letterSpacing: 1.5,
-      color: "#94A3B8",
-      marginBottom: 12,
-      fontFamily:
-        "'IBM Plex Mono', monospace"
-    }}
-  >
-    STEP 2: CHOOSE SPECIFIC CHALLENGE ACTIVITY
-  </div>
-
-  <select
-    value={selectedEvent}
-    onChange={(e) =>
-      setSelectedEvent(
-        e.target.value
-      )
-    }
-    style={{
-      width: "100%",
-      height: 55,
-      border:
-        "3px solid #F97316",
-      borderRadius: 24,
-      paddingLeft: 22,
-      fontSize: 18,
-      fontWeight: 400,
-      background: "#FFF",
-      color: "#1E293B"
-    }}
-  >
-    {events.map((event) => (
-      <option
-        key={event}
-        value={event}
-      >
-        {event} :{" "}
-        {
-          eventData.description
-        }
-      </option>
-    ))}
-  </select>
-
- <div
-  style={{
-    marginTop: 20,
-    borderLeft: "3px solid #F97316",
-    paddingLeft: 14
-  }}
->
-  <div
-    style={{
-      fontSize: 12,
-      fontWeight: 700,
-      color: "#64748B",
-      letterSpacing: "1px",
-      textTransform: "uppercase",
-      marginBottom: 10,
-      fontFamily: "monospace"
-    }}
-  >
-    ⭐ JUDGING PARAMETERS & MEASUREMENTS (
-    {selectedEvent.toUpperCase()})
-  </div>
-
-  <div
-    style={{
-      border: "1px solid #CBD5E1",
-      borderRadius: 18,
-      overflow: "hidden",
-      background: "#FFFFFF"
-    }}
-  >
-    {/* HEADER */}
+    {/* ==========================================================
+        COMPETITION SUBMISSION WORKSPACE
+    ========================================================== */}
 
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "1fr 2fr",
-        padding: "12px 16px",
-        background: "#FFF7ED",
-        borderBottom: "1px solid #D6DCE5",
-        fontSize: 12,
-        fontWeight: 700,
-        color: "#64748B",
-        letterSpacing: "1px",
-        textTransform: "uppercase",
-        fontFamily: "monospace"
+        gridTemplateColumns: "minmax(0, 1.7fr) minmax(320px, 0.9fr)",
+        gap: 22,
+        alignItems: "start"
       }}
     >
-      <div>Parameter</div>
-      <div>Measurement Basis</div>
-    </div>
+      {/* ========================================================
+          LEFT — SUBMISSION FORM
+      ======================================================== */}
 
-    {Object.entries(eventData.skills).map(
-      ([skill, value]) => (
+      <div
+        style={{
+          background:
+            "linear-gradient(180deg, #FFFFFF 0%, #FCFDFE 100%)",
+          border: "1px solid #E2E8F0",
+          borderRadius: 26,
+          overflow: "hidden",
+          boxShadow:
+            "0 12px 34px rgba(15,23,42,.045)"
+        }}
+      >
+        {/* FORM HEADER */}
+
         <div
-          key={skill}
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 2fr",
-            padding: "16px",
-            borderBottom:
-              "1px solid #CBD5E1",
-            background: "#FFFFFF"
+            position: "relative",
+            overflow: "hidden",
+            padding: "26px 28px 24px",
+            background:
+              "linear-gradient(120deg, #FFFFFF 0%, #FFFFFF 62%, #FFF7ED 100%)",
+            borderBottom: "1px solid #EDF1F5"
           }}
         >
           <div
             style={{
-              fontWeight: 700,
-              color: "#334155",
-              fontSize: 15
+              position: "absolute",
+              width: 150,
+              height: 150,
+              borderRadius: "50%",
+              right: -40,
+              top: -85,
+              background: "rgba(249,115,22,.06)",
+              pointerEvents: "none"
+            }}
+          />
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1
             }}
           >
-            {skill}
+            <div
+              style={{
+                color: "#F97316",
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                marginBottom: 8
+              }}
+            >
+              Competition Entry Desk
+            </div>
+
+            <h3
+              style={{
+                margin: 0,
+                color: "#0F172A",
+                fontSize: 22,
+                fontWeight: 800,
+                letterSpacing: "-0.3px"
+              }}
+            >
+              Submit Performance Audition
+            </h3>
+
+            <p
+              style={{
+                margin: "8px 0 0",
+                color: "#64748B",
+                fontSize: 13,
+                lineHeight: 1.6
+              }}
+            >
+              Select your pathway, choose a challenge and submit
+              your performance evidence for verification.
+            </p>
+          </div>
+        </div>
+
+        {/* FORM BODY */}
+
+        <div
+          style={{
+            padding: 28
+          }}
+        >
+          {/* ====================================================
+              STEP 1
+          ==================================================== */}
+
+          <div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 14
+              }}
+            >
+              <div
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 8,
+                  background: "#FFF4EA",
+                  color: "#F97316",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  fontWeight: 800
+                }}
+              >
+                01
+              </div>
+
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: 1.4,
+                  color: "#64748B",
+                  textTransform: "uppercase"
+                }}
+              >
+                Select Broad Pathway
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: 10
+              }}
+            >
+              {[
+                ["Communication", "🗣"],
+                ["Creativity", "🎨"],
+                ["Thinking", "💡"],
+                ["Team Event", "🤝"]
+              ].map(([item, icon]) => {
+                const active = pathway === item;
+
+                return (
+                  <button
+                    key={item}
+                    onClick={() => {
+                      setPathway(item);
+
+                      const newEvents =
+                        Object.keys(
+                          pathwayData[
+                            item as keyof typeof pathwayData
+                          ].events
+                        );
+
+                      setSelectedEvent(newEvents[0]);
+                    }}
+                    style={{
+                      minHeight: 62,
+                      padding: "12px 10px",
+                      borderRadius: 14,
+
+                      background: active
+                        ? "linear-gradient(135deg, #FFF8F1 0%, #FFF3E8 100%)"
+                        : "#F8FAFC",
+
+                      color: active
+                        ? "#EA580C"
+                        : "#334155",
+
+                      border: active
+                        ? "1.5px solid #FB923C"
+                        : "1px solid #E2E8F0",
+
+                      boxShadow: active
+                        ? "0 6px 16px rgba(249,115,22,.08)"
+                        : "none",
+
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      transition: "all .2s ease"
+                    }}
+                  >
+                    <span
+                      style={{
+                        marginRight: 7,
+                        fontSize: 16
+                      }}
+                    >
+                      {icon}
+                    </span>
+
+                    {item}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ====================================================
+              STEP 2
+          ==================================================== */}
+
+          <div
+            style={{
+              marginTop: 30
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 14
+              }}
+            >
+              <div
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 8,
+                  background: "#EEF4FF",
+                  color: "#2563EB",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  fontWeight: 800
+                }}
+              >
+                02
+              </div>
+
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: 1.4,
+                  color: "#64748B",
+                  textTransform: "uppercase"
+                }}
+              >
+                Choose Specific Challenge Activity
+              </div>
+            </div>
+
+            <select
+              value={selectedEvent}
+              onChange={(e) =>
+                setSelectedEvent(e.target.value)
+              }
+              style={{
+                width: "100%",
+                height: 54,
+                border: "1.5px solid #FDBA74",
+                borderRadius: 14,
+                padding: "0 18px",
+                fontSize: 15,
+                fontWeight: 600,
+                background: "#FFFCF8",
+                color: "#1E293B",
+                outline: "none",
+                cursor: "pointer",
+                boxSizing: "border-box"
+              }}
+            >
+              {events.map((event) => (
+                <option
+                  key={event}
+                  value={event}
+                >
+                  {event} : {eventData.description}
+                </option>
+              ))}
+            </select>
+
+            {/* JUDGING PARAMETERS */}
+
+            <div
+              style={{
+                marginTop: 18,
+                background: "#F8FAFC",
+                border: "1px solid #E2E8F0",
+                borderRadius: 18,
+                padding: 16
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 13
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: "#475569",
+                    letterSpacing: 1,
+                    textTransform: "uppercase"
+                  }}
+                >
+                  ⭐ Judging Parameters & Measurements
+                </div>
+
+                <div
+                  style={{
+                    background: "#FFF4EA",
+                    color: "#EA580C",
+                    padding: "5px 9px",
+                    borderRadius: 999,
+                    fontSize: 9,
+                    fontWeight: 800,
+                    letterSpacing: 0.8,
+                    textTransform: "uppercase"
+                  }}
+                >
+                  {selectedEvent}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  border: "1px solid #E2E8F0",
+                  borderRadius: 14,
+                  overflow: "hidden",
+                  background: "#FFFFFF"
+                }}
+              >
+                {/* TABLE HEADER */}
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 2fr",
+                    padding: "11px 14px",
+                    background:
+                      "linear-gradient(90deg, #FFF7ED 0%, #FFFBF7 100%)",
+                    borderBottom: "1px solid #E2E8F0",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    color: "#64748B",
+                    letterSpacing: 1,
+                    textTransform: "uppercase"
+                  }}
+                >
+                  <div>Parameter</div>
+                  <div>Measurement Basis</div>
+                </div>
+
+                {Object.entries(eventData.skills).map(
+                  ([skill, value], index, array) => (
+                    <div
+                      key={skill}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 2fr",
+                        padding: "13px 14px",
+                        borderBottom:
+                          index === array.length - 1
+                            ? "none"
+                            : "1px solid #EDF1F5",
+                        background: "#FFFFFF"
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          color: "#334155",
+                          fontSize: 13
+                        }}
+                      >
+                        {skill}
+                      </div>
+
+                      <div
+                        style={{
+                          color: "#64748B",
+                          fontSize: 13
+                        }}
+                      >
+                        {String(value)}
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ====================================================
+              STEP 3
+          ==================================================== */}
+
+          <div
+            style={{
+              marginTop: 30
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 14
+              }}
+            >
+              <div
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 8,
+                  background: "#ECFDF5",
+                  color: "#059669",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  fontWeight: 800
+                }}
+              >
+                03
+              </div>
+
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: 1.4,
+                  color: "#64748B",
+                  textTransform: "uppercase"
+                }}
+              >
+                Upload Performance Attachment
+              </div>
+            </div>
+
+            <label
+              style={{
+                minHeight: 150,
+                border: selectedFile
+                  ? "1.5px dashed #86EFAC"
+                  : "1.5px dashed #CBD5E1",
+                borderRadius: 18,
+                background: selectedFile
+                  ? "#F6FFF9"
+                  : "#FAFCFF",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                padding: 20,
+                boxSizing: "border-box",
+                transition: "all .2s ease"
+              }}
+            >
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 14,
+                  background: selectedFile
+                    ? "#DCFCE7"
+                    : "#EEF4FF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 24
+                }}
+              >
+                {selectedFile ? "✓" : "☁️"}
+              </div>
+
+              <div
+                style={{
+                  fontWeight: 700,
+                  color: "#334155",
+                  marginTop: 12,
+                  fontSize: 13,
+                  textAlign: "center"
+                }}
+              >
+                {selectedFile
+                  ? selectedFile.name
+                  : "Drag and drop file here, or click to upload"}
+              </div>
+
+              <div
+                style={{
+                  color: "#94A3B8",
+                  marginTop: 6,
+                  fontSize: 12
+                }}
+              >
+                Supports MP4, MP3, WAV, PDF · Max size 40MB
+              </div>
+
+              <input
+                type="file"
+                accept=".mp4,.mp3,.wav,.pdf"
+                style={{
+                  display: "none"
+                }}
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    setSelectedFile(
+                      e.target.files[0]
+                    );
+                  }
+                }}
+              />
+            </label>
+          </div>
+
+          {/* ====================================================
+              STEP 4
+          ==================================================== */}
+
+          <div
+            style={{
+              marginTop: 30
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 14
+              }}
+            >
+              <div
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 8,
+                  background: "#F5F3FF",
+                  color: "#7C3AED",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  fontWeight: 800
+                }}
+              >
+                04
+              </div>
+
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: 1.4,
+                  color: "#64748B",
+                  textTransform: "uppercase"
+                }}
+              >
+                Performance Summary Note
+              </div>
+            </div>
+
+            <textarea
+              value={summary}
+              onChange={(e) =>
+                setSummary(e.target.value)
+              }
+              placeholder="Provide a detailed note summarizing your tryout entry, co-curricular highlights, and which core competencies you practiced."
+              rows={5}
+              style={{
+                width: "100%",
+                border: "1px solid #DCE4EE",
+                borderRadius: 16,
+                padding: 16,
+                fontSize: 13,
+                lineHeight: 1.6,
+                resize: "vertical",
+                background: "#FAFCFF",
+                color: "#334155",
+                outline: "none",
+                boxSizing: "border-box"
+              }}
+            />
+          </div>
+
+          {/* SUBMIT */}
+
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            style={{
+              width: "100%",
+              marginTop: 22,
+              padding: "16px 20px",
+              background:
+                "linear-gradient(135deg, #FF7A00 0%, #F97316 100%)",
+              color: "#FFFFFF",
+              border: "none",
+              borderRadius: 14,
+              fontWeight: 800,
+              fontSize: 13,
+              cursor: isSubmitting
+                ? "default"
+                : "pointer",
+              letterSpacing: 0.7,
+              textTransform: "uppercase",
+              opacity: isSubmitting ? 0.7 : 1,
+              boxShadow:
+                "0 8px 18px rgba(249,115,22,.16)"
+            }}
+          >
+            {isSubmitting
+              ? `Uploading ${uploadProgress}%`
+              : "SUBMIT FOR PARENTAL VERIFICATION →"}
+          </button>
+
+          {submitMessage && (
+            <div
+              style={{
+                marginTop: 14,
+                padding: "11px 14px",
+                borderRadius: 12,
+                background:
+                  submitMessage.includes("✅")
+                    ? "#F0FDF4"
+                    : "#FEF2F2",
+                border:
+                  submitMessage.includes("✅")
+                    ? "1px solid #BBF7D0"
+                    : "1px solid #FECACA",
+                fontSize: 13,
+                fontWeight: 700,
+                color:
+                  submitMessage.includes("✅")
+                    ? "#15803D"
+                    : "#DC2626"
+              }}
+            >
+              {submitMessage}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ========================================================
+          RIGHT — ACTIVE SUBMISSIONS
+      ======================================================== */}
+
+      <div
+        style={{
+          background: "#FFFFFF",
+          border: "1px solid #E2E8F0",
+          borderRadius: 26,
+          overflow: "hidden",
+          boxShadow:
+            "0 12px 34px rgba(15,23,42,.045)"
+        }}
+      >
+        {/* RIGHT HEADER */}
+
+        <div
+          style={{
+            position: "relative",
+            overflow: "hidden",
+            padding: "24px 24px 21px",
+            background:
+              "linear-gradient(135deg, #FFFFFF 0%, #F5F8FF 100%)",
+            borderBottom: "1px solid #EDF1F5"
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              width: 110,
+              height: 110,
+              borderRadius: "50%",
+              right: -35,
+              top: -55,
+              background: "rgba(37,99,235,.05)"
+            }}
+          />
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  color: "#2563EB",
+                  fontSize: 9,
+                  fontWeight: 800,
+                  letterSpacing: 1.6,
+                  textTransform: "uppercase",
+                  marginBottom: 7
+                }}
+              >
+                Submission Tracker
+              </div>
+
+              <h3
+                style={{
+                  margin: 0,
+                  color: "#0F172A",
+                  fontSize: 18,
+                  fontWeight: 800
+                }}
+              >
+                My Active Submissions
+              </h3>
+            </div>
+
+            <div
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 12,
+                background: "#FFFFFF",
+                border: "1px solid #E2E8F0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 19,
+                boxShadow:
+                  "0 5px 14px rgba(15,23,42,.05)"
+              }}
+            >
+              📋
+            </div>
           </div>
 
           <div
             style={{
-              color: "#475569",
-              fontSize: 15
+              position: "relative",
+              zIndex: 1,
+              marginTop: 9,
+              color: "#94A3B8",
+              fontSize: 11
             }}
           >
-            {String(value)}
+            NEP Ledger
           </div>
         </div>
-      )
-    )}
-  </div>
-</div>
-</div>
 
-{/* STEP 3 */}
-
-<div
-  style={{
-    marginTop: 28
-  }}
->
-  <div
-    style={{
-      fontSize: 11,
-fontWeight: 700,
-letterSpacing: 1.5,
-color: "#94A3B8",
-marginBottom: 12,
-textTransform: "uppercase",
-fontFamily:
-  "'IBM Plex Mono', monospace"
-    }}
-  >
-    STEP 3: UPLOAD PERFORMANCE ATTACHMENT
-  </div>
-
-  <div
-  style={{
-    marginTop: 30
-  }}
->
-  <div
-    style={{
-      fontSize: 12,
-      fontWeight: 700,
-      color: "#94A3B8",
-      letterSpacing: "1px",
-      textTransform: "uppercase",
-      marginBottom: 12,
-      fontFamily: "monospace"
-    }}
-  >
-    STEP 3: UPLOAD PERFORMANCE ATTACHMENT
-    (VIDEO/AUDIO/DOC)
-  </div>
-
-  <label
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      border: "2px dashed #D7E2EF",
-      borderRadius: 24,
-      minHeight: 150,
-      cursor: "pointer",
-      background: "#FFFFFF"
-    }}
-  >
-    <div
-      style={{
-        fontSize: 44,
-        color: "#94A3B8"
-      }}
-    >
-      ☁️
-    </div>
-
-    <div
-      style={{
-        fontWeight: 600,
-        color: "#334155",
-        marginTop: 8
-      }}
-    >
-      {selectedFile
-  ? selectedFile.name
-  : "Drag and drop file here, or click to upload"}
-    </div>
-
-    <div
-      style={{
-        color: "#94A3B8",
-        marginTop: 8,
-        fontSize: 14
-      }}
-    >
-      Supports MP4, MP3, WAV, PDF
-      (Max size 40MB)
-    </div>
-
-    <input
-  type="file"
-  accept=".mp4,.mp3,.wav,.pdf"
-  style={{
-    display: "none"
-  }}
-  onChange={(e) => {
-    if (e.target.files?.[0]) {
-      setSelectedFile(e.target.files[0]);
-    }
-  }}
-/>
-  </label>
-</div>
-</div>
-
-{/* STEP 4 */}
-
-<div
-  style={{
-    marginTop: 24
-  }}
->
-  <div
-    style={{
-      fontSize: 11,
-fontWeight: 700,
-letterSpacing: 1.5,
-color: "#94A3B8",
-marginBottom: 12,
-textTransform: "uppercase",
-fontFamily:
-  "'IBM Plex Mono', monospace"
-    }}
-  >
-    STEP 4: PERFORMANCE SUMMARY NOTE
-  </div>
-
-<textarea
-  value={summary}
-  onChange={(e) => setSummary(e.target.value)}
-  placeholder="Provide a detailed note summarizing your tryout entry, co-curricular highlights, and which core competencies you practiced."
-  rows={5}
-  style={{
-    width: "100%",
-    border: "1px solid #D7E2EF",
-    borderRadius: 18,
-    padding: 18,
-    fontSize: 15,
-    resize: "vertical"
-  }}
-/>
-</div>
-
-<button
-  onClick={handleSubmit}
-  disabled={isSubmitting}
-  style={{
-    width: "100%",
-    marginTop: 24,
-    padding: "20px",
-    background: "#F97316",
-    color: "#FFF",
-    border: "none",
-    borderRadius: 18,
-    fontWeight: 700,
-    fontSize: 15,
-    cursor: "pointer",
-    letterSpacing: "1px",
-    textTransform: "uppercase",
-    opacity: isSubmitting ? 0.7 : 1
-  }}
->
-  {isSubmitting
-    ? `Uploading ${uploadProgress}%`
-    : "SUBMIT FOR PARENTAL VERIFICATION →"}
-</button>
-
-{submitMessage && (
-  <div
-    style={{
-      marginTop: 16,
-      fontSize: 14,
-      fontWeight: 600,
-      color: submitMessage.includes("✅")
-        ? "#16A34A"
-        : "#DC2626"
-    }}
-  >
-    {submitMessage}
-  </div>
-)}
-
-
-      </div>
-
-
-
-      {/* RIGHT PANEL */}
-
-      <div
-        style={{
-        background: "#FFFFFF",
-border: "1px solid #E2E8F0",
-borderRadius: 28,
-padding: 24,
-minHeight: 700
-        }}
-      >
-       <div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 18
-  }}
->
-  <h3
-    style={{
-      margin: 0,
-      fontSize: 18
-    }}
-  >
-    📋 My Active Submissions
-  </h3>
-
-  <span
-    style={{
-      fontSize: 12,
-      color: "#94A3B8"
-    }}
-  >
-    NEP Ledger
-  </span>
-</div>
+        {/* SUBMISSION BODY */}
 
         <div
-  style={{
-    background: "#F8FAFC",
-    borderRadius: 18,
-    padding: 20,
-    marginTop: 18
-  }}
->
-  <div
-    style={{
-      display: "inline-block",
-      background: "#FFF4EA",
-      color: "#F97316",
-      padding: "4px 10px",
-      borderRadius: 8,
-      fontSize: 11,
-      fontWeight: 700,
-      letterSpacing: 1
-    }}
-  >
-    THINKING EVENT
-  </div>
+          style={{
+            padding: 20
+          }}
+        >
+          <div
+            style={{
+              background:
+                "linear-gradient(145deg, #F8FAFC 0%, #FFFFFF 100%)",
+              border: "1px solid #E8EDF3",
+              borderRadius: 18,
+              padding: 18
+            }}
+          >
+            {/* BADGE */}
 
-  <div
-    style={{
-      marginTop: 12,
-      fontWeight: 700,
-      fontSize: 18,
-      color: "#0F172A"
-    }}
-  >
-    Design Thinking Challenge
-  </div>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                background: "#FFF4EA",
+                color: "#EA580C",
+                padding: "5px 9px",
+                borderRadius: 999,
+                fontSize: 9,
+                fontWeight: 800,
+                letterSpacing: 1,
+                textTransform: "uppercase"
+              }}
+            >
+              Thinking Event
+            </div>
 
-  <div
-    style={{
-      marginTop: 14,
-      background: "#FFF",
-      padding: 14,
-      borderRadius: 12,
-      color: "#64748B",
-      fontStyle: "italic",
-      fontSize: 14
-    }}
-  >
-    "Pre-submitted prototype model for
-    rainwater harvesting."
-  </div>
+            {/* TITLE */}
 
-  <div
-    style={{
-      marginTop: 14,
-      color: "#64748B",
-      fontSize: 13
-    }}
-  >
-    📄 design_thinking.pdf
-  </div>
+            <div
+              style={{
+                marginTop: 12,
+                fontWeight: 800,
+                fontSize: 16,
+                color: "#0F172A"
+              }}
+            >
+              Design Thinking Challenge
+            </div>
 
-  <div
-    style={{
-      marginTop: 20,
-      borderTop:
-        "1px solid #E2E8F0",
-      paddingTop: 16,
-      display: "flex",
-      justifyContent:
-        "space-between",
-      fontSize: 12
-    }}
-  >
-    <span>🟢 Submitted</span>
-    <span>🟠 Reviewed</span>
-    <span>⚪ Verified</span>
-    <span>⚪ Top 5%</span>
-  </div>
-</div>
+            {/* DESCRIPTION */}
+
+            <div
+              style={{
+                marginTop: 12,
+                background: "#FFFFFF",
+                border: "1px solid #EDF1F5",
+                padding: 12,
+                borderRadius: 12,
+                color: "#64748B",
+                fontStyle: "italic",
+                fontSize: 12,
+                lineHeight: 1.55
+              }}
+            >
+              "Pre-submitted prototype model for rainwater
+              harvesting."
+            </div>
+
+            {/* FILE */}
+
+            <div
+              style={{
+                marginTop: 12,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                color: "#64748B",
+                fontSize: 12
+              }}
+            >
+              <span>📄</span>
+              <span>design_thinking.pdf</span>
+            </div>
+
+            {/* STATUS */}
+
+            <div
+              style={{
+                marginTop: 18,
+                borderTop: "1px solid #E2E8F0",
+                paddingTop: 16
+              }}
+            >
+              <div
+                style={{
+                  color: "#94A3B8",
+                  fontSize: 9,
+                  fontWeight: 800,
+                  letterSpacing: 1.3,
+                  textTransform: "uppercase",
+                  marginBottom: 12
+                }}
+              >
+                Verification Progress
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    "repeat(4, minmax(0, 1fr))",
+                  gap: 6
+                }}
+              >
+                {[
+                  ["#22C55E", "Submitted"],
+                  ["#F59E0B", "Reviewed"],
+                  ["#CBD5E1", "Verified"],
+                  ["#CBD5E1", "Top 5%"]
+                ].map(([color, label]) => (
+                  <div
+                    key={label}
+                    style={{
+                      textAlign: "center"
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        background: color,
+                        margin: "0 auto 7px",
+                        boxShadow:
+                          color !== "#CBD5E1"
+                            ? `0 0 0 4px ${color}18`
+                            : "none"
+                      }}
+                    />
+
+                    <div
+                      style={{
+                        color: "#64748B",
+                        fontSize: 9,
+                        fontWeight: 600,
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      {label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* PROGRESS LINE */}
+
+              <div
+                style={{
+                  height: 4,
+                  background: "#E2E8F0",
+                  borderRadius: 999,
+                  marginTop: 13,
+                  overflow: "hidden"
+                }}
+              >
+                <div
+                  style={{
+                    width: "50%",
+                    height: "100%",
+                    borderRadius: 999,
+                    background:
+                      "linear-gradient(90deg, #22C55E, #F59E0B)"
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -631,186 +631,260 @@ export default function MaukePeChauka() {
 
       <div className="mx-auto max-w-[1600px] space-y-6">
 
-        {/* ========================================================= */}
-        {/* HERO / MARKETPLACE OVERVIEW */}
-        {/* ========================================================= */}
+       {/* ========================================================= */}
+{/* HERO / MARKETPLACE OVERVIEW */}
+{/* ========================================================= */}
 
-        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+<section
+  className="
+    relative
+    overflow-hidden
+    rounded-[28px]
+    border
+    border-slate-200
+    bg-gradient-to-br
+    from-white
+    via-white
+    to-[#F7F9FF]
+    shadow-sm
+  "
+>
+  {/* ======================================================= */}
+  {/* DECORATIVE BACKGROUND — SAME LANGUAGE AS COMPETITIONS */}
+  {/* ======================================================= */}
 
-          <div className="px-7 py-7 lg:px-9 lg:py-8">
+  <div
+    className="
+      pointer-events-none
+      absolute
+      -right-20
+      -top-28
+      h-[310px]
+      w-[310px]
+      rounded-full
+      bg-orange-50/80
+    "
+  />
 
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+  <div
+    className="
+      pointer-events-none
+      absolute
+      right-[17%]
+      -top-24
+      h-[170px]
+      w-[170px]
+      rounded-full
+      bg-orange-50/40
+    "
+  />
 
-              {/* LEFT */}
+  <div
+    className="
+      pointer-events-none
+      absolute
+      -bottom-36
+      right-[13%]
+      h-[250px]
+      w-[250px]
+      rounded-full
+      bg-indigo-50/70
+    "
+  />
 
-              <div className="max-w-3xl">
+  {/* ======================================================= */}
+  {/* CONTENT */}
+  {/* ======================================================= */}
 
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-orange-500">
-                  Talent Opportunity Marketplace
-                </p>
+  <div className="relative z-10 px-7 py-7 lg:px-9 lg:py-8">
 
-                <h1 className="mt-3 text-3xl font-black tracking-tight text-[#07142D] lg:text-[38px]">
-                  🎯 Mauke Pe Chauka
-                </h1>
+    <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
 
-                <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-slate-500">
-                  Connect with scholarships, workshops,
-                  institutions, academies and talent partners.
-                </p>
+      {/* LEFT */}
 
-              </div>
+      <div className="max-w-3xl">
 
-              {/* MARKETPLACE STATUS */}
+        <p className="text-xs font-black uppercase tracking-[0.24em] text-orange-500">
+          Talent Opportunity Marketplace
+        </p>
 
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-green-200 bg-green-50 px-4 py-2">
+        <h1 className="mt-3 text-3xl font-black tracking-tight text-[#07142D] lg:text-[38px]">
+          🎯 Mauke Pe Chauka
+        </h1>
 
-                <span className="h-2 w-2 rounded-full bg-green-500" />
+        <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-slate-500">
+          Connect with scholarships, workshops,
+          institutions, academies and talent partners.
+        </p>
 
-                <span className="text-xs font-black uppercase tracking-wider text-green-700">
-                  Marketplace Active
-                </span>
+      </div>
 
-              </div>
+      {/* MARKETPLACE STATUS */}
+
+      <div
+        className="
+          inline-flex
+          w-fit
+          items-center
+          gap-2
+          rounded-full
+          border
+          border-green-200
+          bg-green-50
+          px-4
+          py-2
+        "
+      >
+
+        <span className="h-2 w-2 rounded-full bg-green-500" />
+
+        <span className="text-xs font-black uppercase tracking-wider text-green-700">
+          Marketplace Active
+        </span>
+
+      </div>
+
+    </div>
+
+    {/* ===================================================== */}
+    {/* METRIC CARDS */}
+    {/* ===================================================== */}
+
+    <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+      {/* ACTIVE PARTNERS */}
+
+      <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5">
+
+        <div className="flex items-start justify-between gap-4">
+
+          <div>
+
+            <p className="text-xs font-black uppercase tracking-wider text-blue-700">
+              Active Partners
+            </p>
+
+            <p className="mt-3 text-4xl font-black text-[#07142D]">
+              {loading ? "--" : partners.length}
+            </p>
+
+          </div>
+
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-xl shadow-sm">
+            🏢
+          </div>
+
+        </div>
+
+        <p className="mt-3 text-xs font-semibold text-blue-600">
+          Available in the partner network
+        </p>
+
+      </div>
+
+      {/* INVITATIONS */}
+
+      <div className="rounded-2xl border border-purple-100 bg-purple-50/70 p-5">
+
+        <div className="flex items-start justify-between gap-4">
+
+          <div>
+
+            <p className="text-xs font-black uppercase tracking-wider text-purple-700">
+              Invitations
+            </p>
+
+            <p className="mt-3 text-4xl font-black text-[#07142D]">
+              {loading ? "--" : offers.length}
+            </p>
+
+          </div>
+
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-xl shadow-sm">
+            ✉️
+          </div>
+
+        </div>
+
+        <p className="mt-3 text-xs font-semibold text-purple-600">
+          Opportunities waiting for your response
+        </p>
+
+      </div>
+
+      {/* APPLICATIONS */}
+
+      <div className="rounded-2xl border border-green-100 bg-green-50/70 p-5">
+
+        <div className="flex items-start justify-between gap-4">
+
+          <div>
+
+            <p className="text-xs font-black uppercase tracking-wider text-green-700">
+              Applications
+            </p>
+
+            <p className="mt-3 text-4xl font-black text-[#07142D]">
+              {loading ? "--" : requests.length}
+            </p>
+
+          </div>
+
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-xl shadow-sm">
+            📋
+          </div>
+
+        </div>
+
+        <p className="mt-3 text-xs font-semibold text-green-600">
+          Active opportunity connections
+        </p>
+
+      </div>
+
+      {/* OPPORTUNITY INDEX */}
+
+      <div className="relative overflow-hidden rounded-2xl bg-orange-500 p-5 text-white shadow-sm">
+
+        <div className="absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/10" />
+
+        <div className="absolute -bottom-10 right-10 h-24 w-24 rounded-full bg-white/10" />
+
+        <div className="relative">
+
+          <div className="flex items-start justify-between gap-4">
+
+            <div>
+
+              <p className="text-xs font-black uppercase tracking-wider text-orange-100">
+                Opportunity Index
+              </p>
+
+              <p className="mt-3 text-4xl font-black">
+                {opportunityIndex}
+              </p>
 
             </div>
 
-            {/* METRIC CARDS */}
-
-            <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-
-              {/* ACTIVE PARTNERS */}
-
-              <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5">
-
-                <div className="flex items-start justify-between gap-4">
-
-                  <div>
-
-                    <p className="text-xs font-black uppercase tracking-wider text-blue-700">
-                      Active Partners
-                    </p>
-
-                    <p className="mt-3 text-4xl font-black text-[#07142D]">
-                      {loading ? "--" : partners.length}
-                    </p>
-
-                  </div>
-
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-xl shadow-sm">
-                    🏢
-                  </div>
-
-                </div>
-
-                <p className="mt-3 text-xs font-semibold text-blue-600">
-                  Available in the partner network
-                </p>
-
-              </div>
-
-              {/* INVITATIONS */}
-
-              <div className="rounded-2xl border border-purple-100 bg-purple-50/70 p-5">
-
-                <div className="flex items-start justify-between gap-4">
-
-                  <div>
-
-                    <p className="text-xs font-black uppercase tracking-wider text-purple-700">
-                      Invitations
-                    </p>
-
-                    <p className="mt-3 text-4xl font-black text-[#07142D]">
-                      {loading ? "--" : offers.length}
-                    </p>
-
-                  </div>
-
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-xl shadow-sm">
-                    ✉️
-                  </div>
-
-                </div>
-
-                <p className="mt-3 text-xs font-semibold text-purple-600">
-                  Opportunities waiting for your response
-                </p>
-
-              </div>
-
-              {/* APPLICATIONS */}
-
-              <div className="rounded-2xl border border-green-100 bg-green-50/70 p-5">
-
-                <div className="flex items-start justify-between gap-4">
-
-                  <div>
-
-                    <p className="text-xs font-black uppercase tracking-wider text-green-700">
-                      Applications
-                    </p>
-
-                    <p className="mt-3 text-4xl font-black text-[#07142D]">
-                      {loading ? "--" : requests.length}
-                    </p>
-
-                  </div>
-
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-xl shadow-sm">
-                    📋
-                  </div>
-
-                </div>
-
-                <p className="mt-3 text-xs font-semibold text-green-600">
-                  Active opportunity connections
-                </p>
-
-              </div>
-
-              {/* OPPORTUNITY INDEX */}
-
-              <div className="relative overflow-hidden rounded-2xl bg-orange-500 p-5 text-white shadow-sm">
-
-                <div className="absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/10" />
-
-                <div className="absolute -bottom-10 right-10 h-24 w-24 rounded-full bg-white/10" />
-
-                <div className="relative">
-
-                  <div className="flex items-start justify-between gap-4">
-
-                    <div>
-
-                      <p className="text-xs font-black uppercase tracking-wider text-orange-100">
-                        Opportunity Index
-                      </p>
-
-                      <p className="mt-3 text-4xl font-black">
-                        {opportunityIndex}
-                      </p>
-
-                    </div>
-
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 text-xl">
-                      ✦
-                    </div>
-
-                  </div>
-
-                  <p className="mt-3 text-xs font-bold text-orange-100">
-                    Your current marketplace opportunity score
-                  </p>
-
-                </div>
-
-              </div>
-
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 text-xl">
+              ✦
             </div>
 
           </div>
 
-        </section>
+          <p className="mt-3 text-xs font-bold text-orange-100">
+            Your current marketplace opportunity score
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
 
         {/* ========================================================= */}
         {/* MY INVITATIONS */}

@@ -18,6 +18,10 @@ loadTodaysTeacherLogsByAssignment,
 } from "../viewmodels/TeacherDailyLogViewModel";
 
 import {
+  getTeacherDailyLogsByAssignment,
+} from "../repository/TeacherDailyLogRepository";
+
+import {
 getTeacherPendingDoubtLedger,
 } from "../repository/TeacherPendingDoubtRepository";
 
@@ -26,6 +30,11 @@ export default function TeacherDailyLogPage() {
     useState(false);
 
   const [logs, setLogs] = useState<any[]>([]);
+
+const [
+  doubtLedgerClassrooms,
+  setDoubtLedgerClassrooms
+] = useState<string[]>([]);
 
 const [logsLoading, setLogsLoading] =
 useState(true);
@@ -51,65 +60,232 @@ loadPendingDoubtLedger();
 
 async function fetchLogs() {
 
-setLogsLoading(true);
+  setLogsLoading(true);
 
-try{
+  try {
 
-const teacher =
-getCurrentTeacher();
+    const teacher =
+      getCurrentTeacher();
 
-if (!teacher) {
+    if (!teacher) {
 
-setLogs([]);
+      setLogs([]);
 
-return;
+      setDoubtLedgerClassrooms([]);
 
-}
+      return;
 
-const assignments =
+    }
 
-await getTeacherAssignmentsByTeacher(
-teacher.teacherUuid
+    const assignments =
+      await getTeacherAssignmentsByTeacher(
+        teacher.teacherUuid
+      );
+
+    /* ==========================================
+       UNIQUE CLASS + SECTION ASSIGNMENTS
+       ========================================== */
+
+    const uniqueAssignments =
+      assignments.filter(
+        (assignment, index, array) => {
+
+          const classroom =
+            `${assignment.className}-${assignment.sectionName}`;
+
+          return (
+            array.findIndex(
+              (item) =>
+                `${item.className}-${item.sectionName}` ===
+                classroom
+            ) === index
+          );
+
+        }
+      );
+
+    const allAssignedClassrooms =
+      uniqueAssignments.map(
+        (assignment) =>
+          `${assignment.className}-${assignment.sectionName}`
+      );
+
+    let allLogs: any[] = [];
+
+    const usedClassrooms: string[] = [];
+
+    /* ==========================================
+       CHECK DAILY LOG USAGE
+       ========================================== */
+
+    for (
+      const assignment
+      of uniqueAssignments
+    ) {
+
+      if (!assignment.id) {
+        continue;
+      }
+
+ const todayLogs =
+  await loadTodaysTeacherLogsByAssignment(
+    assignment.id
+  );
+
+allLogs.push(
+  ...todayLogs
 );
 
-let allLogs:any[] = [];
 
-for (const assignment of assignments) {
+/* HISTORICAL USAGE CHECK */
 
-if (!assignment.id) {
-continue;
-}
+const historicalLogs =
+  await getTeacherDailyLogsByAssignment(
+    assignment.id
+  );
 
-const logs =
+if (
+  historicalLogs.length > 0
+) {
 
-await loadTodaysTeacherLogsByAssignment(
-assignment.id
-);
+  const classroom =
+    `${assignment.className}-${assignment.sectionName}`;
 
-allLogs.push(...logs);
+  if (
+    !usedClassrooms.includes(
+      classroom
+    )
+  ) {
 
-}
+    usedClassrooms.push(
+      classroom
+    );
 
-allLogs.sort(
-(a,b)=>
-new Date(
-b.createdAt
-).getTime()
--
-new Date(
-a.createdAt
-).getTime()
-);
-
-setLogs(allLogs);
+  }
 
 }
 
-finally{
+      /*
+       IMPORTANT:
 
-setLogsLoading(false);
+       Today's records continue controlling the
+       "Today's Published Lecture Records" area.
 
-}
+       We do NOT use todayLogs alone to determine
+       permanent classroom usage below.
+      */
+
+    }
+
+    allLogs.sort(
+      (a, b) =>
+        new Date(
+          b.createdAt
+        ).getTime()
+        -
+        new Date(
+          a.createdAt
+        ).getTime()
+    );
+
+    setLogs(
+      allLogs
+    );
+
+    /* ==========================================
+       DETERMINE CLASSROOMS ALREADY USED
+
+       pendingDoubts can tell us which classrooms
+       have entered the intelligence lifecycle.
+
+       We also include today's published logs.
+       ========================================== */
+
+    const currentPendingDoubts =
+      await getTeacherPendingDoubtLedger();
+
+    currentPendingDoubts.forEach(
+      (item: any) => {
+
+        if (
+          item.classroom &&
+          !usedClassrooms.includes(
+            item.classroom
+          )
+        ) {
+
+          usedClassrooms.push(
+            item.classroom
+          );
+
+        }
+
+      }
+    );
+
+    allLogs.forEach(
+      (log: any) => {
+
+        const classroom =
+          `${log.className}-${log.sectionName}`;
+
+        if (
+          !usedClassrooms.includes(
+            classroom
+          )
+        ) {
+
+          usedClassrooms.push(
+            classroom
+          );
+
+        }
+
+      }
+    );
+
+    /* ==========================================
+       SAME DASHBOARD RULE
+
+       Nothing used yet:
+       → show every assigned classroom
+
+       Teacher has started:
+       → show only used classrooms
+       ========================================== */
+
+    if (
+      usedClassrooms.length === 0
+    ) {
+
+      setDoubtLedgerClassrooms(
+        allAssignedClassrooms
+      );
+
+    } else {
+
+      setDoubtLedgerClassrooms(
+        usedClassrooms
+      );
+
+    }
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "DAILY LOG PAGE LOAD ERROR",
+      error
+    );
+
+  }
+
+  finally {
+
+    setLogsLoading(false);
+
+  }
 
 }
 
@@ -522,7 +698,7 @@ color:"#041B4D",
 
 >
 
- Not discussed Doubt Ledger
+ ❌ Day Before Yesterday's Not discussed Doubt Ledger ❌
 
 </h2>
 
@@ -564,7 +740,8 @@ minWidth:"950px",
 
 <tr>
 
-<th style={{
+<th
+style={{
 padding:"10px",
 background:"#f7f4f9",
 color:"#041B4D",
@@ -572,54 +749,99 @@ fontWeight:700,
 fontSize:"18px",
 textAlign:"center",
 border:"1px solid #E5E7EB",
-}}>
+}}
+>
+
 METRICS
+
 </th>
 
-<th style={{
+{
+
+doubtLedgerClassrooms.map(
+(classroom,index)=>(
+
+<th
+key={classroom}
+style={{
+
 ...tableHeaderStyle,
-background:"#F9F4EA",
+
+background:
+
+index % 4 === 0
+? "#F9F4EA"
+
+: index % 4 === 1
+? "#EEF4FB"
+
+: index % 4 === 2
+? "#EEF8F4"
+
+: "#F4EFFA",
+
 color:"#041B4D",
 fontSize:"20px",
 fontWeight:700,
-}}>
-Loading...
+
+}}
+>
+
+{classroom}
+
 </th>
+
+))
+
+}
 
 </tr>
 
 </thead>
 
+
 <tbody>
 
 {renderPendingDoubtRow(
 "Students Count who had Doubt",
-["-"]
+doubtLedgerClassrooms.map(
+()=> "-"
+)
 )}
 
 {renderPendingDoubtRow(
 "Topic that was taught that day",
-["-"]
+doubtLedgerClassrooms.map(
+()=> "-"
+)
 )}
 
 {renderPendingDoubtRow(
 "Most Difficult Concept from that topic",
-["-"]
+doubtLedgerClassrooms.map(
+()=> "-"
+)
 )}
 
 {renderPendingDoubtRow(
 "Students Are",
-["-"]
+doubtLedgerClassrooms.map(
+()=> "-"
+)
 )}
 
 {renderPendingDoubtRow(
 "Date of this discussion",
-["-"]
+doubtLedgerClassrooms.map(
+()=> "-"
+)
 )}
 
 {renderPendingDoubtRow(
 "Status",
-["-"]
+doubtLedgerClassrooms.map(
+()=> "-"
+)
 )}
 
 </tbody>
@@ -630,43 +852,16 @@ Loading...
 
 :
 
-pendingDoubts.length === 0 ? (
-
-<div
-style={{
-
-padding:"30px",
-
-textAlign:"center",
-
-color:"#64748B",
-
-fontSize:"16px",
-
-}}
-
->
-
-No unresolved classroom learning gaps.
-
-</div>
-
-)
-
-:
 (
 
-  <table
+<table
 style={{
 
 width:"100%",
-
 borderCollapse:"collapse",
-
 minWidth:"950px",
 
 }}
-
 >
 
 <thead>
@@ -692,14 +887,11 @@ METRICS
 
 {
 
-pendingDoubts.map(
-
-(item:any, index:number)=>(
+doubtLedgerClassrooms.map(
+(classroom,index)=>(
 
 <th
-
-key={item.classroom}
-
+key={classroom}
 style={{
 
 ...tableHeaderStyle,
@@ -722,10 +914,9 @@ fontSize:"20px",
 fontWeight:700,
 
 }}
-
 >
 
-{item.classroom}
+{classroom}
 
 </th>
 
@@ -740,13 +931,25 @@ fontWeight:700,
 
 <tbody>
 
+
 {renderPendingDoubtRow(
 
 "Students Count who had Doubt",
 
-pendingDoubts.map(
-(item)=>String(item.pendingCount)
-)
+doubtLedgerClassrooms.map(
+(classroom) => {
+
+const item =
+pendingDoubts.find(
+(doubt:any) =>
+doubt.classroom === classroom
+);
+
+return item
+? String(item.pendingCount)
+: "-";
+
+})
 
 )}
 
@@ -755,9 +958,18 @@ pendingDoubts.map(
 
 "Topic that was taught that day",
 
-pendingDoubts.map(
-(item)=>item.previousTopic
-)
+doubtLedgerClassrooms.map(
+(classroom) => {
+
+const item =
+pendingDoubts.find(
+(doubt:any) =>
+doubt.classroom === classroom
+);
+
+return item?.previousTopic ?? "-";
+
+})
 
 )}
 
@@ -766,9 +978,18 @@ pendingDoubts.map(
 
 "Most Difficult Concept from that topic",
 
-pendingDoubts.map(
-(item)=>item.difficultConcept
-)
+doubtLedgerClassrooms.map(
+(classroom) => {
+
+const item =
+pendingDoubts.find(
+(doubt:any) =>
+doubt.classroom === classroom
+);
+
+return item?.difficultConcept ?? "-";
+
+})
 
 )}
 
@@ -777,9 +998,18 @@ pendingDoubts.map(
 
 "Students Are",
 
-pendingDoubts.map(
-(item)=>item.students
-)
+doubtLedgerClassrooms.map(
+(classroom) => {
+
+const item =
+pendingDoubts.find(
+(doubt:any) =>
+doubt.classroom === classroom
+);
+
+return item?.students ?? "-";
+
+})
 
 )}
 
@@ -788,9 +1018,18 @@ pendingDoubts.map(
 
 "Date of this discussion",
 
-pendingDoubts.map(
-(item)=>item.logDate
-)
+doubtLedgerClassrooms.map(
+(classroom) => {
+
+const item =
+pendingDoubts.find(
+(doubt:any) =>
+doubt.classroom === classroom
+);
+
+return item?.logDate ?? "-";
+
+})
 
 )}
 
@@ -799,9 +1038,18 @@ pendingDoubts.map(
 
 "Status",
 
-pendingDoubts.map(
-(item)=>item.status
-)
+doubtLedgerClassrooms.map(
+(classroom) => {
+
+const item =
+pendingDoubts.find(
+(doubt:any) =>
+doubt.classroom === classroom
+);
+
+return item?.status ?? "-";
+
+})
 
 )}
 

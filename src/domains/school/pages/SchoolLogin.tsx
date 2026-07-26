@@ -69,26 +69,116 @@ export default function SchoolLogin({
 
     return (
 
-        <div
-            style={{
-                minHeight: "100vh",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                background: "#F4F7FC"
-            }}
-        >
+ <div
+    style={{
+        minHeight: "100vh",
 
-            <div
-              style={{
-    width: 430,
-    maxWidth: "90%",
-    background: "white",
-    padding: 42,
-    borderRadius: 28,
-    boxShadow: "0 18px 50px rgba(0,0,0,.08)"
-}}
-            >
+        background:
+            "linear-gradient(135deg, #F8F7F4 0%, #FCFAF7 38%, #FFF7EE 70%, #F3F6FB 100%)",
+
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+
+        position: "relative",
+        overflow: "hidden"
+    }}
+>
+
+    {/* LARGE WARM TOP RIGHT CIRCLE */}
+
+    <div
+        style={{
+            position: "absolute",
+            width: "500px",
+            height: "500px",
+            borderRadius: "50%",
+            background:
+                "rgba(244,166,35,0.085)",
+            right: "-175px",
+            top: "-215px",
+            pointerEvents: "none"
+        }}
+    />
+
+    {/* INNER WARM GLOW */}
+
+    <div
+        style={{
+            position: "absolute",
+            width: "270px",
+            height: "270px",
+            borderRadius: "50%",
+            background:
+                "rgba(255,184,76,0.055)",
+            right: "7%",
+            top: "18%",
+            pointerEvents: "none"
+        }}
+    />
+
+    {/* LARGE BLUE BOTTOM LEFT CIRCLE */}
+
+    <div
+        style={{
+            position: "absolute",
+            width: "410px",
+            height: "410px",
+            borderRadius: "50%",
+            background:
+                "rgba(20,59,115,0.060)",
+            left: "-205px",
+            bottom: "-215px",
+            pointerEvents: "none"
+        }}
+    />
+
+    {/* WARM BOTTOM CIRCLE */}
+
+    <div
+        style={{
+            position: "absolute",
+            width: "235px",
+            height: "235px",
+            borderRadius: "50%",
+            background:
+                "rgba(244,166,35,0.060)",
+            right: "15%",
+            bottom: "7%",
+            pointerEvents: "none"
+        }}
+    />
+
+    {/* SOFT CENTER GLOW */}
+
+    <div
+        style={{
+            position: "absolute",
+            width: "550px",
+            height: "550px",
+            borderRadius: "50%",
+            background:
+                "radial-gradient(circle, rgba(244,166,35,0.035) 0%, rgba(244,166,35,0) 70%)",
+            left: "35%",
+            top: "20%",
+            pointerEvents: "none"
+        }}
+    />
+
+     <div
+    style={{
+        width: 430,
+        maxWidth: "90%",
+        background: "white",
+        padding: 42,
+        borderRadius: 28,
+        boxShadow:
+            "0 18px 50px rgba(0,0,0,.08)",
+
+        position: "relative",
+        zIndex: 1
+    }}
+>
 
                 <button
                     onClick={onBack}

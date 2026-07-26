@@ -1,3 +1,5 @@
+import { getCurrentTeacher } from "../../services/identityService";
+
 interface Props {
   onLogout: () => void;
 }
@@ -5,6 +7,12 @@ interface Props {
 export default function TeacherHeader({
   onLogout,
 }: Props) {
+  const teacher = getCurrentTeacher();
+
+  const schoolName =
+    teacher?.schoolName?.trim() ||
+    "Academic Workspace";
+
   const today = new Date();
 
   const formattedDate =
@@ -93,59 +101,66 @@ export default function TeacherHeader({
 
       {/* RIGHT SECTION */}
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-        }}
-      >
-        <div
-          style={{
-            textAlign: "right",
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontWeight: 700,
-              fontSize: 14,
-              color: "#03122E",
-            }}
-          >
-            Academic Workspace
-          </p>
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+  }}
+>
+  <div
+    style={{
+      textAlign: "right",
+      maxWidth: 280,
+    }}
+  >
+    <p
+      style={{
+        margin: 0,
+        fontWeight: 700,
+        fontSize: 14,
+        color: "#03122E",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+      }}
+      title={schoolName}
+    >
+      {schoolName}
+    </p>
 
-          <p
-            style={{
-              marginTop: 3,
-              color: "#64748B",
-              fontSize: 10,
-            }}
-          >
-            Ready for today's classes
-          </p>
-        </div>
+    <p
+      style={{
+        marginTop: 3,
+        marginBottom: 0,
+        color: "#64748B",
+        fontSize: 10,
+      }}
+    >
+      Academic Workspace
+    </p>
+  </div>
 
-        <button
-          onClick={onLogout}
-          style={{
-            background:
-              "linear-gradient(90deg,#EF4444,#DC2626)",
-            color: "white",
-            border: "none",
-            padding: "9px 16px",
-            borderRadius: 10,
-            cursor: "pointer",
-            fontWeight: 700,
-            fontSize: 12,
-            boxShadow:
-              "0px 8px 18px rgba(220,38,38,0.25)",
-          }}
-        >
-          Logout
-        </button>
-      </div>
+  <button
+    onClick={onLogout}
+    style={{
+      background:
+        "linear-gradient(90deg,#EF4444,#DC2626)",
+      color: "white",
+      border: "none",
+      padding: "9px 16px",
+      borderRadius: 10,
+      cursor: "pointer",
+      fontWeight: 700,
+      fontSize: 12,
+      boxShadow:
+        "0px 8px 18px rgba(220,38,38,0.25)",
+    }}
+  >
+    Logout
+  </button>
+</div>
+
     </div>
   );
 }

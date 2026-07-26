@@ -76,256 +76,303 @@ useState<string[]>([]);
 
 
 
-  async function loadDashboard() {
+ async function loadDashboard() {
 
-    try {
+  try {
 
-      const teacher =
-        getCurrentTeacher();
+    const teacher =
+      getCurrentTeacher();
 
-      if (!teacher) {
-        return;
-      }
+    if (!teacher) {
+      return;
+    }
 
+    const assignments =
+      await getTeacherAssignmentsByTeacher(
+        teacher.teacherUuid
+      );
 
+    /* ==========================================
+       DEDUPLICATE CLASS + SECTION ASSIGNMENTS
+       ========================================== */
 
-      const assignments =
-        await getTeacherAssignmentsByTeacher(
-          teacher.teacherUuid
+    const uniqueAssignments =
+      assignments.filter(
+        (assignment, index, array) => {
+
+          const classroom =
+            `${assignment.className}-${assignment.sectionName}`;
+
+          return (
+            array.findIndex(
+              (item) =>
+                `${item.className}-${item.sectionName}` ===
+                classroom
+            ) === index
+          );
+
+        }
+      );
+
+    const classroomData:
+      ClassroomDashboardData[] = [];
+
+    const allAssignedClassrooms =
+      uniqueAssignments.map(
+        (assignment) =>
+          `${assignment.className}-${assignment.sectionName}`
+      );
+
+    const usedClassrooms: string[] = [];
+
+    /* ==========================================
+       CHECK EACH ASSIGNED CLASSROOM
+       ========================================== */
+
+    for (
+      const assignment
+      of uniqueAssignments
+    ) {
+
+      const classroom =
+        `${assignment.className}-${assignment.sectionName}`;
+
+      const logs =
+        await getTeacherDailyLogsByAssignment(
+          assignment.id!
         );
 
-setTeacherAssignments(
-assignments
-);
+      /* ========================================
+         NO DAILY LOG FOR THIS CLASSROOM
 
- const classroomData:
-ClassroomDashboardData[] = [];
+         Do NOT create dashboard analytics here.
 
-const loadingColumns:string[] = [];
+         If the teacher has never used Daily Log
+         anywhere, we will fall back to ALL
+         assigned classrooms after this loop.
+         ======================================== */
 
-
-
-      for (const assignment of assignments) {
-
-        const logs =
-          await getTeacherDailyLogsByAssignment(
-            assignment.id!
-          );
-
-loadingColumns.push(
-
-`${assignment.className}-${assignment.sectionName}`
-
-);
-
-
-
-        if (logs.length === 0) {
-          continue;
-        }
-
-
-
-        const latestLecture =
-          logs[0];
-
-
-
-        const radar =
-          await getLectureFeedbackRadar(
-            latestLecture.id
-          );
-
-const totalStudents =
-radar.totalStudents || 1;
-
-
-const completelyPercentage =
-
-Math.round(
-
-(radar.completelyUnderstood /
-totalStudents) * 100
-
-);
-
-
-const partiallyPercentage =
-
-Math.round(
-
-(radar.partiallyUnderstood /
-totalStudents) * 100
-
-);
-
-
-const didNotPercentage =
-
-Math.round(
-
-(radar.didNotUnderstand /
-totalStudents) * 100
-
-);
-
-        const difficultConcept =
-
-          radar.commonConcepts?.length > 0
-
-            ? radar.commonConcepts[0].concept
-
-            : "-";
-
-
-
-        const studentsAttention =
-
-          radar.studentsRequiringAttention?.length > 0
-
-            ? radar.studentsRequiringAttention
-                .map(
-                  (student: any) =>
-                    student.studentName
-                )
-                .join(", ")
-
-            : "-";
-
-
-
-        const studentsNotUnderstood =
-
-          radar.studentsRequiringAttention?.length > 0
-
-            ? radar.studentsRequiringAttention
-                .filter(
-                  (student: any) =>
-                    student.understandingLevel
-                      ?.toLowerCase()
-                      .includes("did")
-                )
-                .map(
-                  (student: any) =>
-                    student.studentName
-                )
-                .join(", ")
-
-            : "-";
-
-
-
-        classroomData.push({
-
-          classroom:
-
-            `${assignment.className}-${assignment.sectionName}`,
-
-
-
-          latestTopic:
-            latestLecture.topicName,
-
-
-
-          studentsFilledFeedback:
-
-            `${
-
-              radar.totalStudents -
-
-              radar.pendingStudentsCount
-
-            } / ${radar.totalStudents}`,
-
-
-
-          feedbackRemaining:
-            radar.pendingStudentsCount,
-
-
-
-   completelyUnderstood:
-
-`${radar.completelyUnderstood} (${completelyPercentage}%)`,
-
-
-
-partiallyUnderstood:
-
-`${radar.partiallyUnderstood} (${partiallyPercentage}%)`,
-
-
-
-didNotUnderstand:
-
-`${radar.didNotUnderstand} (${didNotPercentage}%)`,
-
-
-
-          classHealthScore:
-
-            radar.classroomHealthScore.score,
-
-
-
-          classHealthStatus:
-
-            radar.classroomHealthScore.status,
-
-
-
-          studentsRequiringAttention:
-
-            studentsAttention,
-
-
-
-          mostDifficultConcept:
-
-            difficultConcept,
-
-
-
-          studentsWhoDidNotUnderstand:
-
-            studentsNotUnderstood,
-
-
-
-          teachingRecommendation:
-
-            radar.teachingRecommendation,
-
-        });
-
+      if (logs.length === 0) {
+        continue;
       }
 
+      /* ========================================
+         THIS CLASSROOM HAS BEEN USED
+         ======================================== */
 
+      usedClassrooms.push(
+        classroom
+      );
 
-    setLoadingClassrooms(
-loadingColumns
-);
+      const latestLecture =
+        logs[0];
 
-setDashboardData(
-classroomData
-);
+      const radar =
+        await getLectureFeedbackRadar(
+          latestLecture.id
+        );
+
+      const totalStudents =
+        radar.totalStudents || 1;
+
+      const completelyPercentage =
+        Math.round(
+          (
+            radar.completelyUnderstood /
+            totalStudents
+          ) * 100
+        );
+
+      const partiallyPercentage =
+        Math.round(
+          (
+            radar.partiallyUnderstood /
+            totalStudents
+          ) * 100
+        );
+
+      const didNotPercentage =
+        Math.round(
+          (
+            radar.didNotUnderstand /
+            totalStudents
+          ) * 100
+        );
+
+      const difficultConcept =
+        radar.commonConcepts?.length > 0
+          ? radar.commonConcepts[0].concept
+          : "-";
+
+      const studentsAttention =
+        radar.studentsRequiringAttention
+          ?.length > 0
+
+          ? radar.studentsRequiringAttention
+              .map(
+                (student: any) =>
+                  student.studentName
+              )
+              .join(", ")
+
+          : "-";
+
+      const studentsNotUnderstood =
+        radar.studentsRequiringAttention
+          ?.length > 0
+
+          ? radar.studentsRequiringAttention
+              .filter(
+                (student: any) =>
+                  student
+                    .understandingLevel
+                    ?.toLowerCase()
+                    .includes("did")
+              )
+              .map(
+                (student: any) =>
+                  student.studentName
+              )
+              .join(", ")
+
+          : "-";
+
+      classroomData.push({
+
+        classroom,
+
+        latestTopic:
+          latestLecture.topicName,
+
+        studentsFilledFeedback:
+          `${
+            radar.totalStudents -
+            radar.pendingStudentsCount
+          } / ${radar.totalStudents}`,
+
+        feedbackRemaining:
+          radar.pendingStudentsCount,
+
+        completelyUnderstood:
+          `${radar.completelyUnderstood} (${completelyPercentage}%)`,
+
+        partiallyUnderstood:
+          `${radar.partiallyUnderstood} (${partiallyPercentage}%)`,
+
+        didNotUnderstand:
+          `${radar.didNotUnderstand} (${didNotPercentage}%)`,
+
+        classHealthScore:
+          radar.classroomHealthScore.score,
+
+        classHealthStatus:
+          radar.classroomHealthScore.status,
+
+        studentsRequiringAttention:
+          studentsAttention,
+
+        mostDifficultConcept:
+          difficultConcept,
+
+        studentsWhoDidNotUnderstand:
+          studentsNotUnderstood,
+
+        teachingRecommendation:
+          radar.teachingRecommendation,
+
+      });
 
     }
 
-    catch (error) {
+    /* ==========================================
+       FINAL DASHBOARD CLASSROOM RULE
 
-      console.error(error);
+       ZERO used classrooms:
+       → New teacher
+       → Show every assigned classroom
+
+       ONE OR MORE used classrooms:
+       → Active teacher
+       → Show only classrooms with Daily Logs
+       ========================================== */
+
+    if (usedClassrooms.length === 0) {
+
+      setTeacherAssignments(
+        uniqueAssignments
+      );
+
+      setLoadingClassrooms(
+        allAssignedClassrooms
+      );
+
+    } else {
+
+      const usedAssignments =
+        uniqueAssignments.filter(
+          (assignment) => {
+
+            const classroom =
+              `${assignment.className}-${assignment.sectionName}`;
+
+            return usedClassrooms.includes(
+              classroom
+            );
+
+          }
+        );
+
+      setTeacherAssignments(
+        usedAssignments
+      );
+
+      setLoadingClassrooms(
+        usedClassrooms
+      );
 
     }
 
-    finally {
-
-      setLoading(false);
-
-    }
+    setDashboardData(
+      classroomData
+    );
 
   }
+
+  catch (error) {
+
+    console.error(
+      "TEACHER HOME DASHBOARD ERROR",
+      error
+    );
+
+  }
+
+  finally {
+
+    setLoading(false);
+
+  }
+
+}
+
+const classroomColumns =
+  teacherAssignments.map(
+    (assignment) => ({
+      classroom:
+        `${assignment.className}-${assignment.sectionName}`,
+    })
+  );
+
+  function getDashboardItem(
+  classroom: string
+) {
+
+  return dashboardData.find(
+    (item) =>
+      item.classroom === classroom
+  );
+
+}
 
   return (
 
@@ -432,32 +479,7 @@ Here is your classroom intelligence summary for yesterday's latest lecture.
 
 
 
-{/* EMPTY STATE */}
 
-
-{!loading && dashboardData.length === 0 && (
-
-<div
-
-style={{
-
-background:"white",
-
-padding:"20px",
-
-borderRadius:"24px",
-
-fontSize:"18px",
-
-}}
-
->
-
-No classroom intelligence available yet.
-
-</div>
-
-)}
 
 
 {/* TABLE CONTAINER */}
@@ -478,8 +500,6 @@ Loading All Metrics...
 </div>
 
 )}
-
-{(loading || dashboardData.length > 0) && (
 
 <>
 
@@ -524,21 +544,8 @@ METRICS
 
 {
 
-(loading
-
-? loadingClassrooms.map(
-
-(classroom)=>({
-
-classroom
-
-})
-
-)
-
-: dashboardData
-
-).map((item:any,index)=>(
+classroomColumns.map(
+  (item:any,index)=>(
 
 <th
 key={item.classroom}
@@ -586,13 +593,11 @@ fontWeight:700,
 
 "Latest Topic",
 
-loading
-? loadingClassrooms.map(
-()=> "-"
-)
-
-: dashboardData.map(
-(item)=>item.latestTopic
+classroomColumns.map(
+(item) =>
+  getDashboardItem(
+    item.classroom
+  )?.latestTopic ?? "-"
 )
 
 )}
@@ -603,13 +608,11 @@ loading
 
 "Students Filled Feedback",
 
-loading
-? loadingClassrooms.map(
-()=> "-"
-)
-
-: dashboardData.map(
-(item)=>item.studentsFilledFeedback
+classroomColumns.map(
+(item) =>
+  getDashboardItem(
+    item.classroom
+  )?.studentsFilledFeedback ?? "-"
 )
 
 )}
@@ -620,14 +623,21 @@ loading
 
 "Feedback Remaining",
 
-loading
-? loadingClassrooms.map(
-()=> "-"
-)
+classroomColumns.map(
+(item) => {
 
-: dashboardData.map(
-(item)=>String(item.feedbackRemaining)
-)
+  const data =
+    getDashboardItem(
+      item.classroom
+    );
+
+  return data
+    ? String(
+        data.feedbackRemaining
+      )
+    : "-";
+
+})
 
 )}
 
@@ -637,13 +647,11 @@ loading
 
 "Completely Understood",
 
-loading
-? loadingClassrooms.map(
-()=> "-"
-)
-
-: dashboardData.map(
-(item)=>item.completelyUnderstood
+classroomColumns.map(
+(item) =>
+  getDashboardItem(
+    item.classroom
+  )?.completelyUnderstood ?? "-"
 )
 
 )}
@@ -654,13 +662,11 @@ loading
 
 "Partially Understood",
 
-loading
-? loadingClassrooms.map(
-()=> "-"
-)
-
-: dashboardData.map(
-(item)=>item.partiallyUnderstood
+classroomColumns.map(
+(item) =>
+  getDashboardItem(
+    item.classroom
+  )?.partiallyUnderstood ?? "-"
 )
 
 )}
@@ -671,42 +677,43 @@ loading
 
 "Didn't Understand",
 
-loading
-? loadingClassrooms.map(
-()=> "-"
-)
-
-: dashboardData.map(
-(item)=>item.didNotUnderstand
+classroomColumns.map(
+(item) =>
+  getDashboardItem(
+    item.classroom
+  )?.didNotUnderstand ?? "-"
 )
 
 )}
 
 
 
-{
-
-loading
-
-?
-
-renderTableRow(
+{renderTableRow(
 
 "Class Health Score",
 
-loadingClassrooms.map(
-()=> "-"
-)
+classroomColumns.map(
+(item) => {
 
-)
+  const data =
+    getDashboardItem(
+      item.classroom
+    );
 
-:
+  if (
+    !data ||
+    data.classHealthStatus === "No Data"
+  ) {
 
-renderHealthScoreRow(
-dashboardData
-)
+    return "-";
 
-}
+  }
+
+  return `${data.classHealthScore} /100 — ${data.classHealthStatus}`;
+
+})
+
+)}
 
 
 
@@ -714,13 +721,11 @@ dashboardData
 
 "Most Difficult Concept",
 
-loading
-? loadingClassrooms.map(
-()=> "-"
-)
-
-: dashboardData.map(
-(item)=>item.mostDifficultConcept
+classroomColumns.map(
+(item) =>
+  getDashboardItem(
+    item.classroom
+  )?.mostDifficultConcept ?? "-"
 )
 
 )}
@@ -731,13 +736,11 @@ loading
 
 "Students Requiring Attention",
 
-loading
-? loadingClassrooms.map(
-()=> "-"
-)
-
-: dashboardData.map(
-(item)=>item.studentsRequiringAttention
+classroomColumns.map(
+(item) =>
+  getDashboardItem(
+    item.classroom
+  )?.studentsRequiringAttention ?? "-"
 )
 
 )}
@@ -823,7 +826,6 @@ lineHeight:1.8,
 
 </>
 
-)}
 
 </div>
 
