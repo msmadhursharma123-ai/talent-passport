@@ -69,7 +69,8 @@ export function calculateTalentScores(
 
           if (
 
-            typeof value !== "string"
+            typeof value !== "string" &&
+            typeof value !== "number"
 
           ) {
 
@@ -77,15 +78,17 @@ export function calculateTalentScores(
 
           }
 
-          const normalized =
+          const stringValue =
+            String(value);
 
-            normalizeAnswer(value);
+          const normalized =
+            normalizeAnswer(stringValue);
 
           const mapping =
 
             OPTION_MAPPING[normalized] ??
 
-            OPTION_MAPPING[value];
+            OPTION_MAPPING[stringValue];
 
           if (!mapping) {
 
@@ -112,6 +115,15 @@ export function calculateTalentScores(
     }
 
   );
+
+  /* Normalize raw questionnaire points to the canonical 0–100 scale.
+     60 raw points is the full-scale already defined by passportEngine. */
+  TALENT_AREAS.forEach(area => {
+    scores[area] = Math.min(
+      100,
+      Math.max(0, Math.round((scores[area] / 60) * 100))
+    );
+  });
 
   return scores;
 

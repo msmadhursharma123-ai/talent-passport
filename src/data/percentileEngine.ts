@@ -1,58 +1,56 @@
 /* ============================================================
    PERCENTILE ENGINE
 
-   Pure Statistical Engine
+   Pure percentile calculation.
+   Uses mid-rank handling for ties.
 
-   Responsibilities
-
-   • Calculate percentile
-   • No Repository
-   • No Identity
-   • No Supabase
-============================================================ */
-
-const DEFAULT_PERCENTILE = 50;
-
-/* ============================================================
-   CALCULATE PERCENTILE
+   No Repository
+   No Identity
+   No Supabase
 ============================================================ */
 
 export function calculatePercentile(
-
   currentScore: number,
-
   allScores: readonly number[]
-
 ): number {
 
-  if (
+  const current = Number(currentScore);
 
-    allScores.length === 0
+  const validScores =
+    allScores
+      .map(score => Number(score))
+      .filter(score => Number.isFinite(score));
 
-  ) {
+  if (!Number.isFinite(current) || validScores.length === 0) {
+    return 0;
+  }
 
-    return DEFAULT_PERCENTILE;
-
+  /*
+   * A one-student cohort has no meaningful relative ranking.
+   * Return 50 because the student is exactly at the cohort median.
+   */
+  if (validScores.length === 1) {
+    return 50;
   }
 
   const below =
-
-    allScores.filter(
-
-      score =>
-
-        score < currentScore
-
+    validScores.filter(
+      score => score < current
     ).length;
 
-  return Math.round(
+  const equal =
+    validScores.filter(
+      score => score === current
+    ).length;
 
-    (below /
+  const percentile =
+    ((below + equal * 0.5) / validScores.length) * 100;
 
-      allScores.length) *
-
-    100
-
+  return Math.min(
+    100,
+    Math.max(
+      0,
+      Math.round(percentile)
+    )
   );
-
 }

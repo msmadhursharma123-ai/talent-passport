@@ -1,5 +1,25 @@
 import { getSupabaseClient } from "../supabaseClient";
-import { calculatePercentile } from "./percentileEngine";
+
+/* ============================================================
+   PASSPORT ANALYTICS
+
+   Uses the authenticated server-side RPC:
+   get_my_school_dna_benchmark
+
+   IMPORTANT:
+   Percentile analytics must not read student_dna_profiles
+   directly from the student's browser.
+
+   The RPC calculates school-relative intelligence server-side
+   while RLS continues protecting individual student DNA rows.
+
+   Existing public API remains unchanged.
+============================================================ */
+
+function numeric(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
 export async function getPercentileData(
   passport: any
@@ -13,91 +33,111 @@ export async function getPercentileData(
     getSupabaseClient();
 
   if (!supabase) {
+
+    console.error(
+      "Passport analytics RPC: Supabase client unavailable"
+    );
+
     return null;
   }
 
+  console.log(
+    "PASSPORT ANALYTICS: calling get_my_school_dna_benchmark"
+  );
+
   const { data, error } =
     await (supabase as any)
-      .from("talent_passports_v2")
-      .select(`
-        creativity_score,
-        communication_score,
-        critical_thinking_score,
-        team_score,
-        combined_score
-      `);
+      .rpc(
+        "get_my_school_dna_benchmark"
+      );
 
-  if (error || !data) {
+  if (error) {
 
     console.error(
-      "Percentile fetch failed",
+      "Passport analytics RPC failed",
       error
     );
 
     return null;
-
   }
 
-  const creativityScores =
-    data.map(
-      (row: any) =>
-        row.creativity_score ?? 0
+  console.log(
+    "PASSPORT ANALYTICS: RPC response",
+    data
+  );
+
+  if (!data) {
+    return null;
+  }
+
+  const creativity =
+    numeric(
+      data?.creativity?.percentile
     );
 
-  const communicationScores =
-    data.map(
-      (row: any) =>
-        row.communication_score ?? 0
+  const communication =
+    numeric(
+      data?.communication?.percentile
     );
 
-  const collaborationScores =
-    data.map(
-      (row: any) =>
-        row.team_score ?? 0
+  const leadership =
+    numeric(
+      data?.leadership?.percentile
     );
 
-  const criticalThinkingScores =
-    data.map(
-      (row: any) =>
-        row.critical_thinking_score ?? 0
+  const confidence =
+    numeric(
+      data?.confidence?.percentile
     );
 
-  const combinedScores =
-    data.map(
-      (row: any) =>
-        row.combined_score ?? 0
+  const collaboration =
+    numeric(
+      data?.collaboration?.percentile
+    );
+
+  const criticalThinking =
+    numeric(
+      data?.criticalThinking?.percentile
+    );
+
+  /*
+   * Preserve the existing `overall` field expected by consumers.
+   *
+   * The six dimension percentiles themselves come directly from
+   * the school-level RPC.
+   */
+
+  const overall =
+    Math.round(
+      (
+        creativity +
+        communication +
+        leadership +
+        confidence +
+        collaboration +
+        criticalThinking
+      ) / 6
     );
 
   return {
 
-    creativity:
-      calculatePercentile(
-        passport.creativity_score ?? 0,
-        creativityScores
-      ),
+    creativity,
 
-    communication:
-      calculatePercentile(
-        passport.communication_score ?? 0,
-        communicationScores
-      ),
+    communication,
 
-    collaboration:
-      calculatePercentile(
-        passport.team_score ?? 0,
-        collaborationScores
-      ),
+    leadership,
 
-    criticalThinking:
-      calculatePercentile(
-        passport.critical_thinking_score ?? 0,
-        criticalThinkingScores
-      ),
+    confidence,
 
-    overall:
-      calculatePercentile(
-        passport.combined_score ?? 0,
-        combinedScores
+    collaboration,
+
+    criticalThinking,
+
+    overall,
+
+    totalStudents:
+      numeric(
+        data?.totalStudents
       )
 
   };

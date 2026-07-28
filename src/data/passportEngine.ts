@@ -35,11 +35,15 @@ function normalizeScore(
   value: number
 ): number {
 
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
   return Math.min(
     100,
     Math.max(
       0,
-      Math.round((value / 60) * 100)
+      Math.round(value)
     )
   );
 
@@ -107,21 +111,26 @@ export function generatePassport(
       participationKey as keyof typeof PARTICIPATION_SCORE
     ] ?? 20;
 
-  const dnaIndex =
-    Math.round(
-
-      Object.values(
-        normalizedScores
-      ).reduce(
-        (a, b) => a + b,
-        0
-      ) /
-
-      Object.keys(
-        normalizedScores
-      ).length
-
+  const normalizedValues =
+    Object.values(
+      normalizedScores
     );
+
+  const dnaIndex =
+    normalizedValues.length > 0
+
+      ? Math.round(
+
+          normalizedValues.reduce(
+            (a, b) => a + b,
+            0
+          ) /
+
+          normalizedValues.length
+
+        )
+
+      : 0;
 
   const sorted =
 
@@ -139,8 +148,9 @@ export function generatePassport(
       .map(([name]) => name);
 
   const growthAreas =
-    sorted
-      .slice(-3)
+    [...sorted]
+      .reverse()
+      .slice(0, 3)
       .map(([name]) => name);
 
   const benchmarkDelta:

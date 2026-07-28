@@ -209,7 +209,7 @@ console.log(masterRow);
 
   const identity = buildIdentity({
 
-    authUserId: studentRow.id,
+    authUserId: authUserId ?? undefined,
 
     studentUuid: studentRow.student_uuid,
 
@@ -412,23 +412,56 @@ export async function saveStudentDNA(
   const identity =
     requireIdentity();
 
+  /*
+     TalentScores uses capitalized keys:
+     Communication, Leadership, Confidence,
+     Collaboration, CriticalThinking, Creativity.
+
+     Lowercase fallbacks are retained only for compatibility
+     with any older caller that may still send the legacy shape.
+  */
+
   const communication =
-    scores.communication || 0;
+    Number(
+      scores?.Communication ??
+      scores?.communication ??
+      0
+    );
 
   const leadership =
-    scores.leadership || 0;
+    Number(
+      scores?.Leadership ??
+      scores?.leadership ??
+      0
+    );
 
   const confidence =
-    scores.confidence || 0;
+    Number(
+      scores?.Confidence ??
+      scores?.confidence ??
+      0
+    );
 
   const collaboration =
-    scores.collaboration || 0;
+    Number(
+      scores?.Collaboration ??
+      scores?.collaboration ??
+      0
+    );
 
   const criticalThinking =
-    scores.criticalThinking || 0;
+    Number(
+      scores?.CriticalThinking ??
+      scores?.criticalThinking ??
+      0
+    );
 
   const creativity =
-    scores.creativity || 0;
+    Number(
+      scores?.Creativity ??
+      scores?.creativity ??
+      0
+    );
 
   const dnaIndex =
     Math.round(
@@ -500,22 +533,23 @@ export async function saveStudentDNA(
       identity.studentName,
 
     student_email:
-  identity.email,
+      identity.parentEmail ??
+      identity.email,
 
     school_name:
-      identity.schoolName,
+      identity.schoolName ?? "",
 
     class_name:
-      identity.className,
+      identity.className ?? "",
 
     dna_index:
       dnaIndex,
 
-    participation:
+    participation_index:
       0,
 
     reliability:
-      0,
+      100,
 
     communication_score:
       communication,
@@ -552,9 +586,14 @@ export async function saveStudentDNA(
         "student_dna_profiles"
       )
 
-      .upsert([
-        payload
-      ])
+      .upsert(
+        [
+          payload
+        ],
+        {
+          onConflict: "student_id"
+        }
+      )
 
       .select()
 

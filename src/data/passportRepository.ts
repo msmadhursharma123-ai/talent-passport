@@ -1,13 +1,18 @@
 import { getSupabaseClient } from "../supabaseClient";
 
 import {
-    requireIdentity,
-    getCurrentStudent
+  requireIdentity
 } from "../services/identityService";
-
 
 /* ============================================================
    SAVE PASSPORT
+
+   Identity contract:
+   - student_id   = legacy/business student code
+   - student_uuid = canonical student identity used by RLS
+
+   IMPORTANT:
+   talent_passports_v2 RLS authorizes through student_uuid.
 ============================================================ */
 
 export async function savePassport(
@@ -15,253 +20,295 @@ export async function savePassport(
   answers: any
 ) {
 
-console.log("========== SAVE PASSPORT START ==========");
+  console.log("========== SAVE PASSPORT START ==========");
 
-  const supabase = getSupabaseClient();
+  const supabase =
+    getSupabaseClient();
 
-  if (!supabase) return;
+  if (!supabase) {
+    throw new Error(
+      "Supabase client is unavailable."
+    );
+  }
 
- const identity = requireIdentity();
+  const identity =
+    requireIdentity();
 
-console.log("IDENTITY", identity);
+  const studentUuid =
+    identity.studentUuid;
 
- const studentId = identity.studentUuid;
+  const studentCode =
+    identity.studentCode;
 
-  console.log("studentId =", studentId);
+  if (!studentUuid) {
+    throw new Error(
+      "Student UUID is missing from identity."
+    );
+  }
 
-console.log("identity =", identity);
+  /*
+   * Preserve the legacy/business identifier when available.
+   * The UUID remains the canonical identity and is always
+   * written separately to student_uuid for RLS.
+   *
+   * UUID fallback keeps compatibility with older identities
+   * that may not expose studentCode.
+   */
+  const passportStudentId =
+    studentCode || studentUuid;
 
-console.log("identity.studentUuid =", identity.studentUuid);
-
-console.log("identity.masterStudentId =", identity.masterStudentId);
-
-console.log("identity.studentCode =", identity.studentCode);
-
-  console.log("STUDENT ID", studentId);
+  console.log("IDENTITY", identity);
+  console.log("studentUuid =", studentUuid);
+  console.log("studentCode =", studentCode);
+  console.log("passportStudentId =", passportStudentId);
 
   try {
 
     const communication =
-      scores.Communication || 0;
+      Number(scores?.Communication ?? 0);
 
     const creativity =
-      scores.Creativity || 0;
+      Number(scores?.Creativity ?? 0);
 
     const leadership =
-      scores.Leadership || 0;
+      Number(scores?.Leadership ?? 0);
 
     const confidence =
-      scores.Confidence || 0;
+      Number(scores?.Confidence ?? 0);
 
     const collaboration =
-      scores.Collaboration || 0;
+      Number(scores?.Collaboration ?? 0);
 
     const criticalThinking =
-      scores.CriticalThinking || 0;
+      Number(scores?.CriticalThinking ?? 0);
 
     const combined =
       Math.round(
-
         (
-
           communication +
-
           creativity +
-
           leadership +
-
           confidence +
-
           collaboration +
-
           criticalThinking
-
         ) / 6
-
       );
 
-   /* ======================================================
-   SAVE DNA PROFILE
-====================================================== */
+    /* ======================================================
+       SAVE DNA PROFILE
 
-console.log("Saving DNA...");
+       Do not change the existing DNA identity contract here.
+       This table is already working with student UUID in
+       student_id and is consumed elsewhere in the portal.
+    ====================================================== */
 
-console.log("========== DNA UPSERT PAYLOAD ==========");
+    console.log("Saving DNA...");
 
-console.table({
+    const {
+      data: dnaData,
+      error: dnaError
+    } = await (supabase as any)
 
-    student_id: studentId,
+      .from("student_dna_profiles")
 
-    student_name: identity.studentName,
-
-    student_email: identity.parentEmail,
-
-    school_name: identity.schoolName,
-
-    class_name: identity.className,
-
-    dna_index: combined,
-
-    participation_index: 0,
-
-    reliability: 100,
-
-    creativity_score: creativity,
-
-    communication_score: communication,
-
-    leadership_score: leadership,
-
-    confidence_score: confidence,
-
-    collaboration_score: collaboration,
-
-    critical_thinking_score: criticalThinking
-
-});
-
-const {
-
-    data: dnaData,
-
-    error: dnaError
-
-} = await (supabase as any)
-
-    .from("student_dna_profiles")
-
-    .upsert(
-
-      [{
-
-    student_id: studentId,
-
-    student_name: identity.studentName,
-
-    student_email: identity.parentEmail,
-
-    school_name: identity.schoolName ?? "",
-
-    class_name: identity.className ?? "",
-
-    dna_index: combined,
-
-    participation_index: 0,
-
-    reliability: 100,
-
-    creativity_score: creativity,
-
-    communication_score: communication,
-
-    leadership_score: leadership,
-
-    confidence_score: confidence,
-
-    collaboration_score: collaboration,
-
-    critical_thinking_score: criticalThinking,
-
-    strengths: [],
-
-    growth_areas: [],
-
-    answers
-
-}],
-
-        {
-
-            onConflict: "student_id"
-
-        }
-
-    )
-
-    .select();
-
-console.log("DNA UPSERT DATA =", dnaData);
-
-console.log("DNA UPSERT ERROR =", dnaError);
-
-if (dnaError) {
-
-    console.error("========== DNA UPSERT FAILED ==========");
-
-    console.error(JSON.stringify(dnaError, null, 2));
-
-    return;
-
-}
-
-console.log("DNA UPSERT SUCCESS");
-
-  /* ======================================================
-   SAVE PASSPORT
-====================================================== */
-
-console.log("Saving Passport...");
-
-const {
-
-    data: passportData,
-
-    error: passportError
-
-} = await (supabase as any)
-
-    .from("talent_passports_v2")
-
-    .upsert(
-
+      .upsert(
         [{
+          student_id:
+            studentUuid,
 
-            student_id: studentId,
+          student_name:
+            identity.studentName,
 
-            student_uuid: studentId,
+          student_email:
+            identity.parentEmail,
 
-            communication_score: communication,
+          school_name:
+            identity.schoolName ?? "",
 
-            creativity_score: creativity,
+          class_name:
+            identity.className ?? "",
 
-            critical_thinking_score: criticalThinking,
+          dna_index:
+            combined,
 
-            team_score: collaboration,
+          participation_index:
+            0,
 
-            combined_score: combined,
+          reliability:
+            100,
 
-            final_feedback:
-                "Generated from DNA Questionnaire"
+          creativity_score:
+            creativity,
 
+          communication_score:
+            communication,
+
+          leadership_score:
+            leadership,
+
+          confidence_score:
+            confidence,
+
+          collaboration_score:
+            collaboration,
+
+          critical_thinking_score:
+            criticalThinking,
+
+          strengths:
+            [],
+
+          growth_areas:
+            [],
+
+          answers
         }],
-
         {
-
-            onConflict: "student_id"
-
+          onConflict:
+            "student_id"
         }
+      )
 
-    )
+      .select();
 
-    .select();
+    console.log(
+      "DNA UPSERT DATA =",
+      dnaData
+    );
 
-console.log("PASSPORT UPSERT DATA =", passportData);
+    console.log(
+      "DNA UPSERT ERROR =",
+      dnaError
+    );
 
-console.log("PASSPORT UPSERT ERROR =", passportError);
+    if (dnaError) {
 
-console.log("STUDENT ID SAVED =", studentId);
+      console.error(
+        "========== DNA UPSERT FAILED =========="
+      );
 
-if (passportError) {
+      console.error(
+        JSON.stringify(
+          dnaError,
+          null,
+          2
+        )
+      );
 
-    console.error("========== PASSPORT UPSERT FAILED ==========");
+      throw dnaError;
+    }
 
-    console.error(JSON.stringify(passportError, null, 2));
+    console.log(
+      "DNA UPSERT SUCCESS"
+    );
 
-    return;
+    /* ======================================================
+       SAVE TALENT PASSPORT
 
-}
+       talent_passports_v2 schema:
+       student_id
+       student_uuid
+       communication_score
+       creativity_score
+       critical_thinking_score
+       team_score
+       combined_score
+       final_feedback
 
-console.log("DNA + PASSPORT SAVED");
+       Leadership + Confidence intentionally remain in
+       student_dna_profiles because talent_passports_v2
+       does not contain those columns.
+    ====================================================== */
+
+    console.log(
+      "Saving Passport..."
+    );
+
+    const passportPayload = {
+
+      student_id:
+        passportStudentId,
+
+      student_uuid:
+        studentUuid,
+
+      communication_score:
+        communication,
+
+      creativity_score:
+        creativity,
+
+      critical_thinking_score:
+        criticalThinking,
+
+      team_score:
+        collaboration,
+
+      combined_score:
+        combined,
+
+      final_feedback:
+        "Generated from DNA Questionnaire"
+    };
+
+    console.log(
+      "PASSPORT UPSERT PAYLOAD =",
+      passportPayload
+    );
+
+    const {
+      data: passportData,
+      error: passportError
+    } = await (supabase as any)
+
+      .from("talent_passports_v2")
+
+      .upsert(
+        [passportPayload],
+        {
+          onConflict:
+            "student_id"
+        }
+      )
+
+      .select();
+
+    console.log(
+      "PASSPORT UPSERT DATA =",
+      passportData
+    );
+
+    console.log(
+      "PASSPORT UPSERT ERROR =",
+      passportError
+    );
+
+    if (passportError) {
+
+      console.error(
+        "========== PASSPORT UPSERT FAILED =========="
+      );
+
+      console.error(
+        JSON.stringify(
+          passportError,
+          null,
+          2
+        )
+      );
+
+      throw passportError;
+    }
+
+    console.log(
+      "DNA + PASSPORT SAVED"
+    );
+
+    return (
+      passportData?.[0] ??
+      true
+    );
+
   }
 
   catch (err) {
@@ -271,16 +318,21 @@ console.log("DNA + PASSPORT SAVED");
       err
     );
 
+    throw err;
   }
-
 }
 
 /* ============================================================
    GROWTH PLAN DATA
 
-   Loads every dataset required by GrowthPlan
-   using the authenticated student's identity.
+   Loads every dataset required by GrowthPlan using the
+   authenticated student's canonical identity.
 
+   Passport lookup uses student_uuid because that is the
+   canonical identity and the column protected by RLS.
+
+   Other repositories/tables retain their existing identity
+   contracts so unrelated portal features are not changed.
 ============================================================ */
 
 export async function getGrowthPlanData() {
@@ -291,108 +343,187 @@ export async function getGrowthPlanData() {
   if (!supabase)
     return null;
 
-const identity = requireIdentity();
+  const identity =
+    requireIdentity();
 
-const {
-  data: { user },
-  error: authError,
-} = await supabase.auth.getUser();
-
-console.log("====================================");
-console.log("SUPABASE AUTH CHECK");
-console.log("====================================");
-
-console.log("SUPABASE USER ID =", user?.id);
-console.log("IDENTITY AUTH USER =", identity.authUserId);
-console.log("AUTH ERROR =", authError);
-
-const studentId =
+  const studentUuid =
     identity.studentUuid;
 
-console.log("====================================");
-console.log("PASSPORT FETCH START");
-console.log("====================================");
+  if (!studentUuid) {
+    throw new Error(
+      "Student UUID is missing from identity."
+    );
+  }
 
-console.table({
-    studentUuid: identity.studentUuid,
-    studentCode: identity.studentCode,
-    masterStudentId: identity.masterStudentId,
-    studentName: identity.studentName
-});
+  const {
+    data: { user },
+    error: authError
+  } =
+    await supabase.auth.getUser();
 
-console.log(
-    "CURRENT STUDENT ID",
-    studentId
-);
+  console.log(
+    "===================================="
+  );
+
+  console.log(
+    "SUPABASE AUTH CHECK"
+  );
+
+  console.log(
+    "===================================="
+  );
+
+  console.log(
+    "SUPABASE USER ID =",
+    user?.id
+  );
+
+  console.log(
+    "IDENTITY AUTH USER =",
+    identity.authUserId
+  );
+
+  console.log(
+    "AUTH ERROR =",
+    authError
+  );
+
+  console.log(
+    "===================================="
+  );
+
+  console.log(
+    "PASSPORT FETCH START"
+  );
+
+  console.log(
+    "===================================="
+  );
+
+  console.table({
+    studentUuid:
+      identity.studentUuid,
+
+    studentCode:
+      identity.studentCode,
+
+    masterStudentId:
+      identity.masterStudentId,
+
+    studentName:
+      identity.studentName
+  });
 
   const [
-
     passportResult,
-
     dnaResult,
-
     evaluationResult,
-
     submissionResult,
-
     projectResult,
-
     assessmentResult
+  ] = await Promise.all([
 
-] = await Promise.all([
-
+    /*
+     * Canonical passport lookup.
+     * Existing rows were migrated/backfilled with student_uuid,
+     * while new rows are now saved with student_uuid directly.
+     */
     (supabase as any)
-        .from("talent_passports_v2")
-        .select("*")
-        .eq("student_id", studentId)
-        .maybeSingle(),
+      .from(
+        "talent_passports_v2"
+      )
+      .select("*")
+      .eq(
+        "student_uuid",
+        studentUuid
+      )
+      .maybeSingle(),
 
+    /*
+     * Keep existing DNA repository contract unchanged.
+     */
     (supabase as any)
-        .from("student_dna_profiles")
-        .select("*")
-        .eq("student_id", studentId)
-        .maybeSingle(),
+      .from(
+        "student_dna_profiles"
+      )
+      .select("*")
+      .eq(
+        "student_id",
+        studentUuid
+      )
+      .maybeSingle(),
 
+    /*
+     * Existing build intentionally supplies an empty
+     * evaluation collection here.
+     */
     Promise.resolve({
-        data: [],
-        error: null
+      data: [],
+      error: null
     }),
 
+    /*
+     * Keep the existing contracts of the remaining tables.
+     */
     (supabase as any)
-        .from("submissions")
-        .select("*")
-        .eq("student_id", studentId),
+      .from(
+        "submissions"
+      )
+      .select("*")
+      .eq(
+        "student_id",
+        studentUuid
+      ),
 
     (supabase as any)
-        .from("student_projects")
-        .select("*")
-        .eq("student_id", studentId),
+      .from(
+        "student_projects"
+      )
+      .select("*")
+      .eq(
+        "student_id",
+        studentUuid
+      ),
 
     (supabase as any)
-        .from("student_assessments")
-        .select("*")
-        .eq("student_id", studentId)
+      .from(
+        "student_assessments"
+      )
+      .select("*")
+      .eq(
+        "student_id",
+        studentUuid
+      )
 
-]);
+  ]);
 
   console.log(
     "PASSPORT RESULT",
     passportResult.data
-);
+  );
 
-console.log(
+  console.log(
     "PASSPORT ERROR",
     passportResult.error
-);
+  );
 
-console.log("====================================");
-console.log("DNA RESULT");
-console.log(dnaResult.data);
+  console.log(
+    "DNA RESULT",
+    dnaResult.data
+  );
 
-console.log("DNA ERROR");
-console.log(dnaResult.error);
+  console.log(
+    "DNA ERROR",
+    dnaResult.error
+  );
 
-console.log("====================================");
+  /*
+   * A passport query error must not silently become
+   * "Talent Passport Not Found".
+   */
+  if (passportResult.error) {
+    throw passportResult.error;
+  }
 
   return {
 
@@ -415,5 +546,4 @@ console.log("====================================");
       assessmentResult.data || []
 
   };
-
 }

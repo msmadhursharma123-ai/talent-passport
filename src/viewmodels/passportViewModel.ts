@@ -3,14 +3,12 @@ import { getPercentileData } from "../data/passportAnalytics";
 import { getSchoolBenchmarks } from "../data/schoolBenchmarkEngine";
 import { calculateRarity } from "../data/rarityEngine";
 import { getRecommendedCompetitions } from "../data/competitionEngine";
+import { generatePassport } from "../data/passportEngine";
 import {
     getDNAConfidence,
     getFutureReadinessScore,
     getStrongestSkill,
-    getWeakestSkill
-} from "../data/dnaInsightsEngine";
-
-import {
+    getWeakestSkill,
     DNAConfidence
 } from "../data/dnaInsightsEngine";
 
@@ -19,43 +17,27 @@ import {
 ============================================================ */
 
 export interface PassportDimension {
-
     key: string;
-
     label: string;
-
     value: number;
-
     average: number;
-
     percentile: number;
-
 }
 
 export interface PassportProjection {
-
     label: string;
-
     current: number;
-
     projected: number;
-
 }
 
 export interface PercentileRow {
-
     label: string;
-
     percentile: number;
-
 }
 
 export interface RarityRow {
-
     label: string;
-
     value: string;
-
 }
 
 /* ============================================================
@@ -63,65 +45,122 @@ export interface RarityRow {
 ============================================================ */
 
 export interface PassportViewModel {
-
     passport: any;
-
     dna: any;
-
     benchmarks: any;
-
     percentile: any;
-
     rarity: any;
 
     competitions: {
-
         name: string;
-
         score: number;
-
     }[];
 
     futureReadiness: number;
-
     confidence: DNAConfidence;
-
     strongestSkill: string;
-
     weakestSkill: string;
 
     submissions: any[];
-
     projects: any[];
-
     assessments: any[];
 
-    /* ---------- Dashboard ---------- */
-
     dnaAverage: number;
-
     reliability: number;
-
     participationReadiness: number;
 
-    /* ---------- Cards ---------- */
-
     dimensions: PassportDimension[];
-
     topStrengths: PassportDimension[];
-
     growthGaps: PassportDimension[];
-
     projections: PassportProjection[];
-
     percentileRows: PercentileRow[];
-
     rarityRows: RarityRow[];
-
 }
 
-export async function getPassportViewModel():
+/* ============================================================
+   HELPERS
+============================================================ */
 
+function numeric(value: unknown, fallback = 0): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function clamp100(value: number): number {
+    return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+function readAnswers(
+    dna: any,
+    assessments: any[]
+): Record<number, unknown> {
+
+    if (
+        dna?.answers &&
+        typeof dna.answers === "object"
+    ) {
+        return dna.answers;
+    }
+
+    const latestAssessment =
+        [...assessments]
+            .sort((a, b) => {
+                const aTime =
+                    new Date(a?.created_at ?? 0).getTime();
+
+                const bTime =
+                    new Date(b?.created_at ?? 0).getTime();
+
+                return bTime - aTime;
+            })[0];
+
+    if (
+        latestAssessment?.answers &&
+        typeof latestAssessment.answers === "object"
+    ) {
+        return latestAssessment.answers;
+    }
+
+    return {};
+}
+
+function ordinal(percentile: number): string {
+
+    const value =
+        clamp100(percentile);
+
+    const mod100 =
+        value % 100;
+
+    if (
+        mod100 >= 11 &&
+        mod100 <= 13
+    ) {
+        return `${value}th Percentile`;
+    }
+
+    switch (value % 10) {
+
+        case 1:
+            return `${value}st Percentile`;
+
+        case 2:
+            return `${value}nd Percentile`;
+
+        case 3:
+            return `${value}rd Percentile`;
+
+        default:
+            return `${value}th Percentile`;
+
+    }
+}
+
+/* ============================================================
+   VIEW MODEL ASSEMBLY
+============================================================ */
+
+export async function getPassportViewModel():
 Promise<PassportViewModel | null> {
 
     try {
@@ -129,494 +168,675 @@ Promise<PassportViewModel | null> {
         const growth =
             await getGrowthPlanData();
 
-            console.log("====================================");
-console.log("VIEWMODEL GROWTH DATA");
-console.log(growth);
-console.log("====================================");
+        console.log("====================================");
+        console.log("VIEWMODEL GROWTH DATA");
+        console.log(growth);
+        console.log("====================================");
 
         if (
-
             !growth ||
-
             !growth.passport
-
         ) {
-
             return null;
+        }
+
+        const storedPassport =
+            growth.passport;
+
+        const dna =
+            growth.dna ?? {};
+
+        const submissions =
+            growth.submissions ?? [];
+
+        const projects =
+            growth.projects ?? [];
+
+        const assessments =
+            growth.assessments ?? [];
+
+        /*
+         * talent_passports_v2 intentionally stores only four
+         * direct dimensions + team/collaboration.
+         *
+         * student_dna_profiles is the six-dimensional source
+         * created from the questionnaire and therefore supplies
+         * Leadership + Confidence as well.
+         *
+         * DNA values are preferred for all six dimensions when
+         * present so every card reads one coherent source.
+         * Passport values remain safe fallbacks for migrated rows.
+         */
+
+        const sourceScores = {
+
+            creativity:
+                numeric(
+                    dna?.creativity_score,
+                    numeric(
+                        storedPassport?.creativity_score
+                    )
+                ),
+
+            communication:
+                numeric(
+                    dna?.communication_score,
+                    numeric(
+                        storedPassport?.communication_score
+                    )
+                ),
+
+            leadership:
+                numeric(
+                    dna?.leadership_score,
+                    numeric(
+                        storedPassport?.leadership_score
+                    )
+                ),
+
+            confidence:
+                numeric(
+                    dna?.confidence_score,
+                    numeric(
+                        storedPassport?.confidence_score
+                    )
+                ),
+
+            collaboration:
+                numeric(
+                    dna?.collaboration_score,
+                    numeric(
+                        storedPassport?.team_score
+                    )
+                ),
+
+            criticalThinking:
+                numeric(
+                    dna?.critical_thinking_score,
+                    numeric(
+                        storedPassport?.critical_thinking_score
+                    )
+                )
+
+        };
+
+        /*
+         * Unified passport shape for existing engines.
+         * This does NOT write new columns to Supabase.
+         * It only supplies the six-dimensional in-memory shape
+         * expected by analytics/benchmark consumers.
+         */
+
+        const passport = {
+
+            ...storedPassport,
+
+            creativity_score:
+                sourceScores.creativity,
+
+            communication_score:
+                sourceScores.communication,
+
+            leadership_score:
+                sourceScores.leadership,
+
+            confidence_score:
+                sourceScores.confidence,
+
+            team_score:
+                sourceScores.collaboration,
+
+            collaboration_score:
+                sourceScores.collaboration,
+
+            critical_thinking_score:
+                sourceScores.criticalThinking,
+
+            combined_score:
+                Math.round(
+                    (
+                        sourceScores.creativity +
+                        sourceScores.communication +
+                        sourceScores.leadership +
+                        sourceScores.confidence +
+                        sourceScores.collaboration +
+                        sourceScores.criticalThinking
+                    ) / 6
+                )
+
+        };
+
+        const dnaProfile = {
+
+            creativity:
+                sourceScores.creativity,
+
+            communication:
+                sourceScores.communication,
+
+            leadership:
+                sourceScores.leadership,
+
+            confidence:
+                sourceScores.confidence,
+
+            collaboration:
+                sourceScores.collaboration,
+
+            criticalThinking:
+                sourceScores.criticalThinking
+
+        };
+
+        const answers =
+            readAnswers(
+                dna,
+                assessments
+            );
+
+        /*
+         * Reuse the existing passport engine for questionnaire
+         * reliability and participation readiness. It expects raw
+         * TalentScores, so convert the six current values back to
+         * the engine's 0-60 input scale. This keeps its established
+         * normalization contract intact without changing the engine.
+         */
+
+        const engineScores = {
+
+            Communication:
+                sourceScores.communication * 0.6,
+
+            Leadership:
+                sourceScores.leadership * 0.6,
+
+            Creativity:
+                sourceScores.creativity * 0.6,
+
+            CriticalThinking:
+                sourceScores.criticalThinking * 0.6,
+
+            Collaboration:
+                sourceScores.collaboration * 0.6,
+
+            Confidence:
+                sourceScores.confidence * 0.6,
+
+            Resilience: 0,
+
+            Entrepreneurship: 0
+
+        };
+
+        const generatedMetrics =
+            generatePassport(
+                engineScores,
+                answers
+            );
+
+             /*
+         * ========================================================
+         * SCHOOL INTELLIGENCE
+         *
+         * Execute the two RPC-backed engines explicitly.
+         *
+         * These are intentionally outside Promise.allSettled so
+         * benchmark/RPC failures cannot disappear silently inside
+         * the general engine batch.
+         * ========================================================
+         */
+
+        console.log(
+            "PASSPORT VIEWMODEL: requesting school benchmark RPC data"
+        );
+
+        let benchmarks: any = null;
+
+        try {
+
+            benchmarks =
+                await getSchoolBenchmarks(
+                    passport
+                );
+
+            console.log(
+                "PASSPORT VIEWMODEL: school benchmarks",
+                benchmarks
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "PASSPORT VIEWMODEL: school benchmark failed",
+                error
+            );
 
         }
 
-        const passport =
-            growth.passport;
+        let percentile: any = null;
 
-console.log("PASSPORT RECEIVED BY VIEWMODEL");
-console.log(passport);
+        try {
 
-const dna =
-    growth.dna ?? {};
+            percentile =
+                await getPercentileData(
+                    passport
+                );
 
-const submissions =
-    growth.submissions ?? [];
+            console.log(
+                "PASSPORT VIEWMODEL: percentile data",
+                percentile
+            );
 
-const projects =
-    growth.projects ?? [];
+        }
+        catch (error) {
 
-const assessments =
-    growth.assessments ?? [];
+            console.error(
+                "PASSPORT VIEWMODEL: percentile analytics failed",
+                error
+            );
 
-       /* ============================================================
-   DNA PROFILE
-============================================================ */
+        }
 
-const dnaProfile = {
+        /*
+         * Remaining independent engines retain the existing
+         * Promise.allSettled behaviour.
+         */
 
-    creativity:
-        passport.creativity_score ?? 0,
+        const [
+            rarityResult,
+            competitionResult,
+            confidenceResult,
+            readinessResult,
+            strongestResult,
+            weakestResult
+        ] = await Promise.allSettled([
 
-    communication:
-        passport.communication_score ?? 0,
+            Promise.resolve(
+                calculateRarity(
+                    passport.combined_score
+                )
+            ),
 
-    leadership:
-        passport.leadership_score ?? 0,
+            Promise.resolve(
+                getRecommendedCompetitions({
+                    normalizedScores: {
+                        Creativity:
+                            sourceScores.creativity,
 
-    confidence:
-        passport.confidence_score ?? 0,
+                        Communication:
+                            sourceScores.communication,
 
-    collaboration:
-        passport.team_score ?? 0,
+                        Leadership:
+                            sourceScores.leadership,
 
-    criticalThinking:
-        passport.critical_thinking_score ?? 0
+                        Confidence:
+                            sourceScores.confidence,
 
-};
+                        Collaboration:
+                            sourceScores.collaboration,
 
-/* ============================================================
-   LOAD ENGINES
-============================================================ */
+                        CriticalThinking:
+                            sourceScores.criticalThinking
+                    }
+                })
+            ),
 
-const [
+            Promise.resolve(
+                getDNAConfidence(
+                    submissions.length
+                )
+            ),
 
-    benchmarkResult,
+            Promise.resolve(
+                getFutureReadinessScore(
+                    dnaProfile
+                )
+            ),
 
-    percentileResult,
+            Promise.resolve(
+                getStrongestSkill(
+                    dnaProfile
+                )
+            ),
 
-    rarityResult,
+            Promise.resolve(
+                getWeakestSkill(
+                    dnaProfile
+                )
+            )
 
-    competitionResult,
+        ]);
 
-    confidenceResult,
+        const rarity =
+            rarityResult.status === "fulfilled"
+                ? rarityResult.value
+                : null;
 
-    readinessResult,
+        const competitions =
+            competitionResult.status === "fulfilled"
+                ? competitionResult.value
+                : [];
 
-    strongestResult,
+        const confidence =
+            confidenceResult.status === "fulfilled"
+                ? confidenceResult.value
+                : "Low";
 
-    weakestResult
+        const futureReadiness =
+            readinessResult.status === "fulfilled"
+                ? readinessResult.value
+                : 0;
 
-] = await Promise.allSettled([
+        const strongestSkill =
+            strongestResult.status === "fulfilled"
+                ? strongestResult.value
+                : "";
 
-    getSchoolBenchmarks(
-        passport
-    ),
+        const weakestSkill =
+            weakestResult.status === "fulfilled"
+                ? weakestResult.value
+                : "";
 
-    getPercentileData(
-        passport
-    ),
+        const dimensions: PassportDimension[] = [
 
-    Promise.resolve(
+            {
+                key: "creativity",
+                label: "Creativity",
+                value:
+                    sourceScores.creativity,
+                average:
+                    benchmarks?.creativity?.average ?? 0,
+                percentile:
+                    percentile?.creativity ??
+                    benchmarks?.creativity?.percentile ??
+                    0
+            },
 
-        calculateRarity(
+            {
+                key: "communication",
+                label: "Communication",
+                value:
+                    sourceScores.communication,
+                average:
+                    benchmarks?.communication?.average ?? 0,
+                percentile:
+                    percentile?.communication ??
+                    benchmarks?.communication?.percentile ??
+                    0
+            },
 
-            passport.combined_score ??
+            {
+                key: "leadership",
+                label: "Leadership",
+                value:
+                    sourceScores.leadership,
+                average:
+                    benchmarks?.leadership?.average ?? 0,
+                percentile:
+                    percentile?.leadership ??
+                    benchmarks?.leadership?.percentile ??
+                    0
+            },
 
-            passport.total_score ??
+            {
+                key: "confidence",
+                label: "Confidence",
+                value:
+                    sourceScores.confidence,
+                average:
+                    benchmarks?.confidence?.average ?? 0,
+                percentile:
+                    percentile?.confidence ??
+                    benchmarks?.confidence?.percentile ??
+                    0
+            },
 
-            0
+            {
+                key: "collaboration",
+                label: "Collaboration",
+                value:
+                    sourceScores.collaboration,
+                average:
+                    benchmarks?.collaboration?.average ?? 0,
+                percentile:
+                    percentile?.collaboration ??
+                    benchmarks?.collaboration?.percentile ??
+                    0
+            },
 
-        )
-
-    ),
-
-    Promise.resolve(
-
-        getRecommendedCompetitions({
-
-            normalizedScores: {
-
-                Creativity:
-                    passport.creativity_score ?? 0,
-
-                Communication:
-                    passport.communication_score ?? 0,
-
-                Leadership:
-                    passport.leadership_score ?? 0,
-
-                Confidence:
-                    passport.confidence_score ?? 0,
-
-                Collaboration:
-                    passport.team_score ?? 0,
-
-                CriticalThinking:
-                    passport.critical_thinking_score ?? 0
-
+            {
+                key: "criticalThinking",
+                label: "Critical Thinking",
+                value:
+                    sourceScores.criticalThinking,
+                average:
+                    benchmarks?.criticalThinking?.average ?? 0,
+                percentile:
+                    percentile?.criticalThinking ??
+                    benchmarks?.criticalThinking?.percentile ??
+                    0
             }
 
-        })
-
-    ),
-
-    Promise.resolve(
-        getDNAConfidence(
-            submissions.length
-        )
-    ),
-
-    Promise.resolve(
-        getFutureReadinessScore(
-            dnaProfile
-        )
-    ),
-
-    Promise.resolve(
-        getStrongestSkill(
-            dnaProfile
-        )
-    ),
-
-    Promise.resolve(
-        getWeakestSkill(
-            dnaProfile
-        )
-    )
-
-]);
-
-/* ============================================================
-   RESOLVE ENGINE RESULTS
-============================================================ */
-
-const benchmarks =
-
-    benchmarkResult.status === "fulfilled"
-
-        ? benchmarkResult.value
-
-        : null;
-
-const percentile =
-
-    percentileResult.status === "fulfilled"
-
-        ? percentileResult.value
-
-        : null;
-
-const rarity =
-
-    rarityResult.status === "fulfilled"
-
-        ? rarityResult.value
-
-        : null;
-
-const competitions =
-
-    competitionResult.status === "fulfilled"
-
-        ? competitionResult.value
-
-        : [];
-
-const confidence =
-
-    confidenceResult.status === "fulfilled"
-
-        ? confidenceResult.value
-
-        : "Low";
-
-const futureReadiness =
-
-    readinessResult.status === "fulfilled"
-
-        ? readinessResult.value
-
-        : 0;
-
-const strongestSkill =
-
-    strongestResult.status === "fulfilled"
-
-        ? strongestResult.value
-
-        : "";
-
-const weakestSkill =
-
-    weakestResult.status === "fulfilled"
-
-        ? weakestResult.value
-
-        : "";
-
-/* ============================================================
-   VIEW OBJECTS
-============================================================ */
-
-const dimensions: PassportDimension[] = [
-
-    {
-
-        key: "creativity",
-
-        label: "Creativity",
-
-        value: passport.creativity_score ?? 0,
-
-        average:
-            benchmarks?.creativity?.average ?? 0,
-
-        percentile:
-            percentile?.creativity ?? 0
-
-    },
-
-    {
-
-        key: "communication",
-
-        label: "Communication",
-
-        value: passport.communication_score ?? 0,
-
-        average:
-            benchmarks?.communication?.average ?? 0,
-
-        percentile:
-            percentile?.communication ?? 0
-
-    },
-
-    {
-
-        key: "leadership",
-
-        label: "Leadership",
-
-        value: passport.leadership_score ?? 0,
-
-        average:
-            benchmarks?.leadership?.average ?? 0,
-
-        percentile: 0
-
-    },
-
-    {
-
-        key: "confidence",
-
-        label: "Confidence",
-
-        value: passport.confidence_score ?? 0,
-
-        average:
-            benchmarks?.confidence?.average ?? 0,
-
-       percentile: 0
-
-    },
-
-    {
-
-        key: "collaboration",
-
-        label: "Collaboration",
-
-        value: passport.team_score ?? 0,
-
-        average:
-            benchmarks?.collaboration?.average ?? 0,
-
-        percentile:
-            percentile?.collaboration ?? 0
-
-    },
-
-    {
-
-        key: "criticalThinking",
-
-        label: "Critical Thinking",
-
-        value: passport.critical_thinking_score ?? 0,
-
-        average:
-            benchmarks?.criticalThinking?.average ?? 0,
-
-        percentile:
-            percentile?.criticalThinking ?? 0
-
-    }
-
-];
-
-const topStrengths =
-
-    [...dimensions]
-
-        .sort((a, b) => b.value - a.value)
-
-        .slice(0, 3);
-
-const growthGaps =
-
-    [...dimensions]
-
-        .sort((a, b) => a.value - b.value)
-
-        .slice(0, 2);
-
-const projections: PassportProjection[] =
-
-    dimensions.map(
-
-        dimension => ({
-
-            label:
-                dimension.label,
-
-            current:
-                dimension.value,
-
-            projected:
-                Math.min(
-                    100,
-                    dimension.value + 20
+        ];
+
+        const topStrengths =
+            [...dimensions]
+                .sort(
+                    (a, b) =>
+                        b.value - a.value
                 )
+                .slice(0, 3);
 
-        })
+        const growthGaps =
+            [...dimensions]
+                .sort(
+                    (a, b) =>
+                        a.value - b.value
+                )
+                .slice(0, 2);
 
-    );
+        const projectionMap:
+            Record<string, number> = {
 
-const dnaAverage =
+            Creativity:
+                generatedMetrics
+                    .projectedScores
+                    .Creativity,
 
-    Math.round(
+            Communication:
+                generatedMetrics
+                    .projectedScores
+                    .Communication,
 
-        dimensions.reduce(
+            Leadership:
+                generatedMetrics
+                    .projectedScores
+                    .Leadership,
 
-            (sum, item) =>
+            Confidence:
+                generatedMetrics
+                    .projectedScores
+                    .Confidence,
 
-                sum + item.value,
+            Collaboration:
+                generatedMetrics
+                    .projectedScores
+                    .Collaboration,
 
-            0
+            "Critical Thinking":
+                generatedMetrics
+                    .projectedScores
+                    .CriticalThinking
 
-        ) /
+        };
 
-        dimensions.length
+        const projections: PassportProjection[] =
+            dimensions.map(
+                dimension => ({
 
-    );
+                    label:
+                        dimension.label,
 
-const reliability =
+                    current:
+                        dimension.value,
 
-    submissions.length * 10;
+                    projected:
+                        clamp100(
+                            projectionMap[
+                                dimension.label
+                            ] ??
+                            dimension.value
+                        )
 
-const participationReadiness =
+                })
+            );
 
-    futureReadiness;
+        const dnaAverage =
+            Math.round(
+                (
+                    sourceScores.creativity +
+                    sourceScores.communication +
+                    sourceScores.leadership +
+                    sourceScores.confidence +
+                    sourceScores.collaboration +
+                    sourceScores.criticalThinking
+                ) / 6
+            );
 
-const percentileRows =
+        /*
+         * Reliability now reflects questionnaire consistency,
+         * not submission count. student_dna_profiles.reliability
+         * is retained as a fallback for older profiles that do
+         * not have saved answers.
+         */
 
-    dimensions.map(
+        const hasAnswers =
+            Object.keys(
+                answers
+            ).length > 0;
 
-        d => ({
+        const reliability =
+            hasAnswers
+                ? generatedMetrics.reliability
+                : numeric(
+                    dna?.reliability,
+                    0
+                );
 
-            label:
-                d.label,
+        /*
+         * Participation readiness comes from the questionnaire's
+         * participation answer through the existing engine.
+         * Existing DNA participation_index is a fallback only.
+         */
 
-            percentile:
-                d.percentile
+        const participationReadiness =
+            hasAnswers
+                ? generatedMetrics.participationIndex
+                : numeric(
+                    dna?.participation_index,
+                    futureReadiness
+                );
 
-        })
+        const percentileRows: PercentileRow[] =
+            dimensions.map(
+                dimension => ({
 
-    );
+                    label:
+                        dimension.label,
 
-const rarityRows =
+                    percentile:
+                        clamp100(
+                            dimension.percentile
+                        )
 
-    dimensions.map(
+                })
+            );
 
-        d => ({
+        const rarityRows: RarityRow[] =
+            dimensions.map(
+                dimension => ({
 
-            label:
-                d.label,
+                    label:
+                        dimension.label,
 
-            value:
-                `${d.percentile}th Percentile`
+                    value:
+                        ordinal(
+                            dimension.percentile
+                        )
 
-        })
+                })
+            );
 
-    );
+        console.log("====================================");
+        console.log("UNIFIED PASSPORT SOURCE");
+        console.log({
+            sourceScores,
+            dnaAverage,
+            reliability,
+            participationReadiness,
+            futureReadiness,
+            confidence,
+            strongestSkill,
+            weakestSkill
+        });
+        console.log("====================================");
 
-        
-       return {
+        return {
 
-    passport,
+            passport,
 
-    dna,
+            dna,
 
-    benchmarks,
+            benchmarks,
 
-    percentile,
+            percentile,
 
-    rarity,
+            rarity,
 
-    competitions,
+            competitions,
 
-    futureReadiness,
+            futureReadiness,
 
-    confidence,
+            confidence,
 
-    strongestSkill,
+            strongestSkill,
 
-    weakestSkill,
+            weakestSkill,
 
-    submissions,
+            submissions,
 
-    projects,
+            projects,
 
-    assessments,
+            assessments,
 
-    dnaAverage,
+            dnaAverage,
 
-    reliability,
+            reliability,
 
-    participationReadiness,
+            participationReadiness,
 
-    dimensions,
+            dimensions,
 
-    topStrengths,
+            topStrengths,
 
-    growthGaps,
+            growthGaps,
 
-    projections,
+            projections,
 
-    percentileRows,
+            percentileRows,
 
-    rarityRows
+            rarityRows
 
-};
+        };
 
     }
 
     catch (error) {
 
         console.error(
-
             "PassportViewModel",
-
             error
-
         );
 
         return null;

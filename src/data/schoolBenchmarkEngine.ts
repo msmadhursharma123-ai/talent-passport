@@ -1,161 +1,164 @@
 import { getSupabaseClient } from "../supabaseClient";
 
+/* ============================================================
+   SCHOOL BENCHMARK ENGINE
+
+   Uses the authenticated server-side RPC:
+   get_my_school_dna_benchmark
+
+   IMPORTANT:
+   We no longer fetch student_dna_profiles directly here.
+
+   RLS correctly prevents one student from reading the DNA
+   profiles of other students. The RPC performs the school-level
+   aggregation server-side and returns only benchmark results.
+
+   Existing public API remains unchanged.
+============================================================ */
+
+function numeric(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export async function getSchoolBenchmarks(
   passport: any
 ) {
 
-  if (
-  !passport ||
-  !passport.normalizedScores
-) {
-  return null;
-}
+  if (!passport) {
+    return null;
+  }
 
   const supabase =
     getSupabaseClient();
 
   if (!supabase) {
+
+    console.error(
+      "School benchmark RPC: Supabase client unavailable"
+    );
+
     return null;
   }
 
-  const { data } =
+  console.log(
+    "SCHOOL BENCHMARK ENGINE: calling get_my_school_dna_benchmark"
+  );
+
+  const { data, error } =
     await (supabase as any)
-      .from("student_dna_profiles")
-      .select("*");
+      .rpc(
+        "get_my_school_dna_benchmark"
+      );
 
-  if (!data || data.length === 0) {
+  if (error) {
+
+    console.error(
+      "School benchmark RPC failed",
+      error
+    );
+
     return null;
   }
 
-  const avg = (
-    key: string
-  ) =>
-    Math.round(
-      data.reduce(
-        (
-          sum: number,
-          row: any
-        ) =>
-          sum +
-          Number(
-            row[key] || 0
-          ),
-        0
-      ) / data.length
-    );
+  console.log(
+    "SCHOOL BENCHMARK ENGINE: RPC response",
+    data
+  );
 
-  const percentile = (
-    key: string,
-    score: number
-  ) => {
+  if (!data) {
+    return null;
+  }
 
-    const below =
-      data.filter(
-        (row: any) =>
-          Number(
-            row[key] || 0
-          ) <= score
-      ).length;
-
-    return Math.round(
-      (below /
-        data.length) *
-        100
-    );
-  };
+  /*
+   * Support the JSON/object response shape returned by the RPC.
+   * The ViewModel continues receiving exactly the same benchmark
+   * structure that it already expects.
+   */
 
   return {
+
     creativity: {
       average:
-        avg(
-          "creativity_score"
+        numeric(
+          data?.creativity?.average
         ),
 
       percentile:
-        percentile(
-          "creativity_score",
-          passport
-            .normalizedScores
-            .Creativity
+        numeric(
+          data?.creativity?.percentile
         ),
     },
 
     communication: {
       average:
-        avg(
-          "communication_score"
+        numeric(
+          data?.communication?.average
         ),
 
       percentile:
-        percentile(
-          "communication_score",
-          passport
-            .normalizedScores
-            .Communication
+        numeric(
+          data?.communication?.percentile
         ),
     },
 
     leadership: {
       average:
-        avg(
-          "leadership_score"
+        numeric(
+          data?.leadership?.average
         ),
 
       percentile:
-        percentile(
-          "leadership_score",
-          passport
-            .normalizedScores
-            .Leadership
+        numeric(
+          data?.leadership?.percentile
         ),
     },
 
     confidence: {
       average:
-        avg(
-          "confidence_score"
+        numeric(
+          data?.confidence?.average
         ),
 
       percentile:
-        percentile(
-          "confidence_score",
-          passport
-            .normalizedScores
-            .Confidence
+        numeric(
+          data?.confidence?.percentile
         ),
     },
 
     collaboration: {
       average:
-        avg(
-          "collaboration_score"
+        numeric(
+          data?.collaboration?.average
         ),
 
       percentile:
-        percentile(
-          "collaboration_score",
-          passport
-            .normalizedScores
-            .Collaboration
+        numeric(
+          data?.collaboration?.percentile
         ),
     },
 
     criticalThinking: {
       average:
-        avg(
-          "critical_thinking_score"
+        numeric(
+          data?.criticalThinking?.average
         ),
 
       percentile:
-        percentile(
-          "critical_thinking_score",
-          passport
-            .normalizedScores
-            .CriticalThinking
+        numeric(
+          data?.criticalThinking?.percentile
         ),
     },
 
     totalStudents:
-      data.length,
+      numeric(
+        data?.totalStudents
+      ),
+
+    scope:
+      data?.scope ??
+      "school"
+
   };
+
 }

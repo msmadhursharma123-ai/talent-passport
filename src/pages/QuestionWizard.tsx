@@ -766,12 +766,31 @@ await updateStudentSection(
   answers[2]
 );
 
-await savePassport(
-  scores,
-  answers
-);
+try {
 
-console.log("savePassport FINISHED");
+  await savePassport(
+    scores,
+    answers
+  );
+
+  console.log("savePassport FINISHED");
+
+}
+
+catch (error) {
+
+  console.error(
+    "PASSPORT SAVE FAILED",
+    error
+  );
+
+  alert(
+    "Your Talent Passport could not be saved. Please try again."
+  );
+
+  return;
+
+}
 
 const studentProfile =
   JSON.parse(

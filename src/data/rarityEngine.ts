@@ -102,13 +102,18 @@ export function calculateRarity(
 
 ): RarityResult {
 
+  const safeScore =
+    Number.isFinite(Number(score))
+      ? Math.min(100, Math.max(0, Number(score)))
+      : 0;
+
   const rarity =
 
     RARITY_BANDS.find(
 
       band =>
 
-        score >= band.minimumScore
+        safeScore >= band.minimumScore
 
     );
 
