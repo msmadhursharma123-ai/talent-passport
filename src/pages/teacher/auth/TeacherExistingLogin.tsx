@@ -337,7 +337,7 @@ case "teacher":
                         cursor: "pointer",
                     }}
                 >
-                    Create Teacher Account
+                    New User? Register
                 </button>
 
             </div>

@@ -425,6 +425,25 @@ option,
         return (
           <div
             key={number}
+            onClick={() =>
+              setAnswers({
+                ...answers,
+                [current.id]: number,
+              })
+            }
+            role="button"
+            tabIndex={0}
+            aria-label={`Select rating ${number} out of 10`}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+
+                setAnswers({
+                  ...answers,
+                  [current.id]: number,
+                });
+              }
+            }}
             style={{
               display: "flex",
               justifyContent:
@@ -433,6 +452,7 @@ option,
                   : number === 10
                   ? "flex-end"
                   : "center",
+              cursor: "pointer",
             }}
           >
             <span
@@ -464,6 +484,8 @@ option,
                   : 600,
 
                 transition: "all 0.2s ease",
+                cursor: "pointer",
+                userSelect: "none",
               }}
             >
               {number}

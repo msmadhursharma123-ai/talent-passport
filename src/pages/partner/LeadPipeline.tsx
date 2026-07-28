@@ -369,6 +369,7 @@ const counsellingCount =
    return (
 
     <div
+      className="lead-pipeline-page"
       style={{
         width: "95%",
         maxWidth: "1600px",
@@ -378,11 +379,158 @@ const counsellingCount =
       }}
     >
 
+      <style>{`
+        .lp-swipe-hint { display: none; }
+
+        @media (max-width: 1024px) {
+          .lead-pipeline-page {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 6px !important;
+          }
+
+          .lp-hero {
+            min-height: 0 !important;
+            padding: 16px 18px !important;
+            margin-bottom: 10px !important;
+            border-radius: 18px !important;
+            gap: 14px !important;
+          }
+          .lp-hero-copy { min-width: 0 !important; max-width: none !important; flex: 1 1 auto !important; }
+          .lp-hero-copy > div:first-child { font-size: 8px !important; letter-spacing: 1.2px !important; margin-bottom: 6px !important; }
+          .lp-hero-title { font-size: 25px !important; line-height: 1.08 !important; letter-spacing: -.45px !important; }
+          .lp-hero-copy > p { margin-top: 6px !important; font-size: 11px !important; line-height: 1.4 !important; }
+          .lp-hero-copy > div:last-child { margin-top: 9px !important; gap: 6px !important; }
+          .lp-hero-copy > div:last-child > div { padding: 5px 8px !important; font-size: 8px !important; }
+          .lp-hero-badge { width: 64px !important; height: 64px !important; min-width: 64px !important; border-radius: 16px !important; }
+          .lp-hero-badge > div > div:first-child { font-size: 21px !important; }
+          .lp-hero-badge > div > div:last-child { margin-top: 4px !important; font-size: 6px !important; letter-spacing: .55px !important; }
+
+          .lp-summary, .lp-filter-desk, .lp-ledger { border-radius: 17px !important; margin-bottom: 10px !important; }
+          .lp-summary { padding: 15px !important; }
+          .lp-summary > div:first-child { gap: 10px !important; margin-bottom: 12px !important; align-items: flex-start !important; }
+          .lp-summary > div:first-child > div:first-child > div:first-child { font-size: 8px !important; letter-spacing: 1.1px !important; margin-bottom: 4px !important; }
+          .lp-summary h2, .lp-ledger h2 { font-size: 18px !important; line-height: 1.12 !important; }
+          .lp-summary p, .lp-ledger p { font-size: 10px !important; line-height: 1.35 !important; }
+          .lp-summary > div:first-child > div:last-child { font-size: 8px !important; }
+
+          .lp-primary-grid, .lp-action-grid { gap: 7px !important; margin-bottom: 7px !important; }
+          .lp-stat-card { min-height: 82px !important; padding: 10px !important; border-radius: 12px !important; }
+          .lp-stat-card > div:last-child > div:first-child { font-size: 7px !important; line-height: 1.1 !important; }
+          .lp-stat-card > div:last-child > div:nth-child(2) { font-size: 20px !important; margin-top: 5px !important; }
+          .lp-stat-card > div:last-child > div:last-child { font-size: 8px !important; margin-top: 4px !important; line-height: 1.2 !important; }
+
+          .lp-filter-desk { padding: 12px !important; }
+          .lp-filter-desk > div:first-child { font-size: 8px !important; margin-bottom: 7px !important; }
+          .lp-filter-grid { grid-template-columns: minmax(0,1.6fr) minmax(0,.7fr) minmax(0,.7fr) !important; gap: 6px !important; }
+          .lp-filter-grid input, .lp-filter-grid select { min-width: 0 !important; height: 32px !important; padding: 0 8px !important; border-radius: 8px !important; font-size: 9px !important; }
+
+          .lp-ledger-header { padding: 15px !important; }
+          .lp-ledger-header > div:last-child { align-items: flex-start !important; gap: 10px !important; }
+          .lp-ledger-header > div:last-child > div:last-child { padding: 5px 8px !important; font-size: 8px !important; }
+
+          .lp-swipe-hint {
+            display: block;
+            margin: 8px 10px 6px;
+            padding: 6px 9px;
+            border: 1px solid #FED7AA;
+            border-radius: 9px;
+            background: #FFF7ED;
+            color: #9A3412;
+            font-size: 8px;
+            font-weight: 800;
+          }
+          .lp-table-scroll {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+          }
+          .lp-table { min-width: 900px !important; }
+          .lp-table th { padding: 8px 10px !important; font-size: 8px !important; }
+          .lp-table td { padding: 9px 10px !important; font-size: 10px !important; }
+          .lp-table button { padding: 5px 8px !important; border-radius: 7px !important; font-size: 8px !important; }
+          .lp-table select { min-width: 120px !important; padding: 5px 7px !important; border-radius: 7px !important; font-size: 8px !important; }
+          .lp-table span { padding: 4px 6px !important; font-size: 8px !important; }
+          .lp-table td:first-child > div > div:last-child > div:first-child {
+            font-size: 10px !important;
+            line-height: 1.25 !important;
+          }
+          .lp-table td:first-child > div > div:last-child > div:last-child {
+            font-size: 8px !important;
+            line-height: 1.25 !important;
+          }
+
+          .lp-sticky-col {
+            position: sticky !important;
+            left: 0 !important;
+            z-index: 4 !important;
+            min-width: 120px !important;
+            box-shadow: 6px 0 10px -10px rgba(15,23,42,.55);
+          }
+          .lp-sticky-head { z-index: 6 !important; background: #F8FAFC !important; }
+          .lp-sticky-cell { background: #FFFFFF !important; }
+        }
+
+        @media (max-width: 600px) {
+          .lead-pipeline-page { padding: 4px !important; }
+
+          .lp-hero { padding: 12px 13px !important; margin-bottom: 8px !important; border-radius: 14px !important; gap: 8px !important; }
+          .lp-hero-copy > div:first-child { font-size: 6px !important; letter-spacing: .8px !important; margin-bottom: 4px !important; }
+          .lp-hero-title { font-size: 18px !important; letter-spacing: -.25px !important; }
+          .lp-hero-copy > p { margin-top: 4px !important; font-size: 8px !important; line-height: 1.3 !important; }
+          .lp-hero-copy > div:last-child { margin-top: 6px !important; gap: 4px !important; }
+          .lp-hero-copy > div:last-child > div { padding: 4px 6px !important; font-size: 6px !important; }
+          .lp-hero-badge { width: 48px !important; height: 48px !important; min-width: 48px !important; border-radius: 11px !important; }
+          .lp-hero-badge > div > div:first-child { font-size: 15px !important; }
+          .lp-hero-badge > div > div:last-child { font-size: 4px !important; letter-spacing: .25px !important; }
+
+          .lp-summary, .lp-filter-desk, .lp-ledger { border-radius: 14px !important; margin-bottom: 8px !important; }
+          .lp-summary { padding: 10px !important; }
+          .lp-summary h2, .lp-ledger h2 { font-size: 14px !important; }
+          .lp-summary p, .lp-ledger p { font-size: 7.5px !important; }
+          .lp-summary > div:first-child > div:first-child > div:first-child { font-size: 6px !important; letter-spacing: .8px !important; }
+          .lp-summary > div:first-child > div:last-child { font-size: 6px !important; }
+
+          .lp-primary-grid { grid-template-columns: repeat(5,minmax(0,1fr)) !important; gap: 3px !important; margin-bottom: 4px !important; }
+          .lp-action-grid { grid-template-columns: repeat(4,minmax(0,1fr)) !important; gap: 3px !important; }
+          .lp-stat-card { min-height: 66px !important; padding: 6px !important; border-radius: 8px !important; }
+          .lp-stat-card > div:last-child > div:first-child { font-size: 5px !important; letter-spacing: .2px !important; }
+          .lp-stat-card > div:last-child > div:nth-child(2) { font-size: 15px !important; margin-top: 4px !important; }
+          .lp-stat-card > div:last-child > div:last-child { font-size: 5.5px !important; margin-top: 3px !important; }
+
+          .lp-filter-desk { padding: 9px !important; }
+          .lp-filter-desk > div:first-child { font-size: 6px !important; margin-bottom: 5px !important; }
+          .lp-filter-grid { grid-template-columns: minmax(0,1.6fr) minmax(0,.7fr) minmax(0,.7fr) !important; gap: 3px !important; }
+          .lp-filter-grid input, .lp-filter-grid select { height: 27px !important; padding: 0 4px !important; border-radius: 6px !important; font-size: 6.5px !important; }
+
+          .lp-ledger-header { padding: 10px !important; }
+          .lp-ledger-header > div:last-child > div:last-child { padding: 4px 6px !important; font-size: 6px !important; }
+          .lp-swipe-hint { margin: 6px 7px 5px; padding: 5px 7px; font-size: 7px; border-radius: 7px; }
+          .lp-table { min-width: 760px !important; }
+          .lp-table th { padding: 6px 8px !important; font-size: 6.5px !important; }
+          .lp-table td { padding: 7px 8px !important; font-size: 8px !important; }
+          .lp-table button { padding: 4px 6px !important; font-size: 6.5px !important; }
+          .lp-table select { min-width: 100px !important; padding: 4px 5px !important; font-size: 6.5px !important; }
+          .lp-table span { padding: 3px 5px !important; font-size: 6.5px !important; }
+          .lp-table td:first-child > div > div:last-child > div:first-child {
+            font-size: 8px !important;
+            line-height: 1.25 !important;
+          }
+          .lp-table td:first-child > div > div:last-child > div:last-child {
+            font-size: 6.5px !important;
+            line-height: 1.25 !important;
+          }
+          .lp-sticky-col { min-width: 100px !important; }
+        }
+      `}</style>
+
+
       {/* =========================================================
           HERO
          ========================================================= */}
 
       <div
+        className="lp-hero"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -443,6 +591,7 @@ const counsellingCount =
 
 
         <div
+          className="lp-hero-copy"
           style={{
             position: "relative",
             zIndex: 2,
@@ -463,7 +612,7 @@ const counsellingCount =
             PARTNER CRM
           </div>
 
-          <h1
+          <h1 className="lp-hero-title"
             style={{
               margin: 0,
               color: "#0F172A",
@@ -531,6 +680,7 @@ const counsellingCount =
 
 
         <div
+          className="lp-hero-badge"
           style={{
             position: "relative",
             zIndex: 2,
@@ -588,6 +738,7 @@ const counsellingCount =
          ========================================================= */}
 
       <div
+        className="lp-summary"
         style={{
           background: "#FFFFFF",
           border: "1px solid #E2E8F0",
@@ -666,6 +817,7 @@ const counsellingCount =
         {/* PRIMARY METRICS */}
 
         <div
+          className="lp-primary-grid"
           style={{
             display: "grid",
             gridTemplateColumns:
@@ -716,6 +868,7 @@ const counsellingCount =
         {/* ACTION METRICS */}
 
         <div
+          className="lp-action-grid"
           style={{
             display: "grid",
             gridTemplateColumns:
@@ -762,6 +915,7 @@ const counsellingCount =
          ========================================================= */}
 
       <div
+        className="lp-filter-desk"
         style={{
           background:
             "linear-gradient(135deg,#FFFFFF,#FFFCF8)",
@@ -787,6 +941,7 @@ const counsellingCount =
         </div>
 
         <div
+          className="lp-filter-grid"
           style={{
             display: "grid",
             gridTemplateColumns:
@@ -905,6 +1060,7 @@ const counsellingCount =
          ========================================================= */}
 
       <div
+        className="lp-ledger"
         style={{
           background: "#FFFFFF",
           borderRadius: "24px",
@@ -918,6 +1074,7 @@ const counsellingCount =
         {/* LEDGER HEADER */}
 
         <div
+          className="lp-ledger-header"
           style={{
             position: "relative",
             overflow: "hidden",
@@ -1011,13 +1168,19 @@ const counsellingCount =
         </div>
 
 
+        <div className="lp-swipe-hint">
+          Swipe left or right to view lead details →
+        </div>
+
         <div
+          className="lp-table-scroll"
           style={{
             overflowX: "auto"
           }}
         >
 
           <table
+            className="lp-table"
             style={{
               width: "100%",
               borderCollapse: "collapse",
@@ -1046,6 +1209,7 @@ const counsellingCount =
 
                   <th
                     key={label}
+                    className={label === "Student" ? "lp-sticky-col lp-sticky-head" : undefined}
                     style={{
                       padding: "13px 16px",
                       textAlign:
@@ -1114,6 +1278,7 @@ const counsellingCount =
                       {/* STUDENT */}
 
                       <td
+                        className="lp-sticky-col lp-sticky-cell"
                         style={{
                           padding: "15px 16px"
                         }}
@@ -1632,6 +1797,7 @@ function StatCard({
   return (
 
     <div
+      className="lp-stat-card"
       style={{
         position: "relative",
         overflow: "hidden",

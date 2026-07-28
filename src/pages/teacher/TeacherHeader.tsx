@@ -1,5 +1,3 @@
-import { getCurrentTeacher } from "../../services/identityService";
-
 interface Props {
   onLogout: () => void;
 }
@@ -7,11 +5,6 @@ interface Props {
 export default function TeacherHeader({
   onLogout,
 }: Props) {
-  const teacher = getCurrentTeacher();
-
-  const schoolName =
-    teacher?.schoolName?.trim() ||
-    "Academic Workspace";
 
   const today = new Date();
 
@@ -34,9 +27,9 @@ export default function TeacherHeader({
 
         borderBottom: "1px solid #E2E8F0",
 
-        display: "grid",
-        gridTemplateColumns: "1fr auto 1fr",
+        display: "flex",
         alignItems: "center",
+        justifyContent: "space-between",
 
         padding: "0 26px",
 
@@ -51,9 +44,8 @@ export default function TeacherHeader({
         zIndex: 20,
       }}
     >
-      {/* =====================================================
-          DECORATIVE BACKGROUND
-         ===================================================== */}
+
+      {/* DECORATIVE BACKGROUND */}
 
       <div
         style={{
@@ -93,21 +85,8 @@ export default function TeacherHeader({
         }}
       />
 
-      {/* =====================================================
-          LEFT
 
-          Intentionally empty.
-
-          Portal identity already exists in TeacherSidebar.
-          Keeping this column preserves true center alignment
-          for the date card.
-         ===================================================== */}
-
-      <div />
-
-      {/* =====================================================
-          CENTER — CURRENT DATE
-         ===================================================== */}
+      {/* LEFT — CURRENT DATE */}
 
       <div
         className="teacher-header-date"
@@ -161,9 +140,8 @@ export default function TeacherHeader({
         </div>
       </div>
 
-      {/* =====================================================
-          RIGHT — SCHOOL IDENTITY + LOGOUT
-         ===================================================== */}
+
+      {/* RIGHT — LOGOUT */}
 
       <div
         className="teacher-header-right"
@@ -175,142 +153,179 @@ export default function TeacherHeader({
           alignItems: "center",
           justifyContent: "flex-end",
 
-          gap: 14,
-
           minWidth: 0,
         }}
       >
-        {/* SCHOOL */}
-
-        <div
-          style={{
-            textAlign: "right",
-
-            maxWidth: 280,
-            minWidth: 0,
-          }}
-        >
-          <div
-            style={{
-              color: "#0F172A",
-
-              fontSize: 17,
-              fontWeight: 800,
-
-              lineHeight: 1.2,
-
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-            title={schoolName}
-          >
-            {schoolName}
-          </div>
-
-          <div
-            style={{
-              marginTop: 5,
-
-              color: "#64748B",
-
-              fontSize: 12,
-              fontWeight: 600,
-            }}
-          >
-            Academic Workspace
-          </div>
-        </div>
-
-        {/* SEPARATOR */}
-
-        <div
-          style={{
-            width: 1,
-            height: 30,
-
-            background: "#E2E8F0",
-          }}
-        />
-
-        {/* LOGOUT */}
 
         <button
+          className="teacher-header-logout"
           onClick={onLogout}
           style={{
-            padding: "10px 17px",
+            padding: "14px 25px",
 
-            background:
-              "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)",
+            background: "#DC2F2F",
 
-            color: "#EA580C",
+            color: "#FFFFFF",
 
-            border: "1px solid #FDBA74",
+            border: "none",
 
-            borderRadius: 11,
+            borderRadius: 16,
 
             cursor: "pointer",
 
-            fontSize: 14,
+            fontSize: 16,
             fontWeight: 800,
 
             boxShadow:
-              "0 6px 16px rgba(249, 115, 22, 0.08)",
+              "0 7px 18px rgba(220, 47, 47, 0.16)",
 
             transition:
               "all 0.2s ease",
 
             whiteSpace: "nowrap",
           }}
-          onMouseEnter={(event) => {
-            event.currentTarget.style.background =
-              "#F97316";
 
-            event.currentTarget.style.color =
-              "#FFFFFF";
+          onMouseEnter={(event) => {
+
+            event.currentTarget.style.background =
+              "#C62828";
 
             event.currentTarget.style.transform =
               "translateY(-1px)";
 
             event.currentTarget.style.boxShadow =
-              "0 8px 20px rgba(249, 115, 22, 0.18)";
+              "0 9px 22px rgba(220, 47, 47, 0.22)";
           }}
-          onMouseLeave={(event) => {
-            event.currentTarget.style.background =
-              "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)";
 
-            event.currentTarget.style.color =
-              "#EA580C";
+          onMouseLeave={(event) => {
+
+            event.currentTarget.style.background =
+              "#DC2F2F";
 
             event.currentTarget.style.transform =
               "translateY(0)";
 
             event.currentTarget.style.boxShadow =
-              "0 6px 16px rgba(249, 115, 22, 0.08)";
+              "0 7px 18px rgba(220, 47, 47, 0.16)";
           }}
         >
           Logout
         </button>
+
       </div>
-    
-<style>{`
-@media (max-width: 1024px) {
- .teacher-header { min-height: 72px !important; grid-template-columns: auto 1fr !important; padding: 0 18px !important; gap: 14px !important; }
- .teacher-header > div:nth-of-type(3) { display:none !important; }
- .teacher-header-date { justify-self:start !important; min-width:0 !important; padding:8px 14px !important; }
- .teacher-header-right { justify-self:end !important; }
-}
-@media (max-width: 600px) {
- .teacher-header { min-height:64px !important; padding:8px 12px !important; gap:8px !important; }
- .teacher-header-date { padding:7px 9px !important; border-radius:10px !important; }
- .teacher-header-date > div:first-child { font-size:8px !important; letter-spacing:1px !important; }
- .teacher-header-date > div:last-child { font-size:10px !important; margin-top:3px !important; white-space:nowrap; }
- .teacher-header-right { gap:7px !important; min-width:0 !important; }
- .teacher-header-right > div:first-child { display:none !important; }
- .teacher-header-right > div:nth-child(2) { display:none !important; }
- .teacher-header-right button { padding:8px 10px !important; font-size:11px !important; border-radius:9px !important; }
-}
-`}</style>
-</header>
+
+
+      <style>{`
+
+        /* ================================
+           TABLET
+        ================================= */
+
+        @media (max-width: 1024px) {
+
+          .teacher-header {
+            min-height: 72px !important;
+
+            padding:
+              0 18px !important;
+
+            gap: 14px !important;
+          }
+
+          .teacher-header-date {
+            min-width: 0 !important;
+
+            padding:
+              8px 14px !important;
+
+            flex-shrink: 0 !important;
+          }
+
+          .teacher-header-right {
+            margin-left: auto !important;
+          }
+
+          .teacher-header-logout {
+            padding:
+              11px 18px !important;
+
+            font-size:
+              14px !important;
+
+            border-radius:
+              13px !important;
+          }
+        }
+
+
+        /* ================================
+           MOBILE
+        ================================= */
+
+        @media (max-width: 600px) {
+
+          .teacher-header {
+            min-height: 64px !important;
+
+            padding:
+              8px 12px !important;
+
+            gap: 8px !important;
+
+            justify-content:
+              space-between !important;
+          }
+
+          .teacher-header-date {
+            min-width: 0 !important;
+
+            padding:
+              7px 9px !important;
+
+            border-radius:
+              10px !important;
+
+            flex-shrink: 1 !important;
+          }
+
+          .teacher-header-date > div:first-child {
+            font-size:
+              8px !important;
+
+            letter-spacing:
+              1px !important;
+          }
+
+          .teacher-header-date > div:last-child {
+            font-size:
+              10px !important;
+
+            margin-top:
+              3px !important;
+
+            white-space: nowrap;
+          }
+
+          .teacher-header-right {
+            margin-left: auto !important;
+
+            flex-shrink: 0 !important;
+          }
+
+          .teacher-header-logout {
+            padding:
+              9px 13px !important;
+
+            font-size:
+              11px !important;
+
+            border-radius:
+              11px !important;
+          }
+        }
+
+      `}</style>
+
+    </header>
   );
 }

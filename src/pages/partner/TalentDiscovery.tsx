@@ -1103,6 +1103,7 @@ const events =
     return (
 
     <div
+      className="talent-discovery-page"
       style={{
         width: "95%",
         maxWidth: "1600px",
@@ -1112,11 +1113,159 @@ const events =
       }}
     >
 
+      <style>{`
+        .td-swipe-hint { display: none; }
+
+        @media (max-width: 1024px) {
+          .talent-discovery-page {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 6px !important;
+          }
+
+          .td-hero {
+            min-height: 0 !important;
+            padding: 16px 18px !important;
+            margin-bottom: 10px !important;
+            border-radius: 18px !important;
+            gap: 14px !important;
+          }
+          .td-hero-copy { min-width: 0 !important; max-width: none !important; flex: 1 1 auto !important; }
+          .td-hero-copy > div:first-child { font-size: 8px !important; letter-spacing: 1.2px !important; margin-bottom: 6px !important; }
+          .td-hero-title { font-size: 25px !important; line-height: 1.08 !important; letter-spacing: -.45px !important; }
+          .td-hero-copy > p { margin-top: 6px !important; font-size: 11px !important; line-height: 1.4 !important; }
+          .td-hero-copy > div:last-child { margin-top: 9px !important; gap: 6px !important; }
+          .td-hero-copy > div:last-child > div { padding: 5px 8px !important; font-size: 8px !important; }
+          .td-hero-badge { width: 64px !important; height: 64px !important; min-width: 64px !important; border-radius: 16px !important; }
+          .td-hero-badge > div > div:first-child { font-size: 21px !important; }
+          .td-hero-badge > div > div:last-child { margin-top: 4px !important; font-size: 6px !important; letter-spacing: .55px !important; }
+
+          .td-section, .td-offer-management {
+            margin-bottom: 10px !important;
+            border-radius: 17px !important;
+          }
+          .td-section { padding: 15px !important; }
+          .td-section h2, .td-offer-management h2, .td-students-heading h2 { font-size: 18px !important; line-height: 1.12 !important; }
+          .td-section p, .td-offer-management p, .td-students-heading p { font-size: 10px !important; line-height: 1.35 !important; }
+
+          .td-marketplace > div:first-child { gap: 10px !important; margin-bottom: 12px !important; align-items: flex-start !important; }
+          .td-marketplace > div:first-child > div:last-child { font-size: 8px !important; }
+          .td-metric-grid { grid-template-columns: repeat(3, minmax(0,1fr)) !important; gap: 7px !important; }
+          .td-metric-card { min-height: 82px !important; padding: 10px !important; border-radius: 12px !important; }
+          .td-metric-card > div:last-child > div:first-child { font-size: 7px !important; line-height: 1.1 !important; }
+          .td-metric-card > div:last-child > div:nth-child(2) { font-size: 20px !important; margin-top: 5px !important; }
+          .td-metric-card > div:last-child > div:last-child { font-size: 8px !important; margin-top: 4px !important; line-height: 1.2 !important; }
+
+          .td-offer-header { padding: 15px !important; }
+          .td-offer-header button { padding: 6px 9px !important; border-radius: 8px !important; font-size: 9px !important; }
+          .td-swipe-hint {
+            display: block;
+            margin: 8px 10px 6px;
+            padding: 6px 9px;
+            border: 1px solid #FED7AA;
+            border-radius: 9px;
+            background: #FFF7ED;
+            color: #9A3412;
+            font-size: 8px;
+            font-weight: 800;
+          }
+          .td-table-scroll {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+          }
+          .td-pipeline-table { min-width: 650px !important; }
+          .td-pipeline-table th { padding: 8px 10px !important; font-size: 8px !important; }
+          .td-pipeline-table td { padding: 9px 10px !important; font-size: 10px !important; }
+          .td-pipeline-table button { padding: 5px 7px !important; font-size: 8px !important; }
+          .td-pipeline-table span { padding: 4px 6px !important; font-size: 8px !important; }
+
+          .td-sticky-col {
+            position: sticky !important;
+            left: 0 !important;
+            z-index: 4 !important;
+            min-width: 90px !important;
+            box-shadow: 6px 0 10px -10px rgba(15,23,42,.55);
+          }
+          .td-sticky-head { z-index: 6 !important; background: #F8FAFC !important; }
+          .td-sticky-cell { background: #FFFFFF !important; }
+
+          .td-filters > div:first-child { gap: 8px !important; margin-bottom: 11px !important; align-items: flex-start !important; }
+          .td-filters > div:first-child > div:last-child { padding: 5px 8px !important; font-size: 8px !important; }
+          .td-filter-grid { grid-template-columns: repeat(5, minmax(0,1fr)) !important; gap: 6px !important; }
+          .td-filter-grid label { font-size: 7px !important; margin-bottom: 4px !important; }
+          .td-filter-grid input, .td-filter-grid select { height: 32px !important; padding: 0 7px !important; border-radius: 8px !important; font-size: 9px !important; }
+
+          .td-students-heading { margin-bottom: 10px !important; }
+          .td-student-grid { gap: 9px !important; }
+          .td-student-card { padding: 14px !important; border-radius: 16px !important; }
+          .td-student-card h2 { font-size: 16px !important; }
+          .td-student-card button { padding: 7px 9px !important; border-radius: 8px !important; font-size: 9px !important; }
+          .td-info-card { padding: 8px !important; border-radius: 9px !important; }
+          .td-info-card > div:first-child { font-size: 7px !important; margin-bottom: 3px !important; }
+          .td-info-card > div:last-child { font-size: 9px !important; line-height: 1.25 !important; }
+        }
+
+        @media (max-width: 600px) {
+          .talent-discovery-page { padding: 4px !important; }
+          .td-hero { padding: 12px 13px !important; margin-bottom: 8px !important; border-radius: 14px !important; gap: 8px !important; }
+          .td-hero-copy > div:first-child { font-size: 6px !important; letter-spacing: .8px !important; margin-bottom: 4px !important; }
+          .td-hero-title { font-size: 18px !important; letter-spacing: -.25px !important; }
+          .td-hero-copy > p { margin-top: 4px !important; font-size: 8px !important; line-height: 1.3 !important; }
+          .td-hero-copy > div:last-child { margin-top: 6px !important; gap: 4px !important; }
+          .td-hero-copy > div:last-child > div { padding: 4px 6px !important; font-size: 6px !important; }
+          .td-hero-badge { width: 48px !important; height: 48px !important; min-width: 48px !important; border-radius: 11px !important; }
+          .td-hero-badge > div > div:first-child { font-size: 15px !important; }
+          .td-hero-badge > div > div:last-child { font-size: 4px !important; letter-spacing: .25px !important; }
+
+          .td-section, .td-offer-management { margin-bottom: 8px !important; border-radius: 14px !important; }
+          .td-section { padding: 10px !important; }
+          .td-section h2, .td-offer-management h2, .td-students-heading h2 { font-size: 14px !important; }
+          .td-section p, .td-offer-management p, .td-students-heading p { font-size: 7.5px !important; }
+
+          .td-marketplace > div:first-child { margin-bottom: 8px !important; }
+          .td-marketplace > div:first-child > div:last-child { display: none !important; }
+          .td-metric-grid { grid-template-columns: repeat(3, minmax(0,1fr)) !important; gap: 4px !important; }
+          .td-metric-card { min-height: 68px !important; padding: 7px !important; border-radius: 9px !important; }
+          .td-metric-card > div:last-child > div:first-child { font-size: 5.5px !important; }
+          .td-metric-card > div:last-child > div:nth-child(2) { font-size: 16px !important; margin-top: 4px !important; }
+          .td-metric-card > div:last-child > div:last-child { font-size: 6px !important; margin-top: 3px !important; }
+
+          .td-offer-header { padding: 10px !important; }
+          .td-offer-header p { margin-bottom: 10px !important; }
+          .td-offer-header button { padding: 5px 7px !important; font-size: 7px !important; }
+          .td-swipe-hint { margin: 6px 7px 5px; padding: 5px 7px; font-size: 7px; border-radius: 7px; }
+          .td-pipeline-table { min-width: 560px !important; }
+          .td-pipeline-table th { padding: 6px 8px !important; font-size: 6.5px !important; }
+          .td-pipeline-table td { padding: 7px 8px !important; font-size: 8px !important; }
+          .td-pipeline-table button { padding: 4px 5px !important; font-size: 6.5px !important; }
+          .td-pipeline-table span { padding: 3px 5px !important; font-size: 6.5px !important; }
+          .td-sticky-col { min-width: 76px !important; }
+
+          .td-filters > div:first-child { margin-bottom: 8px !important; }
+          .td-filters > div:first-child > div:last-child { padding: 4px 6px !important; font-size: 6px !important; }
+          .td-filter-grid { grid-template-columns: repeat(5, minmax(0,1fr)) !important; gap: 3px !important; }
+          .td-filter-grid label { font-size: 5.5px !important; margin-bottom: 3px !important; letter-spacing: .25px !important; }
+          .td-filter-grid input, .td-filter-grid select { height: 27px !important; padding: 0 4px !important; border-radius: 6px !important; font-size: 7px !important; }
+
+          .td-students-heading { margin-bottom: 7px !important; }
+          .td-student-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 5px !important; }
+          .td-student-card { min-width: 0 !important; padding: 9px !important; border-radius: 12px !important; }
+          .td-student-card h2 { font-size: 12px !important; }
+          .td-student-card button { padding: 5px 6px !important; border-radius: 6px !important; font-size: 6.5px !important; }
+          .td-info-card { min-width: 0 !important; padding: 6px !important; border-radius: 7px !important; }
+          .td-info-card > div:first-child { font-size: 5.5px !important; }
+          .td-info-card > div:last-child { font-size: 7px !important; }
+        }
+      `}</style>
+
+
       {/* =========================================================
           TALENT DISCOVERY HERO
          ========================================================= */}
 
       <div
+        className="td-hero"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -1179,6 +1328,7 @@ const events =
         />
 
         <div
+          className="td-hero-copy"
           style={{
             position: "relative",
             zIndex: 2,
@@ -1199,7 +1349,7 @@ const events =
             ALLOCATED TALENT POOL
           </div>
 
-          <h1
+          <h1 className="td-hero-title"
             style={{
               margin: 0,
               color: "#0F172A",
@@ -1268,6 +1418,7 @@ const events =
         </div>
 
         <div
+          className="td-hero-badge"
           style={{
             position: "relative",
             zIndex: 2,
@@ -1321,6 +1472,7 @@ const events =
          ========================================================= */}
 
       <div
+        className="td-section td-marketplace"
         style={{
           background: "#FFFFFF",
           border: "1px solid #E2E8F0",
@@ -1399,6 +1551,7 @@ const events =
         {/* KPI CARDS */}
 
         <div
+          className="td-metric-grid"
           style={{
             display: "grid",
             gridTemplateColumns:
@@ -1483,6 +1636,7 @@ const events =
          ========================================================= */}
 
       <div
+        className="td-offer-management"
         style={{
           background: "#FFFFFF",
           border: "1px solid #E2E8F0",
@@ -1495,6 +1649,7 @@ const events =
       >
 
         <div
+          className="td-offer-header"
           style={{
             position: "relative",
             overflow: "hidden",
@@ -1622,13 +1777,20 @@ const events =
         </div>
 
 
+
+        <div className="td-swipe-hint">
+          Swipe left or right to view offer details →
+        </div>
+
         <div
+          className="td-table-scroll"
           style={{
             overflowX: "auto"
           }}
         >
 
           <table
+            className="td-pipeline-table"
             style={{
               width: "100%",
               borderCollapse: "collapse",
@@ -1654,6 +1816,7 @@ const events =
 
                   <th
                     key={label}
+                    className={label === "Type" ? "td-sticky-col td-sticky-head" : undefined}
                     style={{
                       padding: "13px 18px",
                       textAlign: "left",
@@ -1696,6 +1859,7 @@ const events =
                   >
 
                     <td
+                      className="td-sticky-col td-sticky-cell"
                       style={{
                         padding: "15px 18px"
                       }}
@@ -1801,6 +1965,7 @@ const events =
          ========================================================= */}
 
       <div
+        className="td-section td-filters"
         style={{
           background: "#FFFFFF",
           border: "1px solid #E2E8F0",
@@ -1878,6 +2043,7 @@ const events =
 
 
         <div
+          className="td-filter-grid"
           style={{
             display: "grid",
             gridTemplateColumns:
@@ -2039,6 +2205,7 @@ const events =
          ========================================================= */}
 
       <div
+        className="td-students-heading"
         style={{
           marginBottom: "18px",
           display: "flex",
@@ -2090,6 +2257,7 @@ const events =
 
 
       <div
+        className="td-student-grid"
         style={{
           display: "grid",
           gridTemplateColumns:
@@ -2102,6 +2270,7 @@ const events =
           (student) => (
 
             <div
+              className="td-student-card"
               key={student.student_id}
               style={{
                 position: "relative",
@@ -3025,6 +3194,7 @@ function InfoCard({
   return (
 
     <div
+      className="td-info-card"
       style={{
         background:
           "linear-gradient(145deg,#F8FAFC,#FFFFFF)",
@@ -3147,6 +3317,7 @@ function MetricCard({
   return (
 
     <div
+      className="td-metric-card"
       style={{
         position: "relative",
         overflow: "hidden",

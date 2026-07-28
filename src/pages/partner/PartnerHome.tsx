@@ -27,6 +27,7 @@ const partnerId =
     return (
 
     <div
+      className="partner-home-page"
       style={{
         width: "95%",
         maxWidth: "1600px",
@@ -36,11 +37,421 @@ const partnerId =
       }}
     >
 
+      <style>{`
+        /* Partner dashboard responsive styling only.
+           Existing desktop inline styles remain authoritative above 1024px. */
+
+        @media (max-width: 1024px) {
+          .partner-home-page {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 10px !important;
+          }
+
+          .partner-home-hero {
+            min-height: 0 !important;
+            padding: 16px 18px !important;
+            margin-bottom: 10px !important;
+            border-radius: 18px !important;
+            gap: 14px !important;
+          }
+
+          .partner-home-hero-copy {
+            min-width: 0 !important;
+            max-width: none !important;
+            flex: 1 1 auto !important;
+          }
+
+          .partner-home-hero-copy > div:first-child {
+            margin-bottom: 6px !important;
+            font-size: 9px !important;
+            line-height: 1.15 !important;
+            letter-spacing: 1.35px !important;
+          }
+
+          .partner-home-hero-title {
+            font-size: 25px !important;
+            line-height: 1.08 !important;
+            letter-spacing: -.45px !important;
+          }
+
+          .partner-home-hero-description {
+            margin-top: 6px !important;
+            max-width: 650px !important;
+            font-size: 12px !important;
+            line-height: 1.4 !important;
+          }
+
+          .partner-home-hero-copy > div:last-child {
+            gap: 7px !important;
+            margin-top: 10px !important;
+          }
+
+          .partner-home-hero-copy > div:last-child > div {
+            gap: 5px !important;
+            padding: 5px 8px !important;
+            font-size: 8px !important;
+          }
+
+          .partner-home-hero-badge {
+            width: 64px !important;
+            height: 64px !important;
+            min-width: 64px !important;
+            border-radius: 16px !important;
+          }
+
+          .partner-home-hero-badge > div > div:first-child {
+            font-size: 21px !important;
+          }
+
+          .partner-home-hero-badge > div > div:last-child {
+            margin-top: 5px !important;
+            font-size: 5.5px !important;
+            line-height: 1.05 !important;
+            letter-spacing: .55px !important;
+          }
+
+          .partner-home-section {
+            padding: 16px !important;
+            margin-bottom: 10px !important;
+            border-radius: 17px !important;
+            box-sizing: border-box !important;
+          }
+
+          .partner-home-section h2,
+          .partner-home-two-column h2 {
+            font-size: 18px !important;
+            line-height: 1.12 !important;
+          }
+
+          .partner-home-section p,
+          .partner-home-two-column p {
+            font-size: 10px !important;
+            line-height: 1.35 !important;
+          }
+
+          .partner-home-intelligence > div:first-child {
+            gap: 10px !important;
+            margin-bottom: 12px !important;
+            align-items: flex-start !important;
+          }
+
+          .partner-home-intelligence > div:first-child > div:first-child > div:first-child,
+          .partner-home-school > div:last-child > div:first-child,
+          .partner-home-two-column > div > div:last-child > div:nth-child(2) {
+            font-size: 8px !important;
+            line-height: 1.15 !important;
+            letter-spacing: 1.15px !important;
+          }
+
+          .partner-home-intelligence > div:first-child > div:last-child {
+            font-size: 8px !important;
+            letter-spacing: .6px !important;
+          }
+
+          .partner-home-kpi-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 7px !important;
+          }
+
+          .partner-home-stat-card {
+            min-height: 92px !important;
+            padding: 10px !important;
+            border-radius: 12px !important;
+          }
+
+          .partner-home-stat-card > div:last-child > div:first-child {
+            font-size: 7px !important;
+            line-height: 1.15 !important;
+            letter-spacing: .35px !important;
+          }
+
+          .partner-home-stat-card > div:last-child > div:nth-child(2) {
+            margin-top: 6px !important;
+            font-size: 20px !important;
+          }
+
+          .partner-home-stat-card > div:last-child > div:last-child {
+            margin-top: 5px !important;
+            font-size: 8px !important;
+            line-height: 1.2 !important;
+          }
+
+          .partner-home-school > div:last-child > div:nth-child(4) {
+            min-height: 78px !important;
+            margin-top: 12px !important;
+            padding: 12px !important;
+            border-radius: 13px !important;
+          }
+
+          .partner-home-school > div:last-child > div:nth-child(4) > div:first-child {
+            width: 34px !important;
+            height: 34px !important;
+            margin-right: 10px !important;
+            border-radius: 10px !important;
+            font-size: 15px !important;
+          }
+
+          .partner-home-two-column {
+            gap: 10px !important;
+            margin-bottom: 10px !important;
+          }
+
+          .partner-home-two-column > div {
+            padding: 16px !important;
+            border-radius: 17px !important;
+          }
+
+          .partner-home-two-column > div > div:last-child > div:first-child {
+            width: 38px !important;
+            height: 38px !important;
+            margin-bottom: 12px !important;
+            border-radius: 11px !important;
+            font-size: 18px !important;
+          }
+
+          .partner-home-empty-row {
+            min-height: 32px !important;
+            padding: 0 9px !important;
+            margin-top: 6px !important;
+            border-radius: 9px !important;
+            font-size: 8px !important;
+          }
+
+          .partner-home-info-grid {
+            gap: 7px !important;
+          }
+
+          .partner-home-info-card {
+            min-height: 70px !important;
+            padding: 10px !important;
+            border-radius: 12px !important;
+          }
+
+          .partner-home-info-card > div:first-child {
+            font-size: 7px !important;
+          }
+
+          .partner-home-info-card > div:last-child {
+            margin-top: 5px !important;
+            font-size: 9px !important;
+            line-height: 1.3 !important;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .partner-home-page {
+            padding: 7px !important;
+          }
+
+          .partner-home-hero {
+            padding: 12px 13px !important;
+            margin-bottom: 8px !important;
+            border-radius: 14px !important;
+            gap: 8px !important;
+          }
+
+          .partner-home-hero-copy > div:first-child {
+            margin-bottom: 4px !important;
+            font-size: 6.5px !important;
+            letter-spacing: .9px !important;
+          }
+
+          .partner-home-hero-title {
+            font-size: 18px !important;
+            line-height: 1.08 !important;
+            letter-spacing: -.25px !important;
+          }
+
+          .partner-home-hero-description {
+            margin-top: 4px !important;
+            font-size: 9px !important;
+            line-height: 1.3 !important;
+          }
+
+          .partner-home-hero-copy > div:last-child {
+            gap: 5px !important;
+            margin-top: 7px !important;
+          }
+
+          .partner-home-hero-copy > div:last-child > div {
+            padding: 4px 6px !important;
+            font-size: 6px !important;
+          }
+
+          .partner-home-hero-badge {
+            width: 48px !important;
+            height: 48px !important;
+            min-width: 48px !important;
+            border-radius: 11px !important;
+          }
+
+          .partner-home-hero-badge > div > div:first-child {
+            font-size: 15px !important;
+          }
+
+          .partner-home-hero-badge > div > div:last-child {
+            margin-top: 3px !important;
+            font-size: 4px !important;
+            letter-spacing: .25px !important;
+          }
+
+          .partner-home-section {
+            padding: 11px !important;
+            margin-bottom: 8px !important;
+            border-radius: 14px !important;
+          }
+
+          .partner-home-section h2,
+          .partner-home-two-column h2 {
+            font-size: 14px !important;
+            line-height: 1.1 !important;
+          }
+
+          .partner-home-section p,
+          .partner-home-two-column p {
+            font-size: 8px !important;
+            line-height: 1.3 !important;
+          }
+
+          .partner-home-intelligence > div:first-child {
+            gap: 5px !important;
+            margin-bottom: 9px !important;
+          }
+
+          .partner-home-intelligence > div:first-child > div:first-child > div:first-child,
+          .partner-home-school > div:last-child > div:first-child,
+          .partner-home-two-column > div > div:last-child > div:nth-child(2) {
+            font-size: 6px !important;
+            letter-spacing: .75px !important;
+          }
+
+          .partner-home-intelligence > div:first-child > div:last-child {
+            display: none !important;
+          }
+
+          .partner-home-kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 5px !important;
+          }
+
+          .partner-home-stat-card {
+            min-height: 76px !important;
+            padding: 7px !important;
+            border-radius: 10px !important;
+          }
+
+          .partner-home-stat-card > div:last-child > div:first-child {
+            font-size: 5.5px !important;
+            line-height: 1.1 !important;
+            letter-spacing: .2px !important;
+          }
+
+          .partner-home-stat-card > div:last-child > div:nth-child(2) {
+            margin-top: 4px !important;
+            font-size: 16px !important;
+          }
+
+          .partner-home-stat-card > div:last-child > div:last-child {
+            margin-top: 3px !important;
+            font-size: 6.5px !important;
+            line-height: 1.15 !important;
+          }
+
+          .partner-home-school > div:last-child > div:nth-child(4) {
+            min-height: 62px !important;
+            margin-top: 9px !important;
+            padding: 9px !important;
+            border-radius: 10px !important;
+          }
+
+          .partner-home-school > div:last-child > div:nth-child(4) > div:first-child {
+            width: 28px !important;
+            height: 28px !important;
+            margin-right: 8px !important;
+            border-radius: 8px !important;
+            font-size: 12px !important;
+          }
+
+          .partner-home-school > div:last-child > div:nth-child(4) > div:last-child > div:first-child {
+            font-size: 9px !important;
+          }
+
+          .partner-home-school > div:last-child > div:nth-child(4) > div:last-child > div:last-child {
+            font-size: 7px !important;
+          }
+
+          .partner-home-two-column {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 6px !important;
+            margin-bottom: 8px !important;
+          }
+
+          .partner-home-two-column > div {
+            min-width: 0 !important;
+            padding: 10px !important;
+            border-radius: 13px !important;
+          }
+
+          .partner-home-two-column > div > div:last-child > div:first-child {
+            width: 30px !important;
+            height: 30px !important;
+            margin-bottom: 9px !important;
+            border-radius: 9px !important;
+            font-size: 14px !important;
+          }
+
+          .partner-home-two-column > div > div:last-child > p {
+            margin: 4px 0 9px !important;
+          }
+
+          .partner-home-empty-row {
+            min-height: 26px !important;
+            padding: 0 6px !important;
+            margin-top: 4px !important;
+            border-radius: 7px !important;
+            font-size: 6px !important;
+            line-height: 1.15 !important;
+          }
+
+          .partner-home-empty-row > span {
+            width: 5px !important;
+            height: 5px !important;
+            margin-right: 5px !important;
+          }
+
+          .partner-home-info-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 5px !important;
+          }
+
+          .partner-home-info-card {
+            min-width: 0 !important;
+            min-height: 58px !important;
+            padding: 7px !important;
+            border-radius: 9px !important;
+          }
+
+          .partner-home-info-card > div:first-child {
+            font-size: 5.5px !important;
+            letter-spacing: .35px !important;
+          }
+
+          .partner-home-info-card > div:last-child {
+            margin-top: 4px !important;
+            font-size: 7px !important;
+            line-height: 1.2 !important;
+          }
+        }
+      `}</style>
+
+
       {/* =========================================================
           PARTNER DASHBOARD HERO
          ========================================================= */}
 
       <div
+        className="partner-home-hero"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -112,6 +523,7 @@ const partnerId =
         {/* HERO LEFT */}
 
         <div
+          className="partner-home-hero-copy"
           style={{
             position: "relative",
             zIndex: 2,
@@ -133,6 +545,7 @@ const partnerId =
           </div>
 
           <h1
+            className="partner-home-hero-title"
             style={{
               margin: 0,
               color: "#0F172A",
@@ -146,6 +559,7 @@ const partnerId =
           </h1>
 
           <p
+            className="partner-home-hero-description"
             style={{
               margin: "12px 0 0",
               color: "#64748B",
@@ -214,6 +628,7 @@ const partnerId =
         {/* HERO RIGHT */}
 
         <div
+          className="partner-home-hero-badge"
           style={{
             position: "relative",
             zIndex: 2,
@@ -271,6 +686,7 @@ const partnerId =
          ========================================================= */}
 
       <div
+        className="partner-home-section partner-home-intelligence"
         style={{
           background: "#FFFFFF",
           border: "1px solid #E2E8F0",
@@ -351,6 +767,7 @@ const partnerId =
         {/* KPI GRID */}
 
         <div
+          className="partner-home-kpi-grid"
           style={{
             display: "grid",
             gridTemplateColumns:
@@ -397,6 +814,7 @@ const partnerId =
          ========================================================= */}
 
       <div
+        className="partner-home-section partner-home-school"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -537,6 +955,7 @@ const partnerId =
          ========================================================= */}
 
       <div
+        className="partner-home-two-column"
         style={{
           display: "grid",
           gridTemplateColumns:
@@ -807,6 +1226,7 @@ const partnerId =
          ========================================================= */}
 
       <div
+        className="partner-home-section partner-home-profile"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -901,6 +1321,7 @@ const partnerId =
           {/* INFORMATION GRID */}
 
           <div
+            className="partner-home-info-grid"
             style={{
               display: "grid",
               gridTemplateColumns:
@@ -1011,6 +1432,7 @@ function StatCard({
   return (
 
     <div
+      className="partner-home-stat-card"
       style={{
         position: "relative",
         overflow: "hidden",
@@ -1103,6 +1525,7 @@ function EmptyRow({
   return (
 
     <div
+      className="partner-home-empty-row"
       style={{
         minHeight: "38px",
         borderRadius: "11px",
@@ -1183,6 +1606,7 @@ function InfoCard({
   return (
 
     <div
+      className="partner-home-info-card"
       style={{
         position: "relative",
         overflow: "hidden",

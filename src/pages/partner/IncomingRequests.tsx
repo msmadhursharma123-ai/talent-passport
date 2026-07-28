@@ -83,6 +83,7 @@ function RequestMetricCard({
   return (
 
     <div
+      className="ir-metric-card"
       style={{
         position: "relative",
         overflow: "hidden",
@@ -340,6 +341,7 @@ function RequestDetailCard({
   return (
 
     <div
+      className="ir-detail-card"
       style={{
         gridColumn:
           fullWidth
@@ -600,6 +602,7 @@ async function handleAccept(
    return (
 
     <div
+      className="incoming-requests-page"
       style={{
         width: "95%",
         maxWidth: "1600px",
@@ -609,11 +612,155 @@ async function handleAccept(
       }}
     >
 
+      <style>{`
+        .ir-swipe-hint { display: none; }
+
+        @media (max-width: 1024px) {
+          .incoming-requests-page {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 6px !important;
+          }
+
+          .ir-hero {
+            min-height: 0 !important;
+            padding: 16px 18px !important;
+            margin-bottom: 10px !important;
+            border-radius: 18px !important;
+            gap: 14px !important;
+          }
+          .ir-hero-copy { min-width: 0 !important; max-width: none !important; flex: 1 1 auto !important; }
+          .ir-hero-copy > div:first-child { font-size: 8px !important; letter-spacing: 1.2px !important; margin-bottom: 6px !important; }
+          .ir-hero-title { font-size: 25px !important; line-height: 1.08 !important; letter-spacing: -.45px !important; }
+          .ir-hero-copy > p { margin-top: 6px !important; font-size: 11px !important; line-height: 1.4 !important; }
+          .ir-hero-copy > div:last-child { margin-top: 9px !important; gap: 6px !important; }
+          .ir-hero-copy > div:last-child > div { padding: 5px 8px !important; font-size: 8px !important; }
+          .ir-hero-badge { width: 64px !important; height: 64px !important; min-width: 64px !important; border-radius: 16px !important; }
+          .ir-hero-badge > div > div:first-child { font-size: 21px !important; }
+          .ir-hero-badge > div > div:last-child { margin-top: 4px !important; font-size: 6px !important; letter-spacing: .55px !important; }
+
+          .ir-summary, .ir-ledger { border-radius: 17px !important; margin-bottom: 10px !important; }
+          .ir-summary { padding: 15px !important; }
+          .ir-summary > div:first-child { gap: 10px !important; margin-bottom: 12px !important; align-items: flex-start !important; }
+          .ir-summary > div:first-child > div:first-child > div:first-child { font-size: 8px !important; letter-spacing: 1.1px !important; margin-bottom: 4px !important; }
+          .ir-summary h2, .ir-ledger h2 { font-size: 18px !important; line-height: 1.12 !important; }
+          .ir-summary p, .ir-ledger p { font-size: 10px !important; line-height: 1.35 !important; }
+          .ir-summary > div:first-child > div:last-child { font-size: 8px !important; }
+
+          .ir-metrics-grid { gap: 7px !important; }
+          .ir-metric-card { min-height: 82px !important; padding: 10px !important; border-radius: 12px !important; }
+          .ir-metric-card > div:last-child > div:first-child { font-size: 7px !important; line-height: 1.1 !important; }
+          .ir-metric-card > div:last-child > div:nth-child(2) { font-size: 20px !important; margin-top: 5px !important; }
+          .ir-metric-card > div:last-child > div:last-child { font-size: 8px !important; margin-top: 4px !important; line-height: 1.2 !important; }
+
+          .ir-ledger-header { padding: 15px !important; }
+          .ir-ledger-header > div:last-child { align-items: flex-start !important; gap: 10px !important; }
+          .ir-ledger-header > div:last-child > div:last-child { padding: 5px 8px !important; font-size: 8px !important; }
+          .ir-swipe-hint {
+            display: block;
+            margin: 8px 10px 6px;
+            padding: 6px 9px;
+            border: 1px solid #FED7AA;
+            border-radius: 9px;
+            background: #FFF7ED;
+            color: #9A3412;
+            font-size: 8px;
+            font-weight: 800;
+          }
+          .ir-table-scroll {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+          }
+          .ir-table { min-width: 650px !important; }
+          .ir-table th { padding: 8px 10px !important; font-size: 8px !important; }
+          .ir-table td { padding: 9px 10px !important; font-size: 10px !important; }
+          .ir-table button { padding: 5px 7px !important; border-radius: 7px !important; font-size: 8px !important; }
+          .ir-table span { font-size: 8px !important; }
+          .ir-table td:nth-child(2) > div > div:last-child > div:first-child {
+            font-size: 10px !important;
+            line-height: 1.25 !important;
+          }
+          .ir-table td:nth-child(2) > div > div:last-child > div:last-child {
+            font-size: 8px !important;
+            line-height: 1.25 !important;
+          }
+          .ir-sticky-col {
+            position: sticky !important;
+            left: 0 !important;
+            z-index: 4 !important;
+            min-width: 90px !important;
+            box-shadow: 6px 0 10px -10px rgba(15,23,42,.55);
+          }
+          .ir-sticky-head { z-index: 6 !important; background: #F8FAFC !important; }
+          .ir-sticky-cell { background: #FFFFFF !important; }
+
+          .ir-modal-overlay { padding: 12px !important; }
+          .ir-modal-card { width: min(620px, calc(100vw - 24px)) !important; border-radius: 18px !important; }
+          .ir-detail-card { padding: 10px !important; border-radius: 10px !important; }
+          .ir-detail-card > div:first-child { font-size: 8px !important; margin-bottom: 4px !important; }
+          .ir-detail-card > div:last-child { font-size: 10px !important; }
+        }
+
+        @media (max-width: 600px) {
+          .incoming-requests-page { padding: 4px !important; }
+
+          .ir-hero { padding: 12px 13px !important; margin-bottom: 8px !important; border-radius: 14px !important; gap: 8px !important; }
+          .ir-hero-copy > div:first-child { font-size: 6px !important; letter-spacing: .8px !important; margin-bottom: 4px !important; }
+          .ir-hero-title { font-size: 18px !important; letter-spacing: -.25px !important; }
+          .ir-hero-copy > p { margin-top: 4px !important; font-size: 8px !important; line-height: 1.3 !important; }
+          .ir-hero-copy > div:last-child { margin-top: 6px !important; gap: 4px !important; }
+          .ir-hero-copy > div:last-child > div { padding: 4px 6px !important; font-size: 6px !important; }
+          .ir-hero-badge { width: 48px !important; height: 48px !important; min-width: 48px !important; border-radius: 11px !important; }
+          .ir-hero-badge > div > div:first-child { font-size: 15px !important; }
+          .ir-hero-badge > div > div:last-child { font-size: 4px !important; letter-spacing: .25px !important; }
+
+          .ir-summary, .ir-ledger { border-radius: 14px !important; margin-bottom: 8px !important; }
+          .ir-summary { padding: 10px !important; }
+          .ir-summary h2, .ir-ledger h2 { font-size: 14px !important; }
+          .ir-summary p, .ir-ledger p { font-size: 7.5px !important; }
+          .ir-summary > div:first-child > div:first-child > div:first-child { font-size: 6px !important; letter-spacing: .8px !important; }
+          .ir-summary > div:first-child > div:last-child { font-size: 6px !important; }
+
+          .ir-metrics-grid { grid-template-columns: repeat(4,minmax(0,1fr)) !important; gap: 4px !important; }
+          .ir-metric-card { min-height: 68px !important; padding: 7px !important; border-radius: 9px !important; }
+          .ir-metric-card > div:last-child > div:first-child { font-size: 5.5px !important; }
+          .ir-metric-card > div:last-child > div:nth-child(2) { font-size: 16px !important; margin-top: 4px !important; }
+          .ir-metric-card > div:last-child > div:last-child { font-size: 6px !important; margin-top: 3px !important; }
+
+          .ir-ledger-header { padding: 10px !important; }
+          .ir-ledger-header > div:last-child > div:last-child { padding: 4px 6px !important; font-size: 6px !important; }
+          .ir-swipe-hint { margin: 6px 7px 5px; padding: 5px 7px; font-size: 7px; border-radius: 7px; }
+          .ir-table { min-width: 560px !important; }
+          .ir-table th { padding: 6px 8px !important; font-size: 6.5px !important; }
+          .ir-table td { padding: 7px 8px !important; font-size: 8px !important; }
+          .ir-table button { padding: 4px 5px !important; font-size: 6.5px !important; }
+          .ir-table span { font-size: 6.5px !important; }
+          .ir-table td:nth-child(2) > div > div:last-child > div:first-child {
+            font-size: 8px !important;
+            line-height: 1.25 !important;
+          }
+          .ir-table td:nth-child(2) > div > div:last-child > div:last-child {
+            font-size: 6.5px !important;
+            line-height: 1.25 !important;
+          }
+          .ir-sticky-col { min-width: 76px !important; }
+
+          .ir-modal-overlay { padding: 8px !important; }
+          .ir-modal-card { width: calc(100vw - 16px) !important; border-radius: 14px !important; }
+          .ir-detail-card { padding: 7px !important; border-radius: 8px !important; }
+          .ir-detail-card > div:first-child { font-size: 6px !important; }
+          .ir-detail-card > div:last-child { font-size: 8px !important; }
+        }
+      `}</style>
+
+
       {/* =========================================================
           HERO
          ========================================================= */}
 
       <div
+        className="ir-hero"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -681,6 +828,7 @@ async function handleAccept(
         {/* HERO CONTENT */}
 
         <div
+          className="ir-hero-copy"
           style={{
             position: "relative",
             zIndex: 2,
@@ -701,7 +849,7 @@ async function handleAccept(
             PARTNER CRM
           </div>
 
-          <h1
+          <h1 className="ir-hero-title"
             style={{
               margin: 0,
               color: "#0F172A",
@@ -774,6 +922,7 @@ async function handleAccept(
         {/* HERO SYMBOL */}
 
         <div
+          className="ir-hero-badge"
           style={{
             position: "relative",
             zIndex: 2,
@@ -831,6 +980,7 @@ async function handleAccept(
          ========================================================= */}
 
       <div
+        className="ir-summary"
         style={{
           background: "#FFFFFF",
           border: "1px solid #E2E8F0",
@@ -907,6 +1057,7 @@ async function handleAccept(
 
 
         <div
+          className="ir-metrics-grid"
           style={{
             display: "grid",
             gridTemplateColumns:
@@ -968,6 +1119,7 @@ async function handleAccept(
          ========================================================= */}
 
       <div
+        className="ir-ledger"
         style={{
           background: "#FFFFFF",
           border: "1px solid #E2E8F0",
@@ -981,6 +1133,7 @@ async function handleAccept(
         {/* TABLE HEADER */}
 
         <div
+          className="ir-ledger-header"
           style={{
             position: "relative",
             overflow: "hidden",
@@ -1078,13 +1231,19 @@ async function handleAccept(
 
         {/* TABLE */}
 
+        <div className="ir-swipe-hint">
+          Swipe left or right to view request details →
+        </div>
+
         <div
+          className="ir-table-scroll"
           style={{
             overflowX: "auto"
           }}
         >
 
           <table
+            className="ir-table"
             style={{
               width: "100%",
               borderCollapse: "collapse",
@@ -1110,6 +1269,7 @@ async function handleAccept(
 
                   <th
                     key={label}
+                    className={label === "Type" ? "ir-sticky-col ir-sticky-head" : undefined}
                     style={{
                       padding: "13px 18px",
                       textAlign: "left",
@@ -1150,6 +1310,7 @@ async function handleAccept(
                     {/* TYPE */}
 
                     <td
+                      className="ir-sticky-col ir-sticky-cell"
                       style={{
                         padding: "15px 18px"
                       }}
@@ -1407,6 +1568,7 @@ async function handleAccept(
       {selectedRequest && (
 
         <div
+          className="ir-modal-overlay"
           style={{
             position: "fixed",
             inset: 0,
@@ -1422,6 +1584,7 @@ async function handleAccept(
         >
 
           <div
+            className="ir-modal-card"
             style={{
               width:
                 "min(680px, calc(100vw - 40px))",

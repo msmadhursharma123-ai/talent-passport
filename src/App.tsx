@@ -157,75 +157,85 @@ const [activeTab, setActiveTab] =
 const [studentSchoolName, setStudentSchoolName] =
   useState<string | null>(null);
 
+const [teacherSchoolName, setTeacherSchoolName] =
+  useState<string | null>(null);
+
 const adminIdentity = getCurrentAdmin();
 
 
 
 const routeTeacherAfterLogin = async () => {
 
-const teacher =
-getCurrentTeacher();
+  const teacher =
+    getCurrentTeacher();
 
-const user =
-await getCurrentUser();
+  const user =
+    await getCurrentUser();
 
-if (!user) {
-return;
-}
+  if (!user) {
 
+    setTeacherSchoolName(null);
 
-const profileExists =
-await doesTeacherProfileExist(
-user.id
-);
+    return;
+  }
 
-if (!profileExists) {
+  const profileExists =
+    await doesTeacherProfileExist(
+      user.id
+    );
 
-setTeacherStage("profile");
-setActiveTab("teacher");
+  if (!profileExists) {
 
-return;
+    setTeacherSchoolName(null);
 
-}
+    setTeacherStage("profile");
+    setActiveTab("teacher");
 
+    return;
+  }
 
-if (!teacher) {
+  if (!teacher) {
 
-await signOut();
+    setTeacherSchoolName(null);
 
-alert(
-"Unable to restore your teacher session. Please login again."
-);
+    await signOut();
 
-setTeacherStage("login");
-setActiveTab("teacher");
+    alert(
+      "Unable to restore your teacher session. Please login again."
+    );
 
-return;
+    setTeacherStage("login");
+    setActiveTab("teacher");
 
-}
+    return;
+  }
 
+  /*
+   * Teacher identity is authenticated.
+   *
+   * Store the teacher's school in App state.
+   * AppHeader receives this only while the
+   * Teacher Portal itself is active.
+   */
+  setTeacherSchoolName(
+    teacher.schoolName?.trim() || null
+  );
 
-const assignments =
-await getTeacherAssignmentsByTeacher(
+  const assignments =
+    await getTeacherAssignmentsByTeacher(
+      teacher.teacherUuid
+    );
 
-teacher.teacherUuid
+  if (!assignments.length) {
 
-);
+    setTeacherStage("academic");
+    setActiveTab("teacher");
 
+    return;
+  }
 
-if (!assignments.length) {
-
-setTeacherStage("academic");
-setActiveTab("teacher");
-
-return;
-
-}
-
-
-setTeacherStage("portal");
-setActiveTab("teacher");
-
+  setTeacherStage("portal");
+  setActiveTab("teacher");
 };
 
 const routeStudentAfterLogin =
@@ -596,6 +606,17 @@ schoolName: string;
   schoolName={
     activeTab === "passport"
       ? studentSchoolName
+      : activeTab === "teacher" &&
+        teacherStage === "portal"
+      ? teacherSchoolName
+      : null
+  }
+  workspaceLabel={
+    activeTab === "passport"
+      ? "Student Academic Workspace"
+      : activeTab === "teacher" &&
+        teacherStage === "portal"
+      ? "Teacher Academic Workspace"
       : null
   }
 />
@@ -779,27 +800,22 @@ if (selectedRole === "teacher") {
 
 )}
 
-{activeTab ===
-  "existing-login" && (
+{activeTab === "existing-login" && (
   <ExistingUserLogin
-onBack={() =>
-setActiveTab(
-"user-type"
-)
-}
+    onBack={() =>
+      setActiveTab("user-type")
+    }
 
-onSuccess={async () => {
+    onSuccess={async () => {
+      await routeStudentAfterLogin();
+    }}
 
-await routeStudentAfterLogin();
-
-}}
-
-onRegister={() =>
-setActiveTab(
-"student-profile"
-)
-}
-/>
+    onRegister={() => {
+      setUserType("new");
+      setSelectedRole("student");
+      setActiveTab("student-register-auth");
+    }}
+  />
 )}
 
 {activeTab ===
@@ -1103,9 +1119,25 @@ return (
 
 <TeacherAcademicQuestionnaire
 
-onContinue={() =>
-setTeacherStage("portal")
-}
+onContinue={async () => {
+
+  /*
+   * Academic onboarding is now complete.
+   *
+   * Resolve the teacher identity again so
+   * the global AppHeader receives the school
+   * before Teacher Portal becomes visible.
+   */
+  const teacher =
+    getCurrentTeacher();
+
+  setTeacherSchoolName(
+    teacher?.schoolName?.trim() || null
+  );
+
+  setTeacherStage("portal");
+
+}}
 
 onBack={() => {
 
@@ -1141,31 +1173,37 @@ await routeTeacherAfterLogin();
         />
 
     );
-            case "portal":
+       case "portal":
 
-                return (
+  return (
 
     <TeacherPortal
 
-        onLogout={async () => {
+      onLogout={async () => {
 
-            await signOut();
+        /*
+         * Immediately remove teacher school
+         * identity from the global AppHeader.
+         */
+        setTeacherSchoolName(null);
 
-            setSelectedRole("");
+        await signOut();
 
-            setUserType(null);
+        setSelectedRole("");
 
-            setTeacherStage("login");
+        setUserType(null);
 
-            setTeacherEmail("");
+        setTeacherStage("login");
 
-            setActiveTab("identity");
+        setTeacherEmail("");
 
-        }}
+        setActiveTab("identity");
+
+      }}
 
     />
 
-);
+  );
 
             default:
 
