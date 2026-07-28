@@ -29,6 +29,7 @@ export default function EvidenceVault({
 
   return (
     <div
+      className="evidence-vault"
       style={{
         background: "#FFFFFF",
         border: "1px solid #E2E8F0",
@@ -41,6 +42,7 @@ export default function EvidenceVault({
       {/* ================= HEADER ================= */}
 
       <div
+        className="evidence-vault-header"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -49,8 +51,9 @@ export default function EvidenceVault({
           marginBottom: 26,
         }}
       >
-        <div>
+        <div className="evidence-vault-header-copy">
           <div
+            className="evidence-vault-eyebrow"
             style={{
               color: "#F97316",
               fontSize: 11,
@@ -64,6 +67,7 @@ export default function EvidenceVault({
           </div>
 
           <div
+            className="evidence-vault-title"
             style={{
               color: "#0F172A",
               fontSize: 23,
@@ -75,6 +79,7 @@ export default function EvidenceVault({
           </div>
 
           <div
+            className="evidence-vault-description"
             style={{
               color: "#64748B",
               fontSize: 14,
@@ -87,6 +92,7 @@ export default function EvidenceVault({
         </div>
 
         <div
+          className="evidence-vault-header-icon"
           style={{
             width: 48,
             height: 48,
@@ -108,6 +114,7 @@ export default function EvidenceVault({
       {/* ================= EVIDENCE GRID ================= */}
 
       <div
+        className="evidence-vault-grid"
         style={{
           display: "grid",
           gridTemplateColumns:
@@ -115,8 +122,6 @@ export default function EvidenceVault({
           gap: 18,
         }}
       >
-        {/* ================= CERTIFICATE ================= */}
-
         <EvidenceCard
           icon="📜"
           eyebrow="Official Record"
@@ -129,8 +134,6 @@ export default function EvidenceVault({
           borderColor="#FED7AA"
           onClick={onViewCertificate}
         />
-
-        {/* ================= MEDAL ================= */}
 
         <EvidenceCard
           icon="🥇"
@@ -145,14 +148,12 @@ export default function EvidenceVault({
           onClick={onViewMedal}
         />
 
-        {/* ================= AWARD ================= */}
-
         <EvidenceCard
           icon="🏆"
           eyebrow="Achievement Proof"
           title="Award"
           description="View award evidence associated with this milestone."
-    available={Boolean(current.award_photo_url)}
+          available={Boolean(current.award_photo_url)}
           buttonLabel="View Award"
           accent="#16A34A"
           softBackground="linear-gradient(135deg,#F0FDF4,#FFFFFF)"
@@ -160,9 +161,409 @@ export default function EvidenceVault({
           onClick={onViewAward}
         />
       </div>
+
+      <style>{`
+
+        /* =====================================================
+           TABLET
+           DESKTOP > 1024px UNTOUCHED
+        ===================================================== */
+
+        @media (max-width: 1024px) {
+
+          .evidence-vault {
+            padding: 20px !important;
+            margin-bottom: 17px !important;
+            border-radius: 20px !important;
+          }
+
+          .evidence-vault-header {
+            gap: 14px !important;
+            margin-bottom: 17px !important;
+          }
+
+          .evidence-vault-eyebrow {
+            font-size: 9px !important;
+            letter-spacing: 1.5px !important;
+            margin-bottom: 6px !important;
+          }
+
+          .evidence-vault-title {
+            font-size: 19px !important;
+          }
+
+          .evidence-vault-description {
+            margin-top: 5px !important;
+            font-size: 12px !important;
+            line-height: 1.4 !important;
+          }
+
+          .evidence-vault-header-icon {
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 12px !important;
+            font-size: 18px !important;
+          }
+
+          .evidence-vault-grid {
+            gap: 10px !important;
+          }
+
+          .evidence-card {
+            min-height: 185px !important;
+            padding: 15px !important;
+            border-radius: 16px !important;
+          }
+
+          .evidence-card-top {
+            gap: 8px !important;
+            margin-bottom: 12px !important;
+          }
+
+          .evidence-card-icon {
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 12px !important;
+            font-size: 19px !important;
+          }
+
+          .evidence-card-status {
+            padding: 5px 8px !important;
+            font-size: 8px !important;
+          }
+
+          .evidence-card-eyebrow {
+            font-size: 8px !important;
+            letter-spacing: 1px !important;
+            margin-bottom: 4px !important;
+          }
+
+          .evidence-card-title {
+            font-size: 16px !important;
+            margin-bottom: 6px !important;
+          }
+
+          .evidence-card-description {
+            font-size: 10.5px !important;
+            line-height: 1.4 !important;
+            margin-bottom: 13px !important;
+          }
+
+          .evidence-card-button {
+            padding: 9px 10px !important;
+            border-radius: 9px !important;
+            font-size: 10.5px !important;
+          }
+        }
+
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media (max-width: 768px) {
+
+          .evidence-vault {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box;
+
+            padding: 13px !important;
+            margin-bottom: 10px !important;
+
+            border-radius: 15px !important;
+          }
+
+          .evidence-vault-header {
+            gap: 8px !important;
+            margin-bottom: 11px !important;
+          }
+
+          .evidence-vault-header-copy {
+            flex: 1 1 auto;
+            min-width: 0;
+          }
+
+          .evidence-vault-eyebrow {
+            font-size: 7.5px !important;
+            letter-spacing: 1px !important;
+            margin-bottom: 4px !important;
+          }
+
+          .evidence-vault-title {
+            font-size: 16px !important;
+          }
+
+          .evidence-vault-description {
+            margin-top: 4px !important;
+            font-size: 9.5px !important;
+            line-height: 1.3 !important;
+          }
+
+          .evidence-vault-header-icon {
+            width: 34px !important;
+            height: 34px !important;
+            border-radius: 10px !important;
+            font-size: 15px !important;
+          }
+
+
+          /*
+             Keep the three evidence types immediately visible.
+
+             Certificate occupies the first row.
+             Medal + Award share the second row.
+          */
+
+          .evidence-vault-grid {
+            grid-template-columns:
+              repeat(2, minmax(0, 1fr)) !important;
+
+            gap: 7px !important;
+          }
+
+          .evidence-card:first-child {
+            grid-column: 1 / -1;
+          }
+
+          .evidence-card {
+            min-width: 0 !important;
+            min-height: 0 !important;
+
+            padding: 10px !important;
+
+            border-radius: 12px !important;
+          }
+
+          .evidence-card:first-child {
+            display: grid !important;
+
+            grid-template-columns: auto 1fr auto !important;
+
+            column-gap: 9px !important;
+            row-gap: 3px !important;
+
+            align-items: center !important;
+          }
+
+          .evidence-card:first-child .evidence-card-top {
+            grid-column: 1;
+            grid-row: 1 / span 3;
+
+            margin: 0 !important;
+          }
+
+          .evidence-card:first-child .evidence-card-status {
+            display: none;
+          }
+
+          .evidence-card:first-child .evidence-card-eyebrow {
+            grid-column: 2;
+            grid-row: 1;
+
+            margin: 0 !important;
+          }
+
+          .evidence-card:first-child .evidence-card-title {
+            grid-column: 2;
+            grid-row: 2;
+
+            margin: 0 !important;
+          }
+
+          .evidence-card:first-child .evidence-card-description {
+            grid-column: 2;
+            grid-row: 3;
+
+            margin: 0 !important;
+          }
+
+          .evidence-card:first-child .evidence-card-button {
+            grid-column: 3;
+            grid-row: 1 / span 3;
+
+            width: auto !important;
+            margin: 0 !important;
+
+            padding: 7px 9px !important;
+
+            white-space: nowrap;
+          }
+
+
+          /* CARD TOP */
+
+          .evidence-card-top {
+            gap: 5px !important;
+            margin-bottom: 7px !important;
+          }
+
+          .evidence-card-icon {
+            width: 32px !important;
+            height: 32px !important;
+
+            border-radius: 9px !important;
+
+            font-size: 15px !important;
+          }
+
+          .evidence-card-status {
+            padding: 4px 6px !important;
+
+            font-size: 6.5px !important;
+            letter-spacing: .2px !important;
+          }
+
+
+          /* CARD TEXT */
+
+          .evidence-card-eyebrow {
+            font-size: 6.5px !important;
+            letter-spacing: .7px !important;
+
+            margin-bottom: 3px !important;
+          }
+
+          .evidence-card-title {
+            font-size: 12px !important;
+
+            margin-bottom: 4px !important;
+          }
+
+          .evidence-card-description {
+            font-size: 8px !important;
+            line-height: 1.3 !important;
+
+            margin-bottom: 8px !important;
+          }
+
+
+          /* ACTION */
+
+          .evidence-card-button {
+            padding: 7px 6px !important;
+
+            border-radius: 8px !important;
+
+            font-size: 8px !important;
+          }
+
+          .evidence-card-circle {
+            width: 75px !important;
+            height: 75px !important;
+
+            right: -30px !important;
+            top: -30px !important;
+          }
+        }
+
+
+        /* =====================================================
+           520px
+        ===================================================== */
+
+        @media (max-width: 520px) {
+
+          .evidence-vault {
+            padding: 11px !important;
+            border-radius: 14px !important;
+          }
+
+          .evidence-vault-grid {
+            gap: 6px !important;
+          }
+
+          .evidence-card {
+            padding: 9px !important;
+          }
+
+          .evidence-card-title {
+            font-size: 11px !important;
+          }
+
+          .evidence-card-description {
+            font-size: 7.5px !important;
+          }
+
+          .evidence-card-button {
+            font-size: 7.5px !important;
+          }
+        }
+
+
+        /* =====================================================
+           390px / 400px
+        ===================================================== */
+
+        @media (max-width: 420px) {
+
+          .evidence-vault {
+            padding: 10px !important;
+            margin-bottom: 8px !important;
+            border-radius: 13px !important;
+          }
+
+          .evidence-vault-header {
+            margin-bottom: 9px !important;
+          }
+
+          .evidence-vault-eyebrow {
+            font-size: 7px !important;
+          }
+
+          .evidence-vault-title {
+            font-size: 15px !important;
+          }
+
+          .evidence-vault-description {
+            font-size: 9px !important;
+          }
+
+          .evidence-vault-header-icon {
+            width: 31px !important;
+            height: 31px !important;
+            font-size: 14px !important;
+          }
+
+          .evidence-card {
+            padding: 8px !important;
+            border-radius: 10px !important;
+          }
+
+          .evidence-card-icon {
+            width: 29px !important;
+            height: 29px !important;
+            font-size: 14px !important;
+          }
+
+          .evidence-card-status {
+            padding: 3px 5px !important;
+            font-size: 6px !important;
+          }
+
+          .evidence-card-title {
+            font-size: 10.5px !important;
+          }
+
+          .evidence-card-description {
+            font-size: 7px !important;
+          }
+
+          .evidence-card-button {
+            padding: 6px 5px !important;
+            font-size: 7px !important;
+          }
+
+          .evidence-card:first-child .evidence-card-button {
+            padding: 6px 7px !important;
+          }
+        }
+
+      `}</style>
     </div>
   );
 }
+
 
 /* =========================================================
    EVIDENCE CARD
@@ -193,6 +594,7 @@ function EvidenceCard({
 }) {
   return (
     <div
+      className="evidence-card"
       style={{
         position: "relative",
         overflow: "hidden",
@@ -205,9 +607,8 @@ function EvidenceCard({
         flexDirection: "column",
       }}
     >
-      {/* LIGHT DECORATIVE CIRCLE */}
-
       <div
+        className="evidence-card-circle"
         style={{
           position: "absolute",
           width: 120,
@@ -221,9 +622,8 @@ function EvidenceCard({
         }}
       />
 
-      {/* ICON + STATUS */}
-
       <div
+        className="evidence-card-top"
         style={{
           position: "relative",
           display: "flex",
@@ -234,6 +634,7 @@ function EvidenceCard({
         }}
       >
         <div
+          className="evidence-card-icon"
           style={{
             width: 48,
             height: 48,
@@ -252,6 +653,7 @@ function EvidenceCard({
         </div>
 
         <div
+          className="evidence-card-status"
           style={{
             borderRadius: 999,
             padding: "6px 10px",
@@ -274,9 +676,8 @@ function EvidenceCard({
         </div>
       </div>
 
-      {/* TEXT */}
-
       <div
+        className="evidence-card-eyebrow"
         style={{
           position: "relative",
           fontSize: 10,
@@ -291,6 +692,7 @@ function EvidenceCard({
       </div>
 
       <div
+        className="evidence-card-title"
         style={{
           position: "relative",
           fontWeight: 800,
@@ -303,6 +705,7 @@ function EvidenceCard({
       </div>
 
       <div
+        className="evidence-card-description"
         style={{
           position: "relative",
           color: "#64748B",
@@ -314,9 +717,8 @@ function EvidenceCard({
         {description}
       </div>
 
-      {/* ACTION */}
-
       <button
+        className="evidence-card-button"
         onClick={onClick}
         style={{
           position: "relative",

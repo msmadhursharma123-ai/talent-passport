@@ -1,6 +1,5 @@
 import React from "react";
 
-
 export type StudentTab =
   | "dna-radar"
   | "homeboard"
@@ -31,90 +30,48 @@ const tabs: {
   { key: "opportunities", label: "Opportunities" },
   {
     key: "mauke-pe-chauka",
-    label: "🎯 Mauke Pe Chauka"
+    label: "🎯 Mauke Pe Chauka",
   },
   { key: "my-analysis", label: "My Analysis" },
-  { key: "growth-plan", label: "Growth Plan" }
+  { key: "growth-plan", label: "Growth Plan" },
 ];
 
 export default function StudentLayout({
   activeTab,
   setActiveTab,
   onLogout,
-  children
+  children,
 }: StudentLayoutProps) {
   return (
-    <div
-      style={{
-        background: "#F5F7F8",
-        minHeight: "100vh",
-        padding: "0 24px 40px"
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "1800px",
-          margin: "0 auto"
-        }}
-      >
-        {/* TOP BAR */}
+    <div className="portal-shell student-portal-shell">
+      <div className="portal-shell-inner">
 
-        <div
-          style={{
-            background: "#FFFFFF",
-            borderRadius: 18,
-            padding: "20px 24px",
-            marginBottom: 20,
-            border: "1px solid #E5E7EB"
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 20
-            }}
-          >
-            {/* TABS */}
+        {/* =====================================================
+            STUDENT PORTAL NAVIGATION
+        ===================================================== */}
+
+        <div className="portal-nav-card student-portal-nav">
+          <div className="portal-nav-row">
+
+            {/* NAVIGATION TABS */}
 
             <div
-              style={{
-                display: "flex",
-                flexWrap: "nowrap",
-                gap: 10,
-                overflowX: "auto",
-                flex: 1
-              }}
+              className="portal-nav-tabs"
+              role="navigation"
+              aria-label="Student portal navigation"
             >
               {tabs.map((tab) => {
-                const isActive =
-                  activeTab === tab.key;
+                const isActive = activeTab === tab.key;
 
                 return (
                   <button
                     key={tab.key}
-                    onClick={() =>
-                      setActiveTab(tab.key)
-                    }
-                    style={{
-                      border: "none",
-                      cursor: "pointer",
-                      borderRadius: 10,
-                      padding: "10px 16px",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      whiteSpace: "nowrap",
-                      background: isActive
-                        ? "#FF6B00"
-                        : "#EFF2F6",
-                      color: isActive
-                        ? "#FFFFFF"
-                        : "#475569",
-                      transition:
-                        "all .2s ease",
-                      flexShrink: 0
-                    }}
+                    type="button"
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`portal-nav-tab ${
+                      isActive ? "portal-nav-tab-active" : ""
+                    }`}
+                    aria-current={isActive ? "page" : undefined}
                   >
                     {tab.label}
                   </button>
@@ -122,35 +79,29 @@ export default function StudentLayout({
               })}
             </div>
 
-            {/* LOGOUT BUTTON */}
+            {/* LOGOUT */}
 
-            <button
-              onClick={onLogout}
-              style={{
-                background: "#D32F2F",
-                color: "#FFF",
-                border: "none",
-                borderRadius: 10,
-                padding: "10px 20px",
-                cursor: "pointer",
-                fontWeight: 700,
-                flexShrink: 0
-              }}
-            >
-              Logout
-            </button>
+            <div className="portal-nav-actions">
+              <button
+                type="button"
+                onClick={onLogout}
+                className="portal-logout-button"
+              >
+                Logout
+              </button>
+            </div>
+
           </div>
         </div>
 
-        {/* PAGE CONTENT */}
+        {/* =====================================================
+            CURRENT PAGE
+        ===================================================== */}
 
-        <div
-          style={{
-            width: "100%"
-          }}
-        >
+        <main className="portal-page-content">
           {children}
-        </div>
+        </main>
+
       </div>
     </div>
   );

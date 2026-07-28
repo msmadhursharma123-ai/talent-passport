@@ -1,0 +1,759 @@
+/* ================================================================
+   TALENT PASSPORT OS
+   UNIVERSAL RESPONSIVE FOUNDATION
+
+   Purpose:
+   - Preserve the existing desktop UI
+   - Establish safe responsive behaviour across all portals
+   - Prevent accidental horizontal page overflow
+   - Make media, forms, tables and flex/grid children responsive
+   - Provide reusable responsive primitives for portal/page migration
+
+   IMPORTANT:
+   This file intentionally does NOT redesign individual pages.
+   Portal shells and page components will be adapted progressively.
+   ================================================================ */
+
+
+/* ================================================================
+   1. GLOBAL BOX MODEL
+   ================================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+
+/* ================================================================
+   2. DOCUMENT FOUNDATION
+   ================================================================ */
+
+html {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+
+  margin: 0;
+  padding: 0;
+
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+
+  overflow-x: clip;
+}
+
+
+/* ================================================================
+   3. MEDIA SAFETY
+   ================================================================ */
+
+img,
+picture,
+svg,
+canvas,
+video {
+  max-width: 100%;
+}
+
+img,
+picture,
+video {
+  height: auto;
+}
+
+
+/* ================================================================
+   4. FLEX / GRID SHRINK SAFETY
+
+   One of the most common causes of mobile overflow is a flex/grid
+   child refusing to become narrower than its content.
+
+   We do NOT globally change layout direction here.
+   ================================================================ */
+
+.tp-responsive-page,
+.tp-responsive-container,
+.tp-responsive-content,
+.tp-responsive-grid,
+.tp-responsive-flex,
+.tp-responsive-card,
+.tp-responsive-hero,
+.tp-responsive-table,
+.tp-responsive-tabs {
+  min-width: 0;
+}
+
+
+/* ================================================================
+   5. RESPONSIVE PAGE SYSTEM
+
+   These classes will be added gradually to portal/page components.
+   They do nothing destructive to existing desktop layouts.
+   ================================================================ */
+
+.tp-responsive-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.tp-responsive-container {
+  width: 100%;
+  min-width: 0;
+
+  max-width: 1600px;
+
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tp-responsive-content {
+  width: 100%;
+  min-width: 0;
+}
+
+
+/* ================================================================
+   6. RESPONSIVE GRID FOUNDATION
+   ================================================================ */
+
+.tp-responsive-grid {
+  display: grid;
+  min-width: 0;
+}
+
+.tp-grid-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tp-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tp-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+
+/* ================================================================
+   7. RESPONSIVE FLEX FOUNDATION
+   ================================================================ */
+
+.tp-responsive-flex {
+  display: flex;
+  min-width: 0;
+}
+
+.tp-responsive-flex > * {
+  min-width: 0;
+}
+
+
+/* ================================================================
+   8. CARD FOUNDATION
+   ================================================================ */
+
+.tp-responsive-card {
+  width: 100%;
+  min-width: 0;
+}
+
+
+/* ================================================================
+   9. HERO FOUNDATION
+
+   We will attach this class to the premium hero cards you created.
+   Desktop remains horizontal.
+
+   Tablet/mobile rules are below.
+   ================================================================ */
+
+.tp-responsive-hero {
+  width: 100%;
+  min-width: 0;
+}
+
+.tp-responsive-hero-content {
+  min-width: 0;
+}
+
+.tp-responsive-hero-art {
+  flex-shrink: 0;
+}
+
+
+/* ================================================================
+   10. HORIZONTAL NAVIGATION / TABS
+
+   Student and some other portals contain many navigation items.
+
+   On mobile we should NOT crush them into tiny buttons.
+   They become touch-friendly horizontal scrollers instead.
+   ================================================================ */
+
+.tp-responsive-tabs {
+  display: flex;
+
+  width: 100%;
+  min-width: 0;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  overscroll-behavior-x: contain;
+
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: none;
+}
+
+.tp-responsive-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tp-responsive-tabs > * {
+  flex-shrink: 0;
+}
+
+
+/* ================================================================
+   11. TABLE FOUNDATION
+
+   Tables should remain tables.
+   We do NOT squeeze columns until their contents become unreadable.
+
+   The wrapper becomes horizontally scrollable on smaller devices.
+   ================================================================ */
+
+.tp-table-scroll {
+  width: 100%;
+  min-width: 0;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+.tp-table-scroll table {
+  width: 100%;
+}
+
+
+/* ================================================================
+   12. FORM FOUNDATION
+   ================================================================ */
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+textarea {
+  resize: vertical;
+}
+
+
+/* ================================================================
+   13. DIALOG / MODAL FOUNDATION
+   ================================================================ */
+
+.tp-responsive-dialog {
+  width: min(100%, 720px);
+
+  max-height: calc(100dvh - 32px);
+
+  overflow-y: auto;
+
+  overscroll-behavior: contain;
+}
+
+
+/* ================================================================
+   14. TEXT SAFETY
+
+   Prevent long generated/database content from breaking cards.
+   ================================================================ */
+
+.tp-break-text {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+
+/* ================================================================
+   15. TOUCH TARGET FOUNDATION
+   ================================================================ */
+
+@media (hover: none) and (pointer: coarse) {
+
+  button,
+  [role="button"],
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+}
+
+
+/* ================================================================
+   TABLET
+   <= 1024px
+   ================================================================ */
+
+@media (max-width: 1024px) {
+
+  .tp-grid-4 {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .tp-grid-3 {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+}
+
+
+/* ================================================================
+   MOBILE / LARGE PHONE
+   <= 768px
+   ================================================================ */
+
+@media (max-width: 768px) {
+
+  /*
+   * Grids become single-column by default.
+   *
+   * Individual page components can intentionally override this
+   * where a 2-column mobile arrangement makes more sense.
+   */
+
+  .tp-grid-4,
+  .tp-grid-3,
+  .tp-grid-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+
+  /*
+   * Responsive hero layout.
+   *
+   * Once attached to existing hero components, this lets the
+   * content use the available width instead of preserving the
+   * desktop horizontal geometry.
+   */
+
+  .tp-responsive-hero {
+    min-width: 0;
+  }
+
+
+  /*
+   * Tables remain usable instead of being compressed.
+   */
+
+  .tp-table-scroll {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+
+  /*
+   * Dialogs respect the mobile viewport.
+   */
+
+  .tp-responsive-dialog {
+    width: calc(100% - 24px);
+
+    max-height: calc(100dvh - 24px);
+  }
+
+}
+
+
+/* ================================================================
+   SMALL MOBILE
+   <= 480px
+   ================================================================ */
+
+@media (max-width: 480px) {
+
+  /*
+   * iOS Safari zooms focused form controls when font-size is below
+   * 16px. Keep interactive text at 16px on phone-sized screens.
+   */
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+}
+
+
+/* ================================================================
+   VERY SMALL MOBILE
+   <= 360px
+   ================================================================ */
+
+@media (max-width: 360px) {
+
+  .tp-responsive-dialog {
+    width: calc(100% - 16px);
+
+    max-height: calc(100dvh - 16px);
+  }
+
+}
+
+
+/* ================================================================
+   ACCESSIBILITY — REDUCED MOTION
+   ================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+
+    transition-duration: 0.01ms !important;
+  }
+
+}
+
+/* ==========================================================
+   TALENT PASSPORT OS
+   STUDENT PORTAL SHELL
+========================================================== */
+
+.portal-shell {
+  width: 100%;
+  min-height: 100vh;
+  background: #f5f7f8;
+  padding: 0 24px 40px;
+  box-sizing: border-box;
+}
+
+.portal-shell *,
+.portal-shell *::before,
+.portal-shell *::after {
+  box-sizing: border-box;
+}
+
+.portal-shell-inner {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.portal-nav-card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.portal-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  min-width: 0;
+}
+
+.portal-nav-tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.portal-nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.portal-nav-tab {
+  flex: 0 0 auto;
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 10px 16px;
+  min-height: 38px;
+  background: #eff2f6;
+  color: #475569;
+
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 700;
+
+  white-space: nowrap;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  touch-action: manipulation;
+}
+
+.portal-nav-tab:hover {
+  background: #e7ebf1;
+}
+
+.portal-nav-tab-active {
+  background: #ff6b00;
+  color: #ffffff;
+}
+
+.portal-nav-tab-active:hover {
+  background: #ff6b00;
+}
+
+.portal-nav-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.portal-logout-button {
+  flex: 0 0 auto;
+
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  min-height: 38px;
+
+  background: #d32f2f;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+
+  cursor: pointer;
+  touch-action: manipulation;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.portal-logout-button:hover {
+  background: #c62828;
+}
+
+.portal-page-content {
+  width: 100%;
+  min-width: 0;
+}
+
+
+/* ==========================================================
+   STUDENT PORTAL — TABLET
+========================================================== */
+
+@media (max-width: 1024px) {
+
+  .portal-shell {
+    padding-inline: 18px;
+  }
+
+  .portal-nav-card {
+    padding: 16px 18px;
+  }
+
+  .portal-nav-row {
+    gap: 14px;
+  }
+
+  .portal-nav-tab {
+    padding: 10px 14px;
+  }
+
+}
+
+
+/* ==========================================================
+   STUDENT PORTAL — MOBILE
+========================================================== */
+
+@media (max-width: 768px) {
+
+  .portal-shell {
+    padding:
+      0
+      12px
+      calc(28px + env(safe-area-inset-bottom));
+  }
+
+  .portal-shell-inner {
+    max-width: 100%;
+  }
+
+  .portal-nav-card {
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+
+  .portal-nav-row {
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  /*
+    Navigation remains one horizontal row.
+
+    This is intentional:
+    we do NOT squeeze 9 portal features into tiny buttons.
+    The user can swipe the navigation naturally.
+  */
+
+  .portal-nav-tabs {
+    gap: 8px;
+    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
+
+    padding-bottom: 1px;
+
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .portal-nav-tab {
+    min-height: 44px;
+    padding: 11px 14px;
+
+    font-size: 12px;
+
+    border-radius: 10px;
+
+    scroll-snap-align: start;
+  }
+
+  .portal-nav-actions {
+    position: relative;
+    z-index: 2;
+  }
+
+  .portal-logout-button {
+    min-height: 44px;
+    padding: 11px 15px;
+
+    font-size: 12px;
+
+    border-radius: 10px;
+  }
+
+  .portal-page-content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+}
+
+
+/* ==========================================================
+   STUDENT PORTAL — SMALL MOBILE
+========================================================== */
+
+@media (max-width: 480px) {
+
+  .portal-shell {
+    padding-inline: 8px;
+  }
+
+  .portal-nav-card {
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .portal-nav-row {
+    gap: 8px;
+  }
+
+  .portal-nav-tabs {
+    gap: 7px;
+  }
+
+  .portal-nav-tab {
+    padding: 10px 12px;
+    min-height: 42px;
+
+    font-size: 11.5px;
+  }
+
+  .portal-logout-button {
+    min-height: 42px;
+    padding: 10px 13px;
+
+    font-size: 11.5px;
+  }
+
+}
+
+
+/* ==========================================================
+   TOUCH DEVICES
+========================================================== */
+
+@media (hover: none) {
+
+  .portal-nav-tab:hover {
+    background: #eff2f6;
+  }
+
+  .portal-nav-tab-active:hover {
+    background: #ff6b00;
+  }
+
+  .portal-logout-button:hover {
+    background: #d32f2f;
+  }
+
+}

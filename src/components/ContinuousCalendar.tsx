@@ -341,13 +341,454 @@ subjectList[0]
 }
 
   return (
-    <div className="space-y-6">
+    <div className="cc-page space-y-6">
+<style>{`
+/* =========================================================
+   CONTINUOUS CALENDAR RESPONSIVE SYSTEM
+   Desktop remains unchanged.
+========================================================= */
+
+.cc-swipe-hint { display: none; }
+
+.cc-page,
+.cc-page * { box-sizing: border-box; }
+
+@media (max-width: 1024px) {
+  .cc-swipe-hint {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+    padding: 9px 12px;
+    border: 1px solid #FED7AA;
+    border-radius: 11px;
+    background: #FFF7ED;
+    color: #9A3412;
+    font-size: 10px;
+    line-height: 1.25;
+  }
+  .cc-swipe-hint span {
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+  .cc-swipe-hint strong {
+    font-weight: 800;
+    text-align: right;
+  }
+
+  .cc-page {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .cc-hero,
+  .cc-custom-date,
+  .cc-facilitator,
+  .cc-calendar-shell {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .cc-hero {
+    padding: 22px !important;
+    border-radius: 22px !important;
+  }
+
+  .cc-hero > div:last-child { gap: 18px !important; }
+  .cc-hero h1 {
+    font-size: 28px !important;
+    line-height: 1.08 !important;
+  }
+  .cc-hero p { line-height: 1.45 !important; }
+
+  .cc-filters {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto !important;
+    align-items: end !important;
+    gap: 10px !important;
+  }
+
+  .cc-filters > div { min-width: 0; }
+  .cc-filters select {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .cc-custom-date {
+    padding: 20px !important;
+    border-radius: 20px !important;
+  }
+
+  .cc-custom-date > div:last-child {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .cc-custom-date input { width: 100% !important; }
+
+  .cc-facilitator,
+  .cc-calendar-shell {
+    padding: 22px !important;
+    border-radius: 22px !important;
+  }
+
+  .cc-weekdays,
+  .cc-calendar-grid { gap: 7px !important; }
+
+  .cc-weekdays {
+    margin-top: 22px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .cc-day-card {
+    min-width: 0 !important;
+    min-height: 105px !important;
+    padding: 10px !important;
+    border-radius: 13px !important;
+  }
+
+  .cc-modal-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    background: rgba(15,23,42,.58) !important;
+    backdrop-filter: blur(5px);
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .cc-modal-panel {
+    width: min(700px, 100%) !important;
+    max-height: 88vh !important;
+    padding: 24px !important;
+    border-radius: 22px !important;
+  }
+}
+
+/* Tablet: preserve seven columns, but give each day enough room to read data. */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .cc-calendar-shell {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cc-weekdays,
+  .cc-calendar-grid {
+    min-width: 720px !important;
+  }
+
+  .cc-day-card {
+    min-height: 112px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .cc-swipe-hint {
+    position: sticky;
+    left: 0;
+    width: calc(100vw - 48px);
+    max-width: 100%;
+    margin-top: 12px;
+    padding: 7px 9px;
+    font-size: 8px;
+  }
+
+  .cc-page { gap: 12px !important; }
+
+  .cc-hero {
+    padding: 15px !important;
+    border-radius: 18px !important;
+  }
+
+  .cc-hero > div:last-child { gap: 13px !important; }
+
+  .cc-hero h1 {
+    margin-top: 6px !important;
+    font-size: 22px !important;
+    line-height: 1.08 !important;
+  }
+
+  .cc-hero p:first-child {
+    font-size: 8px !important;
+    letter-spacing: .16em !important;
+  }
+
+  .cc-hero h1 + p {
+    margin-top: 6px !important;
+    max-width: 100% !important;
+    font-size: 10.5px !important;
+    line-height: 1.4 !important;
+  }
+
+  .cc-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .cc-filters > div:last-child { display: none !important; }
+
+  .cc-filters p {
+    margin-bottom: 4px !important;
+    font-size: 7px !important;
+    letter-spacing: .08em !important;
+  }
+
+  .cc-filters select {
+    height: 36px !important;
+    padding: 0 7px !important;
+    border-radius: 9px !important;
+    font-size: 9px !important;
+  }
+
+  .cc-custom-date {
+    padding: 14px !important;
+    border-radius: 17px !important;
+  }
+
+  .cc-custom-date h2 { font-size: 15px !important; }
+
+  .cc-custom-date > p {
+    margin-top: 4px !important;
+    font-size: 10px !important;
+    line-height: 1.4 !important;
+  }
+
+  .cc-custom-date > div:last-child {
+    margin-top: 12px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .cc-custom-date > div:last-child p {
+    margin-bottom: 4px !important;
+    font-size: 9px !important;
+  }
+
+  .cc-custom-date input {
+    min-width: 0 !important;
+    padding: 8px !important;
+    border-radius: 9px !important;
+    font-size: 10px !important;
+  }
+
+  .cc-facilitator {
+    padding: 14px !important;
+    border-radius: 17px !important;
+  }
+
+  .cc-facilitator h2 {
+    margin-top: 5px !important;
+    font-size: 17px !important;
+  }
+
+  .cc-facilitator h2 + p {
+    margin-top: 5px !important;
+    font-size: 10px !important;
+  }
+
+  .cc-facilitator > div:last-child {
+    margin-top: 12px !important;
+    padding: 11px !important;
+    gap: 8px !important;
+    border-radius: 13px !important;
+  }
+
+  .cc-facilitator > div:last-child > div:first-child { gap: 9px !important; }
+
+  .cc-facilitator > div:last-child > div:first-child > div:first-child {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 9px !important;
+    font-size: 15px !important;
+  }
+
+  .cc-facilitator h3 { font-size: 13px !important; }
+  .cc-facilitator h3 + p { font-size: 9px !important; }
+
+  .cc-facilitator > div:last-child > div:last-child {
+    padding: 7px 9px !important;
+    border-radius: 9px !important;
+  }
+
+  /* The outer card still uses the full phone width. */
+  .cc-calendar-shell {
+    padding: 12px 8px 14px !important;
+    border-radius: 17px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .cc-calendar-shell > div:nth-of-type(2) {
+    position: sticky;
+    left: 0;
+    width: calc(100vw - 48px);
+    max-width: 100%;
+    padding: 0 4px !important;
+  }
+
+  .cc-calendar-shell h2 {
+    margin-top: 4px !important;
+    font-size: 16px !important;
+    line-height: 1.15 !important;
+  }
+
+  .cc-calendar-shell h2 + p {
+    margin-top: 4px !important;
+    font-size: 9.5px !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Critical fix:
+     do not squeeze 7 information-rich cards into ~700px.
+     Give the calendar a readable width and let the user swipe horizontally. */
+  .cc-weekdays,
+  .cc-calendar-grid {
+    grid-template-columns: repeat(7, 92px) !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    gap: 5px !important;
+  }
+
+  .cc-weekdays {
+    margin-top: 14px !important;
+    margin-bottom: 5px !important;
+  }
+
+  .cc-weekdays > div {
+    width: 92px !important;
+    font-size: 8px !important;
+    letter-spacing: .25px !important;
+  }
+
+  .cc-day-card {
+    width: 92px !important;
+    min-width: 92px !important;
+    min-height: 104px !important;
+    padding: 7px !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+  }
+
+  .cc-day-card > div:first-child {
+    width: 34px !important;
+    height: 34px !important;
+    right: -12px !important;
+    top: -12px !important;
+  }
+
+  .cc-day-card > div:nth-child(2) {
+    font-size: 11px !important;
+    margin-bottom: 7px !important;
+  }
+
+  .cc-day-card > div:nth-child(3) {
+    min-width: 0 !important;
+  }
+
+  .cc-day-card > div:nth-child(3) > div {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 4px 5px !important;
+    margin-bottom: 5px !important;
+    border-radius: 7px !important;
+    font-size: 8px !important;
+    line-height: 1.15 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .cc-day-card > div:nth-child(3) > p {
+    font-size: 8px !important;
+    line-height: 1.25 !important;
+  }
+
+  .cc-day-card button {
+    display: block !important;
+    width: 100% !important;
+    margin-top: 5px !important;
+    font-size: 7.5px !important;
+    line-height: 1.25 !important;
+    text-align: left !important;
+    white-space: normal !important;
+  }
+
+  .cc-day-card > div:last-child {
+    margin-top: 5px !important;
+    font-size: 7.5px !important;
+    line-height: 1.25 !important;
+  }
+
+  .cc-day-card > div:nth-child(2):last-child p {
+    font-size: 7.5px !important;
+    line-height: 1.15 !important;
+    overflow-wrap: normal !important;
+  }
+
+  .cc-modal-overlay { padding: 10px !important; }
+
+  .cc-modal-panel {
+    width: 100% !important;
+    max-height: 92vh !important;
+    padding: 12px !important;
+    border-radius: 17px !important;
+  }
+
+  .cc-modal-panel > div:first-child {
+    padding: 15px !important;
+    margin-bottom: 12px !important;
+    border-radius: 14px !important;
+  }
+
+  .cc-modal-panel > div:first-child p { font-size: 8px !important; }
+
+  .cc-modal-panel > div:first-child h1 {
+    margin: 5px 0 !important;
+    font-size: 18px !important;
+  }
+
+  .cc-modal-panel > div:not(:first-child) {
+    padding: 12px !important;
+    margin-bottom: 9px !important;
+    border-radius: 12px !important;
+  }
+
+  .cc-modal-panel h3 {
+    margin-bottom: 8px !important;
+    font-size: 14px !important;
+  }
+
+  .cc-modal-panel p {
+    margin: 5px 0 !important;
+    font-size: 10px !important;
+    line-height: 1.35 !important;
+  }
+
+  .cc-modal-panel > button {
+    width: 100% !important;
+    padding: 11px 14px !important;
+    border-radius: 11px !important;
+    font-size: 11px !important;
+  }
+}
+`}</style>
    {/* =========================================================
     CONTINUOUS CALENDAR HERO
 ========================================================= */}
 
 <div
-  className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white px-8 py-7 shadow-sm"
+  className="cc-hero relative overflow-hidden rounded-3xl border border-slate-200 bg-white px-8 py-7 shadow-sm"
   style={{
     background:
       "linear-gradient(135deg,#FFFFFF 0%,#FFFFFF 70%,#FFF7ED 100%)",
@@ -385,7 +826,7 @@ subjectList[0]
       </p>
 
       <h1 className="mt-3 text-[30px] font-black leading-tight text-slate-900 md:text-[34px]">
-        Continuous Calendar
+        
       </h1>
 
       <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-500">
@@ -400,7 +841,7 @@ subjectList[0]
         RIGHT — FILTERS
     ===================================================== */}
 
-    <div className="flex flex-wrap items-end gap-3">
+    <div className="cc-filters flex flex-wrap items-end gap-3">
 
 
       {/* SUBJECT */}
@@ -563,7 +1004,7 @@ subjectList[0]
 {
   selectedWeek === "Custom Date Selection" && (
 
-    <div className="rounded-3xl bg-white p-6 shadow-sm">
+    <div className="cc-custom-date rounded-3xl bg-white p-6 shadow-sm">
 
       <h2 className="text-lg font-bold text-slate-800">
         Custom Date Selection
@@ -623,7 +1064,7 @@ subjectList[0]
 ========================================================= */}
 
 <div
-  className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-sm"
+  className="cc-facilitator relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-sm"
 >
 
   <div
@@ -645,11 +1086,11 @@ subjectList[0]
       </p>
 
       <h2 className="mt-2 text-xl font-black text-slate-900">
-        Assigned Subject Facilitator
+        Assigned Subject Teacher
       </h2>
 
       <p className="mt-2 text-sm text-slate-500">
-        Your assigned facilitator for the currently selected subject.
+        
       </p>
 
     </div>
@@ -682,7 +1123,7 @@ subjectList[0]
       <div>
 
         <p className="text-[9px] font-black uppercase tracking-[0.16em] text-blue-600">
-          Subject Facilitator
+          Teacher Name
         </p>
 
         <h3 className="mt-1 text-lg font-black text-slate-900">
@@ -719,7 +1160,7 @@ subjectList[0]
 ========================================================= */}
 
 <div
-  className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-sm"
+  className="cc-calendar-shell relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-sm"
 >
 
   <div
@@ -760,7 +1201,13 @@ subjectList[0]
     WEEK DAYS
 ========================================================= */}
 
+<div className="cc-swipe-hint">
+  <span>Calendar view</span>
+  <strong>Swipe left or right to view the full month →</strong>
+</div>
+
 <div
+  className="cc-weekdays"
   style={{
     display: "grid",
     gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
@@ -793,6 +1240,7 @@ subjectList[0]
 ========================================================= */}
 
 <div
+  className="cc-calendar-grid"
   style={{
     display: "grid",
     gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
@@ -833,6 +1281,7 @@ subjectList[0]
 
         <div
           key={day}
+          className="cc-day-card"
           style={{
             position: "relative",
             overflow: "hidden",
@@ -1172,6 +1621,7 @@ subjectList[0]
 showTopicsModal && (
 
 <div
+className="cc-modal-overlay"
 style={{
 background:"linear-gradient(135deg,#EEF7FF,#F8FAFF)",
 border:"1px solid #BFDBFE",
@@ -1185,6 +1635,7 @@ alignItems:"center"
 >
 
 <div
+className="cc-modal-panel"
 
 style={{
 

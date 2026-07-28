@@ -16,6 +16,7 @@ export default function TimelineHero({
       ===================================================== */}
 
       <div
+        className="timeline-hero-card"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -33,6 +34,7 @@ export default function TimelineHero({
         }}
       >
         <div
+          className="timeline-hero-orange-circle"
           style={{
             position: "absolute",
             width: 430,
@@ -45,6 +47,7 @@ export default function TimelineHero({
         />
 
         <div
+          className="timeline-hero-blue-circle"
           style={{
             position: "absolute",
             width: 315,
@@ -57,6 +60,7 @@ export default function TimelineHero({
         />
 
         <div
+          className="timeline-hero-purple-circle"
           style={{
             position: "absolute",
             width: 180,
@@ -69,6 +73,7 @@ export default function TimelineHero({
         />
 
         <div
+          className="timeline-hero-content"
           style={{
             position: "relative",
             zIndex: 2,
@@ -76,6 +81,7 @@ export default function TimelineHero({
           }}
         >
           <div
+            className="timeline-hero-eyebrow"
             style={{
               color: "#F97316",
               fontSize: 12,
@@ -88,6 +94,7 @@ export default function TimelineHero({
           </div>
 
           <h1
+            className="timeline-hero-title"
             style={{
               margin: 0,
               color: "#0F172A",
@@ -100,6 +107,7 @@ export default function TimelineHero({
           </h1>
 
           <p
+            className="timeline-hero-description"
             style={{
               marginTop: 14,
               color: "#64748B",
@@ -107,12 +115,12 @@ export default function TimelineHero({
               maxWidth: 700,
             }}
           >
-            Complete achievement history, accredited evidence vault and verified
-            student achievement ledger.
+            
           </p>
         </div>
 
         <div
+          className="timeline-hero-icon-shell"
           style={{
             position: "relative",
             zIndex: 2,
@@ -126,6 +134,7 @@ export default function TimelineHero({
           }}
         >
           <div
+            className="timeline-hero-icon"
             style={{
               width: 72,
               height: 72,
@@ -147,6 +156,7 @@ export default function TimelineHero({
       ===================================================== */}
 
       <div
+        className="timeline-credit-summary"
         style={{
           background: "#FFFFFF",
           borderRadius: 24,
@@ -156,9 +166,8 @@ export default function TimelineHero({
           boxShadow: "0 8px 28px rgba(15,23,42,.045)",
         }}
       >
-        {/* HEADER */}
-
         <div
+          className="timeline-credit-header"
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -167,8 +176,9 @@ export default function TimelineHero({
             marginBottom: 22,
           }}
         >
-          <div>
+          <div className="timeline-credit-header-copy">
             <div
+              className="timeline-credit-eyebrow"
               style={{
                 color: "#F97316",
                 fontSize: 11,
@@ -181,6 +191,7 @@ export default function TimelineHero({
             </div>
 
             <h2
+              className="timeline-credit-title"
               style={{
                 margin: 0,
                 color: "#0F172A",
@@ -193,6 +204,7 @@ export default function TimelineHero({
             </h2>
 
             <p
+              className="timeline-credit-description"
               style={{
                 margin: "9px 0 0",
                 color: "#64748B",
@@ -200,12 +212,12 @@ export default function TimelineHero({
                 lineHeight: 1.5,
               }}
             >
-              Your accumulated achievement credits across your verified
-              Talent Passport journey.
+           
             </p>
           </div>
 
           <div
+            className="timeline-credit-ledger-label"
             style={{
               color: "#94A3B8",
               fontSize: 11,
@@ -218,9 +230,8 @@ export default function TimelineHero({
           </div>
         </div>
 
-        {/* CREDIT CARDS */}
-
         <div
+          className="timeline-credit-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
@@ -256,9 +267,470 @@ export default function TimelineHero({
           />
         </div>
       </div>
+
+      <style>{`
+
+        /* =====================================================
+           TABLET
+           DESKTOP ABOVE 1024px REMAINS UNTOUCHED
+        ===================================================== */
+
+        @media (max-width: 1024px) {
+
+          .timeline-hero-card {
+            min-height: 160px !important;
+            padding: 22px 24px !important;
+            margin-bottom: 15px !important;
+            border-radius: 20px !important;
+          }
+
+          .timeline-hero-content {
+            max-width: calc(100% - 105px) !important;
+          }
+
+          .timeline-hero-eyebrow {
+            font-size: 10px !important;
+            letter-spacing: 1.5px !important;
+            margin-bottom: 7px !important;
+          }
+
+          .timeline-hero-title {
+            font-size: 27px !important;
+            line-height: 1.1 !important;
+          }
+
+          .timeline-hero-description {
+            margin-top: 9px !important;
+            font-size: 13px !important;
+            line-height: 1.45 !important;
+          }
+
+          .timeline-hero-icon-shell {
+            width: 82px !important;
+            height: 82px !important;
+            flex: 0 0 82px !important;
+          }
+
+          .timeline-hero-icon {
+            width: 54px !important;
+            height: 54px !important;
+            font-size: 25px !important;
+          }
+
+          .timeline-credit-summary {
+            padding: 19px 20px !important;
+            margin-bottom: 17px !important;
+            border-radius: 19px !important;
+          }
+
+          .timeline-credit-header {
+            gap: 14px !important;
+            margin-bottom: 15px !important;
+          }
+
+          .timeline-credit-eyebrow {
+            font-size: 9.5px !important;
+            letter-spacing: 1.5px !important;
+            margin-bottom: 6px !important;
+          }
+
+          .timeline-credit-title {
+            font-size: 20px !important;
+          }
+
+          .timeline-credit-description {
+            margin-top: 6px !important;
+            font-size: 12.5px !important;
+          }
+
+          .timeline-credit-ledger-label {
+            font-size: 9px !important;
+          }
+
+          .timeline-credit-grid {
+            gap: 9px !important;
+          }
+
+          .timeline-credit-card {
+            min-height: 94px !important;
+            padding: 13px 14px !important;
+            border-radius: 14px !important;
+          }
+
+          .timeline-credit-card-title {
+            font-size: 8.5px !important;
+          }
+
+          .timeline-credit-card-value {
+            margin-top: 8px !important;
+            font-size: 25px !important;
+          }
+
+          .timeline-credit-card-description {
+            margin-top: 7px !important;
+            font-size: 9.5px !important;
+          }
+
+        }
+
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media (max-width: 768px) {
+
+          .timeline-hero-card {
+            min-height: 0 !important;
+
+            padding: 16px !important;
+            margin-bottom: 10px !important;
+
+            border-radius: 16px !important;
+
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+
+            gap: 10px !important;
+          }
+
+          .timeline-hero-content {
+            width: auto !important;
+            max-width: none !important;
+            min-width: 0 !important;
+
+            flex: 1 1 auto !important;
+          }
+
+          .timeline-hero-eyebrow {
+            font-size: 8.5px !important;
+            letter-spacing: 1.2px !important;
+            margin-bottom: 5px !important;
+          }
+
+          .timeline-hero-title {
+            font-size: 21px !important;
+            line-height: 1.08 !important;
+          }
+
+          .timeline-hero-description {
+            margin-top: 7px !important;
+
+            font-size: 11px !important;
+            line-height: 1.35 !important;
+          }
+
+          .timeline-hero-icon-shell {
+            width: 62px !important;
+            height: 62px !important;
+
+            flex: 0 0 62px !important;
+          }
+
+          .timeline-hero-icon {
+            width: 42px !important;
+            height: 42px !important;
+
+            font-size: 20px !important;
+          }
+
+
+          /* Decorative circles reduced */
+
+          .timeline-hero-orange-circle {
+            width: 250px !important;
+            height: 250px !important;
+
+            right: -100px !important;
+            top: -155px !important;
+          }
+
+          .timeline-hero-blue-circle {
+            width: 180px !important;
+            height: 180px !important;
+
+            right: 40px !important;
+            bottom: -145px !important;
+          }
+
+          .timeline-hero-purple-circle {
+            width: 100px !important;
+            height: 100px !important;
+
+            right: 120px !important;
+            top: -70px !important;
+          }
+
+
+          /* ================= CREDIT SUMMARY ================= */
+
+          .timeline-credit-summary {
+            padding: 14px !important;
+            margin-bottom: 11px !important;
+
+            border-radius: 16px !important;
+          }
+
+          .timeline-credit-header {
+            display: flex !important;
+            align-items: flex-start !important;
+
+            gap: 10px !important;
+            margin-bottom: 12px !important;
+          }
+
+          .timeline-credit-header-copy {
+            flex: 1 1 auto;
+            min-width: 0;
+          }
+
+          .timeline-credit-eyebrow {
+            font-size: 8px !important;
+            letter-spacing: 1.2px !important;
+            margin-bottom: 5px !important;
+          }
+
+          .timeline-credit-title {
+            font-size: 17px !important;
+            line-height: 1.15 !important;
+          }
+
+          .timeline-credit-description {
+            margin-top: 5px !important;
+
+            font-size: 10.5px !important;
+            line-height: 1.35 !important;
+          }
+
+          .timeline-credit-ledger-label {
+            font-size: 7.5px !important;
+            letter-spacing: .6px !important;
+
+            flex-shrink: 0;
+
+            white-space: normal !important;
+            text-align: right;
+
+            max-width: 85px;
+          }
+
+
+          /* 2 x 2 instead of four narrow cards */
+
+          .timeline-credit-grid {
+            grid-template-columns:
+              repeat(2, minmax(0, 1fr)) !important;
+
+            gap: 7px !important;
+          }
+
+          .timeline-credit-card {
+            min-height: 78px !important;
+
+            padding: 10px 11px !important;
+
+            border-radius: 12px !important;
+
+            box-sizing: border-box;
+          }
+
+          .timeline-credit-card-circle {
+            width: 65px !important;
+            height: 65px !important;
+
+            right: -25px !important;
+            top: -29px !important;
+          }
+
+          .timeline-credit-card-title {
+            font-size: 7.5px !important;
+            letter-spacing: .45px !important;
+          }
+
+          .timeline-credit-card-value {
+            margin-top: 6px !important;
+
+            font-size: 21px !important;
+          }
+
+          .timeline-credit-card-description {
+            margin-top: 5px !important;
+
+            font-size: 8.5px !important;
+            line-height: 1.3 !important;
+          }
+
+        }
+
+
+        /* =====================================================
+           520px
+        ===================================================== */
+
+        @media (max-width: 520px) {
+
+          .timeline-hero-card {
+            padding: 14px !important;
+            gap: 8px !important;
+          }
+
+          .timeline-hero-title {
+            font-size: 19px !important;
+          }
+
+          .timeline-hero-description {
+            font-size: 10.5px !important;
+          }
+
+          .timeline-hero-icon-shell {
+            width: 56px !important;
+            height: 56px !important;
+
+            flex-basis: 56px !important;
+          }
+
+          .timeline-hero-icon {
+            width: 38px !important;
+            height: 38px !important;
+
+            font-size: 18px !important;
+          }
+
+          .timeline-credit-summary {
+            padding: 12px !important;
+          }
+
+          .timeline-credit-title {
+            font-size: 16px !important;
+          }
+
+          .timeline-credit-description {
+            font-size: 10px !important;
+          }
+
+          .timeline-credit-grid {
+            gap: 6px !important;
+          }
+
+          .timeline-credit-card {
+            min-height: 72px !important;
+            padding: 9px !important;
+          }
+
+          .timeline-credit-card-value {
+            font-size: 19px !important;
+          }
+
+          .timeline-credit-card-description {
+            font-size: 8px !important;
+          }
+
+        }
+
+
+        /* =====================================================
+           390px / 400px
+        ===================================================== */
+
+        @media (max-width: 420px) {
+
+          .timeline-hero-card {
+            padding: 13px !important;
+            margin-bottom: 8px !important;
+
+            gap: 7px !important;
+
+            border-radius: 14px !important;
+          }
+
+          .timeline-hero-eyebrow {
+            font-size: 7.5px !important;
+            letter-spacing: 1px !important;
+          }
+
+          .timeline-hero-title {
+            font-size: 18px !important;
+          }
+
+          .timeline-hero-description {
+            margin-top: 5px !important;
+
+            font-size: 9.5px !important;
+            line-height: 1.3 !important;
+          }
+
+          .timeline-hero-icon-shell {
+            width: 50px !important;
+            height: 50px !important;
+
+            flex-basis: 50px !important;
+          }
+
+          .timeline-hero-icon {
+            width: 34px !important;
+            height: 34px !important;
+
+            font-size: 16px !important;
+          }
+
+          .timeline-credit-summary {
+            padding: 11px !important;
+            margin-bottom: 9px !important;
+
+            border-radius: 14px !important;
+          }
+
+          .timeline-credit-header {
+            gap: 7px !important;
+            margin-bottom: 9px !important;
+          }
+
+          .timeline-credit-eyebrow {
+            font-size: 7px !important;
+          }
+
+          .timeline-credit-title {
+            font-size: 15px !important;
+          }
+
+          .timeline-credit-description {
+            font-size: 9px !important;
+          }
+
+          .timeline-credit-ledger-label {
+            display: none;
+          }
+
+          .timeline-credit-card {
+            min-height: 68px !important;
+
+            padding: 8px !important;
+
+            border-radius: 10px !important;
+          }
+
+          .timeline-credit-card-title {
+            font-size: 7px !important;
+          }
+
+          .timeline-credit-card-value {
+            margin-top: 5px !important;
+            font-size: 18px !important;
+          }
+
+          .timeline-credit-card-description {
+            margin-top: 4px !important;
+            font-size: 7.5px !important;
+          }
+
+        }
+
+      `}</style>
     </>
   );
 }
+
 
 /* =========================================================
    CREDIT CARD
@@ -334,6 +806,7 @@ function CreditCard({
 
   return (
     <div
+      className="timeline-credit-card"
       style={{
         position: "relative",
         overflow: "hidden",
@@ -344,9 +817,8 @@ function CreditCard({
         padding: "18px 20px",
       }}
     >
-      {/* DECORATIVE CIRCLE */}
-
       <div
+        className="timeline-credit-card-circle"
         style={{
           position: "absolute",
           width: 100,
@@ -366,6 +838,7 @@ function CreditCard({
         }}
       >
         <div
+          className="timeline-credit-card-title"
           style={{
             color: theme.title,
             fontSize: 10,
@@ -377,6 +850,7 @@ function CreditCard({
         </div>
 
         <div
+          className="timeline-credit-card-value"
           style={{
             marginTop: 12,
             color: theme.value,
@@ -389,6 +863,7 @@ function CreditCard({
         </div>
 
         <div
+          className="timeline-credit-card-description"
           style={{
             marginTop: 10,
             color: "#475569",

@@ -259,1193 +259,390 @@ icon: "🎯"
 const closeVideo = () =>
   setSelectedVideo(null);
 
-  return (
-    <div
-      style={{
-        padding: "30px",
-        background: "#F4F5F7",
-        minHeight: "100vh"
-      }}
-    >
-{selectedVideo && (
+ return (
+    <div className="min-h-screen bg-[#F5F7FA] px-2.5 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-5">
+      <div className="mx-auto max-w-[1680px] space-y-3 sm:space-y-4">
 
-  <div
-    onClick={closeVideo}
-    style={{
-      position: "fixed",
-      inset: 0,
-      background:
-        "rgba(0,0,0,0.85)",
-      zIndex: 9999,
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      padding: 40
-    }}
-  >
-    <div
-      onClick={(e) =>
-        e.stopPropagation()
-      }
-      style={{
-        width: "90%",
-        maxWidth: 1100
-      }}
-    >
-      <video
-        src={
-          selectedVideo.video_url
-        }
-        controls
-        autoPlay
-        style={{
-          width: "100%",
-          borderRadius: 20
-        }}
-      />
-
-      <div
-        style={{
-          color: "#FFF",
-          marginTop: 12,
-          fontSize: 18,
-          fontWeight: 700
-        }}
-      >
-        {
-          selectedVideo.event_name
-        }
-      </div>
-    </div>
-  </div>
-
-)}
-
-     {/* HEADER */}
-
-<div
-  style={{
-    position: "relative",
-    overflow: "hidden",
-    background:
-      "linear-gradient(115deg, #FFFFFF 0%, #FFFFFF 48%, #FFF9F3 76%, #F3F7FF 100%)",
-    borderRadius: 28,
-    padding: "38px 40px",
-    marginBottom: 25,
-    minHeight: 220,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    border: "1px solid #E2E8F0",
-    boxShadow: "0 4px 16px rgba(15,23,42,0.04)"
-  }}
->
-
-  {/* DECORATIVE BACKGROUND CIRCLES */}
-
-  <div
-    style={{
-      position: "absolute",
-      width: 430,
-      height: 430,
-      borderRadius: "50%",
-      right: -115,
-      top: -235,
-      background: "rgba(249,115,22,0.055)",
-      pointerEvents: "none"
-    }}
-  />
-
-  <div
-    style={{
-      position: "absolute",
-      width: 315,
-      height: 315,
-      borderRadius: "50%",
-      right: 120,
-      bottom: -245,
-      background: "rgba(37,99,235,0.05)",
-      pointerEvents: "none"
-    }}
-  />
-
-  <div
-    style={{
-      position: "absolute",
-      width: 180,
-      height: 180,
-      borderRadius: "50%",
-      right: 245,
-      top: -125,
-      background: "rgba(168,85,247,0.025)",
-      pointerEvents: "none"
-    }}
-  />
-
-  {/* LEFT CONTENT */}
-
-  <div
-    style={{
-      position: "relative",
-      zIndex: 2,
-      maxWidth: "68%"
-    }}
-  >
-
-    <div
-      style={{
-        color: "#F97316",
-        fontSize: 12,
-        fontWeight: 800,
-        letterSpacing: 2,
-        marginBottom: 10
-      }}
-    >
-      ACCREDITED TALENT LEDGER
-    </div>
-
-    <h1
-      style={{
-        margin: 0,
-        color: "#0F172A",
-        fontSize: 38,
-        fontWeight: 800,
-        lineHeight: 1.15,
-        letterSpacing: -0.7
-      }}
-    >
-      Student Talent Ledger Terminal
-    </h1>
-
-    <p
-      style={{
-        color: "#64748B",
-        marginTop: 12,
-        marginBottom: 0,
-        fontSize: 14,
-        fontWeight: 500
-      }}
-    >
-      Complete Talent Passport Overview
-    </p>
-
-  </div>
-
-  {/* RELATIVE SCORE */}
-
-  <div
-    style={{
-      position: "relative",
-      zIndex: 2,
-      background: "#F97316",
-      color: "#FFF",
-      padding: "20px 24px",
-      borderRadius: 18,
-      minWidth: 190,
-      textAlign: "center",
-      boxShadow: "0 10px 25px rgba(249,115,22,0.16)"
-    }}
-  >
-
-    <div
-      style={{
-        fontSize: 10,
-        fontWeight: 800,
-        letterSpacing: 1.5,
-        opacity: 0.9
-      }}
-    >
-      RELATIVE SCORE
-    </div>
-
-    <div
-      style={{
-        fontSize: 52,
-        lineHeight: 1.1,
-        fontWeight: 800,
-        marginTop: 6
-      }}
-    >
-      {overallScore}
-    </div>
-
-    <div
-      style={{
-        marginTop: 3,
-        fontSize: 11,
-        fontWeight: 600,
-        opacity: 0.85
-      }}
-    >
-      TALENT PASSPORT
-    </div>
-
-  </div>
-
-</div>
-
-      {/* TALENT BREAKDOWN */}
-
-      <div
-        style={{
-          background: "#FFF",
-          borderRadius: 24,
-          padding: 30,
-          marginBottom: 25
-        }}
-      >
-        <h2
-          style={{
-            marginTop: 0
-          }}
-        >
-          Talent Score Calculation Breakdown
-        </h2>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit,minmax(220px,1fr))",
-            gap: 15
-          }}
-        >
-          {dimensions.map((item) => (
+        {/* VIDEO MODAL */}
+        {selectedVideo && (
+          <div
+            onClick={closeVideo}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#07142D]/90 p-3 sm:p-6"
+          >
             <div
-              key={item.name}
-              style={{
-                background: "#FAFAFA",
-                borderRadius: 18,
-                padding: 20,
-                border: `2px solid ${item.color}20`
-              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-[1080px]"
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between"
-                }}
-              >
-                <span>{item.name}</span>
-                <span>{item.icon}</span>
+              <video
+                src={selectedVideo.video_url}
+                controls
+                autoPlay
+                className="max-h-[78vh] w-full rounded-[18px] bg-black object-contain shadow-2xl"
+              />
+              <div className="mt-3 text-sm font-black text-white sm:text-base">
+                {selectedVideo.event_name}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* HERO */}
+        <section className="relative overflow-hidden rounded-[18px] border border-[#DCE3EC] bg-gradient-to-r from-white via-white to-[#FFF9F4] shadow-[0_2px_8px_rgba(15,23,42,0.035)] sm:rounded-[22px]">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-[#FFF0E6] sm:h-56 sm:w-56" />
+          <div className="pointer-events-none absolute right-[15%] -bottom-24 hidden h-44 w-44 rounded-full bg-[#EEF2FF] md:block" />
+          <div className="pointer-events-none absolute right-[25%] -top-16 hidden h-28 w-28 rounded-full bg-[#FFF7F0] lg:block" />
+
+          <div className="relative z-10 flex min-h-[150px] flex-col justify-center gap-4 px-5 py-5 sm:min-h-[165px] sm:px-7 sm:py-6 md:flex-row md:items-center md:justify-between lg:px-8">
+            <div className="min-w-0 max-w-[760px]">
+              <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#F05A0A] sm:text-[10px]">
+                Accredited Student Intelligence
+              </p>
+              <h1 className="mt-2 text-[25px] font-black leading-[1.08] tracking-[-0.04em] text-[#07142D] sm:text-[30px] lg:text-[34px]">
+                Student Talent Homeboard
+              </h1>
+              <p className="mt-2 max-w-[680px] text-[11px] font-medium leading-[1.55] text-[#58708F] sm:text-[13px]">
+                Your record across competitions.
+              </p>
+            </div>
+
+            <div className="relative flex w-full items-center justify-between gap-3 rounded-[16px] border border-[#FFD2B5] bg-white/85 px-4 py-3 shadow-[0_4px_12px_rgba(249,115,22,0.05)] sm:w-[205px] sm:flex-col sm:justify-center sm:px-4 sm:py-4 sm:text-center">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-[#FFC897] bg-[#FFF8F1] text-xl">
+                ◈
+              </div>
+              <div>
+                <p className="text-[8px] font-black uppercase tracking-[0.16em] text-[#F05A0A]">
+                  Relative Talent Score
+                </p>
+                <p className="mt-1 text-[24px] font-black leading-none text-[#07142D] sm:text-[28px]">
+                  {overallScore}
+                  {overallScore !== "--" && (
+                    <span className="ml-1 text-[10px] font-black text-[#71819A]">/100</span>
+                  )}
+                </p>
+                <p className="mt-1 text-[9px] font-bold text-[#71819A]">
+                  {studentScores.length} evaluated record{studentScores.length === 1 ? "" : "s"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* TALENT SCORE SUMMARY */}
+        <section className="rounded-[18px] border border-[#DCE3EC] bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.03)] sm:rounded-[22px] sm:p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#F05A0A]">
+                Talent Passport Intelligence
+              </p>
+              <h2 className="mt-1 text-[19px] font-black tracking-[-0.025em] text-[#07142D] sm:text-[22px]">
+                Talent Score Summary
+              </h2>
+              <p className="mt-1 text-[10px] font-medium text-[#58708F] sm:text-[12px]">
+                Your current scores across the five talent dimensions.
+              </p>
+            </div>
+            <span className="hidden text-[9px] font-black uppercase tracking-[0.14em] text-[#8A9BB3] sm:block">
+              Talent Passport Ledger
+            </span>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2.5 md:grid-cols-3 lg:grid-cols-5">
+            {dimensions.map((item, index) => {
+              const styles = [
+                { border: "#FFC58F", bg: "#FFF9F2", circle: "#FFF0E1" },
+                { border: "#B9D2FF", bg: "#F4F8FF", circle: "#E8F0FF" },
+                { border: "#D5C5FF", bg: "#F8F5FF", circle: "#EFE8FF" },
+                { border: "#AEE8C0", bg: "#F2FCF5", circle: "#E4F8EA" },
+                { border: "#F6C2D0", bg: "#FFF6F8", circle: "#FCE8EE" }
+              ][index];
+
+              return (
+                <div
+                  key={item.name}
+                  className="relative min-w-0 overflow-hidden rounded-[14px] border p-3.5 sm:p-4"
+                  style={{ borderColor: styles.border, background: styles.bg }}
+                >
+                  <div
+                    className="pointer-events-none absolute -right-5 -top-7 h-16 w-16 rounded-full"
+                    style={{ background: styles.circle }}
+                  />
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-[8px] font-black uppercase tracking-[0.1em]" style={{ color: item.color }}>
+                        {item.name}
+                      </p>
+                      <span className="text-sm">{item.icon}</span>
+                    </div>
+                    <p className="mt-2.5 text-[24px] font-black leading-none sm:text-[28px]" style={{ color: item.color }}>
+                      {item.score}
+                    </p>
+                    <p className="mt-2 text-[9px] font-bold leading-4 text-[#52637C]">
+                      {item.score === "--" ? "Awaiting evaluated performance" : "Current calibrated score"}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* COMPETITION HISTORY */}
+        <section className="rounded-[18px] border border-[#DCE3EC] bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.03)] sm:rounded-[22px] sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#F05A0A]">
+                Accredited Performance Ledger
+              </p>
+              <h2 className="mt-1 text-[19px] font-black tracking-[-0.025em] text-[#07142D] sm:text-[22px]">
+                Competition History Ledger
+              </h2>
+              <p className="mt-1 text-[10px] font-medium text-[#58708F] sm:text-[12px]">
+                Compare your evaluated competition performance across every active competency.
+              </p>
+            </div>
+
+            <div className="w-fit rounded-[10px] border border-[#FFD1AE] bg-[#FFF9F3] px-3 py-2 text-center">
+              <p className="text-[16px] font-black leading-none text-[#F05A0A]">{studentScores.length}</p>
+              <p className="mt-1 text-[7px] font-black uppercase tracking-[0.12em] text-[#A64C19]">
+                Evaluations
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 overflow-x-auto rounded-[12px] border border-[#DCE3EC] [-webkit-overflow-scrolling:touch]">
+            <div className="min-w-[900px]">
+              <div className="grid grid-cols-[2fr_1fr_repeat(5,1fr)_0.8fr] gap-2 bg-[#061632] px-4 py-3 text-[8px] font-black uppercase tracking-[0.04em] text-white">
+                <div>Competition</div>
+                <div>Pathway</div>
+                <div>Communication</div>
+                <div>Leadership</div>
+                <div>Critical Thinking</div>
+                <div>Collaboration</div>
+                <div>Confidence</div>
+                <div>Overall</div>
               </div>
 
-              <h2
-                style={{
-                  color: item.color,
-                  marginBottom: 0
-                }}
-              >
-                {item.score}%
+              <div className="grid grid-cols-[2fr_1fr_repeat(5,1fr)_0.8fr] items-center gap-2 border-b border-[#F4D0B6] bg-[#FFF9F3] px-4 py-3">
+                <div>
+                  <p className="text-[11px] font-black text-[#F05A0A]">Talent Passport Average</p>
+                  <p className="mt-0.5 text-[8px] font-semibold text-[#71819A]">Combined performance across all competitions</p>
+                </div>
+                <div className="text-[10px] font-bold text-[#8A9BB3]">—</div>
+                <div className="text-[10px] font-black text-[#07142D]">{avgCommunication}</div>
+                <div className="text-[10px] font-black text-[#07142D]">{avgLeadership}</div>
+                <div className="text-[10px] font-black text-[#07142D]">{avgThinking}</div>
+                <div className="text-[10px] font-black text-[#07142D]">{avgCollaboration}</div>
+                <div className="text-[10px] font-black text-[#07142D]">{avgConfidence}</div>
+                <div>
+                  <span className="inline-flex rounded-[7px] bg-[#FF6B0A] px-2 py-1.5 text-[10px] font-black text-white">
+                    {overallScore}
+                  </span>
+                </div>
+              </div>
+
+              {hasCompetitionData ? (
+                studentScores.map((row) => (
+                  <div
+                    key={row.id}
+                    className="grid grid-cols-[2fr_1fr_repeat(5,1fr)_0.8fr] items-center gap-2 border-b border-[#E8EDF3] px-4 py-3 last:border-b-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-[10px] font-black text-[#07142D]">{row.event_name}</p>
+                      <p className="mt-0.5 text-[8px] font-semibold text-[#8A9BB3]">Competition Evaluation</p>
+                    </div>
+                    <div className="text-[9px] font-black text-[#F05A0A]">{row.pathway}</div>
+                    <div className="text-[9px] font-bold text-[#52637C]">{row.communication_score}</div>
+                    <div className="text-[9px] font-bold text-[#52637C]">{row.leadership_score}</div>
+                    <div className="text-[9px] font-bold text-[#52637C]">{row.critical_thinking_score}</div>
+                    <div className="text-[9px] font-bold text-[#52637C]">{row.collaboration_score}</div>
+                    <div className="text-[9px] font-bold text-[#52637C]">{row.confidence_score}</div>
+                    <div>
+                      <span className="inline-flex rounded-[7px] bg-[#FF6B0A] px-2 py-1.5 text-[9px] font-black text-white">
+                        {row.overall_score}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex min-h-[112px] items-center justify-center px-5 py-6 text-center">
+                  <div>
+                    <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF4E8] text-base">🏆</div>
+                    <p className="mt-2 text-[11px] font-black text-[#07142D]">Talent ranking will begin here</p>
+                    <p className="mx-auto mt-1 max-w-[360px] text-[9px] font-medium leading-4 text-[#71819A]">
+                      Competition history will populate after your first evaluated submission.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* SUBMISSION EVIDENCE */}
+        <section className="rounded-[18px] border border-[#DCE3EC] bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.03)] sm:rounded-[22px] sm:p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#F05A0A]">
+                Achievement Evidence
+              </p>
+              <h2 className="mt-1 text-[19px] font-black tracking-[-0.025em] text-[#07142D] sm:text-[22px]">
+                Submission Evidence Vault
               </h2>
+              <p className="mt-1 text-[10px] font-medium text-[#58708F] sm:text-[12px]">
+                Verified performance records supporting your Talent Passport intelligence.
+              </p>
             </div>
-          ))}
-        </div>
-      </div>
-
-<div
-  style={{
-    background: "#FFF",
-    borderRadius: 24,
-    padding: 30,
-    marginBottom: 25
-  }}
->
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 25
-    }}
-  >
-    <div>
-      <div
-        style={{
-          color: "#F97316",
-          fontSize: 12,
-          fontWeight: 700,
-          letterSpacing: 1.5
-        }}
-      >
-        PERFORMANCE ARCHIVE
-      </div>
-
-      <h2
-        style={{
-          margin: "8px 0"
-        }}
-      >
-        Competition History Ledger
-      </h2>
-    </div>
-
-    <div
-      style={{
-        background: "#F8FAFC",
-        padding: "10px 16px",
-        borderRadius: 12,
-        fontWeight: 600
-      }}
-    >
-      {studentScores.length} Evaluations
-    </div>
-  </div>
-
-  <div
-  style={{
-    overflowX: "auto"
-  }}
->
-
-  {/* HEADER */}
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns:
-        "2fr 1fr repeat(5,1fr) 1fr",
-      padding: "16px 20px",
-      background: "#F8FAFC",
-      borderRadius: 14,
-      fontWeight: 700,
-      color: "#475569",
-      marginBottom: 12
-    }}
-  >
-    <div>Competition</div>
-    <div>Pathway</div>
-    <div>Communication</div>
-    <div>Leadership</div>
-    <div>Critical Thinking</div>
-    <div>Collaboration</div>
-    <div>Confidence</div>
-    <div>Overall</div>
-  </div>
-
-<div
-  style={{
-    display: "grid",
-    gridTemplateColumns:
-      "2fr 1fr repeat(5,1fr) 1fr",
-    alignItems: "center",
-    padding: "18px 20px",
-    borderRadius: 14,
-    marginBottom: 14,
-    background:
-      "linear-gradient(90deg,#FFF7ED,#FFF)",
-    border: "2px solid #F97316",
-    fontWeight: 700
-  }}
->
-  <div>
-    <div
-      style={{
-        fontSize: 16,
-        fontWeight: 800,
-        color: "#F97316"
-      }}
-    >
-      Talent Passport Average
-    </div>
-
-    <div
-      style={{
-        fontSize: 12,
-        color: "#64748B"
-      }}
-    >
-      Combined performance across all competitions
-    </div>
-  </div>
-
-  <div>—</div>
-
-  <div>{avgCommunication}</div>
-  <div>{avgLeadership}</div>
-  <div>{avgThinking}</div>
-  <div>{avgCollaboration}</div>
-  <div>{avgConfidence}</div>
-
-  <div>
-    <span
-      style={{
-        background: "#F97316",
-        color: "#FFF",
-        padding: "8px 12px",
-        borderRadius: 10,
-        fontWeight: 700
-      }}
-    >
-      {overallScore}
-    </span>
-  </div>
-</div>
-
-  {hasCompetitionData ? (
-
-  studentScores.map((row) => (
-
-    <div
-      key={row.id}
-      style={{
-        display: "grid",
-        gridTemplateColumns:
-          "2fr 1fr repeat(5,1fr) 1fr",
-        alignItems: "center",
-        padding: "18px 20px",
-        border: "1px solid #E2E8F0",
-        borderRadius: 14,
-        marginBottom: 10,
-        background: "#FFF"
-      }}
-    >
-
-      <div>
-        <div
-          style={{
-            fontWeight: 700,
-            fontSize: 15
-          }}
-        >
-          {row.event_name}
-        </div>
-
-        <div
-          style={{
-            fontSize: 12,
-            color: "#64748B"
-          }}
-        >
-          Competition Evaluation
-        </div>
-      </div>
-
-      <div
-        style={{
-          color: "#F97316",
-          fontWeight: 600
-        }}
-      >
-        {row.pathway}
-      </div>
-
-      <div>{row.communication_score}</div>
-
-      <div>{row.leadership_score}</div>
-
-      <div>{row.critical_thinking_score}</div>
-
-      <div>{row.collaboration_score}</div>
-
-      <div>{row.confidence_score}</div>
-
-      <div>
-        <span
-          style={{
-            background: "#F97316",
-            color: "#FFF",
-            padding: "8px 12px",
-            borderRadius: 10,
-            fontWeight: 700
-          }}
-        >
-          {row.overall_score}
-        </span>
-      </div>
-
-    </div>
-
-  ))
-
-) : (
-
-  <div
-    style={{
-      padding: 40,
-      textAlign: "center",
-      color: "#64748B",
-      background: "#FFF",
-      borderRadius: 16,
-      border: "1px dashed #CBD5E1"
-    }}
-  >
-    Competition history will appear after
-    your first evaluated submission.
-  </div>
-
-)}
-
-</div>
-</div>
-
-{/* SUBMISSION EVIDENCE VAULT */}
-
-<div
-  style={{
-    background: "#FFF",
-    borderRadius: 24,
-    padding: 30,
-    marginBottom: 25
-  }}
->
-  <div
-    style={{
-      marginBottom: 24
-    }}
-  >
-    <div
-      style={{
-        color: "#F97316",
-        fontSize: 12,
-        fontWeight: 700,
-        letterSpacing: 1.5
-      }}
-    >
-      VERIFIED PERFORMANCE EVIDENCE
-    </div>
-
-    <h2
-      style={{
-        margin: "8px 0"
-      }}
-    >
-      Submission Evidence Vault
-    </h2>
-
-    <p
-      style={{
-        color: "#64748B",
-        margin: 0
-      }}
-    >
-      Every score, rank and growth
-      metric in your Talent Passport
-      is generated from the verified
-      submissions below.
-    </p>
-  </div>
-
-  {submissions.length === 0 ? (
-
-    <div
-      style={{
-        padding: 40,
-        textAlign: "center",
-        color: "#64748B",
-        border:
-          "1px dashed #CBD5E1",
-        borderRadius: 18
-      }}
-    >
-      No submissions uploaded yet.
-    </div>
-
-  ) : (
-
-    <div
-  style={{
-    display: "flex",
-    gap: 24,
-    alignItems: "flex-start"
-  }}
->
-
-    {/* LEFT SIDE SUBMISSIONS */}
-
-<div
-  style={{
-    flex: 1,
-    overflowX: "auto"
-  }}
->
-  <div
-    style={{
-      display: "flex",
-      gap: 20,
-      paddingBottom: 10
-    }}
-  >
-    {submissions.map((item) => (
-      <div
-        key={item.id}
-        style={{
-          minWidth: 320,
-          background: "#FFF",
-          border: "1px solid #E2E8F0",
-          borderRadius: 18,
-          padding: 20
-        }}
-      >
-        <div
-          style={{
-            fontSize: 18,
-            fontWeight: 700,
-            marginBottom: 10
-          }}
-        >
-          🎭 {item.event_name}
-        </div>
-
-        <div
-          style={{
-            color: "#64748B",
-            fontSize: 14,
-            marginBottom: 8
-          }}
-        >
-          📅 Submitted on{" "}
-          {new Date(item.created_at).toLocaleDateString()}
-        </div>
-
-        <div
-          style={{
-            color: "#64748B",
-            fontSize: 14,
-            marginBottom: 20
-          }}
-        >
-          🎬 Verified Competition Submission
-        </div>
-
-        <button
-          onClick={() => setSelectedVideo(item)}
-          style={{
-            background: "#F97316",
-            color: "#FFF",
-            border: "none",
-            borderRadius: 12,
-            padding: "12px 20px",
-            fontWeight: 700,
-            cursor: "pointer"
-          }}
-        >
-          ▶ Watch Submission
-        </button>
-      </div>
-    ))}
-  </div>
-</div>
-
-     
-    </div>
-
- )}
-
-{submissions.length > 0 && (
-
-  <div
-    style={{
-      marginTop: 24,
-      background: "#FFFFFF",
-      border: "1px solid #E2E8F0",
-      borderRadius: 24,
-      padding: "26px 28px",
-      boxShadow:
-        "0 8px 28px rgba(15,23,42,.045)"
-    }}
-  >
-
-    {/* HEADER */}
-
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-end",
-        gap: 20,
-        marginBottom: 22
-      }}
-    >
-      <div>
-
-        <div
-          style={{
-            color: "#F97316",
-            fontSize: 11,
-            fontWeight: 800,
-            letterSpacing: 2,
-            marginBottom: 8
-          }}
-        >
-          SUBMISSION INTELLIGENCE
-        </div>
-
-        <h2
-          style={{
-            margin: 0,
-            color: "#0F172A",
-            fontSize: 24,
-            fontWeight: 800,
-            lineHeight: 1.2
-          }}
-        >
-          Submission Credit Summary
-        </h2>
-
-        <p
-          style={{
-            margin: "9px 0 0",
-            color: "#64748B",
-            fontSize: 14,
-            lineHeight: 1.5
-          }}
-        >
-          Your accumulated credits from verified competition
-          submissions across your Talent Passport journey.
-        </p>
-
-      </div>
-
-      <div
-        style={{
-          color: "#94A3B8",
-          fontSize: 11,
-          fontWeight: 800,
-          letterSpacing: 1,
-          whiteSpace: "nowrap"
-        }}
-      >
-        TALENT PASSPORT LEDGER
-      </div>
-
-    </div>
-
-
-    {/* CREDIT CARDS */}
-
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns:
-          "repeat(3, minmax(0, 1fr))",
-        gap: 14
-      }}
-    >
-
-      {/* TOTAL SUBMISSIONS */}
-
-      <div
-        style={{
-          position: "relative",
-          overflow: "hidden",
-          minHeight: 118,
-          background:
-            "linear-gradient(135deg, #FFF8EF 0%, #FFFCF7 100%)",
-          border: "1px solid #FED7AA",
-          borderRadius: 18,
-          padding: "18px 20px"
-        }}
-      >
-
-        <div
-          style={{
-            position: "absolute",
-            width: 100,
-            height: 100,
-            borderRadius: "50%",
-            right: -34,
-            top: -42,
-            background:
-              "rgba(249,115,22,.08)",
-            pointerEvents: "none"
-          }}
-        />
-
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1
-          }}
-        >
-
-          <div
-            style={{
-              color: "#9A3412",
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: 0.7
-            }}
-          >
-            TOTAL SUBMISSIONS
+            <span className="hidden text-[9px] font-black uppercase tracking-[0.14em] text-[#8A9BB3] sm:block">
+              {totalSubmissions} Records
+            </span>
           </div>
 
-          <div
-            style={{
-              marginTop: 12,
-              color: "#F97316",
-              fontSize: 32,
-              lineHeight: 1,
-              fontWeight: 900
-            }}
-          >
-            {totalSubmissions}
-          </div>
-
-          <div
-            style={{
-              marginTop: 10,
-              color: "#475569",
-              fontSize: 11,
-              fontWeight: 600,
-              lineHeight: 1.4
-            }}
-          >
-            Verified competition submissions
-          </div>
-
-        </div>
-
-      </div>
-
-
-      {/* CREDITS PER SUBMISSION */}
-
-      <div
-        style={{
-          position: "relative",
-          overflow: "hidden",
-          minHeight: 118,
-          background:
-            "linear-gradient(135deg, #EFF6FF 0%, #F8FBFF 100%)",
-          border: "1px solid #BFDBFE",
-          borderRadius: 18,
-          padding: "18px 20px"
-        }}
-      >
-
-        <div
-          style={{
-            position: "absolute",
-            width: 100,
-            height: 100,
-            borderRadius: "50%",
-            right: -34,
-            top: -42,
-            background:
-              "rgba(37,99,235,.07)",
-            pointerEvents: "none"
-          }}
-        />
-
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1
-          }}
-        >
-
-          <div
-            style={{
-              color: "#1E40AF",
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: 0.7
-            }}
-          >
-            CREDITS / SUBMISSION
-          </div>
-
-          <div
-            style={{
-              marginTop: 12,
-              color: "#2563EB",
-              fontSize: 32,
-              lineHeight: 1,
-              fontWeight: 900
-            }}
-          >
-            10
-          </div>
-
-          <div
-            style={{
-              marginTop: 10,
-              color: "#475569",
-              fontSize: 11,
-              fontWeight: 600,
-              lineHeight: 1.4
-            }}
-          >
-            Credits awarded per verified submission
-          </div>
-
-        </div>
-
-      </div>
-
-
-      {/* TOTAL CREDITS EARNED */}
-
-      <div
-        style={{
-          position: "relative",
-          overflow: "hidden",
-          minHeight: 118,
-          background:
-            "linear-gradient(135deg, #ECFDF5 0%, #F7FFFB 100%)",
-          border: "1px solid #BBF7D0",
-          borderRadius: 18,
-          padding: "18px 20px"
-        }}
-      >
-
-        <div
-          style={{
-            position: "absolute",
-            width: 100,
-            height: 100,
-            borderRadius: "50%",
-            right: -34,
-            top: -42,
-            background:
-              "rgba(22,163,74,.07)",
-            pointerEvents: "none"
-          }}
-        />
-
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1
-          }}
-        >
-
-          <div
-            style={{
-              color: "#166534",
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: 0.7
-            }}
-          >
-            TOTAL CREDITS EARNED
-          </div>
-
-          <div
-            style={{
-              marginTop: 12,
-              color: "#16A34A",
-              fontSize: 32,
-              lineHeight: 1,
-              fontWeight: 900
-            }}
-          >
-            {submissionCredits}
-          </div>
-
-          <div
-            style={{
-              marginTop: 10,
-              color: "#475569",
-              fontSize: 11,
-              fontWeight: 600,
-              lineHeight: 1.4
-            }}
-          >
-            Accumulated submission ledger credits
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-)}
-
-</div>
-
-{/* GRAPH SECTION */}
-
-<div
-  style={{
-    background: "#FFF",
-    borderRadius: 24,
-    padding: 30,
-    marginBottom: 25
-  }}
->
-  <div
-    style={{
-      color: "#F97316",
-      fontSize: 12,
-      fontWeight: 700,
-      letterSpacing: 1.5
-    }}
-  >
-    PERFORMANCE ANALYTICS
-  </div>
-
-  <h2
-    style={{
-      marginTop: 8
-    }}
-  >
-    Performance Growth Trajectory
-  </h2>
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 24,
-      marginTop: 24
-    }}
-  >
-
-    {/* LINE CHART */}
-
-    <div
-      style={{
-        background: "#FAFAFA",
-        border: "1px solid #E2E8F0",
-        borderRadius: 18,
-        padding: 20
-      }}
-    >
-      <h4>
-        Competency Growth Across Events
-      </h4>
-
-      <div
-        style={{
-          height: 320
-        }}
-      >
-        {hasCompetitionData ? (
-
-  <ResponsiveContainer
-    width="100%"
-    height="100%"
-  >
-    <LineChart
-      data={studentScores}
-    >
-      <CartesianGrid strokeDasharray="3 3" />
-
-      <XAxis dataKey="event_name" />
-
-      <YAxis domain={[50,100]} />
-
-      <Tooltip />
-
-      <Line
-        type="monotone"
-        dataKey="communication_score"
-        stroke="#F97316"
-        strokeWidth={3}
-      />
-
-      <Line
-        type="monotone"
-        dataKey="leadership_score"
-        stroke="#2563EB"
-        strokeWidth={3}
-      />
-
-      <Line
-        type="monotone"
-        dataKey="critical_thinking_score"
-        stroke="#7C3AED"
-        strokeWidth={3}
-      />
-
-      <Line
-        type="monotone"
-        dataKey="confidence_score"
-        stroke="#E11D48"
-        strokeWidth={3}
-      />
-    </LineChart>
-  </ResponsiveContainer>
-
-) : (
-
-  <div
-    style={{
-      height: "100%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      color: "#64748B",
-      fontSize: 16
-    }}
-  >
-    Performance analytics will unlock
-    after your first evaluation.
-  </div>
-
-)}
-      </div>
-    </div>
-
-    {/* BAR CHART */}
-
-    <div
-      style={{
-        background: "#FAFAFA",
-        border: "1px solid #E2E8F0",
-        borderRadius: 18,
-        padding: 20
-      }}
-    >
-      <h4>
-        Overall Event Comparison
-      </h4>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-around",
-          height: 320
-        }}
-      >
-        {studentScores.map((item) => (
-          <div
-            key={item.id}
-            style={{
-              textAlign: "center"
-            }}
-          >
-            <div
-              style={{
-                marginBottom: 10,
-                fontWeight: 700
-              }}
-            >
-              {item.overall_score}
+          {submissions.length === 0 ? (
+            <div className="mt-4 flex min-h-[150px] items-center justify-center rounded-[14px] border border-dashed border-[#BFCBDC] bg-[#FCFDFE] px-5 text-center sm:min-h-[170px]">
+              <div>
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-[12px] border border-[#FFD1AE] bg-[#FFF8F1] text-lg">◉</div>
+                <p className="mt-3 text-[12px] font-black text-[#07142D]">Your performance showcase starts here</p>
+                <p className="mx-auto mt-1 max-w-[420px] text-[9px] font-medium leading-4 text-[#71819A]">
+                  Verified competition submissions will appear here as part of your accredited talent record.
+                </p>
+              </div>
             </div>
+          ) : (
+            <div className="mt-4 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+              <div className="flex gap-3">
+                {submissions.map((item) => (
+                  <article
+                    key={item.id}
+                    className="w-[225px] shrink-0 rounded-[14px] border border-[#FFC58F] bg-[#FFF9F3] p-3.5 sm:w-[245px]"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[#FFD1AE] bg-white text-base">🎭</div>
+                      <span className="rounded-full border border-[#AEE8C0] bg-[#F2FCF5] px-2 py-1 text-[7px] font-black uppercase tracking-wide text-[#168A43]">
+                        Verified
+                      </span>
+                    </div>
+                    <h3 className="mt-3 line-clamp-2 text-[12px] font-black leading-4 text-[#07142D]">{item.event_name}</h3>
+                    <p className="mt-2 text-[8px] font-semibold text-[#71819A]">
+                      Submitted {new Date(item.created_at).toLocaleDateString()}
+                    </p>
+                    <button
+                      onClick={() => setSelectedVideo(item)}
+                      className="mt-3 w-full rounded-[9px] bg-[#FF6B0A] px-3 py-2.5 text-[9px] font-black uppercase tracking-wide text-white shadow-[0_3px_8px_rgba(255,107,10,0.18)] transition hover:bg-[#F05A0A]"
+                    >
+                      Watch Submission
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
 
-            <div
-              style={{
-                width: 70,
-                height: `${item.overall_score * 2}px`,
-                background: "#F97316",
-                borderRadius: "12px 12px 0 0"
-              }}
-            />
-
-            <div
-              style={{
-                marginTop: 10,
-                fontSize: 12,
-                width: 80
-              }}
-            >
-              {item.event_name}
+          <div className="mt-4 grid grid-cols-3 gap-2.5">
+            <div className="relative overflow-hidden rounded-[14px] border border-[#FFC58F] bg-[#FFF9F2] p-3 sm:p-4">
+              <div className="pointer-events-none absolute -right-4 -top-6 h-14 w-14 rounded-full bg-[#FFF0E1]" />
+              <p className="relative text-[7px] font-black uppercase tracking-wide text-[#B54512] sm:text-[8px]">Submissions</p>
+              <p className="relative mt-2 text-[20px] font-black leading-none text-[#F05A0A] sm:text-[25px]">{totalSubmissions}</p>
+              <p className="relative mt-2 hidden text-[8px] font-bold text-[#52637C] sm:block">Verified entries</p>
+            </div>
+            <div className="relative overflow-hidden rounded-[14px] border border-[#B9D2FF] bg-[#F4F8FF] p-3 sm:p-4">
+              <div className="pointer-events-none absolute -right-4 -top-6 h-14 w-14 rounded-full bg-[#E8F0FF]" />
+              <p className="relative text-[7px] font-black uppercase tracking-wide text-[#2455B5] sm:text-[8px]">Credits / Entry</p>
+              <p className="relative mt-2 text-[20px] font-black leading-none text-[#2563EB] sm:text-[25px]">10</p>
+              <p className="relative mt-2 hidden text-[8px] font-bold text-[#52637C] sm:block">Per submission</p>
+            </div>
+            <div className="relative overflow-hidden rounded-[14px] border border-[#AEE8C0] bg-[#F2FCF5] p-3 sm:p-4">
+              <div className="pointer-events-none absolute -right-4 -top-6 h-14 w-14 rounded-full bg-[#E4F8EA]" />
+              <p className="relative text-[7px] font-black uppercase tracking-wide text-[#19763B] sm:text-[8px]">Submission Credits</p>
+              <p className="relative mt-2 text-[20px] font-black leading-none text-[#16A34A] sm:text-[25px]">{submissionCredits}</p>
+              <p className="relative mt-2 hidden text-[8px] font-bold text-[#52637C] sm:block">Talent ledger credits</p>
             </div>
           </div>
-        ))}
+        </section>
+
+        {/* ANALYTICS */}
+        <section className="rounded-[18px] border border-[#DCE3EC] bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.03)] sm:rounded-[22px] sm:p-5">
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#F05A0A]">
+              Talent Insights
+            </p>
+            <h2 className="mt-1 text-[19px] font-black tracking-[-0.025em] text-[#07142D] sm:text-[22px]">
+              Performance Growth Trajectory
+            </h2>
+            <p className="mt-1 text-[10px] font-medium text-[#58708F] sm:text-[12px]">
+              Track competency development and overall competition performance over time.
+            </p>
+          </div>
+
+          <div className="mt-4 grid gap-3 xl:grid-cols-2">
+            <div className="min-w-0 rounded-[14px] border border-[#B9D2FF] bg-[#F8FBFF] p-3.5 sm:p-4">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-[11px] font-black text-[#07142D] sm:text-[12px]">Competency Growth</h3>
+                <span className="text-[7px] font-black uppercase tracking-wider text-[#8A9BB3]">Across Events</span>
+              </div>
+              <div className="mt-3 h-[210px] sm:h-[245px] lg:h-[265px]">
+                {hasCompetitionData ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={studentScores}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#DCE5F1" />
+                      <XAxis dataKey="event_name" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                      <YAxis domain={[50, 100]} tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="communication_score" stroke="#F97316" strokeWidth={2.5} dot={false} />
+                      <Line type="monotone" dataKey="leadership_score" stroke="#2563EB" strokeWidth={2.5} dot={false} />
+                      <Line type="monotone" dataKey="critical_thinking_score" stroke="#7C3AED" strokeWidth={2.5} dot={false} />
+                      <Line type="monotone" dataKey="confidence_score" stroke="#E11D48" strokeWidth={2.5} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center rounded-[12px] border border-dashed border-[#BFCBDC] bg-white px-5 text-center">
+                    <div>
+                      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#EEF4FF] text-base">📈</div>
+                      <p className="mt-2 text-[10px] font-black text-[#07142D]">Growth intelligence will appear here</p>
+                      <p className="mt-1 text-[8px] font-medium text-[#71819A]">Analytics unlock after your first evaluation.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="min-w-0 rounded-[14px] border border-[#D5C5FF] bg-[#FBF9FF] p-3.5 sm:p-4">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-[11px] font-black text-[#07142D] sm:text-[12px]">Overall Event Comparison</h3>
+                <span className="text-[7px] font-black uppercase tracking-wider text-[#8A9BB3]">Overall Score</span>
+              </div>
+
+              {hasCompetitionData ? (
+                <div className="mt-3 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+                  <div
+                    className="flex h-[210px] min-w-full items-end justify-around gap-5 sm:h-[245px] lg:h-[265px]"
+                    style={{ width: Math.max(420, studentScores.length * 105) }}
+                  >
+                    {studentScores.map((item) => (
+                      <div key={item.id} className="flex h-full w-[72px] shrink-0 flex-col items-center justify-end text-center">
+                        <p className="mb-2 text-[10px] font-black text-[#07142D]">{item.overall_score}</p>
+                        <div
+                          className="w-10 rounded-t-[9px] bg-[#7C3AED]"
+                          style={{ height: `${Math.max(8, Math.min(100, item.overall_score))}%` }}
+                        />
+                        <p className="mt-2 line-clamp-2 w-full text-[8px] font-bold leading-3 text-[#71819A]">{item.event_name}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3 flex h-[210px] items-center justify-center rounded-[12px] border border-dashed border-[#BFCBDC] bg-white px-5 text-center sm:h-[245px] lg:h-[265px]">
+                  <div>
+                    <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#F2ECFF] text-base">◎</div>
+                    <p className="mt-2 text-[10px] font-black text-[#07142D]">Event comparison will appear here</p>
+                    <p className="mt-1 text-[8px] font-medium text-[#71819A]">Your evaluated records will populate this comparison.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
       </div>
     </div>
-
-  </div>
-</div>
-  
-   
-    </div>
-  );}
+  );
+}

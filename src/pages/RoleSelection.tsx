@@ -178,11 +178,11 @@ export default function RoleSelection({
 
         return (
 
-        <div className="portal-page">
+        <div className="portal-page responsive-role-page">
 
             <div className="portal-background" />
 
-            <div className="portal-container">
+            <div className="portal-container responsive-role-container">
 
                 {/* ==========================================
                     HEADER
@@ -403,6 +403,33 @@ export default function RoleSelection({
 
     </div>
 
+
+<style>{`
+@media (max-width: 1024px) {
+  .responsive-role-page { box-sizing: border-box; }
+  .responsive-role-container { width: 100% !important; max-width: 100% !important; box-sizing: border-box; padding-left: 24px !important; padding-right: 24px !important; }
+  .responsive-role-page .portal-grid { grid-template-columns: repeat(2, minmax(0,1fr)) !important; gap: 18px !important; }
+  .responsive-role-page .portal-card { min-width: 0 !important; padding: 24px !important; }
+  .responsive-role-page .portal-help-card { gap: 22px !important; }
+}
+@media (max-width: 650px) {
+  .responsive-role-container { padding-left: 14px !important; padding-right: 14px !important; }
+  .responsive-role-page .portal-header { margin-bottom: 24px !important; }
+  .responsive-role-page .portal-title { font-size: 34px !important; line-height: 1.08 !important; }
+  .responsive-role-page .portal-subtitle { font-size: 14px !important; line-height: 1.5 !important; }
+  .responsive-role-page .portal-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .responsive-role-page .portal-card { padding: 18px !important; border-radius: 18px !important; }
+  .responsive-role-page .portal-card h2 { font-size: 22px !important; margin-bottom: 6px !important; }
+  .responsive-role-page .portal-card h3 { font-size: 14px !important; margin-bottom: 8px !important; }
+  .responsive-role-page .portal-card p { font-size: 13px !important; line-height: 1.45 !important; }
+  .responsive-role-page .portal-features { gap: 6px !important; }
+  .responsive-role-page .portal-features span { font-size: 11px !important; padding: 6px 8px !important; }
+  .responsive-role-page .portal-button { width: 100% !important; min-height: 42px; }
+  .responsive-role-page .portal-help-card { flex-direction: column !important; padding: 18px !important; }
+  .responsive-role-page .portal-help-actions { width: 100% !important; }
+  .responsive-role-page .portal-help-actions button { width: 100% !important; }
+}
+`}</style>
 </div>
 
     );

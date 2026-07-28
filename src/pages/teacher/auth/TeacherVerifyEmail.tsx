@@ -13,7 +13,7 @@ export default function TeacherVerifyEmail({
 }: Props) {
 
   return (
-    <div
+    <div className="teacher-verify-page"
       style={{
         minHeight: "100vh",
         background: "#F8F7F4",
@@ -23,7 +23,7 @@ export default function TeacherVerifyEmail({
         padding: 40,
       }}
     >
-      <div
+      <div className="teacher-verify-card"
         style={{
           width: 560,
           background: "white",
@@ -114,6 +114,21 @@ click the button below to continue.
         </button>
 
       </div>
-    </div>
+    
+<style>{`
+@media (max-width: 1024px) {
+  .teacher-verify-page { padding: 28px !important; box-sizing: border-box; }
+  .teacher-verify-card { width: min(560px, 100%) !important; padding: 40px !important; box-sizing: border-box; }
+}
+@media (max-width: 600px) {
+  .teacher-verify-page { min-height: 100dvh !important; padding: 14px !important; }
+  .teacher-verify-card { width: 100% !important; padding: 24px 16px !important; border-radius: 18px !important; }
+  .teacher-verify-card > div:first-child { font-size: 42px !important; margin-bottom: 14px !important; }
+  .teacher-verify-card h1 { font-size: 26px !important; line-height: 1.12 !important; }
+  .teacher-verify-card p { font-size: 14px !important; line-height: 1.55 !important; margin-top: 16px !important; overflow-wrap: anywhere; }
+  .teacher-verify-card button { padding: 13px !important; min-height: 44px; }
+}
+`}</style>
+</div>
   );
 }

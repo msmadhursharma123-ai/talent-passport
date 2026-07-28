@@ -5,6 +5,7 @@ import App from "./App.tsx";
 import "./index.css";
 import "./styles/theme.css";
 import "./styles/LandingImports.css";
+import "./styles/portalResponsive.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

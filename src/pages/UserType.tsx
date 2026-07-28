@@ -133,6 +133,7 @@ export default function UserType({
 
   return (
     <div
+      className="onboarding-page"
       style={{
         minHeight: "100vh",
 
@@ -261,6 +262,7 @@ export default function UserType({
       ====================================================== */}
 
       <div
+        className="user-type-content"
         style={{
           maxWidth: "1060px",
 
@@ -275,6 +277,7 @@ export default function UserType({
         {/* BACK */}
 
         <button
+          className="user-type-back"
           onClick={onBack}
           style={{
             background: "transparent",
@@ -300,6 +303,7 @@ export default function UserType({
         {/* EYEBROW */}
 
         <div
+          className="user-type-eyebrow"
           style={{
             color: "#F4A623",
 
@@ -318,6 +322,7 @@ export default function UserType({
         {/* TITLE */}
 
         <h1
+          className="user-type-title"
           style={{
             fontSize: "60px",
 
@@ -340,6 +345,7 @@ export default function UserType({
         {/* SUBTITLE */}
 
         <p
+          className="user-type-subtitle"
           style={{
             color: "#555",
 
@@ -368,6 +374,7 @@ export default function UserType({
           >
 
             <div
+              className="user-type-card"
               style={cardStyle}
               onClick={() =>
                 onSelect("existing")
@@ -429,6 +436,7 @@ export default function UserType({
           ==================================================== */
 
           <div
+            className="user-type-grid"
             style={{
               display: "grid",
 
@@ -442,6 +450,7 @@ export default function UserType({
             {/* NEW USER */}
 
             <div
+              className="user-type-card"
               style={cardStyle}
               onClick={() =>
                 onSelect("new")
@@ -496,6 +505,7 @@ export default function UserType({
             {/* EXISTING USER */}
 
             <div
+              className="user-type-card"
               style={cardStyle}
               onClick={() =>
                 onSelect("existing")
@@ -553,6 +563,29 @@ export default function UserType({
 
       </div>
 
-    </div>
+    
+<style>{`
+@media (max-width: 1024px) {
+  .onboarding-page { padding: 36px 28px !important; box-sizing: border-box; }
+  .user-type-content { max-width: 100% !important; }
+  .user-type-title { font-size: 46px !important; }
+  .user-type-grid { gap: 18px !important; }
+  .user-type-card { min-height: 230px !important; padding: 24px !important; }
+}
+@media (max-width: 700px) {
+  .onboarding-page { min-height: 100dvh !important; padding: 22px 14px !important; overflow-y: auto !important; }
+  .user-type-content { width: 100% !important; }
+  .user-type-back { margin-bottom: 18px !important; font-size: 13px !important; }
+  .user-type-eyebrow { margin-bottom: 10px !important; font-size: 11px !important; letter-spacing: 2px !important; }
+  .user-type-title { font-size: 32px !important; line-height: 1.08 !important; letter-spacing: -.4px !important; }
+  .user-type-subtitle { margin-bottom: 24px !important; font-size: 15px !important; }
+  .user-type-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .user-type-card { min-height: 0 !important; padding: 18px !important; border-radius: 17px !important; }
+  .user-type-card h2 { font-size: 21px !important; margin-bottom: 7px !important; }
+  .user-type-card p { font-size: 13px !important; line-height: 1.45 !important; }
+  .user-type-card button { margin-top: 16px !important; padding: 10px 14px !important; font-size: 13px !important; }
+}
+`}</style>
+</div>
   );
 }

@@ -117,10 +117,10 @@ export default function TalentPassport({
                 const model =
                     await getPassportViewModel();
 
-console.log("====================================");
-console.log("MODEL RECEIVED BY PAGE");
-console.log(model);
-console.log("====================================");
+                console.log("====================================");
+                console.log("MODEL RECEIVED BY PAGE");
+                console.log(model);
+                console.log("====================================");
 
                 setPassportModel(model);
 
@@ -149,1013 +149,1066 @@ console.log("====================================");
 
     }, []);
 
-/* ==========================================
-   ViewModel Data
-========================================== */
+    /* ==========================================
+       ViewModel Data
+    ========================================== */
 
-const passport =
-    passportModel?.passport;
+    const passport =
+        passportModel?.passport;
 
+    const dimensions =
+        passportModel?.dimensions ?? [];
 
-const dimensions =
-    passportModel?.dimensions ?? [];
+    const topStrengths =
+        passportModel?.topStrengths ?? [];
 
-const topStrengths =
-    passportModel?.topStrengths ?? [];
+    const growthGaps =
+        passportModel?.growthGaps ?? [];
 
-const growthGaps =
-    passportModel?.growthGaps ?? [];
+    const projections =
+        passportModel?.projections ?? [];
 
-const projections =
-    passportModel?.projections ?? [];
+    const percentileRows =
+        passportModel?.percentileRows ?? [];
 
-const percentileRows =
-    passportModel?.percentileRows ?? [];
+    const rarityRows =
+        passportModel?.rarityRows ?? [];
 
-const rarityRows =
-    passportModel?.rarityRows ?? [];
+    const recommendedCompetitions =
+        passportModel?.competitions ?? [];
 
-const recommendedCompetitions =
-    passportModel?.competitions ?? [];
+    const dnaAverage =
+        passportModel?.dnaAverage ?? 0;
 
-const dnaAverage =
-    passportModel?.dnaAverage ?? 0;
+    const reliability =
+        passportModel?.reliability ?? 0;
 
-const reliability =
-    passportModel?.reliability ?? 0;
+    const participationReadiness =
+        passportModel?.participationReadiness ?? 0;
 
-const participationReadiness =
-    passportModel?.participationReadiness ?? 0;
+    const futureReadiness =
+        passportModel?.futureReadiness ?? 0;
 
-const futureReadiness =
-    passportModel?.futureReadiness ?? 0;
+    const dnaConfidence =
+        passportModel?.confidence ?? "Low";
 
-const dnaConfidence =
-    passportModel?.confidence ?? "Low";
+    const strongestSkill =
+        passportModel?.strongestSkill ?? "";
 
-const strongestSkill =
-    passportModel?.strongestSkill ?? "";
+    const weakestSkill =
+        passportModel?.weakestSkill ?? "";
 
-const weakestSkill =
-    passportModel?.weakestSkill ?? "";
+    const dimensionColors: Record<string, string> = {
+        creativity: "#F97316",
+        communication: "#2563EB",
+        leadership: "#7C3AED",
+        confidence: "#E11D48",
+        collaboration: "#16A34A",
+        criticalThinking: "#A855F7"
+    };
 
-/* ==========================================
-   Loading
-========================================== */
+    const dimensionIcons: Record<string, string> = {
+        creativity: "🎨",
+        communication: "📢",
+        leadership: "👑",
+        confidence: "🎯",
+        collaboration: "🤝",
+        criticalThinking: "🧠"
+    };
 
-if (loading) {
+    /* ==========================================
+       Loading
+    ========================================== */
+
+    if (loading) {
+
+        return (
+
+            <div className="min-h-[70vh] bg-[#F7F9FC] px-4 py-6 sm:px-6 lg:px-8">
+
+                <div className="mx-auto flex min-h-[60vh] max-w-[1600px] items-center justify-center">
+
+                    <div className="rounded-[24px] border border-slate-200 bg-white px-8 py-7 text-center shadow-sm">
+
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-xl">
+                            ◈
+                        </div>
+
+                        <p className="mt-4 text-sm font-black text-[#07142D]">
+                            Loading Talent Passport...
+                        </p>
+
+                        <p className="mt-1 text-xs font-semibold text-slate-400">
+                            Preparing your talent intelligence.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        );
+
+    }
+
+    /* ==========================================
+       Empty Passport
+    ========================================== */
+
+    if (!passportModel || !passport) {
+
+        return (
+
+            <div className="min-h-[70vh] bg-[#F7F9FC] px-4 py-6 sm:px-6 lg:px-8">
+
+                <div className="mx-auto flex min-h-[60vh] max-w-[1600px] items-center justify-center">
+
+                    <div className="w-full max-w-[520px] rounded-[28px] border border-slate-200 bg-white p-7 text-center shadow-sm sm:p-9">
+
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50 text-2xl">
+                            ◈
+                        </div>
+
+                        <p className="mt-5 text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+                            Talent Passport
+                        </p>
+
+                        <h2 className="mt-2 text-2xl font-black tracking-tight text-[#07142D]">
+                            Talent Passport Not Found
+                        </h2>
+
+                        <p className="mx-auto mt-3 max-w-md text-sm font-medium leading-6 text-slate-500">
+                            This student has not completed the DNA Assessment yet.
+                        </p>
+
+                        <button
+
+                            type="button"
+
+                            onClick={() => {
+
+                                localStorage.removeItem(
+                                    "studentPassport"
+                                );
+
+                                localStorage.removeItem(
+                                    "talentScores"
+                                );
+
+                                localStorage.removeItem(
+                                    "studentCalibration"
+                                );
+
+                                localStorage.removeItem(
+                                    "studentAnswers"
+                                );
+
+                                onStartDNA?.();
+
+                            }}
+
+                            className="mt-6 rounded-xl bg-orange-500 px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-orange-600"
+                        >
+
+                            Complete DNA Assessment
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        );
+
+    }
+
+    /* ==========================================
+       PAGE
+    ========================================== */
 
     return (
 
-        <div
-            style={{
-                minHeight: "70vh",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center"
-            }}
-        >
+        <div className="min-h-screen bg-[#F7F9FC] px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
 
-            Loading Talent Passport...
+            <div className="mx-auto max-w-[1600px] space-y-3 sm:space-y-4 lg:space-y-4">
+
+                {/* =========================================================
+                    HERO / TALENT PASSPORT OVERVIEW
+                ========================================================= */}
+
+                <section className="relative overflow-hidden rounded-[22px] border border-slate-200 bg-gradient-to-br from-white via-white to-[#F7F9FF] shadow-sm sm:rounded-[26px] lg:rounded-[28px]">
+
+                    <div className="pointer-events-none absolute -right-20 -top-28 h-[300px] w-[300px] rounded-full bg-orange-50/80" />
+
+                    <div className="pointer-events-none absolute right-[17%] -top-24 hidden h-[170px] w-[170px] rounded-full bg-orange-50/40 sm:block" />
+
+                    <div className="pointer-events-none absolute -bottom-36 right-[13%] h-[250px] w-[250px] rounded-full bg-indigo-50/70" />
+
+                    <div className="relative z-10 px-5 py-5 sm:px-6 sm:py-5 lg:px-7 lg:py-6">
+
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+
+                            <div className="min-w-0 max-w-3xl">
+
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500 sm:text-xs sm:tracking-[0.24em]">
+                                    Pre-Term Talent Profiling
+                                </p>
+
+                                <h1 className="mt-3 text-[28px] font-black leading-[1.08] tracking-tight text-[#07142D] sm:text-3xl lg:text-[38px]">
+                                    Co-Curricular Diagnostic Calibration
+                                </h1>
+
+                                <p className="mt-3 text-sm font-bold text-slate-500">
+                                    {studentName}
+                                </p>
+
+                                <p className="mt-2 max-w-2xl text-xs font-medium leading-5 text-slate-500 sm:text-sm sm:leading-6">
+                                    A structured view of your current co-curricular strengths,
+                                    development gaps, school positioning and future readiness.
+                                </p>
+
+                            </div>
+
+                            <div className="w-full rounded-2xl bg-orange-500 p-4 text-white shadow-sm sm:w-auto sm:min-w-[220px] lg:min-w-[235px]">
+
+                                <div className="flex items-center justify-between gap-5 sm:block sm:text-center">
+
+                                    <div>
+
+                                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-100">
+                                            Relative DNA Avg
+                                        </p>
+
+                                        <div className="mt-2 flex items-end gap-1 sm:justify-center">
+
+                                            <span className="text-3xl font-black leading-none sm:text-4xl">
+                                                {dnaAverage}
+                                            </span>
+
+                                            <span className="pb-1 text-xs font-bold text-orange-100">
+                                                /100
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div className="rounded-xl bg-white/15 px-3 py-2 text-right sm:mt-3 sm:text-center">
+
+                                        <p className="text-[9px] font-black uppercase tracking-wider text-orange-100">
+                                            Reliability
+                                        </p>
+
+                                        <p className="mt-1 text-lg font-black">
+                                            {reliability}%
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        {/* SUMMARY METRICS */}
+
+                        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+
+                            <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-3.5 sm:p-4">
+
+                                <p className="text-[9px] font-black uppercase tracking-wider text-blue-700 sm:text-[10px]">
+                                    Participation Readiness
+                                </p>
+
+                                <p className="mt-2 text-2xl font-black text-[#07142D] sm:text-3xl">
+                                    {participationReadiness}
+                                </p>
+
+                                <p className="mt-1 text-[10px] font-semibold text-blue-600">
+                                    Current readiness score
+                                </p>
+
+                            </div>
+
+                            <div className="rounded-2xl border border-purple-100 bg-purple-50/70 p-3.5 sm:p-4">
+
+                                <p className="text-[9px] font-black uppercase tracking-wider text-purple-700 sm:text-[10px]">
+                                    Future Readiness
+                                </p>
+
+                                <p className="mt-2 text-2xl font-black text-[#07142D] sm:text-3xl">
+                                    {futureReadiness}
+                                </p>
+
+                                <p className="mt-1 text-[10px] font-semibold text-purple-600">
+                                    Growth trajectory indicator
+                                </p>
+
+                            </div>
+
+                            <div className="rounded-2xl border border-green-100 bg-green-50/70 p-3.5 sm:p-4">
+
+                                <p className="text-[9px] font-black uppercase tracking-wider text-green-700 sm:text-[10px]">
+                                    Strongest Skill
+                                </p>
+
+                                <p className="mt-2 break-words text-base font-black leading-5 text-[#07142D] sm:text-lg">
+                                    {strongestSkill || "—"}
+                                </p>
+
+                                <p className="mt-1 text-[10px] font-semibold text-green-600">
+                                    Leading DNA dimension
+                                </p>
+
+                            </div>
+
+                            <div className="rounded-2xl border border-orange-100 bg-orange-50/70 p-3.5 sm:p-4">
+
+                                <p className="text-[9px] font-black uppercase tracking-wider text-orange-700 sm:text-[10px]">
+                                    DNA Confidence
+                                </p>
+
+                                <p className="mt-2 text-base font-black text-[#07142D] sm:text-lg">
+                                    {dnaConfidence}
+                                </p>
+
+                                <p className="mt-1 text-[10px] font-semibold text-orange-600">
+                                    Current profile confidence
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                {/* =========================================================
+                    DNA PROFILE
+                ========================================================= */}
+
+                <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:rounded-[28px] lg:p-6">
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+
+                        <div>
+
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500 sm:text-xs">
+                                Talent DNA Intelligence
+                            </p>
+
+                            <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                                New User DNA Radar
+                            </h2>
+
+                            <p className="mt-1 max-w-2xl text-xs font-medium leading-5 text-slate-500 sm:text-sm sm:leading-6">
+                                Your six-dimensional co-curricular profile based on the current diagnostic calibration.
+                            </p>
+
+                        </div>
+
+                        <div className="w-fit rounded-full bg-slate-100 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-slate-600">
+                            6 Talent Dimensions
+                        </div>
+
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+
+                        {dimensions.map((dimension: PassportDimension) => {
+
+                            const color =
+                                dimensionColors[dimension.key] || "#2563EB";
+
+                            const icon =
+                                dimensionIcons[dimension.key] || "✦";
+
+                            return (
+
+                                <article
+                                    key={dimension.key}
+                                    className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3.5 sm:p-4"
+                                >
+
+                                    <div className="flex items-start justify-between gap-3">
+
+                                        <div className="flex min-w-0 items-center gap-3">
+
+                                            <div
+                                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-lg shadow-sm"
+                                            >
+                                                {icon}
+                                            </div>
+
+                                            <div className="min-w-0">
+
+                                                <p className="truncate text-sm font-black text-[#07142D]">
+                                                    {dimension.label}
+                                                </p>
+
+                                                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                    DNA Dimension
+                                                </p>
+
+                                            </div>
+
+                                        </div>
+
+                                        <span className="text-xl font-black text-[#07142D]">
+                                            {dimension.value}
+                                        </span>
+
+                                    </div>
+
+                                    <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-200">
+
+                                        <div
+                                            style={{
+                                                width: `${dimension.value}%`,
+                                                background: color
+                                            }}
+                                            className="h-full rounded-full"
+                                        />
+
+                                    </div>
+
+                                    <div className="mt-2 flex items-center justify-between text-[10px] font-bold text-slate-400">
+
+                                        <span>0</span>
+
+                                        <span>100</span>
+
+                                    </div>
+
+                                </article>
+
+                            );
+
+                        })}
+
+                    </div>
+
+                </section>
+
+                {/* =========================================================
+                    STRENGTHS + GROWTH GAPS
+                ========================================================= */}
+
+                <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+
+                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-green-600">
+                            Strength Intelligence
+                        </p>
+
+                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                            Top Strengths
+                        </h2>
+
+                        <p className="mt-1 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
+                            Your strongest calibrated talent dimensions.
+                        </p>
+
+                        <div className="mt-4 space-y-2.5">
+
+                            {topStrengths.map((dimension: PassportDimension, index: number) => (
+
+                                <div
+                                    key={dimension.key}
+                                    className="flex items-center justify-between gap-4 rounded-2xl border border-green-100 bg-green-50/60 p-3.5"
+                                >
+
+                                    <div className="flex min-w-0 items-center gap-3">
+
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-sm font-black text-green-700 shadow-sm">
+                                            {index + 1}
+                                        </div>
+
+                                        <div className="min-w-0">
+
+                                            <p className="truncate text-sm font-black text-[#07142D]">
+                                                {dimension.label}
+                                            </p>
+
+                                            <p className="mt-0.5 text-[10px] font-bold text-green-700">
+                                                Leading strength
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div className="text-right">
+
+                                        <p className="text-xl font-black text-green-700">
+                                            {dimension.value}
+                                        </p>
+
+                                        <p className="text-[9px] font-bold text-slate-400">
+                                            /100
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            ))}
+
+                        </div>
+
+                    </section>
+
+                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+                            Growth Intelligence
+                        </p>
+
+                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                            Growth Gaps
+                        </h2>
+
+                        <p className="mt-1 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
+                            Dimensions with the highest opportunity for development.
+                        </p>
+
+                        <div className="mt-4 space-y-2.5">
+
+                            {growthGaps.map((dimension: PassportDimension, index: number) => (
+
+                                <div
+                                    key={dimension.key}
+                                    className="flex items-center justify-between gap-4 rounded-2xl border border-orange-100 bg-orange-50/60 p-3.5"
+                                >
+
+                                    <div className="flex min-w-0 items-center gap-3">
+
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-sm font-black text-orange-600 shadow-sm">
+                                            {index + 1}
+                                        </div>
+
+                                        <div className="min-w-0">
+
+                                            <p className="truncate text-sm font-black text-[#07142D]">
+                                                {dimension.label}
+                                            </p>
+
+                                            <p className="mt-0.5 text-[10px] font-bold text-orange-600">
+                                                Development opportunity
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div className="text-right">
+
+                                        <p className="text-xl font-black text-orange-600">
+                                            {dimension.value}
+                                        </p>
+
+                                        <p className="text-[9px] font-bold text-slate-400">
+                                            /100
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            ))}
+
+                        </div>
+
+                    </section>
+
+                </div>
+
+                {/* =========================================================
+                    BENCHMARK + SCHOOL POSITIONING
+                ========================================================= */}
+
+                <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+
+                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">
+                            Comparative Intelligence
+                        </p>
+
+                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                            Benchmark Analysis
+                        </h2>
+
+                        <p className="mt-1 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
+                            Difference between your score and the current benchmark average.
+                        </p>
+
+                        <div className="mt-5 divide-y divide-slate-100">
+
+                            {dimensions.map((dimension: PassportDimension) => {
+
+                                const delta =
+                                    Math.round(
+                                        dimension.value -
+                                        dimension.average
+                                    );
+
+                                return (
+
+                                    <div
+                                        key={dimension.key}
+                                        className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                                    >
+
+                                        <div className="flex min-w-0 items-center gap-3">
+
+                                            <span className="text-base">
+                                                {dimensionIcons[dimension.key] || "✦"}
+                                            </span>
+
+                                            <span className="truncate text-sm font-bold text-slate-600">
+                                                {dimension.label}
+                                            </span>
+
+                                        </div>
+
+                                        <span
+                                            className={`rounded-full px-3 py-1.5 text-xs font-black ${
+                                                delta >= 0
+                                                    ? "bg-green-50 text-green-700"
+                                                    : "bg-red-50 text-red-700"
+                                            }`}
+                                        >
+                                            {delta >= 0
+                                                ? `+${delta}`
+                                                : delta}
+                                        </span>
+
+                                    </div>
+
+                                );
+
+                            })}
+
+                        </div>
+
+                    </section>
+
+                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-600">
+                            School Benchmark
+                        </p>
+
+                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                            School Positioning
+                        </h2>
+
+                        <p className="mt-1 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
+                            Your relative percentile position across each talent dimension.
+                        </p>
+
+                        <div className="mt-4 space-y-2.5">
+
+                            {dimensions.map((dimension: PassportDimension) => (
+
+                                <div
+                                    key={dimension.key}
+                                    className="rounded-2xl border border-slate-100 bg-slate-50/70 p-3.5"
+                                >
+
+                                    <div className="flex items-center justify-between gap-4">
+
+                                        <span className="text-sm font-black text-[#07142D]">
+                                            {dimension.label}
+                                        </span>
+
+                                        <span className="text-sm font-black text-purple-700">
+                                            {dimension.percentile}%
+                                        </span>
+
+                                    </div>
+
+                                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+
+                                        <div
+                                            className="h-full rounded-full bg-purple-500"
+                                            style={{
+                                                width: `${dimension.percentile}%`
+                                            }}
+                                        />
+
+                                    </div>
+
+                                </div>
+
+                            ))}
+
+                        </div>
+
+                    </section>
+
+                </div>
+
+                {/* =========================================================
+                    RARITY + PERCENTILES
+                ========================================================= */}
+
+                <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+
+                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+                            Profile Distinctiveness
+                        </p>
+
+                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                            Rarity Index
+                        </h2>
+
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+
+                            {rarityRows.map((row: RarityRow) => (
+
+                                <div
+                                    key={row.label}
+                                    className="rounded-2xl border border-orange-100 bg-orange-50/60 p-3.5"
+                                >
+
+                                    <p className="text-xs font-bold text-slate-500">
+                                        {row.label}
+                                    </p>
+
+                                    <p className="mt-2 text-xl font-black text-orange-600">
+                                        {row.value}
+                                    </p>
+
+                                </div>
+
+                            ))}
+
+                        </div>
+
+                    </section>
+
+                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">
+                            Relative Standing
+                        </p>
+
+                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                            Percentile Ranking
+                        </h2>
+
+                        <div className="mt-4 space-y-2.5">
+
+                            {percentileRows.map((row: PercentileRow) => (
+
+                                <div
+                                    key={row.label}
+                                    className="flex items-center justify-between gap-4 rounded-2xl border border-blue-100 bg-blue-50/60 p-3.5"
+                                >
+
+                                    <span className="min-w-0 text-sm font-black text-[#07142D]">
+                                        {row.label}
+                                    </span>
+
+                                    <span className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-black text-blue-700 shadow-sm">
+                                        {row.percentile}th Percentile
+                                    </span>
+
+                                </div>
+
+                            ))}
+
+                        </div>
+
+                    </section>
+
+                </div>
+
+                {/* =========================================================
+                    PARTICIPATION + RECOMMENDATIONS
+                ========================================================= */}
+
+                <div className="grid gap-4 lg:grid-cols-[0.75fr_1.25fr] lg:gap-6">
+
+                    <section className="relative overflow-hidden rounded-[22px] bg-orange-500 p-5 text-white shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+
+                        <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
+
+                        <div className="pointer-events-none absolute -bottom-14 left-8 h-32 w-32 rounded-full bg-white/10" />
+
+                        <div className="relative">
+
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-100">
+                                Participation Intelligence
+                            </p>
+
+                            <h2 className="mt-2 text-xl font-black sm:text-2xl">
+                                Participation Readiness
+                            </h2>
+
+                            <div className="mt-4 flex items-end gap-2">
+
+                                <span className="text-4xl font-black leading-none sm:text-5xl">
+                                    {participationReadiness}
+                                </span>
+
+                                <span className="pb-1 text-sm font-bold text-orange-100">
+                                    /100
+                                </span>
+
+                            </div>
+
+                            <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/20">
+
+                                <div
+                                    className="h-full rounded-full bg-white"
+                                    style={{
+                                        width: `${participationReadiness}%`
+                                    }}
+                                />
+
+                            </div>
+
+                            <p className="mt-4 text-xs font-semibold leading-5 text-orange-100">
+                                Indicates your current readiness to participate in
+                                co-curricular opportunities and competitive experiences.
+                            </p>
+
+                        </div>
+
+                    </section>
+
+                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-green-600">
+                            Opportunity Matching
+                        </p>
+
+                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                            Recommended Competitions
+                        </h2>
+
+                        <p className="mt-1 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
+                            Competition recommendations aligned with your current Talent DNA.
+                        </p>
+
+                        {recommendedCompetitions.length === 0 ? (
+
+                            <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
+
+                                <p className="text-sm font-black text-[#07142D]">
+                                    No recommendations available yet
+                                </p>
+
+                                <p className="mt-1 text-xs font-medium text-slate-500">
+                                    Matching opportunities will appear here as your profile develops.
+                                </p>
+
+                            </div>
+
+                        ) : (
+
+                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+
+                                {recommendedCompetitions.map((competition) => (
+
+                                    <article
+                                        key={competition.name}
+                                        className="rounded-2xl border border-green-100 bg-green-50/60 p-3.5"
+                                    >
+
+                                        <div className="flex items-start justify-between gap-3">
+
+                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-base shadow-sm">
+                                                🏆
+                                            </div>
+
+                                            <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-green-700 shadow-sm">
+                                                {competition.score} Match
+                                            </span>
+
+                                        </div>
+
+                                        <h3 className="mt-4 text-sm font-black leading-5 text-[#07142D]">
+                                            {competition.name}
+                                        </h3>
+
+                                    </article>
+
+                                ))}
+
+                            </div>
+
+                        )}
+
+                    </section>
+
+                </div>
+
+                {/* =========================================================
+                    YEAR-END PROJECTION
+                ========================================================= */}
+
+                <section className="relative overflow-hidden rounded-[22px] bg-[#071A38] p-5 text-white shadow-sm sm:rounded-[26px] sm:p-5 lg:rounded-[28px] lg:p-6">
+
+                    <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-blue-400/10" />
+
+                    <div className="pointer-events-none absolute -bottom-28 right-[28%] h-56 w-56 rounded-full bg-emerald-400/10" />
+
+                    <div className="relative">
+
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-300 sm:text-xs">
+                            Growth Forecast
+                        </p>
+
+                        <h2 className="mt-2 text-xl font-black sm:text-2xl">
+                            Year-End Projection
+                        </h2>
+
+                        <p className="mt-1 max-w-2xl text-xs font-medium leading-5 text-slate-300 sm:text-sm">
+                            Projected development across your talent dimensions based on the current profile.
+                        </p>
+
+                        <div className="mt-5 grid gap-3 md:grid-cols-2">
+
+                            {projections.map((projection: PassportProjection) => (
+
+                                <div
+                                    key={projection.label}
+                                    className="rounded-2xl border border-white/10 bg-white/5 p-3.5 sm:p-4"
+                                >
+
+                                    <div className="flex items-center justify-between gap-4">
+
+                                        <span className="text-sm font-black text-white">
+                                            {projection.label}
+                                        </span>
+
+                                        <span className="shrink-0 text-xs font-black text-emerald-300">
+                                            {projection.current} → {projection.projected}
+                                        </span>
+
+                                    </div>
+
+                                    <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/10">
+
+                                        <div
+                                            className="h-full rounded-full bg-emerald-400"
+                                            style={{
+                                                width: `${projection.projected}%`
+                                            }}
+                                        />
+
+                                    </div>
+
+                                </div>
+
+                            ))}
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                {/* =========================================================
+                    TALENT INTELLIGENCE
+                ========================================================= */}
+
+                <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:rounded-[28px] lg:p-6">
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+
+                        <div>
+
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-600">
+                                Passport Intelligence
+                            </p>
+
+                            <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                                Talent Intelligence
+                            </h2>
+
+                            <p className="mt-1 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
+                                A concise interpretation of your current Talent Passport profile.
+                            </p>
+
+                        </div>
+
+                        <div className="w-fit rounded-full border border-green-200 bg-green-50 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-green-700">
+                            Profile Active
+                        </div>
+
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+
+                        <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-3.5 sm:p-4">
+
+                            <p className="text-[9px] font-black uppercase tracking-wider text-blue-700">
+                                Future Readiness
+                            </p>
+
+                            <p className="mt-3 text-2xl font-black text-[#07142D] sm:text-3xl">
+                                {futureReadiness}
+                            </p>
+
+                        </div>
+
+                        <div className="rounded-2xl border border-purple-100 bg-purple-50/70 p-3.5 sm:p-4">
+
+                            <p className="text-[9px] font-black uppercase tracking-wider text-purple-700">
+                                DNA Confidence
+                            </p>
+
+                            <p className="mt-3 break-words text-base font-black text-[#07142D] sm:text-lg">
+                                {dnaConfidence}
+                            </p>
+
+                        </div>
+
+                        <div className="rounded-2xl border border-green-100 bg-green-50/70 p-3.5 sm:p-4">
+
+                            <p className="text-[9px] font-black uppercase tracking-wider text-green-700">
+                                Strongest Skill
+                            </p>
+
+                            <p className="mt-3 break-words text-base font-black leading-5 text-[#07142D] sm:text-lg">
+                                {strongestSkill || "—"}
+                            </p>
+
+                        </div>
+
+                        <div className="rounded-2xl border border-orange-100 bg-orange-50/70 p-3.5 sm:p-4">
+
+                            <p className="text-[9px] font-black uppercase tracking-wider text-orange-700">
+                                Development Area
+                            </p>
+
+                            <p className="mt-3 break-words text-base font-black leading-5 text-[#07142D] sm:text-lg">
+                                {weakestSkill || "—"}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </div>
 
         </div>
 
     );
 
-}
-
-/* ==========================================
-   Empty Passport
-========================================== */
-
-if (!passportModel || !passport) {
-
-    return (
-
-        <div
-            style={{
-                minHeight: "70vh",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center"
-            }}
-        >
-
-            <div
-                style={{
-                    background: "white",
-                    padding: 40,
-                    borderRadius: 20,
-                    textAlign: "center",
-                    boxShadow:
-                        "0 8px 30px rgba(0,0,0,.08)"
-                }}
-            >
-
-                <h2
-                    style={{
-                        color: "#143B73",
-                        marginBottom: 20
-                    }}
-                >
-                    Talent Passport Not Found
-                </h2>
-
-                <p
-                    style={{
-                        color: "#666",
-                        marginBottom: 25
-                    }}
-                >
-                    This student has not completed
-                    the DNA Assessment yet.
-                </p>
-
-                <button
-
-                    onClick={() => {
-
-                        localStorage.removeItem(
-                            "studentPassport"
-                        );
-
-                        localStorage.removeItem(
-                            "talentScores"
-                        );
-
-                        localStorage.removeItem(
-                            "studentCalibration"
-                        );
-
-                        localStorage.removeItem(
-                            "studentAnswers"
-                        );
-
-                        onStartDNA?.();
-
-                    }}
-
-                    style={{
-                        background: "#F4A623",
-                        color: "white",
-                        border: "none",
-                        padding: "12px 24px",
-                        borderRadius: 12,
-                        cursor: "pointer",
-                        fontWeight: 600
-                    }}
-                >
-
-                    Complete DNA Assessment
-
-                </button>
-
-            </div>
-
-        </div>
-
-    );
-
-}
-
-/* ==========================================
-   PAGE
-========================================== */
-
-return (
-
-<div
-    style={{
-        background: "#F4F5F7",
-        minHeight: "100vh",
-        padding: 30
-    }}
->
-
-<div
-    style={{
-        maxWidth: 1600,
-        margin: "0 auto"
-    }}
->
-
-{/* HEADER */}
-
-<div
-    style={{
-        position: "relative",
-        overflow: "hidden",
-        background:
-            "linear-gradient(115deg, #FFFFFF 0%, #FFFFFF 48%, #FFF9F3 76%, #F3F7FF 100%)",
-        borderRadius: 28,
-        padding: "38px 40px",
-        marginBottom: 24,
-        minHeight: 220,
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        border: "1px solid #E2E8F0",
-        boxShadow: "0 4px 16px rgba(15,23,42,0.04)"
-    }}
->
-
-    {/* DECORATIVE BACKGROUND CIRCLES */}
-
-    <div
-        style={{
-            position: "absolute",
-            width: 430,
-            height: 430,
-            borderRadius: "50%",
-            right: -115,
-            top: -235,
-            background: "rgba(249,115,22,0.055)",
-            pointerEvents: "none"
-        }}
-    />
-
-    <div
-        style={{
-            position: "absolute",
-            width: 315,
-            height: 315,
-            borderRadius: "50%",
-            right: 120,
-            bottom: -245,
-            background: "rgba(37,99,235,0.05)",
-            pointerEvents: "none"
-        }}
-    />
-
-    <div
-        style={{
-            position: "absolute",
-            width: 180,
-            height: 180,
-            borderRadius: "50%",
-            right: 245,
-            top: -125,
-            background: "rgba(168,85,247,0.025)",
-            pointerEvents: "none"
-        }}
-    />
-
-    {/* LEFT CONTENT */}
-
-    <div
-        style={{
-            position: "relative",
-            zIndex: 2,
-            maxWidth: "68%"
-        }}
-    >
-
-        <div
-            style={{
-                fontSize: 12,
-                color: "#F97316",
-                fontWeight: 800,
-                letterSpacing: 2,
-                textTransform: "uppercase"
-            }}
-        >
-            PRE-TERM TALENT PROFILING
-        </div>
-
-        <h1
-            style={{
-                marginTop: 12,
-                color: "#0F172A",
-                fontSize: 38,
-                fontWeight: 800,
-                marginBottom: 10,
-                lineHeight: 1.15,
-                letterSpacing: -0.7
-            }}
-        >
-            Co-Curricular Diagnostic Calibration
-        </h1>
-
-        <div
-            style={{
-                color: "#64748B",
-                fontSize: 14,
-                fontWeight: 600
-            }}
-        >
-            {studentName}
-        </div>
-
-    </div>
-
-    {/* DNA SCORE CARD */}
-
-    <div
-        style={{
-            position: "relative",
-            zIndex: 2,
-            background: "#FF6B00",
-            color: "#FFF",
-            padding: "20px 24px",
-            borderRadius: 18,
-            width: 205,
-            textAlign: "center",
-            boxShadow: "0 10px 25px rgba(249,115,22,0.16)"
-        }}
-    >
-
-        <div
-            style={{
-                fontSize: 10,
-                fontWeight: 800,
-                letterSpacing: 1,
-                opacity: 0.9
-            }}
-        >
-            RELATIVE DNA AVG
-        </div>
-
-        <div
-            style={{
-                fontSize: 48,
-                lineHeight: 1.1,
-                fontWeight: 800,
-                marginTop: 6
-            }}
-        >
-            {dnaAverage}
-        </div>
-
-        <div
-            style={{
-                fontSize: 12,
-                opacity: 0.9
-            }}
-        >
-            /100
-        </div>
-
-        <div
-            style={{
-                marginTop: 8,
-                fontSize: 11,
-                fontWeight: 600,
-                opacity: 0.9
-            }}
-        >
-            Reliability {reliability}%
-        </div>
-
-    </div>
-
-</div></div>
-
-      {/* ==========================================================
-    MAIN GRID
-========================================================== */}
-
-<div
-    style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: 24,
-        alignItems: "start"
-    }}
->
-
-    {/* ======================================================
-        LEFT COLUMN
-    ====================================================== */}
-
-    <div
-        style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 24
-        }}
-    >
-
-        {/* ==================================================
-            DNA RADAR
-        ================================================== */}
-
-        <div
-            style={{
-                background: "#FFF",
-                borderRadius: 24,
-                padding: 24
-            }}
-        >
-
-            <h2>New User DNA Radar</h2>
-
-            {dimensions.map((dimension: PassportDimension) => {
-
-                const colors: Record<string, string> = {
-
-                    creativity: "#F97316",
-
-                    communication: "#1DA1F2",
-
-                    leadership: "#6C63FF",
-
-                    confidence: "#FF2D55",
-
-                    collaboration: "#00C781",
-
-                    criticalThinking: "#A855F7"
-
-                };
-
-                const icons: Record<string, string> = {
-
-                    creativity: "🎨",
-
-                    communication: "📢",
-
-                    leadership: "👑",
-
-                    confidence: "🎯",
-
-                    collaboration: "🤝",
-
-                    criticalThinking: "🧠"
-
-                };
-
-                return (
-
-                    <div
-                        key={dimension.key}
-                        style={{
-                            marginBottom: 18
-                        }}
-                    >
-
-                        <div
-                            style={{
-                                display: "flex",
-                                justifyContent: "space-between"
-                            }}
-                        >
-
-                            <span>
-
-                                {icons[dimension.key]}{" "}
-
-                                {dimension.label}
-
-                            </span>
-
-                            <strong>
-
-                                {dimension.value}
-
-                            </strong>
-
-                        </div>
-
-                        <div
-                            style={{
-                                background: "#E5E7EB",
-                                height: 10,
-                                borderRadius: 20,
-                                marginTop: 6
-                            }}
-                        >
-
-                            <div
-                                style={{
-                                    width: `${dimension.value}%`,
-                                    height: "100%",
-                                    borderRadius: 20,
-                                    background:
-                                        colors[dimension.key]
-                                }}
-                            />
-
-                        </div>
-
-                    </div>
-
-                );
-
-            })}
-
-        </div>
-
-        {/* ==================================================
-            BENCHMARK
-        ================================================== */}
-
-        <div
-            style={{
-                background: "#FFF",
-                borderRadius: 24,
-                padding: 24
-            }}
-        >
-
-            <h3>Benchmark Analysis</h3>
-
-            {dimensions.map((dimension: PassportDimension) => {
-
-                const delta = Math.round(
-
-                    dimension.value -
-
-                    dimension.average
-
-                );
-
-                return (
-
-                    <div
-                        key={dimension.key}
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            marginBottom: 10
-                        }}
-                    >
-
-                        <span>
-
-                            {dimension.label}
-
-                        </span>
-
-                        <strong
-                            style={{
-                                color:
-
-                                    delta >= 0
-
-                                        ? "#00C781"
-
-                                        : "#EF4444"
-                            }}
-                        >
-
-                            {delta >= 0
-
-                                ? `+${delta}`
-
-                                : delta}
-
-                        </strong>
-
-                    </div>
-
-                );
-
-            })}
-
-        </div>
-
-        {/* ==================================================
-            SCHOOL POSITION
-        ================================================== */}
-
-        <div
-            style={{
-                background: "#FFF",
-                borderRadius: 24,
-                padding: 24
-            }}
-        >
-
-            <h3>
-
-                School Positioning
-
-            </h3>
-
-            {dimensions.map((dimension: PassportDimension) => (
-
-                <div
-                    key={dimension.key}
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: 10
-                    }}
-                >
-
-                    <span>
-
-                        {dimension.label}
-
-                    </span>
-
-                    <strong>
-
-                        {dimension.percentile}%
-
-                    </strong>
-
-                </div>
-
-            ))}
-
-        </div>
-
-        {/* ==================================================
-            RARITY
-        ================================================== */}
-
-        <div
-            style={{
-                background: "#FFF",
-                borderRadius: 24,
-                padding: 24
-            }}
-        >
-
-            <h3>
-
-                Rarity Index
-
-            </h3>
-
-            {rarityRows.map((row: RarityRow) => (
-
-                <div
-                    key={row.label}
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: 10
-                    }}
-                >
-
-                    <span>
-
-                        {row.label}
-
-                    </span>
-
-                    <strong>
-
-                        {row.value}
-
-                    </strong>
-
-                </div>
-
-            ))}
-
-        </div>
-
-        {/* ==================================================
-            PERCENTILES
-        ================================================== */}
-
-        <div
-            style={{
-                background: "#FFF",
-                borderRadius: 24,
-                padding: 24
-            }}
-        >
-
-            <h3>
-
-                Percentile Ranking
-
-            </h3>
-
-            {percentileRows.map((row: PercentileRow) => (
-
-                <div
-                    key={row.label}
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: 8
-                    }}
-                >
-
-                    <span>
-
-                        {row.label}
-
-                    </span>
-
-                    <strong>
-
-                        {row.percentile}th Percentile
-
-                    </strong>
-
-                </div>
-
-            ))}
-
-        </div>
-
-    </div>
-
-              {/* ==========================================================
-            RIGHT COLUMN
-        ========================================================== */}
-
-        <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 24
-            }}
-        >
-
-            {/* ======================================================
-                TOP STRENGTHS
-            ====================================================== */}
-
-            <div
-                style={{
-                    background: "#FFF",
-                    borderRadius: 24,
-                    padding: 24
-                }}
-            >
-
-                <h3>Top Strengths</h3>
-
-                {topStrengths.map((dimension: PassportDimension) => (
-
-                    <div
-                        key={dimension.key}
-                        style={{
-                            marginBottom: 14
-                        }}
-                    >
-
-                        <strong>
-
-                            {dimension.label}
-
-                        </strong>
-
-                        <div>
-
-                            {dimension.value}/100
-
-                        </div>
-
-                    </div>
-
-                ))}
-
-            </div>
-
-            {/* ======================================================
-                GROWTH GAPS
-            ====================================================== */}
-
-            <div
-                style={{
-                    background: "#FFF",
-                    borderRadius: 24,
-                    padding: 24
-                }}
-            >
-
-                <h3>Growth Gaps</h3>
-
-                {growthGaps.map((dimension: PassportDimension) => (
-
-                    <div
-                        key={dimension.key}
-                        style={{
-                            marginBottom: 14
-                        }}
-                    >
-
-                        <strong>
-
-                            {dimension.label}
-
-                        </strong>
-
-                        <div>
-
-                            {dimension.value}/100
-
-                        </div>
-
-                    </div>
-
-                ))}
-
-            </div>
-
-            {/* ======================================================
-                PARTICIPATION
-            ====================================================== */}
-
-            <div
-                style={{
-                    background: "#FFF",
-                    borderRadius: 24,
-                    padding: 24
-                }}
-            >
-
-                <h3>
-
-                    Participation Readiness
-
-                </h3>
-
-                <div
-                    style={{
-                        fontSize: 48,
-                        fontWeight: 700
-                    }}
-                >
-
-                    {participationReadiness}/100
-
-                </div>
-
-            </div>
-
-            {/* ======================================================
-                RECOMMENDED COMPETITIONS
-            ====================================================== */}
-
-            <div
-                style={{
-                    background: "#FFF",
-                    borderRadius: 24,
-                    padding: 24
-                }}
-            >
-
-                <h3>
-
-                    Recommended Competitions
-
-                </h3>
-
-                {recommendedCompetitions.map((competition) => (
-
-                    <div
-                        key={competition.name}
-                        style={{
-                            marginBottom: 14
-                        }}
-                    >
-
-                        <strong>
-
-                            {competition.name}
-
-                        </strong>
-
-                        <div>
-
-                            Match Score: {competition.score}
-
-                        </div>
-
-                    </div>
-
-                ))}
-
-            </div>
-
-            {/* ======================================================
-                YEAR END PROJECTION
-            ====================================================== */}
-
-            <div
-                style={{
-                    background: "#071A38",
-                    color: "#FFF",
-                    borderRadius: 24,
-                    padding: 24
-                }}
-            >
-
-                <h3>
-
-                    Year-End Projection
-
-                </h3>
-
-                {projections.map((projection: PassportProjection) => (
-
-                    <div
-                        key={projection.label}
-                        style={{
-                            marginBottom: 18
-                        }}
-                    >
-
-                        <div
-                            style={{
-                                display: "flex",
-                                justifyContent: "space-between"
-                            }}
-                        >
-
-                            <span>
-
-                                {projection.label}
-
-                            </span>
-
-                            <strong>
-
-                                {projection.current}
-
-                                {" → "}
-
-                                {projection.projected}
-
-                            </strong>
-
-                        </div>
-
-                        <div
-                            style={{
-                                height: 10,
-                                background: "#243B60",
-                                borderRadius: 20,
-                                marginTop: 6
-                            }}
-                        >
-
-                            <div
-                                style={{
-                                    width: `${projection.projected}%`,
-                                    height: "100%",
-                                    background: "#00E5A0",
-                                    borderRadius: 20
-                                }}
-                            />
-
-                        </div>
-
-                    </div>
-
-                ))}
-
-            </div>
-
-            {/* ======================================================
-                TALENT INTELLIGENCE
-            ====================================================== */}
-
-            <div
-                style={{
-                    background:
-                        "linear-gradient(135deg,#071226,#0B2A4A)",
-                    color: "#FFF",
-                    borderRadius: 24,
-                    padding: 24
-                }}
-            >
-
-                <h3>
-
-                    Talent Intelligence
-
-                </h3>
-
-                <p>
-
-                    Future Readiness: {futureReadiness}
-
-                </p>
-
-                <p>
-
-                    DNA Confidence: {dnaConfidence}
-
-                </p>
-
-                <p>
-
-                    Strongest Skill: {strongestSkill}
-
-                </p>
-
-                <p>
-
-                    Development Area: {weakestSkill}
-
-                </p>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-);
 }

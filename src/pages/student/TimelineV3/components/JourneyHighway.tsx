@@ -36,6 +36,7 @@ export default function JourneyHighway({
 
   return (
     <div
+      className="journey-highway-card"
       style={{
         background: "#FFFFFF",
         borderRadius: 28,
@@ -48,6 +49,7 @@ export default function JourneyHighway({
       {/* HEADER */}
 
       <div
+        className="journey-highway-header"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -55,8 +57,9 @@ export default function JourneyHighway({
           marginBottom: 28,
         }}
       >
-        <div>
+        <div className="journey-highway-header-copy">
           <div
+            className="journey-highway-eyebrow"
             style={{
               fontSize: 12,
               fontWeight: 800,
@@ -70,6 +73,7 @@ export default function JourneyHighway({
           </div>
 
           <h3
+            className="journey-highway-title"
             style={{
               margin: 0,
               fontSize: 28,
@@ -81,6 +85,7 @@ export default function JourneyHighway({
           </h3>
 
           <div
+            className="journey-highway-description"
             style={{
               marginTop: 8,
               color: "#64748B",
@@ -91,6 +96,7 @@ export default function JourneyHighway({
         </div>
 
         <div
+          className="journey-highway-counter"
           style={{
             background: "#F8FAFC",
             padding: "10px 18px",
@@ -109,6 +115,7 @@ export default function JourneyHighway({
 
       {totalAchievements === 0 ? (
         <div
+          className="journey-highway-empty"
           style={{
             minHeight: 210,
             borderRadius: 22,
@@ -123,6 +130,7 @@ export default function JourneyHighway({
         >
           <div>
             <div
+              className="journey-highway-empty-icon"
               style={{
                 width: 64,
                 height: 64,
@@ -139,6 +147,7 @@ export default function JourneyHighway({
             </div>
 
             <div
+              className="journey-highway-empty-title"
               style={{
                 color: "#0F172A",
                 fontWeight: 800,
@@ -149,6 +158,7 @@ export default function JourneyHighway({
             </div>
 
             <div
+              className="journey-highway-empty-copy"
               style={{
                 color: "#64748B",
                 fontSize: 14,
@@ -164,6 +174,7 @@ export default function JourneyHighway({
           {/* HIGHWAY */}
 
           <div
+            className="journey-highway-scroll"
             style={{
               position: "relative",
               height: 210,
@@ -172,6 +183,7 @@ export default function JourneyHighway({
             }}
           >
             <svg
+              className="journey-highway-svg"
               width={Math.max(
                 totalAchievements * 230,
                 1200
@@ -223,6 +235,7 @@ export default function JourneyHighway({
 
               return (
                 <div
+                  className="journey-highway-checkpoint"
                   key={item.id}
                   onClick={() =>
                     setActiveIndex(index)
@@ -237,6 +250,11 @@ export default function JourneyHighway({
                   }}
                 >
                   <div
+                    className={`journey-highway-node ${
+                      isCurrent
+                        ? "journey-highway-node-current"
+                        : ""
+                    }`}
                     style={{
                       width: isCurrent
                         ? 78
@@ -272,6 +290,7 @@ export default function JourneyHighway({
                   </div>
 
                   <div
+                    className="journey-highway-event"
                     style={{
                       marginTop: 12,
                       fontWeight: 700,
@@ -284,6 +303,7 @@ export default function JourneyHighway({
                   </div>
 
                   <div
+                    className="journey-highway-year"
                     style={{
                       marginTop: 3,
                       fontSize: 12,
@@ -300,6 +320,7 @@ export default function JourneyHighway({
           {/* NAVIGATION */}
 
           <div
+            className="journey-highway-navigation"
             style={{
               display: "flex",
               justifyContent: "center",
@@ -308,6 +329,7 @@ export default function JourneyHighway({
             }}
           >
             <button
+              className="journey-highway-button"
               onClick={goPrevious}
               disabled={activeIndex === 0}
               style={{
@@ -334,6 +356,7 @@ export default function JourneyHighway({
             </button>
 
             <button
+              className="journey-highway-button"
               onClick={goNext}
               disabled={
                 activeIndex >=
@@ -367,6 +390,355 @@ export default function JourneyHighway({
           </div>
         </>
       )}
+
+      <style>{`
+
+        /* =====================================================
+           TABLET
+           DESKTOP > 1024px UNTOUCHED
+        ===================================================== */
+
+        @media (max-width: 1024px) {
+
+          .journey-highway-card {
+            padding: 20px !important;
+            margin-bottom: 17px !important;
+            border-radius: 20px !important;
+          }
+
+          .journey-highway-header {
+            margin-bottom: 18px !important;
+          }
+
+          .journey-highway-eyebrow {
+            font-size: 9.5px !important;
+            letter-spacing: 1.5px !important;
+            margin-bottom: 6px !important;
+          }
+
+          .journey-highway-title {
+            font-size: 21px !important;
+          }
+
+          .journey-highway-description {
+            margin-top: 6px !important;
+            font-size: 12.5px !important;
+          }
+
+          .journey-highway-counter {
+            padding: 8px 13px !important;
+            border-radius: 11px !important;
+            font-size: 12px !important;
+          }
+
+          .journey-highway-scroll {
+            height: 175px !important;
+          }
+
+          .journey-highway-navigation {
+            gap: 9px !important;
+            margin-top: 17px !important;
+          }
+
+          .journey-highway-button {
+            padding: 9px 15px !important;
+            border-radius: 10px !important;
+            font-size: 12px !important;
+          }
+
+          .journey-highway-empty {
+            min-height: 160px !important;
+            padding: 20px !important;
+            border-radius: 17px !important;
+          }
+
+          .journey-highway-empty-icon {
+            width: 50px !important;
+            height: 50px !important;
+            font-size: 22px !important;
+            margin-bottom: 10px !important;
+          }
+
+          .journey-highway-empty-title {
+            font-size: 15px !important;
+          }
+
+          .journey-highway-empty-copy {
+            font-size: 12px !important;
+          }
+
+        }
+
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media (max-width: 768px) {
+
+          .journey-highway-card {
+            width: 100% !important;
+            max-width: 100% !important;
+
+            padding: 13px !important;
+            margin-bottom: 10px !important;
+
+            border-radius: 15px !important;
+
+            box-sizing: border-box;
+          }
+
+
+          /* ================= HEADER ================= */
+
+          .journey-highway-header {
+            align-items: flex-start !important;
+
+            gap: 8px !important;
+
+            margin-bottom: 11px !important;
+          }
+
+          .journey-highway-header-copy {
+            flex: 1 1 auto;
+            min-width: 0;
+          }
+
+          .journey-highway-eyebrow {
+            font-size: 7.5px !important;
+            letter-spacing: 1.1px !important;
+            margin-bottom: 4px !important;
+          }
+
+          .journey-highway-title {
+            font-size: 17px !important;
+            line-height: 1.15 !important;
+          }
+
+          .journey-highway-description {
+            margin-top: 4px !important;
+
+            font-size: 10px !important;
+            line-height: 1.3 !important;
+          }
+
+          .journey-highway-counter {
+            flex-shrink: 0;
+
+            padding: 6px 9px !important;
+
+            border-radius: 9px !important;
+
+            font-size: 10px !important;
+          }
+
+
+          /* ================= HIGHWAY ================= */
+
+          .journey-highway-scroll {
+            width: 100% !important;
+            max-width: 100% !important;
+
+            height: 150px !important;
+
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+
+            -webkit-overflow-scrolling: touch;
+
+            scrollbar-width: thin;
+          }
+
+
+          /*
+            Keep the actual journey horizontal.
+
+            We scale the desktop highway rather than converting
+            the feature into unrelated vertical cards.
+          */
+
+          .journey-highway-svg {
+            transform: scale(.78);
+            transform-origin: left top;
+          }
+
+          .journey-highway-checkpoint {
+            transform: scale(.78);
+            transform-origin: center top;
+          }
+
+          .journey-highway-event {
+            margin-top: 8px !important;
+
+            font-size: 11px !important;
+
+            max-width: 145px;
+
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .journey-highway-year {
+            margin-top: 2px !important;
+
+            font-size: 9.5px !important;
+          }
+
+
+          /* ================= NAVIGATION ================= */
+
+          .journey-highway-navigation {
+            gap: 7px !important;
+
+            margin-top: 10px !important;
+          }
+
+          .journey-highway-button {
+            padding: 7px 12px !important;
+
+            border-radius: 9px !important;
+
+            font-size: 10px !important;
+          }
+
+
+          /* ================= EMPTY ================= */
+
+          .journey-highway-empty {
+            min-height: 125px !important;
+
+            padding: 15px !important;
+
+            border-radius: 13px !important;
+          }
+
+          .journey-highway-empty-icon {
+            width: 42px !important;
+            height: 42px !important;
+
+            margin-bottom: 8px !important;
+
+            font-size: 18px !important;
+          }
+
+          .journey-highway-empty-title {
+            font-size: 13px !important;
+          }
+
+          .journey-highway-empty-copy {
+            margin-top: 5px !important;
+
+            font-size: 10px !important;
+            line-height: 1.3 !important;
+          }
+
+        }
+
+
+        /* =====================================================
+           520px
+        ===================================================== */
+
+        @media (max-width: 520px) {
+
+          .journey-highway-card {
+            padding: 11px !important;
+
+            border-radius: 14px !important;
+          }
+
+          .journey-highway-title {
+            font-size: 16px !important;
+          }
+
+          .journey-highway-description {
+            font-size: 9.5px !important;
+          }
+
+          .journey-highway-scroll {
+            height: 138px !important;
+          }
+
+          .journey-highway-svg {
+            transform: scale(.70);
+          }
+
+          .journey-highway-checkpoint {
+            transform: scale(.70);
+          }
+
+          .journey-highway-navigation {
+            margin-top: 8px !important;
+          }
+
+          .journey-highway-button {
+            padding: 6px 10px !important;
+
+            font-size: 9.5px !important;
+          }
+
+        }
+
+
+        /* =====================================================
+           390px / 400px
+        ===================================================== */
+
+        @media (max-width: 420px) {
+
+          .journey-highway-card {
+            padding: 10px !important;
+            margin-bottom: 8px !important;
+
+            border-radius: 13px !important;
+          }
+
+          .journey-highway-header {
+            gap: 6px !important;
+            margin-bottom: 8px !important;
+          }
+
+          .journey-highway-eyebrow {
+            font-size: 7px !important;
+          }
+
+          .journey-highway-title {
+            font-size: 15px !important;
+          }
+
+          .journey-highway-description {
+            font-size: 9px !important;
+          }
+
+          .journey-highway-counter {
+            padding: 5px 8px !important;
+
+            font-size: 9px !important;
+          }
+
+          .journey-highway-scroll {
+            height: 130px !important;
+          }
+
+          .journey-highway-svg {
+            transform: scale(.65);
+          }
+
+          .journey-highway-checkpoint {
+            transform: scale(.65);
+          }
+
+          .journey-highway-button {
+            padding: 6px 9px !important;
+
+            border-radius: 8px !important;
+
+            font-size: 9px !important;
+          }
+
+        }
+
+      `}</style>
     </div>
   );
 }

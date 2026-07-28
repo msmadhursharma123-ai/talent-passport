@@ -7,7 +7,107 @@ export default function Competitions() {
   const [view, setView] = useState("submit");
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="competitions-page" style={{ padding: 24 }}>
+      <style>{`
+        .competitions-page {
+          width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
+        }
+
+        @media (max-width: 1100px) {
+          .competitions-page {
+            padding: 12px !important;
+          }
+
+          .competitions-page > div:first-of-type {
+            padding: 30px 28px !important;
+            margin-bottom: 22px !important;
+            min-height: 170px !important;
+          }
+
+          .competitions-page > div:first-of-type h1 {
+            font-size: 32px !important;
+            max-width: calc(100% - 110px);
+          }
+
+          .competitions-page > div:first-of-type p {
+            font-size: 14px !important;
+            max-width: calc(100% - 110px) !important;
+          }
+
+          .competitions-page > div:first-of-type > div:last-child {
+            right: 28px !important;
+            width: 82px !important;
+            height: 82px !important;
+          }
+        }
+
+        @media (max-width: 767px) {
+          .competitions-page {
+            padding: 4px !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+          }
+
+          .competitions-page > div:first-of-type {
+            border-radius: 22px !important;
+            padding: 22px 20px !important;
+            margin-bottom: 16px !important;
+            min-height: 0 !important;
+            align-items: flex-start !important;
+          }
+
+          .competitions-page > div:first-of-type h1 {
+            font-size: 25px !important;
+            line-height: 1.15 !important;
+            letter-spacing: -0.4px !important;
+            max-width: calc(100% - 68px);
+          }
+
+          .competitions-page > div:first-of-type p {
+            margin-top: 10px !important;
+            font-size: 12px !important;
+            line-height: 1.5 !important;
+            max-width: calc(100% - 68px) !important;
+          }
+
+          .competitions-page > div:first-of-type > div:nth-last-child(2) > div:first-child {
+            font-size: 9px !important;
+            letter-spacing: 1.7px !important;
+            margin-bottom: 9px !important;
+          }
+
+          .competitions-page > div:first-of-type > div:last-child {
+            right: 18px !important;
+            top: 22px !important;
+            transform: none !important;
+            width: 56px !important;
+            height: 56px !important;
+          }
+
+          .competitions-page > div:first-of-type > div:last-child > div {
+            width: 42px !important;
+            height: 42px !important;
+            font-size: 22px !important;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .competitions-page {
+            padding: 2px !important;
+          }
+
+          .competitions-page > div:first-of-type {
+            padding: 20px 16px !important;
+          }
+
+          .competitions-page > div:first-of-type h1 {
+            font-size: 22px !important;
+          }
+        }
+      `}</style>
     {/* ==========================================================
     COMPETITIONS HERO
 ========================================================== */}

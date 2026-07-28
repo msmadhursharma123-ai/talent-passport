@@ -323,7 +323,249 @@ const handleSubmit = async () => {
 };
 
 return (
-  <div>
+  <div className="competition-command-center">
+    <style>{`
+      .competition-command-center {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+      }
+
+      @media (max-width: 1100px) {
+        .competition-command-center > div {
+          grid-template-columns: minmax(0, 1fr) !important;
+          gap: 18px !important;
+        }
+
+        .competition-command-center > div > div {
+          min-width: 0 !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
+      }
+
+      @media (max-width: 767px) {
+        .competition-command-center {
+          width: 100% !important;
+          max-width: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        .competition-command-center > div {
+          gap: 12px !important;
+          width: 100% !important;
+        }
+
+        .competition-command-center > div > div {
+          border-radius: 20px !important;
+        }
+
+        .competition-command-center > div > div:first-child > div:first-child {
+          padding: 20px 18px 18px !important;
+        }
+
+        .competition-command-center > div > div:first-child > div:nth-child(2) {
+          padding: 18px !important;
+        }
+
+        .competition-command-center > div > div:first-child > div:first-child h3 {
+          font-size: 19px !important;
+          line-height: 1.25 !important;
+        }
+
+        .competition-command-center > div > div:first-child > div:first-child p {
+          font-size: 12px !important;
+          line-height: 1.5 !important;
+        }
+
+        .competition-command-center > div > div:first-child > div:nth-child(2) > div:first-child > div:nth-child(2) {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          gap: 8px !important;
+        }
+
+        .competition-command-center button {
+          max-width: 100%;
+        }
+
+        .competition-command-center select,
+        .competition-command-center textarea {
+          max-width: 100%;
+        }
+
+        .competition-command-center > div > div:last-child > div:first-child {
+          padding: 20px 18px 18px !important;
+        }
+
+        .competition-command-center > div > div:last-child > div:nth-child(2) {
+          padding: 16px !important;
+        }
+      }
+
+
+      /* Mobile/tablet compact form: keep the existing UI, but use the canvas
+         efficiently and prevent long labels/table values from colliding. */
+      @media (max-width: 767px) {
+        .competition-command-center > div > div:first-child > div:nth-child(2) > div {
+          margin-top: 22px !important;
+        }
+
+        .competition-command-center > div > div:first-child > div:nth-child(2) > div:first-child {
+          margin-top: 0 !important;
+        }
+
+        .competition-command-center > div > div:first-child > div:nth-child(2) > div > div:first-child {
+          gap: 8px !important;
+          margin-bottom: 10px !important;
+        }
+
+        .competition-command-center > div > div:first-child > div:nth-child(2) > div > div:first-child > div:first-child {
+          width: 24px !important;
+          height: 24px !important;
+          min-width: 24px !important;
+          border-radius: 7px !important;
+          font-size: 10px !important;
+        }
+
+        .competition-command-center > div > div:first-child > div:nth-child(2) > div > div:first-child > div:last-child {
+          font-size: 9px !important;
+          line-height: 1.25 !important;
+          letter-spacing: 1px !important;
+        }
+
+        .competition-command-center select {
+          height: 46px !important;
+          padding: 0 38px 0 12px !important;
+          border-radius: 12px !important;
+          font-size: 12px !important;
+          line-height: 1.2 !important;
+          text-overflow: ellipsis !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+        }
+
+        /* Judging parameters outer card */
+        .competition-command-center select + div {
+          margin-top: 12px !important;
+          padding: 12px !important;
+          border-radius: 14px !important;
+        }
+
+        .competition-command-center select + div > div:first-child {
+          gap: 8px !important;
+          margin-bottom: 9px !important;
+          align-items: center !important;
+        }
+
+        .competition-command-center select + div > div:first-child > div:first-child {
+          font-size: 9px !important;
+          line-height: 1.3 !important;
+          letter-spacing: .7px !important;
+        }
+
+        .competition-command-center select + div > div:first-child > div:last-child {
+          flex: 0 0 auto !important;
+          max-width: 42% !important;
+          padding: 4px 7px !important;
+          font-size: 8px !important;
+          letter-spacing: .5px !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          white-space: nowrap !important;
+        }
+
+        /* Parameters table */
+        .competition-command-center select + div > div:last-child > div {
+          grid-template-columns: minmax(100px, .8fr) minmax(0, 1.7fr) !important;
+          column-gap: 10px !important;
+          padding: 9px 10px !important;
+          align-items: start !important;
+        }
+
+        .competition-command-center select + div > div:last-child > div:first-child {
+          font-size: 8px !important;
+          line-height: 1.2 !important;
+          letter-spacing: .65px !important;
+        }
+
+        .competition-command-center select + div > div:last-child > div:not(:first-child) > div:first-child {
+          font-size: 10.5px !important;
+          line-height: 1.35 !important;
+          min-width: 0 !important;
+          overflow-wrap: anywhere !important;
+        }
+
+        .competition-command-center select + div > div:last-child > div:not(:first-child) > div:last-child {
+          font-size: 10.5px !important;
+          line-height: 1.35 !important;
+          min-width: 0 !important;
+          overflow-wrap: anywhere !important;
+        }
+
+        .competition-command-center label {
+          min-height: 112px !important;
+          padding: 14px !important;
+          border-radius: 14px !important;
+        }
+
+        .competition-command-center textarea {
+          min-height: 104px !important;
+          padding: 12px !important;
+          font-size: 12px !important;
+          line-height: 1.45 !important;
+          border-radius: 13px !important;
+        }
+      }
+
+      @media (min-width: 768px) and (max-width: 1100px) {
+        .competition-command-center > div > div:first-child > div:nth-child(2) {
+          padding: 22px !important;
+        }
+
+        .competition-command-center > div > div:first-child > div:nth-child(2) > div {
+          margin-top: 24px !important;
+        }
+
+        .competition-command-center > div > div:first-child > div:nth-child(2) > div:first-child {
+          margin-top: 0 !important;
+        }
+
+        .competition-command-center select {
+          height: 50px !important;
+          font-size: 13px !important;
+        }
+
+        .competition-command-center select + div {
+          margin-top: 14px !important;
+          padding: 14px !important;
+        }
+
+        .competition-command-center select + div > div:last-child > div {
+          padding: 10px 12px !important;
+        }
+
+        .competition-command-center select + div > div:last-child > div:not(:first-child) > div {
+          font-size: 12px !important;
+          line-height: 1.4 !important;
+        }
+
+        .competition-command-center label {
+          min-height: 125px !important;
+        }
+      }
+
+      @media (max-width: 420px) {
+        .competition-command-center > div > div:first-child > div:nth-child(2) > div:first-child > div:nth-child(2) button {
+          min-height: 54px !important;
+          padding: 9px 7px !important;
+          font-size: 11px !important;
+        }
+
+        .competition-command-center > div > div:first-child > div:nth-child(2) {
+          padding: 16px !important;
+        }
+      }
+    `}</style>
     {/* ==========================================================
         COMPETITION SUBMISSION WORKSPACE
     ========================================================== */}

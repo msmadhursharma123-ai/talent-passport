@@ -239,6 +239,7 @@ setParentEmail(email);
 
 return (
     <div
+      className="onboarding-page"
       style={{
         minHeight: "100vh",
 
@@ -323,6 +324,7 @@ return (
       {/* SOFT CENTER GLOW */}
 
       <div
+        className="onboarding-card"
         style={{
           position: "absolute",
           width: "550px",
@@ -572,7 +574,24 @@ value={school.school_name}
         </button>
 
       </div>
-    </div>
+    
+<style>{`
+@media (max-width: 1024px) {
+  .onboarding-page { padding: 28px !important; box-sizing: border-box; overflow-y: auto !important; }
+  .onboarding-card { width: min(760px, 100%) !important; box-sizing: border-box; padding: 38px !important; border-radius: 26px !important; }
+  .onboarding-card h1 { font-size: 34px !important; margin-bottom: 22px !important; }
+  .onboarding-card input, .onboarding-card select { padding: 15px !important; margin-top: 11px !important; font-size: 16px !important; }
+}
+@media (max-width: 600px) {
+  .onboarding-page { min-height: 100dvh !important; padding: 14px !important; align-items: flex-start !important; }
+  .onboarding-card { width: 100% !important; padding: 20px 16px !important; border-radius: 20px !important; }
+  .onboarding-card > button:first-child { margin-bottom: 12px !important; font-size: 14px !important; }
+  .onboarding-card h1 { font-size: 25px !important; margin-bottom: 12px !important; }
+  .onboarding-card input, .onboarding-card select { padding: 11px 12px !important; margin-top: 8px !important; font-size: 14px !important; border-radius: 10px !important; min-height: 44px; }
+  .onboarding-card > button:last-child { margin-top: 14px !important; padding: 13px !important; font-size: 15px !important; border-radius: 11px !important; }
+}
+`}</style>
+</div>
   );
 }
 

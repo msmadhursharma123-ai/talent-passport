@@ -183,7 +183,7 @@ setLoading(false);
 }
 
 return (
-<div
+<div className="teacher-questionnaire-page"
 style={{
 minHeight: "100vh",
 
@@ -281,7 +281,7 @@ pointerEvents: "none",
 }}
 />
 
-<div
+<div className="teacher-questionnaire-card"
 style={{
 width: 680,
 background: "white",
@@ -381,6 +381,7 @@ Which Class & Section do you teach?
 </h2>
 
 <div
+className="teacher-class-list"
 style={{
 display:"flex",
 flexWrap:"wrap",
@@ -497,6 +498,7 @@ selectedClassSections.includes(item)
     </h2>
 
     <div
+      className="teacher-subject-list"
       style={{
         display: "flex",
         flexWrap: "wrap",
@@ -536,6 +538,7 @@ selectedClassSections.includes(item)
         {/* NAVIGATION BUTTONS */}
 
         <div
+          className="teacher-questionnaire-nav"
           style={{
             display: "flex",
             justifyContent:
@@ -577,7 +580,30 @@ selectedClassSections.includes(item)
         </div>
 
       </div>
-    </div>
+    
+<style>{`
+@media (max-width: 1024px) {
+  .teacher-questionnaire-page { padding: 28px !important; box-sizing: border-box; overflow-y: auto !important; align-items: flex-start !important; }
+  .teacher-questionnaire-card { width: min(680px, 100%) !important; padding: 28px !important; box-sizing: border-box; margin: auto; }
+}
+@media (max-width: 600px) {
+  .teacher-questionnaire-page { min-height: 100dvh !important; padding: 14px !important; }
+  .teacher-questionnaire-card { width: 100% !important; padding: 18px 14px !important; border-radius: 18px !important; }
+  .teacher-questionnaire-card > button:first-child { font-size: 14px !important; margin-bottom: 14px !important; }
+  .teacher-questionnaire-card > h1 { font-size: 25px !important; line-height: 1.12 !important; }
+  .teacher-questionnaire-card > p { font-size: 13px !important; line-height: 1.5 !important; margin-bottom: 20px !important; }
+  .teacher-questionnaire-card > h3 { font-size: 13px !important; }
+  .teacher-questionnaire-card h2 { font-size: 20px !important; line-height: 1.25 !important; }
+  .teacher-class-list { gap: 8px !important; margin-top: 18px !important; }
+  .teacher-class-list > div { margin-bottom: 10px !important; }
+  .teacher-class-list h3 { font-size: 14px !important; margin-bottom: 7px !important; }
+  .teacher-class-list button, .teacher-subject-list button { padding: 9px 12px !important; border-radius: 11px !important; font-size: 13px !important; }
+  .teacher-subject-list { gap: 8px !important; margin-top: 18px !important; }
+  .teacher-questionnaire-nav { margin-top: 26px !important; gap: 10px; }
+  .teacher-questionnaire-nav button { flex: 1; }
+}
+`}</style>
+</div>
   );
 
 }

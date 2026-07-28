@@ -358,16 +358,486 @@ export default function StudentLeaderboard() {
     filters?.classes ?? [];
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 22,
-      }}
-    >
+    <>
+      <style>{`
+        .student-leaderboard {
+          display: flex;
+          flex-direction: column;
+          gap: 22px;
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
+        }
+
+        .student-leaderboard,
+        .student-leaderboard * {
+          box-sizing: border-box;
+        }
+
+        .sl-hero-content {}
+        .sl-hero-trophy {}
+        .sl-ledger-header {}
+        .sl-position-summary {}
+        .sl-position-metrics {}
+        .sl-section-header {}
+        .sl-competency-grid {}
+        .sl-profile-grid {}
+        .sl-filter-bar {}
+        .sl-filter-controls {}
+        .sl-filter-select {}
+        .sl-insight-grid {}
+        .sl-benchmark-row {}
+        .sl-benchmark-metrics {}
+        .sl-score-labels {}
+
+        @media (max-width: 1024px) {
+          .student-leaderboard {
+            width: 100%;
+            max-width: 100%;
+            gap: 14px;
+          }
+
+          /* Compact tablet cards/sections to reduce total page height */
+          .sl-hero {
+            min-height: 158px !important;
+          }
+
+          .sl-hero-content {
+            max-width: calc(100% - 150px) !important;
+            padding: 24px 24px !important;
+          }
+
+          .sl-hero-content h1 {
+            font-size: 31px !important;
+            line-height: 1.08 !important;
+          }
+
+          .sl-hero-content > div:first-child {
+            margin-bottom: 10px !important;
+          }
+
+          .sl-hero-content > div:last-child {
+            font-size: 12px !important;
+            line-height: 1.45 !important;
+          }
+
+          .sl-hero-trophy {
+            width: 132px !important;
+            height: 132px !important;
+            right: 16px !important;
+            top: 50% !important;
+            bottom: auto !important;
+            transform: translateY(-50%) scale(0.78) !important;
+            transform-origin: center right !important;
+          }
+
+          .sl-ledger-section,
+          .sl-competency-section,
+          .sl-insights-section {
+            padding: 20px !important;
+          }
+
+          .sl-position-summary {
+            padding: 16px 18px !important;
+          }
+
+          .sl-competency-grid > div {
+            padding: 13px 12px !important;
+          }
+
+          .sl-profile-grid > div {
+            padding: 14px 15px !important;
+          }
+
+          .sl-insight-grid > div {
+            min-height: 0 !important;
+            padding: 16px !important;
+          }
+
+          .sl-insight-grid > div > div > div:nth-child(2) {
+            margin-top: 14px !important;
+          }
+
+          .sl-benchmark-row {
+            gap: 14px !important;
+          }
+
+          .sl-hero-content {
+            max-width: 68% !important;
+            padding: 34px 30px !important;
+          }
+
+          .sl-hero-content h1 {
+            font-size: 36px !important;
+          }
+
+          .sl-hero-trophy {
+            right: 24px !important;
+            transform: scale(0.88);
+            transform-origin: center right;
+          }
+
+          .sl-ledger-section,
+          .sl-competency-section,
+          .sl-insights-section {
+            padding: 24px !important;
+          }
+
+          .sl-competency-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+          }
+
+          .sl-profile-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+
+          .sl-insight-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+
+          .sl-insight-grid > div:last-child {
+            grid-column: 1 / -1;
+          }
+
+          .sl-filter-bar {
+            align-items: flex-start !important;
+            flex-direction: column !important;
+          }
+
+          .sl-filter-controls {
+            width: 100%;
+            justify-content: stretch !important;
+          }
+
+          .sl-filter-select {
+            min-width: 0 !important;
+            flex: 1 1 0;
+          }
+        }
+
+        @media (max-width: 767px) {
+          .student-leaderboard {
+            gap: 10px;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+          }
+
+          /* Mobile density: same information, substantially less vertical space */
+          .sl-hero {
+            min-height: 142px !important;
+          }
+
+          .sl-hero-content {
+            max-width: calc(100% - 104px) !important;
+            padding: 18px 8px 18px 16px !important;
+          }
+
+          .sl-hero-content h1 {
+            font-size: 24px !important;
+            line-height: 1.06 !important;
+            letter-spacing: -0.45px !important;
+          }
+
+          .sl-hero-content > div:first-child {
+            font-size: 9px !important;
+            line-height: 1.2 !important;
+            letter-spacing: 1.5px !important;
+            margin-bottom: 9px !important;
+          }
+
+          .sl-hero-content > div:last-child {
+            font-size: 11px !important;
+            line-height: 1.4 !important;
+            max-width: 100% !important;
+          }
+
+          .sl-hero-trophy {
+            width: 94px !important;
+            height: 94px !important;
+            right: 8px !important;
+            top: 50% !important;
+            bottom: auto !important;
+            transform: translateY(-50%) scale(0.72) !important;
+            transform-origin: center right !important;
+          }
+
+          .sl-ledger-section,
+          .sl-competency-section,
+          .sl-insights-section {
+            padding: 15px 12px !important;
+          }
+
+          .sl-ledger-header,
+          .sl-section-header {
+            gap: 8px !important;
+            margin-bottom: 13px !important;
+          }
+
+          .sl-position-summary {
+            padding: 13px 12px !important;
+            gap: 11px !important;
+          }
+
+          .sl-competency-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 7px !important;
+          }
+
+          .sl-competency-grid > div {
+            padding: 10px !important;
+          }
+
+          .sl-competency-grid > div > div:first-child {
+            margin-bottom: 8px !important;
+          }
+
+          .sl-profile-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 7px !important;
+          }
+
+          .sl-profile-grid > div {
+            padding: 11px 10px !important;
+          }
+
+          .sl-profile-grid > div > div:first-child {
+            margin-bottom: 8px !important;
+          }
+
+          .sl-filter-bar {
+            padding: 12px !important;
+            gap: 10px !important;
+          }
+
+          .sl-filter-controls {
+            flex-direction: row !important;
+            gap: 7px !important;
+          }
+
+          .sl-filter-select {
+            flex: 1 1 0 !important;
+          }
+
+          .sl-filter-select select {
+            height: 38px !important;
+            font-size: 10px !important;
+          }
+
+          .sl-insight-grid {
+            grid-template-columns: 1fr !important;
+            gap: 7px !important;
+          }
+
+          .sl-insight-grid > div {
+            min-height: 0 !important;
+            padding: 13px 12px !important;
+          }
+
+          .sl-insight-grid > div > div > div:nth-child(2) {
+            margin-top: 10px !important;
+          }
+
+          .sl-insight-grid > div > div > div:nth-child(3) {
+            margin-top: 10px !important;
+          }
+
+          .sl-benchmark-row {
+            gap: 10px !important;
+          }
+
+          .sl-benchmark-metrics > div {
+            padding: 7px 5px !important;
+          }
+
+          .sl-hero {
+            min-height: 142px !important;
+            border-radius: 20px !important;
+          }
+
+          .sl-ledger-section,
+          .sl-competency-section,
+          .sl-insights-section {
+            border-radius: 20px !important;
+            padding: 20px 16px !important;
+          }
+
+          .sl-ledger-header,
+          .sl-section-header {
+            align-items: flex-start !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+          }
+
+          .sl-ledger-header > div:last-child {
+            width: 100%;
+            min-width: 0 !important;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 14px !important;
+            text-align: left !important;
+          }
+
+          .sl-ledger-header h2,
+          .sl-section-header h2 {
+            font-size: 20px !important;
+            line-height: 1.2 !important;
+          }
+
+          .sl-table-wrap {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+          }
+
+          .sl-table-wrap table {
+            min-width: 900px !important;
+          }
+
+          .sl-position-summary {
+            align-items: stretch !important;
+            flex-direction: column !important;
+            padding: 18px 16px !important;
+            gap: 16px !important;
+          }
+
+          .sl-position-summary > div:first-child {
+            align-items: flex-start !important;
+          }
+
+          .sl-position-metrics {
+            width: 100%;
+          }
+
+          .sl-position-metrics > div {
+            flex: 1 1 0;
+            padding: 10px 8px !important;
+          }
+
+          .sl-competency-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+          }
+
+          .sl-competency-grid > div {
+            padding: 14px 12px !important;
+          }
+
+          .sl-profile-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+          }
+
+          .sl-profile-grid > div {
+            padding: 16px 14px !important;
+          }
+
+          .sl-filter-bar {
+            border-radius: 16px !important;
+            padding: 16px !important;
+            gap: 14px !important;
+          }
+
+          .sl-filter-controls {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+          }
+
+          .sl-filter-select {
+            width: 100%;
+            min-width: 0 !important;
+          }
+
+          .sl-insight-grid {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
+
+          .sl-insight-grid > div:last-child {
+            grid-column: auto;
+          }
+
+          .sl-benchmark-row {
+            align-items: stretch !important;
+            flex-direction: column !important;
+            gap: 14px !important;
+          }
+
+          .sl-benchmark-metrics {
+            width: 100%;
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px !important;
+          }
+
+          .sl-benchmark-metrics > div {
+            min-width: 0 !important;
+            padding: 9px 6px !important;
+          }
+
+          .sl-score-labels {
+            gap: 8px;
+            font-size: 7px !important;
+          }
+
+          .sl-score-labels span {
+            flex: 1 1 0;
+            text-align: center;
+          }
+        }
+
+        @media (max-width: 430px) {
+          .sl-hero-content {
+            max-width: calc(100% - 94px) !important;
+            padding: 16px 6px 16px 14px !important;
+          }
+
+          .sl-hero-content h1 {
+            font-size: 22px !important;
+            line-height: 1.05 !important;
+          }
+
+          .sl-hero-content > div:last-child {
+            font-size: 10.5px !important;
+            line-height: 1.35 !important;
+          }
+
+          .sl-hero-trophy {
+            width: 86px !important;
+            height: 86px !important;
+            right: 6px !important;
+          }
+
+          .sl-competency-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+
+          .sl-profile-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+
+          .sl-position-metrics {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .sl-benchmark-metrics {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+      `}</style>
+
+      <div
+        className="student-leaderboard"
+      >
       {/* HERO */}
 
       <div
+        className="sl-hero"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -409,6 +879,7 @@ export default function StudentLeaderboard() {
         />
 
         <div
+          className="sl-hero-content"
           style={{
             position: "relative",
             zIndex: 2,
@@ -461,6 +932,7 @@ export default function StudentLeaderboard() {
         {/* Trophy visual */}
 
         <div
+          className="sl-hero-trophy"
           style={{
             position: "absolute",
             right: 62,
@@ -503,6 +975,7 @@ export default function StudentLeaderboard() {
             {/* STUDENT TALENT RANKING LEDGER */}
 
       <section
+        className="sl-ledger-section"
         style={{
           background: "#FFFFFF",
           borderRadius: 24,
@@ -514,6 +987,7 @@ export default function StudentLeaderboard() {
         {/* Section Header */}
 
         <div
+          className="sl-ledger-header"
           style={{
             display: "flex",
             alignItems: "center",
@@ -602,6 +1076,7 @@ export default function StudentLeaderboard() {
         {/* Ranking Table */}
 
         <div
+          className="sl-table-wrap"
           style={{
             overflowX: "auto",
             borderRadius: 18,
@@ -968,6 +1443,7 @@ export default function StudentLeaderboard() {
 
       {myRow && (
         <section
+          className="sl-position-summary"
           style={{
             borderRadius: 20,
             border: "1px solid #D9E6C4",
@@ -1048,6 +1524,7 @@ export default function StudentLeaderboard() {
           </div>
 
           <div
+            className="sl-position-metrics"
             style={{
               flexShrink: 0,
               display: "flex",
@@ -1130,6 +1607,7 @@ export default function StudentLeaderboard() {
 
       {myRow && (
         <section
+          className="sl-competency-section"
           style={{
             background: "#FFFFFF",
             borderRadius: 24,
@@ -1141,6 +1619,7 @@ export default function StudentLeaderboard() {
           {/* Section Header */}
 
           <div
+            className="sl-section-header"
             style={{
               display: "flex",
               alignItems: "flex-end",
@@ -1208,6 +1687,7 @@ export default function StudentLeaderboard() {
           {/* Competency Cards */}
 
           <div
+            className="sl-competency-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
@@ -1773,6 +2253,7 @@ export default function StudentLeaderboard() {
 
       {myRow && (
         <section
+          className="sl-profile-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
@@ -2078,6 +2559,7 @@ export default function StudentLeaderboard() {
       {/* LEADERBOARD FILTERS */}
 
       <section
+        className="sl-filter-bar"
         style={{
           background: "#FFFFFF",
           borderRadius: 18,
@@ -2142,6 +2624,7 @@ export default function StudentLeaderboard() {
         {/* Filters */}
 
         <div
+          className="sl-filter-controls"
           style={{
             display: "flex",
             alignItems: "center",
@@ -2153,6 +2636,7 @@ export default function StudentLeaderboard() {
           {/* School Filter */}
 
           <div
+            className="sl-filter-select"
             style={{
               position: "relative",
               minWidth: 210,
@@ -2211,6 +2695,7 @@ export default function StudentLeaderboard() {
           {/* Class Filter */}
 
           <div
+            className="sl-filter-select"
             style={{
               position: "relative",
               minWidth: 180,
@@ -2274,6 +2759,7 @@ export default function StudentLeaderboard() {
 
       {myRow && (
         <section
+          className="sl-insights-section"
           style={{
             background: "#FFFFFF",
             borderRadius: 24,
@@ -2285,6 +2771,7 @@ export default function StudentLeaderboard() {
           {/* HEADER */}
 
           <div
+            className="sl-section-header"
             style={{
               display: "flex",
               alignItems: "flex-end",
@@ -2353,6 +2840,7 @@ export default function StudentLeaderboard() {
           {/* INSIGHT GRID */}
 
           <div
+            className="sl-insight-grid"
             style={{
               display: "grid",
               gridTemplateColumns:
@@ -2846,6 +3334,7 @@ export default function StudentLeaderboard() {
             }}
           >
             <div
+              className="sl-benchmark-row"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -2910,6 +3399,7 @@ export default function StudentLeaderboard() {
               </div>
 
               <div
+                className="sl-benchmark-metrics"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -3070,6 +3560,7 @@ export default function StudentLeaderboard() {
               </div>
 
               <div
+                className="sl-score-labels"
                 style={{
                   marginTop: 7,
                   display: "flex",
@@ -3160,6 +3651,7 @@ export default function StudentLeaderboard() {
           </p>
         </section>
       )}
-    </div>
+      </div>
+    </>
   );
 }

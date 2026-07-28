@@ -129,7 +129,7 @@ export default function AdminLogin({
 
     return (
 
-<div
+<div className="admin-login-page"
     style={{
         minHeight: "100vh",
 
@@ -223,7 +223,7 @@ export default function AdminLogin({
         }}
     />
 
-        <div
+        <div className="admin-login-content"
     style={{
         maxWidth: 700,
         margin: "0 auto",
@@ -279,7 +279,7 @@ export default function AdminLogin({
                     Platform Operations & Management
                 </p>
 
-                <div
+                <div className="admin-login-card"
                     style={{
                         background: "white",
                         borderRadius: 24,
@@ -357,7 +357,25 @@ export default function AdminLogin({
 
             </div>
 
-        </div>
+        
+<style>{`
+@media (max-width: 1024px) {
+  .admin-login-page { padding: 42px 28px !important; box-sizing: border-box; }
+  .admin-login-content { max-width: 700px !important; width: 100% !important; }
+  .admin-login-card { padding: 32px !important; box-sizing: border-box; }
+}
+@media (max-width: 600px) {
+  .admin-login-page { min-height: 100dvh !important; padding: 24px 14px !important; }
+  .admin-login-content > button { font-size: 14px !important; margin-bottom: 20px !important; }
+  .admin-login-content > div:nth-of-type(1) { font-size: 13px !important; letter-spacing: 2px !important; margin-bottom: 12px !important; }
+  .admin-login-content > h1 { font-size: 34px !important; line-height: 1.08 !important; margin-top: 0 !important; margin-bottom: 10px !important; }
+  .admin-login-content > p { font-size: 15px !important; margin-bottom: 24px !important; }
+  .admin-login-card { width: 100% !important; padding: 20px 16px !important; border-radius: 18px !important; }
+  .admin-login-card input { box-sizing: border-box !important; font-size: 14px !important; padding: 13px !important; margin-bottom: 14px !important; }
+  .admin-login-card button { width: 100% !important; padding: 14px 16px !important; font-size: 14px !important; }
+}
+`}</style>
+</div>
 
     );
 

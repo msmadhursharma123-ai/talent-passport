@@ -210,6 +210,7 @@ export default function ExistingUserLogin({
     {/* SOFT CENTER GLOW */}
 
     <div
+        className="onboarding-card"
         style={{
             position: "absolute",
             width: "550px",
@@ -324,7 +325,25 @@ export default function ExistingUserLogin({
 
             </div>
 
-        </div>
+        
+<style>{`
+@media (max-width: 1024px) {
+  .onboarding-page { padding: 28px !important; box-sizing: border-box; }
+  .onboarding-card { width: min(500px, 100%) !important; box-sizing: border-box; padding: 34px !important; border-radius: 24px !important; box-shadow: 0 12px 34px rgba(15,23,42,.08); }
+  .onboarding-card h1 { font-size: 30px !important; line-height: 1.12 !important; margin: 0 0 6px !important; }
+  .onboarding-card input { box-sizing: border-box; border: 1px solid #CBD5E1; border-radius: 12px; font-size: 16px; }
+}
+@media (max-width: 600px) {
+  .onboarding-page { min-height: 100dvh !important; padding: 18px 14px !important; align-items: center !important; }
+  .onboarding-card { width: 100% !important; padding: 22px 18px !important; border-radius: 20px !important; }
+  .onboarding-card > button:first-child { margin-bottom: 14px !important; font-size: 14px !important; }
+  .onboarding-card h1 { font-size: 25px !important; }
+  .onboarding-card input { padding: 12px !important; margin-top: 12px !important; font-size: 15px !important; }
+  .onboarding-card input + input { margin-top: 12px !important; }
+  .onboarding-card button { min-height: 44px; }
+}
+`}</style>
+</div>
 
     );
 

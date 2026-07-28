@@ -144,7 +144,7 @@ case "teacher":
 
     return (
 
-  <div
+  <div className="teacher-onboarding-page"
     style={{
         minHeight: "100vh",
 
@@ -240,7 +240,7 @@ case "teacher":
         }}
     />
 
-     <div
+     <div className="teacher-onboarding-card"
     style={{
         width: 500,
         background: "white",
@@ -342,7 +342,22 @@ case "teacher":
 
             </div>
 
-        </div>
+        
+<style>{`
+@media (max-width: 1024px) {
+  .teacher-onboarding-page { padding: 28px !important; box-sizing: border-box; overflow-y: auto !important; }
+  .teacher-onboarding-card { width: min(500px, 100%) !important; padding: 36px !important; box-sizing: border-box; }
+}
+@media (max-width: 600px) {
+  .teacher-onboarding-page { min-height: 100dvh !important; padding: 14px !important; align-items: center !important; overflow-y: auto !important; }
+  .teacher-onboarding-card { width: 100% !important; padding: 18px !important; border-radius: 18px !important; }
+  .teacher-onboarding-card > button:first-child { margin-bottom: 14px !important; font-size: 14px !important; }
+  .teacher-onboarding-card h1 { font-size: 27px !important; line-height: 1.12 !important; }
+  .teacher-onboarding-card input, .teacher-onboarding-card select { box-sizing: border-box !important; max-width: 100% !important; font-size: 14px !important; padding: 12px !important; }
+  .teacher-onboarding-card button { min-height: 44px; }
+}
+`}</style>
+</div>
 
     );
 

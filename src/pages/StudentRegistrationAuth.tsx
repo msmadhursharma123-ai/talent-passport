@@ -146,6 +146,7 @@ console.log("CALLING onVerificationRequired");
 
   return (
 <div
+  className="onboarding-page"
   style={{
     minHeight: "100vh",
 
@@ -230,6 +231,7 @@ console.log("CALLING onVerificationRequired");
   {/* SOFT CENTER GLOW */}
 
   <div
+    className="onboarding-card"
     style={{
       position: "absolute",
       width: "550px",
@@ -358,7 +360,24 @@ console.log("CALLING onVerificationRequired");
           Existing User Login
         </button>
       </div>
-    </div>
+    
+<style>{`
+@media (max-width: 1024px) {
+  .onboarding-page { padding: 28px !important; box-sizing: border-box; }
+  .onboarding-card { width: min(520px, 100%) !important; box-sizing: border-box; padding: 38px !important; border-radius: 24px !important; }
+  .onboarding-card h1 { font-size: 32px !important; line-height: 1.12 !important; }
+}
+@media (max-width: 600px) {
+  .onboarding-page { min-height: 100dvh !important; padding: 18px 14px !important; align-items: center !important; }
+  .onboarding-card { width: 100% !important; padding: 22px 18px !important; border-radius: 20px !important; }
+  .onboarding-card > button:first-child { margin-bottom: 14px !important; }
+  .onboarding-card h1 { font-size: 25px !important; }
+  .onboarding-card h1 + p { margin-top: 8px !important; margin-bottom: 22px !important; font-size: 14px !important; line-height: 1.45 !important; }
+  .onboarding-card input { padding: 12px !important; margin-bottom: 12px !important; font-size: 15px !important; }
+  .onboarding-card > div { margin-top: 20px !important; font-size: 14px !important; }
+}
+`}</style>
+</div>
   );
 }
 

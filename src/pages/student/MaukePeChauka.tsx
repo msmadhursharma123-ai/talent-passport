@@ -627,9 +627,9 @@ export default function MaukePeChauka() {
 
   
   return (
-    <div className="min-h-screen bg-[#F7F9FC] px-6 py-6">
+    <div className="min-h-screen bg-[#F7F9FC] px-2.5 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-6">
 
-      <div className="mx-auto max-w-[1600px] space-y-6">
+      <div className="mx-auto max-w-[1600px] space-y-3 sm:space-y-4 lg:space-y-6">
 
        {/* ========================================================= */}
 {/* HERO / MARKETPLACE OVERVIEW */}
@@ -639,7 +639,7 @@ export default function MaukePeChauka() {
   className="
     relative
     overflow-hidden
-    rounded-[28px]
+    rounded-[18px] sm:rounded-[22px] lg:rounded-[28px]
     border
     border-slate-200
     bg-gradient-to-br
@@ -696,7 +696,7 @@ export default function MaukePeChauka() {
   {/* CONTENT */}
   {/* ======================================================= */}
 
-  <div className="relative z-10 px-7 py-7 lg:px-9 lg:py-8">
+  <div className="relative z-10 px-4 py-5 sm:px-6 sm:py-6 lg:px-9 lg:py-8">
 
     <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
 
@@ -704,15 +704,15 @@ export default function MaukePeChauka() {
 
       <div className="max-w-3xl">
 
-        <p className="text-xs font-black uppercase tracking-[0.24em] text-orange-500">
+        <p className="text-[9px] sm:text-[10px] lg:text-xs font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] lg:tracking-[0.24em] text-orange-500">
           Talent Opportunity Marketplace
         </p>
 
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-[#07142D] lg:text-[38px]">
+        <h1 className="mt-2 sm:mt-3 text-[25px] sm:text-[30px] font-black tracking-tight text-[#07142D] ">
           🎯 Mauke Pe Chauka
         </h1>
 
-        <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-slate-500">
+        <p className="mt-2 sm:mt-3 max-w-2xl text-[11px] sm:text-[13px] lg:text-sm font-medium leading-5 sm:leading-6 text-slate-500">
           Connect with scholarships, workshops,
           institutions, academies and talent partners.
         </p>
@@ -750,11 +750,11 @@ export default function MaukePeChauka() {
     {/* METRIC CARDS */}
     {/* ===================================================== */}
 
-    <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="mt-5 sm:mt-6 lg:mt-7 grid grid-cols-2 gap-2.5 sm:gap-3 lg:gap-4 xl:grid-cols-4">
 
       {/* ACTIVE PARTNERS */}
 
-      <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5">
+      <div className="rounded-xl sm:rounded-2xl border border-blue-100 bg-blue-50/70 p-3.5 sm:p-4 lg:p-5">
 
         <div className="flex items-start justify-between gap-4">
 
@@ -764,7 +764,7 @@ export default function MaukePeChauka() {
               Active Partners
             </p>
 
-            <p className="mt-3 text-4xl font-black text-[#07142D]">
+            <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl lg:text-4xl font-black text-[#07142D]">
               {loading ? "--" : partners.length}
             </p>
 
@@ -784,7 +784,7 @@ export default function MaukePeChauka() {
 
       {/* INVITATIONS */}
 
-      <div className="rounded-2xl border border-purple-100 bg-purple-50/70 p-5">
+      <div className="rounded-xl sm:rounded-2xl border border-purple-100 bg-purple-50/70 p-3.5 sm:p-4 lg:p-5">
 
         <div className="flex items-start justify-between gap-4">
 
@@ -794,7 +794,7 @@ export default function MaukePeChauka() {
               Invitations
             </p>
 
-            <p className="mt-3 text-4xl font-black text-[#07142D]">
+            <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl lg:text-4xl font-black text-[#07142D]">
               {loading ? "--" : offers.length}
             </p>
 
@@ -814,7 +814,7 @@ export default function MaukePeChauka() {
 
       {/* APPLICATIONS */}
 
-      <div className="rounded-2xl border border-green-100 bg-green-50/70 p-5">
+      <div className="rounded-xl sm:rounded-2xl border border-green-100 bg-green-50/70 p-3.5 sm:p-4 lg:p-5">
 
         <div className="flex items-start justify-between gap-4">
 
@@ -824,7 +824,7 @@ export default function MaukePeChauka() {
               Applications
             </p>
 
-            <p className="mt-3 text-4xl font-black text-[#07142D]">
+            <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl lg:text-4xl font-black text-[#07142D]">
               {loading ? "--" : requests.length}
             </p>
 
@@ -844,7 +844,7 @@ export default function MaukePeChauka() {
 
       {/* OPPORTUNITY INDEX */}
 
-      <div className="relative overflow-hidden rounded-2xl bg-orange-500 p-5 text-white shadow-sm">
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-orange-500 p-3.5 sm:p-4 lg:p-5 text-white shadow-sm">
 
         <div className="absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/10" />
 
@@ -860,7 +860,7 @@ export default function MaukePeChauka() {
                 Opportunity Index
               </p>
 
-              <p className="mt-3 text-4xl font-black">
+              <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl lg:text-4xl font-black">
                 {opportunityIndex}
               </p>
 
@@ -890,7 +890,7 @@ export default function MaukePeChauka() {
         {/* MY INVITATIONS */}
         {/* ========================================================= */}
 
-        <section className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm lg:p-8">
+        <section className="rounded-[18px] sm:rounded-[22px] lg:rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
 
           {/* SECTION HEADER */}
 
@@ -898,15 +898,15 @@ export default function MaukePeChauka() {
 
             <div>
 
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-orange-500">
+              <p className="text-[9px] sm:text-[10px] lg:text-xs font-black uppercase tracking-[0.16em] sm:tracking-[0.18em] lg:tracking-[0.2em] text-orange-500">
                 Partner Outreach
               </p>
 
-              <h2 className="mt-2 text-2xl font-black text-[#07142D]">
+              <h2 className="mt-1.5 sm:mt-2 text-xl sm:text-[22px] lg:text-2xl font-black text-[#07142D]">
                 My Invitations
               </h2>
 
-              <p className="mt-1 text-sm font-medium text-slate-500">
+              <p className="mt-1 text-[11px] sm:text-[13px] lg:text-sm font-medium text-slate-500">
                 Review opportunities sent directly by talent partners.
               </p>
 
@@ -939,8 +939,17 @@ export default function MaukePeChauka() {
             </div>
 
           ) : (
+            <>
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2 xl:hidden">
+              <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 sm:text-[11px]">
+                Swipe to explore more
+              </span>
+              <span className="flex items-center gap-1 text-sm font-black text-orange-500" aria-hidden="true">
+                ← <span className="text-[10px] text-slate-400">SWIPE</span> →
+              </span>
+            </div>
 
-            <div className="mt-6 flex gap-4 overflow-x-auto pb-3">
+            <div className="mt-4 sm:mt-5 lg:mt-6 flex gap-3 sm:gap-4 overflow-x-auto pb-3 snap-x snap-mandatory [-webkit-overflow-scrolling:touch]">
 
               {offers.map((offer) => {
 
@@ -964,7 +973,7 @@ export default function MaukePeChauka() {
 
                   <article
                     key={offer.id}
-                    className="flex min-h-[250px] min-w-[330px] max-w-[330px] flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+                    className="flex min-h-[225px] min-w-[86vw] max-w-[86vw] sm:min-w-[310px] sm:max-w-[310px] lg:min-h-[250px] lg:min-w-[330px] lg:max-w-[330px] snap-start flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
                   >
 
                     {/* CARD TOP */}
@@ -991,7 +1000,7 @@ export default function MaukePeChauka() {
 
                     <div className="mt-5 flex-1">
 
-                      <h3 className="line-clamp-2 text-lg font-black leading-6 text-[#07142D]">
+                      <h3 className="line-clamp-2 text-base sm:text-lg font-black leading-6 text-[#07142D]">
                         {offerTitle}
                       </h3>
 
@@ -1075,7 +1084,7 @@ export default function MaukePeChauka() {
               })}
 
             </div>
-
+            </>
           )}
 
         </section>
@@ -1084,7 +1093,7 @@ export default function MaukePeChauka() {
         {/* EXPLORE PARTNERS */}
         {/* ========================================================= */}
 
-        <section className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm lg:p-8">
+        <section className="rounded-[18px] sm:rounded-[22px] lg:rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
 
           {/* SECTION HEADER */}
 
@@ -1092,11 +1101,11 @@ export default function MaukePeChauka() {
 
             <div>
 
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-orange-500">
+              <p className="text-[9px] sm:text-[10px] lg:text-xs font-black uppercase tracking-[0.16em] sm:tracking-[0.18em] lg:tracking-[0.2em] text-orange-500">
                 Opportunity Network
               </p>
 
-              <h2 className="mt-2 text-2xl font-black text-[#07142D]">
+              <h2 className="mt-1.5 sm:mt-2 text-xl sm:text-[22px] lg:text-2xl font-black text-[#07142D]">
                 Explore Partners
               </h2>
 
@@ -1109,7 +1118,7 @@ export default function MaukePeChauka() {
 
             {/* SEARCH */}
 
-            <div className="w-full lg:w-[390px]">
+            <div className="w-full sm:max-w-[440px] lg:w-[390px]">
 
               <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
                 Find a Partner
@@ -1189,7 +1198,7 @@ export default function MaukePeChauka() {
 
           {loading && (
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-4 sm:mt-5 lg:mt-6 flex gap-3 sm:gap-4 overflow-x-auto pb-4 snap-x snap-mandatory [-webkit-overflow-scrolling:touch] xl:grid xl:grid-cols-3 xl:overflow-visible xl:pb-0">
 
               {[1, 2, 3].map(
                 (item) => (
@@ -1226,9 +1235,18 @@ export default function MaukePeChauka() {
 
           {/* PARTNER CARDS */}
 
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2 xl:hidden">
+              <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 sm:text-[11px]">
+                Swipe to explore more
+              </span>
+              <span className="flex items-center gap-1 text-sm font-black text-orange-500" aria-hidden="true">
+                ← <span className="text-[10px] text-slate-400">SWIPE</span> →
+              </span>
+            </div>
+
           {!loading && (
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-4 sm:mt-5 lg:mt-6 flex gap-3 sm:gap-4 overflow-x-auto pb-4 snap-x snap-mandatory [-webkit-overflow-scrolling:touch] xl:grid xl:grid-cols-3 xl:overflow-visible xl:pb-0">
 
               {partners
 
@@ -1301,14 +1319,14 @@ export default function MaukePeChauka() {
                           partner.id ||
                           partnerName
                         }
-                        className="group flex min-h-[300px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-orange-200 hover:shadow-md"
+                        className="group flex min-h-[260px] sm:min-h-[280px] lg:min-h-[300px] min-w-[86vw] max-w-[86vw] sm:min-w-[340px] sm:max-w-[340px] lg:min-w-[380px] lg:max-w-[380px] xl:min-w-0 xl:max-w-none snap-start flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-orange-200 hover:shadow-md"
                       >
 
                         {/* CARD ACCENT */}
 
                         <div className="h-1.5 w-full bg-gradient-to-r from-orange-400 via-orange-500 to-amber-400" />
 
-                        <div className="flex flex-1 flex-col p-5">
+                        <div className="flex flex-1 flex-col p-4 sm:p-5">
 
                           {/* TOP */}
 
@@ -1318,7 +1336,7 @@ export default function MaukePeChauka() {
 
                               {/* NO PARTNER LOGO */}
 
-                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#07142D] text-lg font-black text-white">
+                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#07142D] text-base sm:text-lg font-black text-white">
                                 {partnerName
                                   .charAt(0)
                                   .toUpperCase()}
@@ -1326,7 +1344,7 @@ export default function MaukePeChauka() {
 
                               <div className="min-w-0">
 
-                                <h3 className="truncate text-lg font-black text-[#07142D]">
+                                <h3 className="truncate text-base sm:text-lg font-black text-[#07142D]">
                                   {partnerName}
                                 </h3>
 
@@ -1346,7 +1364,7 @@ export default function MaukePeChauka() {
 
                           {/* INFORMATION */}
 
-                          <div className="mt-5 grid gap-3">
+                          <div className="mt-4 sm:mt-5 grid gap-2.5 sm:gap-3">
 
                             <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
 
@@ -1394,7 +1412,7 @@ export default function MaukePeChauka() {
                               Connect With Partner
                             </p>
 
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-1 gap-2 min-[390px]:grid-cols-3">
 
                               {/* SCHOLARSHIP */}
 
@@ -1570,7 +1588,7 @@ export default function MaukePeChauka() {
         {/* MY APPLICATIONS */}
         {/* ========================================================= */}
 
-        <section className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm lg:p-8">
+        <section className="rounded-[18px] sm:rounded-[22px] lg:rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
 
           {/* SECTION HEADER */}
 
@@ -1578,15 +1596,15 @@ export default function MaukePeChauka() {
 
             <div>
 
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-orange-500">
+              <p className="text-[9px] sm:text-[10px] lg:text-xs font-black uppercase tracking-[0.16em] sm:tracking-[0.18em] lg:tracking-[0.2em] text-orange-500">
                 Opportunity Connections
               </p>
 
-              <h2 className="mt-2 text-2xl font-black text-[#07142D]">
+              <h2 className="mt-1.5 sm:mt-2 text-xl sm:text-[22px] lg:text-2xl font-black text-[#07142D]">
                 My Applications
               </h2>
 
-              <p className="mt-1 text-sm font-medium text-slate-500">
+              <p className="mt-1 text-[11px] sm:text-[13px] lg:text-sm font-medium text-slate-500">
                 Track the opportunities you have applied for,
                 requested or accepted.
               </p>
@@ -1610,7 +1628,7 @@ export default function MaukePeChauka() {
 
                   <div
                     key={item}
-                    className="min-h-[270px] min-w-[330px] max-w-[330px] animate-pulse rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                    className="min-h-[240px] min-w-[86vw] max-w-[86vw] sm:min-w-[310px] sm:max-w-[310px] lg:min-h-[270px] lg:min-w-[330px] lg:max-w-[330px] snap-start animate-pulse rounded-2xl border border-slate-200 bg-slate-50 p-5"
                   >
 
                     <div className="flex items-center justify-between">
@@ -1671,10 +1689,19 @@ export default function MaukePeChauka() {
 
           {/* APPLICATION CAROUSEL */}
 
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2 xl:hidden">
+              <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 sm:text-[11px]">
+                Swipe to explore more
+              </span>
+              <span className="flex items-center gap-1 text-sm font-black text-orange-500" aria-hidden="true">
+                ← <span className="text-[10px] text-slate-400">SWIPE</span> →
+              </span>
+            </div>
+
           {!loading &&
             requests.length > 0 && (
 
-              <div className="mt-6 flex gap-4 overflow-x-auto pb-4">
+              <div className="mt-4 sm:mt-5 lg:mt-6 flex gap-3 sm:gap-4 overflow-x-auto pb-4 snap-x snap-mandatory [-webkit-overflow-scrolling:touch]">
 
                 {requests.map(
                   (request: any) => {
@@ -1789,7 +1816,7 @@ export default function MaukePeChauka() {
                           request.id ||
                           `${partnerName}-${applicationTitle}`
                         }
-                        className={`relative flex min-h-[285px] min-w-[340px] max-w-[340px] flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${typeStyle.card}`}
+                        className={`relative flex min-h-[250px] min-w-[86vw] max-w-[86vw] sm:min-w-[320px] sm:max-w-[320px] lg:min-h-[285px] lg:min-w-[340px] lg:max-w-[340px] snap-start flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${typeStyle.card}`}
                       >
 
                         {/* TOP ACCENT */}
@@ -1798,14 +1825,14 @@ export default function MaukePeChauka() {
                           className={`h-1.5 w-full ${typeStyle.accent}`}
                         />
 
-                        <div className="flex flex-1 flex-col p-5">
+                        <div className="flex flex-1 flex-col p-4 sm:p-5">
 
                           {/* CARD TOP */}
 
                           <div className="flex items-start justify-between gap-3">
 
                             <div
-                              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg font-black ${typeStyle.icon}`}
+                              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-base sm:text-lg font-black ${typeStyle.icon}`}
                             >
 
                               {String(
@@ -1844,7 +1871,7 @@ export default function MaukePeChauka() {
                               {applicationType}
                             </p>
 
-                            <h3 className="mt-1 line-clamp-2 text-lg font-black leading-6 text-[#07142D]">
+                            <h3 className="mt-1 line-clamp-2 text-base sm:text-lg font-black leading-6 text-[#07142D]">
                               {applicationTitle}
                             </h3>
 
@@ -1997,7 +2024,7 @@ export default function MaukePeChauka() {
         {/* OPPORTUNITY TIMELINE */}
         {/* ========================================================= */}
 
-        <section className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm lg:p-8">
+        <section className="rounded-[18px] sm:rounded-[22px] lg:rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
 
           {/* SECTION HEADER */}
 
@@ -2005,11 +2032,11 @@ export default function MaukePeChauka() {
 
             <div>
 
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-orange-500">
+              <p className="text-[9px] sm:text-[10px] lg:text-xs font-black uppercase tracking-[0.16em] sm:tracking-[0.18em] lg:tracking-[0.2em] text-orange-500">
                 Marketplace Journey
               </p>
 
-              <h2 className="mt-2 text-2xl font-black text-[#07142D]">
+              <h2 className="mt-1.5 sm:mt-2 text-xl sm:text-[22px] lg:text-2xl font-black text-[#07142D]">
                 Opportunity Timeline
               </h2>
 
@@ -2073,7 +2100,7 @@ export default function MaukePeChauka() {
 
           {/* SUMMARY STRIP */}
 
-          <div className="mt-6 flex flex-wrap items-center gap-3 border-b border-slate-100 pb-5">
+          <div className="mt-4 sm:mt-5 lg:mt-6 flex flex-wrap items-center gap-2 sm:gap-3 border-b border-slate-100 pb-5">
 
             <div className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wide text-blue-700">
               {filteredActivity.length} Activities
@@ -2172,8 +2199,17 @@ export default function MaukePeChauka() {
 
           {!loading &&
             filteredActivity.length > 0 && (
+            <>
+              <div className="mt-3 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2 xl:hidden">
+              <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 sm:text-[11px]">
+                Swipe to explore more
+              </span>
+              <span className="flex items-center gap-1 text-sm font-black text-orange-500" aria-hidden="true">
+                ← <span className="text-[10px] text-slate-400">SWIPE</span> →
+              </span>
+            </div>
 
-              <div className="mt-6 flex gap-4 overflow-x-auto pb-4">
+            <div className="mt-4 sm:mt-5 lg:mt-6 flex gap-3 sm:gap-4 overflow-x-auto pb-4 snap-x snap-mandatory [-webkit-overflow-scrolling:touch]">
 
                 {filteredActivity.map(
                   (
@@ -2321,7 +2357,7 @@ export default function MaukePeChauka() {
                           item.id ||
                           `${activityTitle}-${index}`
                         }
-                        className="relative flex min-h-[270px] min-w-[330px] max-w-[330px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+                        className="relative flex min-h-[240px] min-w-[86vw] max-w-[86vw] sm:min-w-[310px] sm:max-w-[310px] lg:min-h-[270px] lg:min-w-[330px] lg:max-w-[330px] snap-start flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
                       >
 
                         {/* TOP ACCENT */}
@@ -2330,14 +2366,14 @@ export default function MaukePeChauka() {
                           className={`h-1.5 w-full ${cardTheme.accent}`}
                         />
 
-                        <div className="flex flex-1 flex-col p-5">
+                        <div className="flex flex-1 flex-col p-4 sm:p-5">
 
                           {/* TOP */}
 
                           <div className="flex items-start justify-between gap-3">
 
                             <div
-                              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg font-black ${cardTheme.icon}`}
+                              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-base sm:text-lg font-black ${cardTheme.icon}`}
                             >
                               {isAccepted
                                 ? "✓"
@@ -2374,7 +2410,7 @@ export default function MaukePeChauka() {
                                 : "Marketplace Activity"}
                             </p>
 
-                            <h3 className="mt-1 line-clamp-2 text-lg font-black leading-6 text-[#07142D]">
+                            <h3 className="mt-1 line-clamp-2 text-base sm:text-lg font-black leading-6 text-[#07142D]">
                               {activityTitle}
                             </h3>
 
@@ -2477,7 +2513,7 @@ export default function MaukePeChauka() {
                 )}
 
               </div>
-
+            </>
             )}
 
           {/* SCROLL HINT */}
@@ -2507,19 +2543,19 @@ export default function MaukePeChauka() {
 
         {showRequestDialog && selectedPartner && (
 
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#07142D]/60 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-[#07142D]/60 p-0 sm:p-4 backdrop-blur-sm">
 
-            <div className="w-full max-w-xl overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl">
+            <div className="w-full max-w-xl overflow-hidden rounded-[18px] sm:rounded-[22px] lg:rounded-[28px] border border-slate-200 bg-white shadow-2xl">
 
               {/* DIALOG HEADER */}
 
-              <div className="border-b border-slate-100 px-7 py-6">
+              <div className="border-b border-slate-100 px-4 py-4 sm:px-6 sm:py-5 lg:px-7 lg:py-6">
 
                 <div className="flex items-start justify-between gap-5">
 
                   <div className="flex items-start gap-4">
 
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-xl font-black text-orange-600">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-lg sm:text-xl font-black text-orange-600">
                       {requestType === "Scholarship"
                         ? "★"
                         : requestType === "Workshop"
@@ -2533,7 +2569,7 @@ export default function MaukePeChauka() {
                         Partner Request
                       </p>
 
-                      <h3 className="mt-1 text-xl font-black text-[#07142D]">
+                      <h3 className="mt-1 text-lg sm:text-xl font-black text-[#07142D]">
                         Request {requestType}
                       </h3>
 
@@ -2555,7 +2591,7 @@ export default function MaukePeChauka() {
                       setSelectedPartner(null);
                       setMessage("");
                     }}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-lg font-black text-slate-500 transition hover:bg-slate-200 hover:text-[#07142D]"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-base sm:text-lg font-black text-slate-500 transition hover:bg-slate-200 hover:text-[#07142D]"
                   >
                     ×
                   </button>
@@ -2566,7 +2602,7 @@ export default function MaukePeChauka() {
 
               {/* DIALOG BODY */}
 
-              <div className="px-7 py-6">
+              <div className="px-4 py-4 sm:px-6 sm:py-5 lg:px-7 lg:py-6">
 
                 <div className="grid gap-3 sm:grid-cols-2">
 
@@ -2636,7 +2672,7 @@ export default function MaukePeChauka() {
 
               {/* DIALOG ACTIONS */}
 
-              <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/70 px-7 py-5 sm:flex-row sm:justify-end">
+              <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/70 px-4 py-4 sm:px-6 sm:py-5 lg:px-7 sm:flex-row sm:justify-end">
 
                 <button
                   type="button"
@@ -2672,20 +2708,20 @@ export default function MaukePeChauka() {
 
         {showOfferDetails && selectedOffer && (
 
-          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[#07142D]/60 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-[#07142D]/60 p-0 sm:p-4 backdrop-blur-sm">
 
-            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[28px] border border-slate-200 bg-white shadow-2xl">
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[18px] sm:rounded-[22px] lg:rounded-[28px] border border-slate-200 bg-white shadow-2xl">
 
               {/* HEADER */}
 
-              <div className="border-b border-slate-100 px-7 py-6">
+              <div className="border-b border-slate-100 px-4 py-4 sm:px-6 sm:py-5 lg:px-7 lg:py-6">
 
                 <div className="flex items-start justify-between gap-5">
 
                   <div className="flex items-start gap-4">
 
                     <div
-                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl font-black ${
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-lg sm:text-xl font-black ${
                         selectedOffer.type === "Scholarship"
                           ? "bg-orange-50 text-orange-600"
                           : selectedOffer.type === "Workshop"
@@ -2714,7 +2750,7 @@ export default function MaukePeChauka() {
 
                       </div>
 
-                      <h3 className="mt-2 text-xl font-black leading-7 text-[#07142D]">
+                      <h3 className="mt-2 text-lg sm:text-xl font-black leading-7 text-[#07142D]">
                         {selectedOffer.offer_title ||
                           selectedOffer.workshop_title ||
                           "Partner Contact Request"}
@@ -2735,7 +2771,7 @@ export default function MaukePeChauka() {
                       setShowOfferDetails(false);
                       setSelectedOffer(null);
                     }}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-lg font-black text-slate-500 transition hover:bg-slate-200 hover:text-[#07142D]"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-base sm:text-lg font-black text-slate-500 transition hover:bg-slate-200 hover:text-[#07142D]"
                   >
                     ×
                   </button>
@@ -2746,7 +2782,7 @@ export default function MaukePeChauka() {
 
               {/* BODY */}
 
-              <div className="space-y-4 px-7 py-6">
+              <div className="space-y-4 px-4 py-4 sm:px-6 sm:py-5 lg:px-7 lg:py-6">
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
 
@@ -2788,7 +2824,7 @@ export default function MaukePeChauka() {
                       Scholarship Value
                     </p>
 
-                    <p className="mt-2 text-2xl font-black text-orange-700">
+                    <p className="mt-1.5 sm:mt-2 text-xl sm:text-[22px] lg:text-2xl font-black text-orange-700">
                       {selectedOffer.scholarship_value}
                     </p>
 
@@ -2828,7 +2864,7 @@ export default function MaukePeChauka() {
 
               {/* ACTIONS */}
 
-              <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/70 px-7 py-5 sm:flex-row sm:justify-end">
+              <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/70 px-4 py-4 sm:px-6 sm:py-5 lg:px-7 sm:flex-row sm:justify-end">
 
                 <button
                   type="button"
@@ -2910,13 +2946,13 @@ export default function MaukePeChauka() {
 
         {showActivityDetails && selectedActivity && (
 
-          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#07142D]/60 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-[#07142D]/60 p-0 sm:p-4 backdrop-blur-sm">
 
-            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[28px] border border-slate-200 bg-white shadow-2xl">
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[18px] sm:rounded-[22px] lg:rounded-[28px] border border-slate-200 bg-white shadow-2xl">
 
               {/* HEADER */}
 
-              <div className="border-b border-slate-100 px-7 py-6">
+              <div className="border-b border-slate-100 px-4 py-4 sm:px-6 sm:py-5 lg:px-7 lg:py-6">
 
                 <div className="flex items-start justify-between gap-5">
 
@@ -2926,7 +2962,7 @@ export default function MaukePeChauka() {
                       Marketplace Details
                     </p>
 
-                    <h3 className="mt-2 text-xl font-black leading-7 text-[#07142D]">
+                    <h3 className="mt-2 text-lg sm:text-xl font-black leading-7 text-[#07142D]">
                       {selectedActivity.activity_title ||
                         selectedActivity.offer_title ||
                         selectedActivity.workshop_title ||
@@ -2949,7 +2985,7 @@ export default function MaukePeChauka() {
                       setShowActivityDetails(false);
                       setSelectedActivity(null);
                     }}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-lg font-black text-slate-500 transition hover:bg-slate-200 hover:text-[#07142D]"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-base sm:text-lg font-black text-slate-500 transition hover:bg-slate-200 hover:text-[#07142D]"
                   >
                     ×
                   </button>
@@ -2960,7 +2996,7 @@ export default function MaukePeChauka() {
 
               {/* BODY */}
 
-              <div className="space-y-4 px-7 py-6">
+              <div className="space-y-4 px-4 py-4 sm:px-6 sm:py-5 lg:px-7 lg:py-6">
 
                 <div className="grid gap-3 sm:grid-cols-2">
 
@@ -3100,7 +3136,7 @@ export default function MaukePeChauka() {
 
               {/* FOOTER */}
 
-              <div className="flex justify-end border-t border-slate-100 bg-slate-50/70 px-7 py-5">
+              <div className="flex justify-end border-t border-slate-100 bg-slate-50/70 px-4 py-4 sm:px-6 sm:py-5 lg:px-7">
 
                 <button
                   type="button"

@@ -66,6 +66,7 @@ export default function QuestionWizard({
 
   return (
   <div
+  className="question-page"
   style={{
     minHeight: "100vh",
 
@@ -160,6 +161,7 @@ export default function QuestionWizard({
   />
 
   <div
+    className="question-shell"
     style={{
       maxWidth: "1100px",
       margin: "0 auto",
@@ -192,6 +194,7 @@ export default function QuestionWizard({
         </div>
 
         <div
+          className="question-card"
           style={{
             background: "white",
             borderRadius: "24px",
@@ -235,6 +238,7 @@ export default function QuestionWizard({
           {current.type !== "slider" &&
             current.options && (
               <div
+                className="question-options"
                 style={{
                   display: "grid",
                   gridTemplateColumns:
@@ -491,6 +495,7 @@ option,
           {/* Buttons */}
 
           <div
+            className="question-actions"
             style={{
               display: "flex",
               justifyContent:
@@ -797,6 +802,26 @@ onComplete?.();
           </div>
         </div>
       </div>
-    </div>
+    
+<style>{`
+@media (max-width: 1024px) {
+  .question-page { padding: 34px 26px !important; box-sizing: border-box; overflow-y: auto !important; }
+  .question-shell { width: 100% !important; max-width: 100% !important; }
+  .question-card { padding: 32px !important; }
+  .question-card h1 { font-size: 34px !important; line-height: 1.15 !important; }
+  .question-options { grid-template-columns: repeat(2, minmax(0,1fr)) !important; gap: 12px !important; }
+}
+@media (max-width: 600px) {
+  .question-page { min-height: 100dvh !important; padding: 18px 14px !important; }
+  .question-card { padding: 20px 16px !important; border-radius: 18px !important; }
+  .question-card h1 { clear: both; font-size: 25px !important; line-height: 1.15 !important; margin-top: 10px !important; margin-bottom: 14px !important; }
+  .question-options { grid-template-columns: 1fr !important; gap: 8px !important; margin-top: 18px !important; }
+  .question-options > div { padding: 13px !important; border-radius: 11px !important; font-size: 14px !important; }
+  .question-actions { margin-top: 28px !important; gap: 10px !important; }
+  .question-actions button { flex: 1 1 0; padding: 12px 10px !important; font-size: 13px !important; min-width: 0; }
+  .question-card input[type="range"] { min-height: 28px; }
+}
+`}</style>
+</div>
   );
 }

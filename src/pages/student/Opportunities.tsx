@@ -4,7 +4,8 @@ export default function Opportunities() {
   return (
     <div
       style={{
-        padding: 30
+        width: "100%",
+        boxSizing: "border-box",
       }}
     >
       <CreditDashboard />

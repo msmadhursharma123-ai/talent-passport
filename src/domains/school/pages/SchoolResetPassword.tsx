@@ -60,7 +60,7 @@ onSuccess();
 
     return (
 
-        <div
+        <div className="school-reset-page"
             style={{
                 minHeight: "100vh",
                 display: "flex",
@@ -70,7 +70,7 @@ onSuccess();
             }}
         >
 
-            <div
+            <div className="school-reset-card"
                 style={{
                     width: 500,
                     background: "white",
@@ -109,7 +109,22 @@ onSuccess();
 
             </div>
 
-        </div>
+        
+<style>{`
+@media (max-width: 1024px) {
+  .school-reset-page { padding: 28px !important; box-sizing: border-box; }
+  .school-reset-card { width: min(500px, 100%) !important; padding: 34px !important; box-sizing: border-box; }
+}
+@media (max-width: 600px) {
+  .school-reset-page { min-height: 100dvh !important; padding: 14px !important; }
+  .school-reset-card { width: 100% !important; padding: 22px 16px !important; border-radius: 18px !important; }
+  .school-reset-card h1 { font-size: 28px !important; line-height: 1.1 !important; margin-top: 0 !important; margin-bottom: 10px !important; }
+  .school-reset-card p { font-size: 14px !important; margin-bottom: 20px !important; }
+  .school-reset-card input { padding: 13px !important; margin-bottom: 12px !important; font-size: 14px !important; }
+  .school-reset-card button { padding: 14px !important; font-size: 15px !important; }
+}
+`}</style>
+</div>
 
     );
 

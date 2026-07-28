@@ -357,6 +357,7 @@ finally {
 
   return (
    <div
+  className="onboarding-page"
   style={{
     minHeight: "100vh",
 
@@ -454,6 +455,7 @@ finally {
     }}
   />
 <div
+  className="onboarding-card"
   style={{
     width: 760,
     background: "white",
@@ -595,6 +597,7 @@ finally {
 />
 
 <div
+  className="responsive-age-grid"
   style={{
     display: "grid",
     gridTemplateColumns:
@@ -846,7 +849,32 @@ finally {
         </button>
 
       </div>
-    </div>
+    
+<style>{`
+@media (max-width: 1024px) {
+  .onboarding-page { padding: 28px !important; box-sizing: border-box; overflow-y: auto !important; }
+  .onboarding-card { width: min(760px, 100%) !important; padding: 38px !important; border-radius: 26px !important; box-sizing: border-box; }
+  .onboarding-card h1 { font-size: 34px !important; line-height: 1.1 !important; }
+  
+  .onboarding-card input, .onboarding-card select, .onboarding-card button { box-sizing: border-box; }
+
+  .onboarding-card .responsive-age-grid { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+
+}
+@media (max-width: 600px) {
+  .onboarding-page { min-height: 100dvh !important; padding: 14px !important; align-items: flex-start !important; overflow-y: auto !important; }
+  .onboarding-card { width: 100% !important; padding: 20px 16px !important; border-radius: 20px !important; }
+  .onboarding-card > button:first-child { margin-bottom: 12px !important; font-size: 14px !important; }
+  .onboarding-card h1 { font-size: 26px !important; }
+  .onboarding-card > h1 + p { font-size: 14px !important; margin-top: 8px !important; margin-bottom: 18px !important; }
+  .onboarding-card input, .onboarding-card select { padding: 11px 12px !important; margin-top: 8px !important; font-size: 14px !important; min-height: 44px; border-radius: 10px !important; }
+  .onboarding-card h3 { font-size: 16px !important; margin-top: 20px !important; margin-bottom: 8px !important; }
+  .onboarding-card p { line-height: 1.45 !important; }
+  .onboarding-card .responsive-age-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; margin-top: 4px !important; }
+  .onboarding-card .responsive-age-grid input { min-width: 0 !important; }
+}
+`}</style>
+</div>
   );
 }
 

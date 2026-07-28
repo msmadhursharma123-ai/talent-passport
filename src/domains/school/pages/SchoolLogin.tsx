@@ -69,7 +69,7 @@ export default function SchoolLogin({
 
     return (
 
- <div
+ <div className="school-login-page"
     style={{
         minHeight: "100vh",
 
@@ -165,7 +165,7 @@ export default function SchoolLogin({
         }}
     />
 
-     <div
+     <div className="school-login-card"
     style={{
         width: 430,
         maxWidth: "90%",
@@ -246,7 +246,23 @@ marginBottom: 28
 
             </div>
 
-        </div>
+        
+<style>{`
+@media (max-width: 1024px) {
+  .school-login-page { padding: 28px !important; box-sizing: border-box; }
+  .school-login-card { width: min(430px, 100%) !important; max-width: 100% !important; padding: 34px !important; box-sizing: border-box; }
+}
+@media (max-width: 600px) {
+  .school-login-page { min-height: 100dvh !important; padding: 14px !important; }
+  .school-login-card { width: 100% !important; max-width: 100% !important; padding: 22px 16px !important; border-radius: 18px !important; }
+  .school-login-card > button:first-child { font-size: 14px !important; margin-bottom: 18px !important; }
+  .school-login-card h1 { font-size: 28px !important; line-height: 1.1 !important; }
+  .school-login-card p { font-size: 14px !important; line-height: 1.45 !important; margin-bottom: 20px !important; }
+  .school-login-card input { padding: 13px !important; margin-bottom: 12px !important; font-size: 14px !important; }
+  .school-login-card > button:last-child { padding: 14px !important; font-size: 16px !important; }
+}
+`}</style>
+</div>
 
     );
 

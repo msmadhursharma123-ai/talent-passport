@@ -88,6 +88,7 @@ async function loadPortfolio() {
 
 return (
   <div
+    className="portfolio-responsive-page"
     style={{
       width: "95%",
       maxWidth: "1600px",
@@ -212,7 +213,7 @@ return (
           }}
         >
           Build your accredited record through performances,
-          projects and verified skills across your Talent Passport.
+          projects and verified skills.
         </p>
       </div>
 
@@ -1262,8 +1263,13 @@ return (
 
   />
 )}
-        </div>
+         </div>
       </div>
+
+      <style>
+        {portfolioResponsiveStyles}
+      </style>
+
     </div>
 );
 }
@@ -1420,8 +1426,7 @@ function PerformanceDrawer({
                   lineHeight: 1.5
                 }}
               >
-                Your recorded performances, accredited clips and
-                verified showcase achievements.
+               Showcase performances.
               </p>
 
             </div>
@@ -4014,8 +4019,7 @@ function ProjectsDrawer({
                   lineHeight: 1.5
                 }}
               >
-                Your documented projects, creations and
-                portfolio evidence.
+                Your documented projects and creations.
               </p>
 
             </div>
@@ -5151,8 +5155,7 @@ function SkillsDrawer({
                   lineHeight: 1.5
                 }}
               >
-                Your growing capability profile,
-                learning evidence and certified skills.
+              
               </p>
 
             </div>
@@ -10624,3 +10627,1312 @@ function AddSkillModal({
   );
 
 }
+
+const portfolioResponsiveStyles = `
+  /* =========================================================
+     PORTFOLIO RESPONSIVE SYSTEM
+
+     DESKTOP > 1024px:
+     COMPLETELY UNTOUCHED.
+
+     TABLET + MOBILE ONLY.
+  ========================================================= */
+
+
+  /* =========================================================
+     TABLET
+     <= 1024px
+  ========================================================= */
+
+  @media (max-width: 1024px) {
+
+    .portfolio-responsive-page {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0;
+      padding: 18px !important;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
+
+    .portfolio-responsive-page * {
+      box-sizing: border-box;
+    }
+
+    .portfolio-responsive-page img,
+    .portfolio-responsive-page video {
+      max-width: 100%;
+    }
+
+
+    /* =========================
+       HERO
+    ========================= */
+
+    .portfolio-responsive-page > div:first-child {
+      min-height: 0 !important;
+      padding: 26px 28px !important;
+      border-radius: 23px !important;
+      gap: 24px;
+    }
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:first-child {
+      font-size: 12px !important;
+      letter-spacing: 2px !important;
+    }
+
+    .portfolio-responsive-page > div:first-child h1 {
+      font-size: 34px !important;
+      line-height: 1.08 !important;
+      letter-spacing: -0.7px !important;
+    }
+
+    .portfolio-responsive-page > div:first-child p {
+      font-size: 15px !important;
+      line-height: 1.5 !important;
+    }
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:last-child {
+      width: 104px !important;
+      height: 104px !important;
+      border-radius: 25px !important;
+    }
+
+
+    /* =========================
+       CREDIT SUMMARY
+    ========================= */
+
+    .portfolio-responsive-page > div:nth-child(2) {
+      padding: 20px !important;
+      border-radius: 21px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:first-child
+      > div:first-child
+      > div:first-child {
+      font-size: 11px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2) h2 {
+      font-size: 23px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2) p {
+      font-size: 14px !important;
+      line-height: 1.45 !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child {
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr)) !important;
+      gap: 11px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child
+      > div {
+      min-height: 110px !important;
+      padding: 15px !important;
+      border-radius: 15px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child
+      > div
+      > div:last-child
+      > div:first-child {
+      font-size: 11px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child
+      > div
+      > div:last-child
+      > div:nth-child(2) {
+      font-size: 32px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child
+      > div
+      > div:last-child
+      > div:nth-child(3) {
+      font-size: 12px !important;
+    }
+
+
+    /* =========================
+       MAIN LEDGER
+    ========================= */
+
+    .portfolio-responsive-page > div:nth-child(3) {
+      border-radius: 22px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div {
+      padding: 18px !important;
+    }
+
+
+    /* =========================
+       EXPLORER
+    ========================= */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child {
+      padding: 16px !important;
+      border-radius: 17px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2) {
+      gap: 15px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child button {
+      min-width: 0 !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child h3 {
+      font-size: 19px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child p {
+      font-size: 13px !important;
+    }
+
+
+    /* =========================
+       PERFORMANCE / PROJECT /
+       SKILL COLLECTION GRIDS
+    ========================= */
+
+    .portfolio-responsive-page
+      [style*="minmax(360px"] {
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr)) !important;
+    }
+
+  }
+
+
+  /* =========================================================
+     MOBILE
+     <= 768px
+  ========================================================= */
+
+  @media (max-width: 768px) {
+
+    .portfolio-responsive-page {
+      width: 100% !important;
+      max-width: 100% !important;
+      padding: 0 !important;
+      overflow-x: hidden !important;
+    }
+
+
+    /* =====================================================
+       HERO
+    ===================================================== */
+
+    .portfolio-responsive-page > div:first-child {
+      min-height: 0 !important;
+      padding: 19px !important;
+      margin-bottom: 12px !important;
+      border-radius: 18px !important;
+      align-items: flex-start !important;
+      gap: 12px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:nth-last-child(2) {
+      max-width: calc(100% - 70px) !important;
+    }
+
+
+    /* HERO EYEBROW */
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:first-child {
+      margin-bottom: 8px !important;
+      font-size: 10px !important;
+      letter-spacing: 1.7px !important;
+      line-height: 1.3 !important;
+    }
+
+
+    /* HERO TITLE */
+
+    .portfolio-responsive-page > div:first-child h1 {
+      font-size: 25px !important;
+      line-height: 1.12 !important;
+      letter-spacing: -0.45px !important;
+    }
+
+
+    /* HERO DESCRIPTION */
+
+    .portfolio-responsive-page > div:first-child p {
+      margin-top: 9px !important;
+      max-width: 100% !important;
+      font-size: 13px !important;
+      line-height: 1.45 !important;
+    }
+
+
+    /* HERO ICON */
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:last-child {
+      width: 56px !important;
+      height: 56px !important;
+      border-radius: 15px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:last-child
+      > div
+      > div:first-child {
+      font-size: 25px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:last-child
+      > div
+      > div:last-child {
+      display: none;
+    }
+
+
+    /* Decorative circles */
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:nth-child(1) {
+      width: 180px !important;
+      height: 180px !important;
+      right: -80px !important;
+      top: -105px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:nth-child(2) {
+      width: 120px !important;
+      height: 120px !important;
+      right: 40px !important;
+      bottom: -90px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:nth-child(3) {
+      width: 60px !important;
+      height: 60px !important;
+      right: 32px !important;
+      top: 12px !important;
+    }
+
+
+    /* =====================================================
+       CREDIT SUMMARY
+    ===================================================== */
+
+    .portfolio-responsive-page > div:nth-child(2) {
+      padding: 16px !important;
+      margin-bottom: 12px !important;
+      border-radius: 17px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:first-child {
+      align-items: flex-start !important;
+      gap: 8px !important;
+      margin-bottom: 14px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:first-child
+      > div:last-child {
+      display: none;
+    }
+
+
+    /* PORTFOLIO INTELLIGENCE */
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:first-child
+      > div:first-child
+      > div:first-child {
+      font-size: 10px !important;
+      letter-spacing: 1.5px !important;
+      margin-bottom: 7px !important;
+    }
+
+
+    /* CREDIT SUMMARY TITLE */
+
+    .portfolio-responsive-page
+      > div:nth-child(2) h2 {
+      font-size: 20px !important;
+      line-height: 1.2 !important;
+    }
+
+
+    /* CREDIT SUMMARY DESCRIPTION */
+
+    .portfolio-responsive-page
+      > div:nth-child(2) p {
+      margin-top: 6px !important;
+      font-size: 12px !important;
+      line-height: 1.45 !important;
+    }
+
+
+    /* 2 × 2 credit grid */
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child {
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr)) !important;
+      gap: 8px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child
+      > div {
+      min-width: 0;
+      min-height: 98px !important;
+      padding: 12px !important;
+      border-radius: 13px !important;
+    }
+
+
+    /* CREDIT LABEL */
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child
+      > div
+      > div:last-child
+      > div:first-child {
+      font-size: 9px !important;
+      letter-spacing: 0.45px !important;
+      line-height: 1.25 !important;
+    }
+
+
+    /* CREDIT NUMBER */
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child
+      > div
+      > div:last-child
+      > div:nth-child(2) {
+      margin-top: 8px !important;
+      font-size: 27px !important;
+    }
+
+
+    /* CREDIT DESCRIPTION */
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child
+      > div
+      > div:last-child
+      > div:nth-child(3) {
+      margin-top: 7px !important;
+      font-size: 10px !important;
+      line-height: 1.3 !important;
+    }
+
+
+    /* =====================================================
+       MAIN PORTFOLIO LEDGER
+    ===================================================== */
+
+    .portfolio-responsive-page > div:nth-child(3) {
+      border-radius: 17px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div {
+      padding: 11px !important;
+    }
+
+
+    /* =====================================================
+       PORTFOLIO SECTION EXPLORER
+    ===================================================== */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child {
+      padding: 14px !important;
+      margin-bottom: 12px !important;
+      border-radius: 15px !important;
+    }
+
+
+    /* Explorer top area */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2) {
+      display: block !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:first-child {
+      min-width: 0 !important;
+      width: 100% !important;
+    }
+
+
+    /* ACTIVE SHOWCASE DESK */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:first-child
+      > div:first-child {
+      padding: 5px 9px !important;
+      margin-bottom: 7px !important;
+      font-size: 9px !important;
+      letter-spacing: .8px !important;
+    }
+
+
+    /* Explorer title */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child h3 {
+      font-size: 19px !important;
+      line-height: 1.2 !important;
+    }
+
+
+    /* Explorer description */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child p {
+      margin-top: 6px !important;
+      font-size: 12px !important;
+      line-height: 1.4 !important;
+    }
+
+
+    /* =====================================================
+       EXPLORER SECTION TABS
+    ===================================================== */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:last-child {
+      width: 100% !important;
+      margin-top: 12px !important;
+      display: grid !important;
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr)) !important;
+      gap: 5px !important;
+      padding: 5px !important;
+      border-radius: 12px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:last-child
+      > button {
+      width: 100% !important;
+      min-width: 0 !important;
+      height: 40px !important;
+      padding: 0 6px !important;
+      border-radius: 9px !important;
+      gap: 5px !important;
+      font-size: 10px !important;
+      white-space: nowrap !important;
+    }
+
+
+    /* Selector icons */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:last-child
+      > button
+      > span {
+      width: 22px !important;
+      height: 22px !important;
+      min-width: 22px !important;
+      border-radius: 7px !important;
+      font-size: 10px !important;
+    }
+
+
+    /* =====================================================
+       THREE LEDGER STATUS CARDS
+    ===================================================== */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child {
+      margin-top: 11px !important;
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr)) !important;
+      gap: 6px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child
+      > div {
+      min-width: 0 !important;
+      padding: 9px !important;
+      border-radius: 10px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child
+      > div
+      > div {
+      gap: 5px !important;
+    }
+
+
+    /* Ledger label */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child
+      > div
+      > div
+      > div:first-child
+      > div:first-child {
+      font-size: 7.5px !important;
+      letter-spacing: .3px !important;
+      line-height: 1.2 !important;
+    }
+
+
+    /* Ledger record count */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child
+      > div
+      > div
+      > div:first-child
+      > div:last-child {
+      margin-top: 4px !important;
+      font-size: 10px !important;
+      line-height: 1.2 !important;
+    }
+
+
+    /* Ledger number */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child
+      > div
+      > div
+      > div:last-child {
+      min-width: 30px !important;
+      width: 30px !important;
+      height: 30px !important;
+      padding: 0 !important;
+      border-radius: 8px !important;
+      font-size: 13px !important;
+      flex-shrink: 0 !important;
+    }
+
+
+    /* =====================================================
+       DRAWER / LIVE PERFORMANCE SECTION
+    ===================================================== */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:not(:first-child) {
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:not(:first-child)
+      > div {
+      max-width: 100%;
+      min-width: 0;
+      border-radius: 14px !important;
+    }
+
+
+    /* Drawer padding */
+
+    .portfolio-responsive-page
+      [style*='padding: "22px 24px"'] {
+      padding: 16px !important;
+    }
+
+    .portfolio-responsive-page
+      [style*='padding: "20px 22px 22px"'] {
+      padding: 14px !important;
+    }
+
+
+    /* =====================================================
+       COLLECTION GRIDS
+    ===================================================== */
+
+    .portfolio-responsive-page
+      [style*="minmax(360px"] {
+      width: 100% !important;
+      grid-template-columns:
+        minmax(0, 1fr) !important;
+      gap: 10px !important;
+    }
+
+    .portfolio-responsive-page
+      [style*='minHeight: "285px"'],
+    .portfolio-responsive-page
+      [style*='minHeight: "270px"'] {
+      min-width: 0 !important;
+      max-width: 100% !important;
+    }
+
+
+    /* =====================================================
+       PERFORMANCE SHOWCASE EMPTY STATE
+    ===================================================== */
+
+    .portfolio-responsive-page
+      [style*='borderStyle: "dashed"'] {
+      max-width: 100% !important;
+      padding-left: 18px !important;
+      padding-right: 18px !important;
+    }
+
+
+    /* =====================================================
+       TEXT SAFETY
+    ===================================================== */
+
+    .portfolio-responsive-page h1,
+    .portfolio-responsive-page h2,
+    .portfolio-responsive-page h3,
+    .portfolio-responsive-page p,
+    .portfolio-responsive-page span,
+    .portfolio-responsive-page strong {
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+
+
+    /* =====================================================
+       VIDEO
+    ===================================================== */
+
+    .portfolio-responsive-page video {
+      width: 100% !important;
+      max-width: 100% !important;
+      border-radius: 12px !important;
+    }
+
+
+    /* =====================================================
+       MODALS
+    ===================================================== */
+
+    .portfolio-responsive-page
+      [style*='position: "fixed"'] {
+      max-width: none !important;
+    }
+
+    .portfolio-responsive-page
+      [style*='position: "fixed"']
+      input,
+    .portfolio-responsive-page
+      [style*='position: "fixed"']
+      select,
+    .portfolio-responsive-page
+      [style*='position: "fixed"']
+      textarea {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+  }
+
+
+  /* =========================================================
+     PHONE
+     <= 520px
+
+     IMPORTANT:
+     We no longer shrink the typography aggressively.
+     The 768px typography remains the visual baseline.
+  ========================================================= */
+
+  @media (max-width: 520px) {
+
+    .portfolio-responsive-page > div:first-child {
+      padding: 17px !important;
+      border-radius: 16px !important;
+    }
+
+    .portfolio-responsive-page > div:first-child h1 {
+      font-size: 23px !important;
+    }
+
+    .portfolio-responsive-page > div:first-child p {
+      font-size: 12px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:first-child {
+      font-size: 9px !important;
+    }
+
+
+    /* CREDIT */
+
+    .portfolio-responsive-page > div:nth-child(2) {
+      padding: 14px !important;
+      border-radius: 15px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2) h2 {
+      font-size: 19px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2) p {
+      font-size: 11px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child
+      > div {
+      min-height: 94px !important;
+      padding: 11px !important;
+    }
+
+
+    /* MAIN LEDGER */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div {
+      padding: 10px !important;
+    }
+
+
+    /* EXPLORER */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child {
+      padding: 12px !important;
+      margin-bottom: 10px !important;
+      border-radius: 13px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child h3 {
+      font-size: 18px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child p {
+      font-size: 11px !important;
+    }
+
+
+    /* Tabs */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:last-child {
+      margin-top: 10px !important;
+      gap: 4px !important;
+      padding: 4px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:last-child
+      > button {
+      height: 38px !important;
+      padding: 0 4px !important;
+      font-size: 9px !important;
+      gap: 4px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:last-child
+      > button
+      > span {
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px !important;
+      font-size: 9px !important;
+    }
+
+
+    /* Ledger cards */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child {
+      margin-top: 10px !important;
+      gap: 5px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child
+      > div {
+      padding: 8px !important;
+    }
+
+
+    /* DRAWER CARDS */
+
+    .portfolio-responsive-page
+      [style*='borderRadius: "20px"'] {
+      max-width: 100%;
+    }
+
+
+    /* Empty showcase */
+
+    .portfolio-responsive-page
+      [style*='borderStyle: "dashed"'] {
+      padding: 22px 16px !important;
+    }
+
+
+    /* Modal overlays */
+
+    .portfolio-responsive-page
+      [style*='position: "fixed"'][style*='inset: 0'] {
+      padding: 12px !important;
+    }
+
+  }
+
+
+  /* =========================================================
+     390 / 400px PHONE
+     <= 420px
+  ========================================================= */
+
+  @media (max-width: 420px) {
+
+    /* HERO */
+
+    .portfolio-responsive-page > div:first-child {
+      padding: 15px !important;
+      margin-bottom: 9px !important;
+      border-radius: 15px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:nth-last-child(2) {
+      max-width: calc(100% - 56px) !important;
+    }
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:first-child {
+      font-size: 8.5px !important;
+      letter-spacing: 1.3px !important;
+    }
+
+    .portfolio-responsive-page > div:first-child h1 {
+      font-size: 22px !important;
+      line-height: 1.12 !important;
+    }
+
+    .portfolio-responsive-page > div:first-child p {
+      margin-top: 7px !important;
+      font-size: 11px !important;
+      line-height: 1.4 !important;
+    }
+
+    .portfolio-responsive-page
+      > div:first-child
+      > div:last-child {
+      width: 48px !important;
+      height: 48px !important;
+      border-radius: 13px !important;
+    }
+
+
+    /* CREDIT */
+
+    .portfolio-responsive-page > div:nth-child(2) {
+      padding: 12px !important;
+      margin-bottom: 9px !important;
+      border-radius: 14px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:first-child
+      > div:first-child
+      > div:first-child {
+      font-size: 9px !important;
+      letter-spacing: 1.2px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2) h2 {
+      font-size: 18px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2) p {
+      font-size: 10.5px !important;
+      line-height: 1.4 !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child {
+      gap: 6px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child
+      > div {
+      min-height: 90px !important;
+      padding: 10px !important;
+      border-radius: 11px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child
+      > div
+      > div:last-child
+      > div:first-child {
+      font-size: 8.5px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child
+      > div
+      > div:last-child
+      > div:nth-child(2) {
+      margin-top: 7px !important;
+      font-size: 25px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(2)
+      > div:last-child
+      > div
+      > div:last-child
+      > div:nth-child(3) {
+      margin-top: 6px !important;
+      font-size: 9px !important;
+      line-height: 1.3 !important;
+    }
+
+
+    /* EXPLORER */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child {
+      padding: 11px !important;
+      border-radius: 12px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:first-child
+      > div:first-child {
+      padding: 4px 7px !important;
+      font-size: 8px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child h3 {
+      font-size: 17px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child p {
+      font-size: 10px !important;
+    }
+
+
+    /* TABS */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:last-child
+      > button {
+      height: 37px !important;
+      padding: 0 3px !important;
+      font-size: 8.5px !important;
+      gap: 3px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:last-child
+      > button
+      > span {
+      width: 19px !important;
+      height: 19px !important;
+      min-width: 19px !important;
+      font-size: 9px !important;
+    }
+
+
+    /* STATUS CARDS */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child {
+      gap: 5px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child
+      > div {
+      padding: 7px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child
+      > div
+      > div
+      > div:first-child
+      > div:first-child {
+      font-size: 7px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child
+      > div
+      > div
+      > div:first-child
+      > div:last-child {
+      font-size: 9px !important;
+    }
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child
+      > div
+      > div
+      > div:last-child {
+      min-width: 28px !important;
+      width: 28px !important;
+      height: 28px !important;
+      font-size: 12px !important;
+    }
+
+
+    /* EMPTY PERFORMANCE SHOWCASE */
+
+    .portfolio-responsive-page
+      [style*='borderStyle: "dashed"'] {
+      padding: 20px 14px !important;
+    }
+
+
+    /* MODALS */
+
+    .portfolio-responsive-page
+      [style*='position: "fixed"'][style*='inset: 0'] {
+      padding: 9px !important;
+    }
+
+  }
+
+
+  /* =========================================================
+     VERY SMALL PHONE
+     <= 360px
+  ========================================================= */
+
+  @media (max-width: 360px) {
+
+    .portfolio-responsive-page > div:first-child h1 {
+      font-size: 20px !important;
+    }
+
+    .portfolio-responsive-page > div:first-child p {
+      font-size: 10.5px !important;
+    }
+
+
+    /* Hide tab icons only when width becomes genuinely tight */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:nth-last-child(2)
+      > div:last-child
+      > button
+      > span {
+      display: none !important;
+    }
+
+
+    /* Stack ledger summaries only on very narrow phones */
+
+    .portfolio-responsive-page
+      > div:nth-child(3)
+      > div
+      > div:first-child
+      > div:last-child {
+      grid-template-columns: 1fr !important;
+    }
+
+  }
+`;

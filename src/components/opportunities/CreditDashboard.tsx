@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 
 import {
   getStudentCompetitionCount
@@ -43,6 +44,176 @@ import {
 } from "../../services/identityService";
 
 export default function CreditDashboard() {
+
+const [viewportWidth, setViewportWidth] =
+  useState(() =>
+    typeof window !== "undefined"
+      ? window.innerWidth
+      : 1440
+  );
+
+useEffect(() => {
+  if (typeof window === "undefined") return;
+
+  const handleResize = () =>
+    setViewportWidth(window.innerWidth);
+
+  handleResize();
+
+  window.addEventListener(
+    "resize",
+    handleResize
+  );
+
+  return () =>
+    window.removeEventListener(
+      "resize",
+      handleResize
+    );
+}, []);
+
+const isMobile = viewportWidth < 640;
+const isTablet =
+  viewportWidth >= 640 &&
+  viewportWidth < 1100;
+const isCompact = viewportWidth < 1100;
+
+const responsive = {
+  page: {
+    padding: isMobile
+      ? 0
+      : isTablet
+      ? 4
+      : 40,
+    borderRadius: isMobile
+      ? 20
+      : isTablet
+      ? 26
+      : 32
+  },
+  hero: {
+    width: "100%",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    padding: isMobile
+      ? "16px 14px"
+      : isTablet
+      ? "20px 18px"
+      : "38px 42px",
+    borderRadius: isMobile
+      ? 20
+      : isTablet
+      ? 24
+      : 28
+  },
+  heroTitle: {
+    fontSize: isMobile
+      ? 21
+      : isTablet
+      ? 25
+      : 38,
+    lineHeight: isMobile
+      ? 1.12
+      : 1.15
+  },
+  marketplaceTitle: {
+    fontSize: isMobile
+      ? 23
+      : isTablet
+      ? 27
+      : 34
+  },
+  section: {
+    width: "100%",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    padding: isMobile
+      ? "15px 12px"
+      : isTablet
+      ? "19px 16px"
+      : "26px 28px",
+    borderRadius: isMobile
+      ? 20
+      : 24
+  },
+  sectionHeader: {
+    flexDirection:
+      isMobile
+        ? "column"
+        : "row",
+    alignItems:
+      isMobile
+        ? "flex-start"
+        : "flex-end"
+  },
+  threeColumns: {
+    gridTemplateColumns:
+      isCompact
+        ? "repeat(2, minmax(0, 1fr))"
+        : "repeat(3, minmax(0, 1fr))"
+  },
+  twoColumns: {
+    gridTemplateColumns:
+      isMobile
+        ? "1fr"
+        : "repeat(2, minmax(0, 1fr))"
+  },
+  formColumns: {
+    gridTemplateColumns:
+      isMobile
+        ? "1fr"
+        : "1fr 1fr"
+  },
+  cardGrid: {
+    gridTemplateColumns:
+      viewportWidth < 1024
+        ? "none"
+        : "repeat(auto-fit,minmax(300px,1fr))"
+  },
+  expertGrid: {
+    gridTemplateColumns:
+      viewportWidth < 1024
+        ? "none"
+        : "repeat(auto-fit,minmax(320px,1fr))"
+  },
+  compactThree: {
+    gridTemplateColumns:
+      isMobile
+        ? "repeat(3, minmax(0, 1fr))"
+        : "repeat(3, minmax(0, 1fr))"
+  },
+  stackRow: {
+    flexDirection:
+      isMobile
+        ? "column"
+        : "row",
+    alignItems:
+      isMobile
+        ? "stretch"
+        : "center"
+  },
+  fullButton: {
+    width: isMobile
+      ? "100%"
+      : undefined,
+    minWidth: isMobile
+      ? 0
+      : 220
+  },
+  input: {
+    boxSizing: "border-box"
+  },
+  visual: {
+    display:
+      isCompact
+        ? "none"
+        : "flex",
+    right:
+      isTablet
+        ? 28
+        : 52
+  }
+} satisfies Record<string, CSSProperties>;
 
 const [competitionCredits,
   setCompetitionCredits] =
@@ -482,9 +653,12 @@ const demoPartners: MarketplacePartner[] = [
   style={{
     background: "#f8f7f4",
     color: "#0F172A",
-    borderRadius: 32,
-    padding: 40,
-    minHeight: "1100px",
+    padding: responsive.page.padding,
+    borderRadius: isCompact ? 0 : responsive.page.borderRadius,
+    width: "100%",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    minHeight: isCompact ? "auto" : "1100px",
     border: "1px solid #E2E8F0"
   }}
 >
@@ -499,10 +673,10 @@ const demoPartners: MarketplacePartner[] = [
     background:
       "linear-gradient(120deg, #FFFFFF 0%, #FFFFFF 58%, #FFF9F4 82%, #F4F7FF 100%)",
     border: "1px solid #E2E8F0",
-    borderRadius: 28,
-    padding: "38px 42px",
-    marginBottom: 30,
-    minHeight: 190,
+    borderRadius: responsive.hero.borderRadius,
+    padding: responsive.hero.padding,
+    marginBottom: isCompact ? 14 : 30,
+    minHeight: isCompact ? 112 : 190,
     display: "flex",
     alignItems: "center",
     boxShadow: "0 10px 30px rgba(15,23,42,.045)"
@@ -582,13 +756,13 @@ const demoPartners: MarketplacePartner[] = [
       style={{
         margin: 0,
         color: "#0F172A",
-        fontSize: 38,
-        lineHeight: 1.15,
+        fontSize: responsive.heroTitle.fontSize,
+        lineHeight: responsive.heroTitle.lineHeight,
         fontWeight: 800,
         letterSpacing: "-0.7px"
       }}
     >
-      Earn Credits and Learn From The Best
+      Consultation Garage
     </h1>
 
     {/* DESCRIPTION */}
@@ -598,16 +772,14 @@ const demoPartners: MarketplacePartner[] = [
         margin: "14px 0 0",
         maxWidth: 720,
         color: "#64748B",
-        fontSize: 15,
+        fontSize: 12,
         lineHeight: 1.65,
         fontWeight: 500
       }}
     >
-      Turn your Talent Passport journey into
-      real opportunities. Earn credits through
-      achievements, competitions and portfolio
-      activities, then use them to access experts,
-      mentors and growth experiences.
+      Unlock one-on-one guidance from mentors, institutes and professionals across
+      academics, performing arts, leadership,
+      competitions and career development.
     </p>
   </div>
 
@@ -617,14 +789,14 @@ const demoPartners: MarketplacePartner[] = [
     style={{
       position: "absolute",
       zIndex: 2,
-      right: 52,
+      right: responsive.visual.right,
+      display: responsive.visual.display,
       top: "50%",
       transform: "translateY(-50%)",
       width: 94,
       height: 94,
       borderRadius: "50%",
       background: "rgba(249,115,22,.09)",
-      display: "flex",
       alignItems: "center",
       justifyContent: "center"
     }}
@@ -656,11 +828,11 @@ const demoPartners: MarketplacePartner[] = [
 
 <div
   style={{
-    marginBottom: 30,
+    marginBottom: isCompact ? 14 : 30,
     background: "#FFFFFF",
     border: "1px solid #E2E8F0",
-    borderRadius: 24,
-    padding: "26px 28px",
+    borderRadius: responsive.section.borderRadius,
+    padding: responsive.section.padding,
     boxShadow: "0 8px 28px rgba(15,23,42,.045)"
   }}
 >
@@ -670,9 +842,10 @@ const demoPartners: MarketplacePartner[] = [
     style={{
       display: "flex",
       justifyContent: "space-between",
-      alignItems: "flex-end",
-      gap: 20,
-      marginBottom: 22
+      alignItems: responsive.sectionHeader.alignItems,
+      flexDirection: responsive.sectionHeader.flexDirection,
+      gap: isCompact ? 8 : 20,
+      marginBottom: isCompact ? 10 : 22
     }}
   >
     <div>
@@ -692,7 +865,7 @@ const demoPartners: MarketplacePartner[] = [
         style={{
           margin: 0,
           color: "#0F172A",
-          fontSize: 24,
+          fontSize: isMobile ? 20 : isTablet ? 22 : 24,
           fontWeight: 800,
           lineHeight: 1.2
         }}
@@ -708,8 +881,7 @@ const demoPartners: MarketplacePartner[] = [
           lineHeight: 1.5
         }}
       >
-        Your accumulated credits across competitions,
-        achievements and portfolio activities.
+        
       </p>
     </div>
 
@@ -722,7 +894,7 @@ const demoPartners: MarketplacePartner[] = [
         whiteSpace: "nowrap"
       }}
     >
-      TALENT PASSPORT LEDGER
+      
     </div>
   </div>
 
@@ -731,9 +903,11 @@ const demoPartners: MarketplacePartner[] = [
   <div
     style={{
       display: "grid",
-      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-      gap: 14,
-      marginBottom: 14
+      gridTemplateColumns: isCompact
+        ? "repeat(3, minmax(0, 1fr))"
+        : responsive.threeColumns.gridTemplateColumns,
+      gap: isMobile ? 5 : isTablet ? 8 : 14,
+      marginBottom: isCompact ? 7 : 14
     }}
   >
     {/* TOTAL EARNED */}
@@ -742,19 +916,19 @@ const demoPartners: MarketplacePartner[] = [
       style={{
         position: "relative",
         overflow: "hidden",
-        minHeight: 118,
+        minHeight: isCompact ? 68 : 118,
         background:
           "linear-gradient(135deg, #FFF8EF 0%, #FFFCF7 100%)",
         border: "1px solid #FED7AA",
         borderRadius: 18,
-        padding: "18px 20px"
+        padding: isMobile ? "8px 7px" : isTablet ? "10px 9px" : "18px 20px",
       }}
     >
       <div
         style={{
           position: "absolute",
-          width: 100,
-          height: 100,
+          width: isCompact ? 66 : 100,
+          height: isCompact ? 66 : 100,
           borderRadius: "50%",
           right: -34,
           top: -42,
@@ -772,7 +946,7 @@ const demoPartners: MarketplacePartner[] = [
         <div
           style={{
             color: "#9A3412",
-            fontSize: 10,
+            fontSize: isMobile ? 6.5 : isTablet ? 7.5 : 10,
             fontWeight: 800,
             letterSpacing: 0.7
           }}
@@ -782,9 +956,9 @@ const demoPartners: MarketplacePartner[] = [
 
         <div
           style={{
-            marginTop: 12,
+            marginTop: isCompact ? 5 : 12,
             color: "#F97316",
-            fontSize: 32,
+            fontSize: isMobile ? 18 : isTablet ? 21 : 32,
             lineHeight: 1,
             fontWeight: 900
           }}
@@ -794,9 +968,9 @@ const demoPartners: MarketplacePartner[] = [
 
         <div
           style={{
-            marginTop: 10,
+            marginTop: isCompact ? 5 : 10,
             color: "#475569",
-            fontSize: 11,
+            fontSize: isMobile ? 7 : isTablet ? 8.5 : 11,
             fontWeight: 600,
             lineHeight: 1.4
           }}
@@ -812,19 +986,19 @@ const demoPartners: MarketplacePartner[] = [
       style={{
         position: "relative",
         overflow: "hidden",
-        minHeight: 118,
+        minHeight: isCompact ? 68 : 118,
         background:
           "linear-gradient(135deg, #EFF6FF 0%, #F8FBFF 100%)",
         border: "1px solid #BFDBFE",
         borderRadius: 18,
-        padding: "18px 20px"
+        padding: isMobile ? "8px 7px" : isTablet ? "10px 9px" : "18px 20px",
       }}
     >
       <div
         style={{
           position: "absolute",
-          width: 100,
-          height: 100,
+          width: isCompact ? 66 : 100,
+          height: isCompact ? 66 : 100,
           borderRadius: "50%",
           right: -34,
           top: -42,
@@ -842,7 +1016,7 @@ const demoPartners: MarketplacePartner[] = [
         <div
           style={{
             color: "#1E40AF",
-            fontSize: 10,
+            fontSize: isMobile ? 6.5 : isTablet ? 7.5 : 10,
             fontWeight: 800,
             letterSpacing: 0.7
           }}
@@ -852,9 +1026,9 @@ const demoPartners: MarketplacePartner[] = [
 
         <div
           style={{
-            marginTop: 12,
+            marginTop: isCompact ? 5 : 12,
             color: "#2563EB",
-            fontSize: 32,
+            fontSize: isMobile ? 18 : isTablet ? 21 : 32,
             lineHeight: 1,
             fontWeight: 900
           }}
@@ -864,9 +1038,9 @@ const demoPartners: MarketplacePartner[] = [
 
         <div
           style={{
-            marginTop: 10,
+            marginTop: isCompact ? 5 : 10,
             color: "#475569",
-            fontSize: 11,
+            fontSize: isMobile ? 7 : isTablet ? 8.5 : 11,
             fontWeight: 600,
             lineHeight: 1.4
           }}
@@ -882,19 +1056,19 @@ const demoPartners: MarketplacePartner[] = [
       style={{
         position: "relative",
         overflow: "hidden",
-        minHeight: 118,
+        minHeight: isCompact ? 68 : 118,
         background:
           "linear-gradient(135deg, #ECFDF5 0%, #F7FFFB 100%)",
         border: "1px solid #BBF7D0",
         borderRadius: 18,
-        padding: "18px 20px"
+        padding: isMobile ? "8px 7px" : isTablet ? "10px 9px" : "18px 20px",
       }}
     >
       <div
         style={{
           position: "absolute",
-          width: 100,
-          height: 100,
+          width: isCompact ? 66 : 100,
+          height: isCompact ? 66 : 100,
           borderRadius: "50%",
           right: -34,
           top: -42,
@@ -912,7 +1086,7 @@ const demoPartners: MarketplacePartner[] = [
         <div
           style={{
             color: "#166534",
-            fontSize: 10,
+            fontSize: isMobile ? 6.5 : isTablet ? 7.5 : 10,
             fontWeight: 800,
             letterSpacing: 0.7
           }}
@@ -922,9 +1096,9 @@ const demoPartners: MarketplacePartner[] = [
 
         <div
           style={{
-            marginTop: 12,
+            marginTop: isCompact ? 5 : 12,
             color: "#16A34A",
-            fontSize: 32,
+            fontSize: isMobile ? 18 : isTablet ? 21 : 32,
             lineHeight: 1,
             fontWeight: 900
           }}
@@ -934,9 +1108,9 @@ const demoPartners: MarketplacePartner[] = [
 
         <div
           style={{
-            marginTop: 10,
+            marginTop: isCompact ? 5 : 10,
             color: "#475569",
-            fontSize: 11,
+            fontSize: isMobile ? 7 : isTablet ? 8.5 : 11,
             fontWeight: 600,
             lineHeight: 1.4
           }}
@@ -952,8 +1126,10 @@ const demoPartners: MarketplacePartner[] = [
   <div
     style={{
       display: "grid",
-      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-      gap: 14
+      gridTemplateColumns: isCompact
+        ? "repeat(3, minmax(0, 1fr))"
+        : responsive.threeColumns.gridTemplateColumns,
+      gap: isMobile ? 5 : isTablet ? 8 : 14
     }}
   >
     {/* COMPETITION */}
@@ -962,19 +1138,19 @@ const demoPartners: MarketplacePartner[] = [
       style={{
         position: "relative",
         overflow: "hidden",
-        minHeight: 102,
+        minHeight: isCompact ? 64 : 102,
         background:
           "linear-gradient(135deg, #FFF8EF 0%, #FFFCF7 100%)",
         border: "1px solid #FED7AA",
         borderRadius: 18,
-        padding: "17px 20px"
+        padding: isMobile ? "7px 7px" : isTablet ? "9px 9px" : "17px 20px",
       }}
     >
       <div
         style={{
           position: "absolute",
-          width: 82,
-          height: 82,
+          width: isCompact ? 58 : 82,
+          height: isCompact ? 58 : 82,
           borderRadius: "50%",
           right: -26,
           top: -34,
@@ -992,7 +1168,7 @@ const demoPartners: MarketplacePartner[] = [
         <div
           style={{
             color: "#9A3412",
-            fontSize: 10,
+            fontSize: isMobile ? 6.5 : isTablet ? 7.5 : 10,
             fontWeight: 800,
             letterSpacing: 0.7
           }}
@@ -1002,9 +1178,9 @@ const demoPartners: MarketplacePartner[] = [
 
         <div
           style={{
-            marginTop: 11,
+            marginTop: isCompact ? 5 : 11,
             color: "#F97316",
-            fontSize: 27,
+            fontSize: isMobile ? 17 : isTablet ? 20 : 27,
             fontWeight: 900,
             lineHeight: 1
           }}
@@ -1014,9 +1190,9 @@ const demoPartners: MarketplacePartner[] = [
 
         <div
           style={{
-            marginTop: 9,
+            marginTop: isCompact ? 5 : 9,
             color: "#64748B",
-            fontSize: 11,
+            fontSize: isMobile ? 7 : isTablet ? 8.5 : 11,
             fontWeight: 600
           }}
         >
@@ -1031,19 +1207,19 @@ const demoPartners: MarketplacePartner[] = [
       style={{
         position: "relative",
         overflow: "hidden",
-        minHeight: 102,
+        minHeight: isCompact ? 64 : 102,
         background:
           "linear-gradient(135deg, #EFF6FF 0%, #F8FBFF 100%)",
         border: "1px solid #BFDBFE",
         borderRadius: 18,
-        padding: "17px 20px"
+        padding: isMobile ? "7px 7px" : isTablet ? "9px 9px" : "17px 20px",
       }}
     >
       <div
         style={{
           position: "absolute",
-          width: 82,
-          height: 82,
+          width: isCompact ? 58 : 82,
+          height: isCompact ? 58 : 82,
           borderRadius: "50%",
           right: -26,
           top: -34,
@@ -1061,7 +1237,7 @@ const demoPartners: MarketplacePartner[] = [
         <div
           style={{
             color: "#1E40AF",
-            fontSize: 10,
+            fontSize: isMobile ? 6.5 : isTablet ? 7.5 : 10,
             fontWeight: 800,
             letterSpacing: 0.7
           }}
@@ -1071,9 +1247,9 @@ const demoPartners: MarketplacePartner[] = [
 
         <div
           style={{
-            marginTop: 11,
+            marginTop: isCompact ? 5 : 11,
             color: "#2563EB",
-            fontSize: 27,
+            fontSize: isMobile ? 17 : isTablet ? 20 : 27,
             fontWeight: 900,
             lineHeight: 1
           }}
@@ -1083,9 +1259,9 @@ const demoPartners: MarketplacePartner[] = [
 
         <div
           style={{
-            marginTop: 9,
+            marginTop: isCompact ? 5 : 9,
             color: "#64748B",
-            fontSize: 11,
+            fontSize: isMobile ? 7 : isTablet ? 8.5 : 11,
             fontWeight: 600
           }}
         >
@@ -1100,19 +1276,19 @@ const demoPartners: MarketplacePartner[] = [
       style={{
         position: "relative",
         overflow: "hidden",
-        minHeight: 102,
+        minHeight: isCompact ? 64 : 102,
         background:
           "linear-gradient(135deg, #F5F3FF 0%, #FBFAFF 100%)",
         border: "1px solid #DDD6FE",
         borderRadius: 18,
-        padding: "17px 20px"
+        padding: isMobile ? "7px 7px" : isTablet ? "9px 9px" : "17px 20px",
       }}
     >
       <div
         style={{
           position: "absolute",
-          width: 82,
-          height: 82,
+          width: isCompact ? 58 : 82,
+          height: isCompact ? 58 : 82,
           borderRadius: "50%",
           right: -26,
           top: -34,
@@ -1130,7 +1306,7 @@ const demoPartners: MarketplacePartner[] = [
         <div
           style={{
             color: "#6D28D9",
-            fontSize: 10,
+            fontSize: isMobile ? 6.5 : isTablet ? 7.5 : 10,
             fontWeight: 800,
             letterSpacing: 0.7
           }}
@@ -1140,9 +1316,9 @@ const demoPartners: MarketplacePartner[] = [
 
         <div
           style={{
-            marginTop: 11,
+            marginTop: isCompact ? 5 : 11,
             color: "#7C3AED",
-            fontSize: 27,
+            fontSize: isMobile ? 17 : isTablet ? 20 : 27,
             fontWeight: 900,
             lineHeight: 1
           }}
@@ -1152,9 +1328,9 @@ const demoPartners: MarketplacePartner[] = [
 
         <div
           style={{
-            marginTop: 9,
+            marginTop: isCompact ? 5 : 9,
             color: "#64748B",
-            fontSize: 11,
+            fontSize: isMobile ? 7 : isTablet ? 8.5 : 11,
             fontWeight: 600
           }}
         >
@@ -1171,7 +1347,7 @@ const demoPartners: MarketplacePartner[] = [
 
 <div
   style={{
-    marginBottom: 32
+    marginBottom: isCompact ? 16 : 32
   }}
 >
   {/* PREMIUM TOGGLE */}
@@ -1179,6 +1355,7 @@ const demoPartners: MarketplacePartner[] = [
   <div
     style={{
       display: "inline-flex",
+      width: isMobile ? "100%" : undefined,
       gap: 6,
       padding: 5,
       marginBottom: 18,
@@ -1202,7 +1379,8 @@ const demoPartners: MarketplacePartner[] = [
             ? "#FFFFFF"
             : "#64748B",
         border: "none",
-        padding: "11px 18px",
+        padding: isMobile ? "11px 10px" : "11px 18px",
+        flex: isMobile ? 1 : undefined,
         borderRadius: 10,
         cursor: "pointer",
         fontSize: 13,
@@ -1227,7 +1405,8 @@ const demoPartners: MarketplacePartner[] = [
             ? "#FFFFFF"
             : "#64748B",
         border: "none",
-        padding: "11px 18px",
+        padding: isMobile ? "11px 10px" : "11px 18px",
+        flex: isMobile ? 1 : undefined,
         borderRadius: 10,
         cursor: "pointer",
         fontSize: 13,
@@ -1245,8 +1424,8 @@ const demoPartners: MarketplacePartner[] = [
     style={{
       background: "#FFFFFF",
       border: "1px solid #E2E8F0",
-      borderRadius: 24,
-      padding: "26px 28px",
+      borderRadius: responsive.section.borderRadius,
+      padding: responsive.section.padding,
       boxShadow:
         "0 8px 28px rgba(15,23,42,.045)"
     }}
@@ -1264,9 +1443,10 @@ const demoPartners: MarketplacePartner[] = [
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-end",
+            alignItems: responsive.sectionHeader.alignItems,
+            flexDirection: responsive.sectionHeader.flexDirection,
             gap: 20,
-            marginBottom: 22
+            marginBottom: isCompact ? 14 : 22
           }}
         >
           <div>
@@ -1301,9 +1481,7 @@ const demoPartners: MarketplacePartner[] = [
                 lineHeight: 1.5
               }}
             >
-              Build your credit balance through
-              participation and use it to unlock
-              opportunities across Talent Passport.
+              Learn how to earn credits.
             </p>
           </div>
 
@@ -1322,12 +1500,28 @@ const demoPartners: MarketplacePartner[] = [
 
         {/* EARN + SPEND */}
 
+        {isCompact && (
+          <div style={{
+            margin:"0 0 10px",
+            color:"#64748B",
+            fontSize:11,
+            fontWeight:800,
+            letterSpacing:.5
+          }}>
+            Swipe left or right to compare earning and spending →
+          </div>
+        )}
+
         <div
           style={{
-            display: "grid",
+            display: isCompact ? "flex" : "grid",
             gridTemplateColumns:
-              "repeat(2, minmax(0, 1fr))",
-            gap: 18
+              responsive.twoColumns.gridTemplateColumns,
+            gap: isMobile ? 12 : 18,
+            overflowX: isCompact ? "auto" : undefined,
+            paddingBottom: isCompact ? 12 : undefined,
+            scrollSnapType: isCompact ? "x mandatory" : undefined,
+            WebkitOverflowScrolling: isCompact ? "touch" : undefined
           }}
         >
           {/* =========================
@@ -1338,7 +1532,11 @@ const demoPartners: MarketplacePartner[] = [
             style={{
               border: "1px solid #BBF7D0",
               borderRadius: 20,
-              padding: 20,
+              padding: isCompact ? 16 : 20,
+              minWidth: isCompact ? (isMobile ? "84%" : 360) : undefined,
+              maxWidth: isCompact ? (isMobile ? "84%" : 360) : undefined,
+              flexShrink: isCompact ? 0 : undefined,
+              scrollSnapAlign: isCompact ? "start" : undefined,
               background:
                 "linear-gradient(145deg, #F0FDF4 0%, #FBFFFC 100%)"
             }}
@@ -1495,7 +1693,11 @@ const demoPartners: MarketplacePartner[] = [
             style={{
               border: "1px solid #FED7AA",
               borderRadius: 20,
-              padding: 20,
+              padding: isCompact ? 16 : 20,
+              minWidth: isCompact ? (isMobile ? "84%" : 360) : undefined,
+              maxWidth: isCompact ? (isMobile ? "84%" : 360) : undefined,
+              flexShrink: isCompact ? 0 : undefined,
+              scrollSnapAlign: isCompact ? "start" : undefined,
               background:
                 "linear-gradient(145deg, #FFF7ED 0%, #FFFCF8 100%)"
             }}
@@ -1655,9 +1857,10 @@ const demoPartners: MarketplacePartner[] = [
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-end",
+            alignItems: responsive.sectionHeader.alignItems,
+            flexDirection: responsive.sectionHeader.flexDirection,
             gap: 20,
-            marginBottom: 22
+            marginBottom: isCompact ? 14 : 22
           }}
         >
           <div>
@@ -1720,7 +1923,7 @@ const demoPartners: MarketplacePartner[] = [
           style={{
             display: "grid",
             gridTemplateColumns:
-              "repeat(2, minmax(0, 1fr))",
+              responsive.twoColumns.gridTemplateColumns,
             gap: 14
           }}
         >
@@ -1775,7 +1978,8 @@ const demoPartners: MarketplacePartner[] = [
                 minHeight: 145,
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center",
+                alignItems: isMobile ? "stretch" : "center",
+                flexDirection: isMobile ? "column" : "row",
                 gap: 20
               }}
             >
@@ -1874,7 +2078,8 @@ const demoPartners: MarketplacePartner[] = [
                   cursor: "pointer",
                   fontSize: 12,
                   fontWeight: 800,
-                  flexShrink: 0
+                  flexShrink: 0,
+                  width: isMobile ? "100%" : undefined
                 }}
               >
                 Redeem
@@ -1896,7 +2101,7 @@ const demoPartners: MarketplacePartner[] = [
 
 <div
   style={{
-    marginTop: 40,
+    marginTop: isCompact ? 18 : 40,
     background: "#FFFFFF",
     border: "1px solid #E2E8F0",
     borderRadius: 28,
@@ -1911,9 +2116,9 @@ const demoPartners: MarketplacePartner[] = [
     overflow: "hidden",
     background:
       "linear-gradient(120deg, #FFFFFF 0%, #FFFFFF 58%, #FFF9F4 82%, #F4F7FF 100%)",
-    padding: "38px 42px",
+    padding: responsive.hero.padding,
     borderBottom: "1px solid #E2E8F0",
-    minHeight: 250
+    minHeight: viewportWidth < 1024 ? 0 : 250
   }}
 >
   {/* DECORATIVE BLUE CIRCLE */}
@@ -1986,7 +2191,7 @@ const demoPartners: MarketplacePartner[] = [
       style={{
         margin: 0,
         color: "#0F172A",
-        fontSize: 34,
+        fontSize: responsive.marketplaceTitle.fontSize,
         lineHeight: 1.18,
         fontWeight: 800,
         letterSpacing: "-0.6px"
@@ -2005,10 +2210,7 @@ const demoPartners: MarketplacePartner[] = [
         fontWeight: 500
       }}
     >
-      Unlock one-on-one guidance from verified
-      mentors, institutes and professionals across
-      academics, performing arts, leadership,
-      competitions and career development.
+     
 
       <div
         style={{
@@ -2081,14 +2283,14 @@ const demoPartners: MarketplacePartner[] = [
     style={{
       position: "absolute",
       zIndex: 2,
-      right: 52,
+      right: responsive.visual.right,
+      display: responsive.visual.display,
       top: "50%",
       transform: "translateY(-50%)",
       width: 94,
       height: 94,
       borderRadius: "50%",
       background: "rgba(249,115,22,.09)",
-      display: "flex",
       alignItems: "center",
       justifyContent: "center"
     }}
@@ -2115,13 +2317,28 @@ const demoPartners: MarketplacePartner[] = [
 
   {/* CATEGORY CARDS */}
 
+  {isCompact && (
+    <div style={{
+      padding: isMobile ? "12px 12px 0" : "14px 16px 0",
+      color:"#64748B",
+      fontSize:10,
+      fontWeight:800,
+      letterSpacing:.35
+    }}>
+      Swipe left or right to explore consultation categories →
+    </div>
+  )}
+
   <div
     style={{
-      padding: 30,
-      display: "grid",
-      gridTemplateColumns:
-        "repeat(auto-fit,minmax(300px,1fr))",
-      gap: 24
+      padding: isMobile ? 12 : isTablet ? 16 : 30,
+      display: isCompact ? "flex" : "grid",
+      gridTemplateColumns: responsive.cardGrid.gridTemplateColumns,
+      gap: isCompact ? 10 : 24,
+      overflowX: isCompact ? "auto" : undefined,
+      scrollSnapType: isCompact ? "x mandatory" : undefined,
+      WebkitOverflowScrolling: isCompact ? "touch" : undefined,
+      paddingBottom: isCompact ? 8 : undefined
     }}
   >
     {/* ACTIVITY */}
@@ -2145,8 +2362,12 @@ const demoPartners: MarketplacePartner[] = [
       selectedCategory === "Activity Coaching"
         ? "1.5px solid #F97316"
         : "1px solid #FED7AA",
-    borderRadius: 24,
-    padding: 26,
+    borderRadius: isCompact ? 16 : 24,
+    padding: isCompact ? 13 : 26,
+    minWidth: isCompact ? (isMobile ? "78%" : 270) : undefined,
+    maxWidth: isCompact ? (isMobile ? "78%" : 270) : undefined,
+    flexShrink: isCompact ? 0 : undefined,
+    scrollSnapAlign: isCompact ? "start" : undefined,
     background:
       "linear-gradient(145deg, #FFF8EF 0%, #FFFCF7 62%, #FFF4E5 100%)",
     transition: "all .25s ease",
@@ -2158,7 +2379,7 @@ const demoPartners: MarketplacePartner[] = [
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    minHeight: 320
+    minHeight: isCompact ? 178 : 320
   }}
 >
   {/* DECORATIVE CIRCLE */}
@@ -2199,17 +2420,17 @@ const demoPartners: MarketplacePartner[] = [
 
     <div
       style={{
-        width: 58,
-        height: 58,
+        width: isCompact ? 36 : 58,
+        height: isCompact ? 36 : 58,
         borderRadius: 16,
         background: "#FFFFFF",
         border: "1px solid #FED7AA",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 29,
+        fontSize: isCompact ? 18 : 29,
         boxShadow: "0 6px 16px rgba(249,115,22,.08)",
-        marginBottom: 22
+        marginBottom: isCompact ? 14 : 22
       }}
     >
       🎭
@@ -2233,7 +2454,7 @@ const demoPartners: MarketplacePartner[] = [
       style={{
         margin: "0 0 12px",
         color: "#0F172A",
-        fontSize: 21,
+        fontSize: isCompact ? 15 : 21,
         fontWeight: 800,
         lineHeight: 1.25
       }}
@@ -2244,12 +2465,12 @@ const demoPartners: MarketplacePartner[] = [
     <div
       style={{
         color: "#64748B",
-        fontSize: 14,
-        lineHeight: 1.65,
+        fontSize: isCompact ? 10.5 : 14,
+        lineHeight: isCompact ? 1.38 : 1.65,
         maxWidth: 430
       }}
     >
-      Learn directly from verified Debate,
+      Learn directly from Debate,
       Dance, Music, Theatre, Coding and
       Public Speaking mentors.
     </div>
@@ -2259,7 +2480,7 @@ const demoPartners: MarketplacePartner[] = [
     style={{
       position: "relative",
       zIndex: 1,
-      marginTop: 26,
+      marginTop: isCompact ? 11 : 26,
       width: "100%",
       padding: "13px 18px",
       background:
@@ -2303,8 +2524,12 @@ const demoPartners: MarketplacePartner[] = [
       selectedCategory === "Career Guidance"
         ? "1.5px solid #2563EB"
         : "1px solid #BFDBFE",
-    borderRadius: 24,
-    padding: 26,
+    borderRadius: isCompact ? 16 : 24,
+    padding: isCompact ? 13 : 26,
+    minWidth: isCompact ? (isMobile ? "78%" : 270) : undefined,
+    maxWidth: isCompact ? (isMobile ? "78%" : 270) : undefined,
+    flexShrink: isCompact ? 0 : undefined,
+    scrollSnapAlign: isCompact ? "start" : undefined,
     background:
       "linear-gradient(145deg, #EFF6FF 0%, #F8FBFF 62%, #EDF4FF 100%)",
     transition: "all .25s ease",
@@ -2316,7 +2541,7 @@ const demoPartners: MarketplacePartner[] = [
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    minHeight: 320
+    minHeight: isCompact ? 178 : 320
   }}
 >
   {/* DECORATIVE CIRCLE */}
@@ -2357,17 +2582,17 @@ const demoPartners: MarketplacePartner[] = [
 
     <div
       style={{
-        width: 58,
-        height: 58,
+        width: isCompact ? 36 : 58,
+        height: isCompact ? 36 : 58,
         borderRadius: 16,
         background: "#FFFFFF",
         border: "1px solid #BFDBFE",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 29,
+        fontSize: isCompact ? 18 : 29,
         boxShadow: "0 6px 16px rgba(37,99,235,.08)",
-        marginBottom: 22
+        marginBottom: isCompact ? 14 : 22
       }}
     >
       🎓
@@ -2391,7 +2616,7 @@ const demoPartners: MarketplacePartner[] = [
       style={{
         margin: "0 0 12px",
         color: "#0F172A",
-        fontSize: 21,
+        fontSize: isCompact ? 15 : 21,
         fontWeight: 800,
         lineHeight: 1.25
       }}
@@ -2402,8 +2627,8 @@ const demoPartners: MarketplacePartner[] = [
     <div
       style={{
         color: "#64748B",
-        fontSize: 14,
-        lineHeight: 1.65,
+        fontSize: isCompact ? 10.5 : 14,
+        lineHeight: isCompact ? 1.38 : 1.65,
         maxWidth: 430
       }}
     >
@@ -2419,7 +2644,7 @@ const demoPartners: MarketplacePartner[] = [
     style={{
       position: "relative",
       zIndex: 1,
-      marginTop: 26,
+      marginTop: isCompact ? 11 : 26,
       width: "100%",
       padding: "13px 18px",
       background:
@@ -2463,8 +2688,12 @@ const demoPartners: MarketplacePartner[] = [
       selectedCategory === "Parent Support"
         ? "1.5px solid #0F766E"
         : "1px solid #99F6E4",
-    borderRadius: 24,
-    padding: 26,
+    borderRadius: isCompact ? 16 : 24,
+    padding: isCompact ? 13 : 26,
+    minWidth: isCompact ? (isMobile ? "78%" : 270) : undefined,
+    maxWidth: isCompact ? (isMobile ? "78%" : 270) : undefined,
+    flexShrink: isCompact ? 0 : undefined,
+    scrollSnapAlign: isCompact ? "start" : undefined,
     background:
       "linear-gradient(145deg, #F0FDFA 0%, #F8FFFD 62%, #ECFDF5 100%)",
     transition: "all .25s ease",
@@ -2476,7 +2705,7 @@ const demoPartners: MarketplacePartner[] = [
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    minHeight: 320
+    minHeight: isCompact ? 178 : 320
   }}
 >
   {/* DECORATIVE CIRCLE */}
@@ -2517,17 +2746,17 @@ const demoPartners: MarketplacePartner[] = [
 
     <div
       style={{
-        width: 58,
-        height: 58,
+        width: isCompact ? 36 : 58,
+        height: isCompact ? 36 : 58,
         borderRadius: 16,
         background: "#FFFFFF",
         border: "1px solid #99F6E4",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 29,
+        fontSize: isCompact ? 18 : 29,
         boxShadow: "0 6px 16px rgba(15,118,110,.08)",
-        marginBottom: 22
+        marginBottom: isCompact ? 14 : 22
       }}
     >
       👨‍👩‍👧
@@ -2551,7 +2780,7 @@ const demoPartners: MarketplacePartner[] = [
       style={{
         margin: "0 0 12px",
         color: "#0F172A",
-        fontSize: 21,
+        fontSize: isCompact ? 15 : 21,
         fontWeight: 800,
         lineHeight: 1.25
       }}
@@ -2562,8 +2791,8 @@ const demoPartners: MarketplacePartner[] = [
     <div
       style={{
         color: "#64748B",
-        fontSize: 14,
-        lineHeight: 1.65,
+        fontSize: isCompact ? 10.5 : 14,
+        lineHeight: isCompact ? 1.38 : 1.65,
         maxWidth: 430
       }}
     >
@@ -2579,7 +2808,7 @@ const demoPartners: MarketplacePartner[] = [
     style={{
       position: "relative",
       zIndex: 1,
-      marginTop: 26,
+      marginTop: isCompact ? 11 : 26,
       width: "100%",
       padding: "13px 18px",
       background:
@@ -2615,8 +2844,8 @@ const demoPartners: MarketplacePartner[] = [
 
 <div
 style={{
-marginTop:40,
-padding:30,
+marginTop: isMobile ? 16 : isTablet ? 24 : 40,
+padding: isMobile ? 14 : isTablet ? 20 : 30,
 borderRadius:24,
 border:"1px solid #E2E8F0",
 background:"#FFFFFF"
@@ -2627,7 +2856,9 @@ background:"#FFFFFF"
 style={{
 display:"flex",
 justifyContent:"space-between",
-alignItems:"center",
+flexDirection: responsive.stackRow.flexDirection,
+alignItems: responsive.stackRow.alignItems,
+gap: isMobile ? 14 : undefined,
 marginBottom:30
 }}
 >
@@ -2680,7 +2911,7 @@ color:"#EA580C"
 <div
 style={{
 display:"grid",
-gridTemplateColumns:"1fr 1fr",
+gridTemplateColumns: responsive.formColumns.gridTemplateColumns,
 gap:24
 }}
 >
@@ -2690,7 +2921,8 @@ gap:24
 <label
 style={{
 fontWeight:700,
-fontSize:15
+fontSize:15,
+boxSizing: responsive.input.boxSizing
 }}
 >
 
@@ -2714,7 +2946,8 @@ width:"100%",
 padding:16,
 borderRadius:12,
 border:"1px solid #CBD5E1",
-fontSize:15
+fontSize:15,
+boxSizing: responsive.input.boxSizing
 }}
 
 >
@@ -2833,6 +3066,7 @@ padding:18,
 borderRadius:14,
 border:"1px solid #CBD5E1",
 fontSize:15,
+boxSizing: responsive.input.boxSizing,
 resize:"vertical"
 }}
 
@@ -2847,7 +3081,8 @@ style={{
 marginTop:36,
 display:"flex",
 justifyContent:"space-between",
-alignItems:"center",
+flexDirection: responsive.stackRow.flexDirection,
+alignItems: responsive.stackRow.alignItems,
 gap:30
 }}
 >
@@ -2855,9 +3090,10 @@ gap:30
 <div
 style={{
 display:"grid",
-gridTemplateColumns:"repeat(3,1fr)",
+gridTemplateColumns: responsive.compactThree.gridTemplateColumns,
 gap:18,
-flex:1
+flex:1,
+width:"100%"
 }}
 >
 
@@ -3029,7 +3265,8 @@ remainingCredits >= 0
 
 fontSize:16,
 
-minWidth:220
+width: responsive.fullButton.width,
+minWidth: responsive.fullButton.minWidth
 
 }}
 
@@ -3053,8 +3290,8 @@ Find Experts →
 
 <div
 style={{
-marginTop:40,
-padding:"0 30px 30px"
+marginTop: isCompact ? 18 : 40,
+padding: isMobile ? "0 16px 18px" : isTablet ? "0 22px 24px" : "0 30px 30px"
 }}
 >
 
@@ -3062,7 +3299,9 @@ padding:"0 30px 30px"
 style={{
 display:"flex",
 justifyContent:"space-between",
-alignItems:"center",
+flexDirection: responsive.stackRow.flexDirection,
+alignItems: responsive.stackRow.alignItems,
+gap: isMobile ? 14 : undefined,
 marginBottom:24
 }}
 >
@@ -3111,11 +3350,27 @@ color:"#EA580C"
 
 </div>
 
+{isCompact && recommendedPartners.length > 1 && (
+<div style={{
+  margin:"-6px 0 12px",
+  color:"#64748B",
+  fontSize:11,
+  fontWeight:800,
+  letterSpacing:.5
+}}>
+  Swipe left or right to explore more experts →
+</div>
+)}
+
 <div
 style={{
-display:"grid",
-gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))",
-gap:24
+display: isCompact ? "flex" : "grid",
+gridTemplateColumns: responsive.expertGrid.gridTemplateColumns,
+gap: isCompact ? 12 : 24,
+overflowX: isCompact ? "auto" : undefined,
+scrollSnapType: isCompact ? "x mandatory" : undefined,
+WebkitOverflowScrolling: isCompact ? "touch" : undefined,
+paddingBottom: isCompact ? 10 : undefined
 }}
 >
 
@@ -3134,9 +3389,13 @@ selectedPartner?.id===partner.id
 ?"2px solid #FF6B00"
 :"1px solid #E2E8F0",
 
-borderRadius:24,
+borderRadius: isCompact ? 18 : 24,
 
-padding:28,
+padding: isMobile ? 15 : isTablet ? 18 : 28,
+minWidth: isCompact ? (isMobile ? "82%" : 340) : undefined,
+maxWidth: isCompact ? (isMobile ? "82%" : 340) : undefined,
+flexShrink: isCompact ? 0 : undefined,
+scrollSnapAlign: isCompact ? "start" : undefined,
 
 display:"flex",
 
@@ -3161,7 +3420,9 @@ transition:".25s"
 style={{
 display:"flex",
 justifyContent:"space-between",
-alignItems:"center",
+flexDirection: responsive.stackRow.flexDirection,
+alignItems: isMobile ? "flex-start" : "center",
+gap: isMobile ? 14 : undefined,
 marginBottom:20
 }}
 >
@@ -3231,7 +3492,7 @@ color:"#143B73"
 <div
 style={{
 display:"grid",
-gridTemplateColumns:"repeat(3,1fr)",
+gridTemplateColumns: responsive.compactThree.gridTemplateColumns,
 gap:12,
 marginBottom:24
 }}
@@ -3424,7 +3685,9 @@ borderTop:"1px solid #E2E8F0",
 paddingTop:20,
 display:"flex",
 justifyContent:"space-between",
-alignItems:"center"
+flexDirection: responsive.stackRow.flexDirection,
+alignItems: responsive.stackRow.alignItems,
+gap: isMobile ? 16 : undefined
 }}
 >
 
@@ -3509,11 +3772,11 @@ fontSize:15
 
 <div
 style={{
-marginTop:40,
+marginTop: isCompact ? 18 : 40,
 background:"#FFFFFF",
 border:"1px solid #E2E8F0",
 borderRadius:28,
-padding:32
+padding: isMobile ? 16 : isTablet ? 22 : 32
 }}
 >
 
@@ -3521,7 +3784,9 @@ padding:32
 style={{
 display:"flex",
 justifyContent:"space-between",
-alignItems:"center",
+flexDirection: responsive.stackRow.flexDirection,
+alignItems: responsive.stackRow.alignItems,
+gap: isMobile ? 14 : undefined,
 marginBottom:30
 }}
 >
@@ -3573,7 +3838,7 @@ color:"#EA580C"
 <div
 style={{
 display:"grid",
-gridTemplateColumns:"repeat(2,1fr)",
+gridTemplateColumns: responsive.twoColumns.gridTemplateColumns,
 gap:20,
 marginBottom:28
 }}
@@ -3726,7 +3991,7 @@ color:"#334155"
 <div
 style={{
 display:"grid",
-gridTemplateColumns:"repeat(2,1fr)",
+gridTemplateColumns: responsive.twoColumns.gridTemplateColumns,
 gap:20,
 marginBottom:30
 }}
@@ -3808,6 +4073,7 @@ color:"#15803D"
 style={{
 display:"flex",
 justifyContent:"flex-end",
+flexDirection: isMobile ? "column" : "row",
 gap:16
 }}
 >
@@ -3980,7 +4246,7 @@ fontSize:16
 
 <div
 style={{
-marginTop:40,
+marginTop: isCompact ? 18 : 40,
 background:"#F0FDF4",
 border:"1px solid #BBF7D0",
 borderRadius:28,
