@@ -383,6 +383,7 @@ const classroomColumns =
 
    return (
     <div
+      className="teacher-home"
       style={{
         minHeight: "100vh",
         padding: "28px",
@@ -403,11 +404,374 @@ const classroomColumns =
         `,
       }}
     >
+      <style>{`
+        /* MOBILE/TABLET ONLY. Desktop remains exactly as existing inline styles. */
+        .teacher-home-swipe-cue { display: none; }
+
+        @media (max-width: 1024px) {
+          .teacher-home {
+            padding: 16px !important;
+            overflow-x: hidden !important;
+          }
+
+          .teacher-home-hero {
+            padding: 20px 22px !important;
+            margin-bottom: 16px !important;
+            border-radius: 20px !important;
+          }
+
+          .teacher-home-hero-content {
+            gap: 12px !important;
+            align-items: center !important;
+          }
+
+          .teacher-home-hero-content > div:first-child {
+            min-width: 0 !important;
+            flex: 1 1 auto !important;
+          }
+
+          .teacher-home-hero-content > div:first-child > div:first-child {
+            font-size: 8px !important;
+            line-height: 1.15 !important;
+            letter-spacing: 1.2px !important;
+            margin-bottom: 5px !important;
+          }
+
+          .teacher-home-hero-content h1 {
+            font-size: 22px !important;
+            line-height: 1.08 !important;
+            letter-spacing: -0.3px !important;
+          }
+
+          .teacher-home-hero-content p {
+            font-size: 11px !important;
+            line-height: 1.35 !important;
+            margin: 6px 0 0 !important;
+          }
+
+          .teacher-home-badge {
+            width: 60px !important;
+            height: 60px !important;
+            border-radius: 15px !important;
+          }
+
+          .teacher-home-badge > div:first-child {
+            font-size: 19px !important;
+            margin-bottom: 1px !important;
+          }
+
+          .teacher-home-badge > div:last-child {
+            font-size: 5px !important;
+            line-height: 1.1 !important;
+            letter-spacing: .5px !important;
+          }
+
+          .teacher-home-table-card {
+            padding: 16px !important;
+            border-radius: 20px !important;
+          }
+
+          .teacher-home-section-head {
+            margin-bottom: 8px !important;
+            gap: 8px !important;
+            align-items: flex-start !important;
+          }
+
+          .teacher-home-section-head > div:first-child > div:first-child {
+            font-size: 8px !important;
+            letter-spacing: 1.1px !important;
+            margin-bottom: 3px !important;
+          }
+
+          .teacher-home-section-head h2 {
+            font-size: 18px !important;
+            line-height: 1.12 !important;
+          }
+
+          .teacher-home-section-head p {
+            font-size: 10px !important;
+            line-height: 1.3 !important;
+            margin: 4px 0 0 !important;
+          }
+
+          .teacher-home-section-head > div:last-child {
+            display: none !important;
+          }
+
+          .teacher-home-swipe-cue {
+            display: block !important;
+            font-size: 8px !important;
+            line-height: 1.2 !important;
+            font-weight: 800 !important;
+            color: #9A3412 !important;
+            background: #FFF7ED !important;
+            border: 1px solid #FED7AA !important;
+            border-radius: 8px !important;
+            padding: 5px 7px !important;
+            margin: 0 0 6px !important;
+          }
+
+          .teacher-home-table-scroll {
+            border-radius: 11px !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+
+          .teacher-home-table-scroll table {
+            min-width: 620px !important;
+          }
+
+          .teacher-home-table-scroll th,
+          .teacher-home-table-scroll td {
+            padding: 6px 7px !important;
+            font-size: 9px !important;
+            line-height: 1.2 !important;
+          }
+
+          .teacher-home-table-scroll th:first-child,
+          .teacher-home-table-scroll td:first-child {
+            width: 135px !important;
+            min-width: 135px !important;
+            max-width: 135px !important;
+            position: sticky !important;
+            left: 0 !important;
+            z-index: 2 !important;
+          }
+
+          .teacher-home-table-scroll thead th:first-child {
+            z-index: 3 !important;
+          }
+
+          .teacher-home-table-scroll th:not(:first-child) {
+            min-width: 110px !important;
+            font-size: 10px !important;
+          }
+
+          .teacher-home-table-card > div:last-child {
+            gap: 5px !important;
+            margin-top: 8px !important;
+          }
+
+          .teacher-home-table-card > div:last-child > div {
+            padding: 4px 7px !important;
+            gap: 4px !important;
+            font-size: 8px !important;
+          }
+
+          .teacher-home-plan {
+            margin-top: 16px !important;
+            padding: 17px !important;
+            border-radius: 20px !important;
+          }
+
+          .teacher-home-plan > div:last-child > div:first-child {
+            font-size: 8px !important;
+            letter-spacing: 1.1px !important;
+            margin-bottom: 3px !important;
+          }
+
+          .teacher-home-plan h2 {
+            font-size: 18px !important;
+            line-height: 1.12 !important;
+          }
+
+          .teacher-home-plan p {
+            font-size: 10px !important;
+            line-height: 1.3 !important;
+            margin: 4px 0 9px !important;
+          }
+
+          .teacher-home-plan > div:last-child > div:last-child {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 7px !important;
+          }
+
+          .teacher-home-plan > div:last-child > div:last-child > div {
+            min-width: 0 !important;
+            padding: 9px !important;
+            border-radius: 11px !important;
+          }
+
+          .teacher-home-plan > div:last-child > div:last-child > div > div:first-child {
+            font-size: 8px !important;
+            margin-bottom: 3px !important;
+          }
+
+          .teacher-home-plan > div:last-child > div:last-child > div > div:last-child {
+            font-size: 9px !important;
+            line-height: 1.25 !important;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .teacher-home {
+            padding: 12px !important;
+          }
+
+          .teacher-home-hero {
+            padding: 15px 16px !important;
+            margin-bottom: 12px !important;
+            border-radius: 16px !important;
+          }
+
+          .teacher-home-hero-content {
+            gap: 7px !important;
+          }
+
+          .teacher-home-hero-content > div:first-child > div:first-child {
+            font-size: 6px !important;
+            letter-spacing: .8px !important;
+            margin-bottom: 3px !important;
+          }
+
+          .teacher-home-hero-content h1 {
+            font-size: 18px !important;
+            line-height: 1.08 !important;
+          }
+
+          .teacher-home-hero-content p {
+            font-size: 9px !important;
+            line-height: 1.3 !important;
+            margin-top: 5px !important;
+          }
+
+          .teacher-home-badge {
+            width: 48px !important;
+            height: 48px !important;
+            border-radius: 12px !important;
+          }
+
+          .teacher-home-badge > div:first-child {
+            font-size: 13px !important;
+            margin-bottom: 0 !important;
+          }
+
+          .teacher-home-badge > div:last-child {
+            font-size: 3.7px !important;
+            line-height: 1 !important;
+            letter-spacing: .25px !important;
+          }
+
+          .teacher-home-table-card {
+            padding: 12px !important;
+            border-radius: 16px !important;
+          }
+
+          .teacher-home-section-head {
+            margin-bottom: 5px !important;
+          }
+
+          .teacher-home-section-head > div:first-child > div:first-child {
+            font-size: 6px !important;
+            letter-spacing: .8px !important;
+            margin-bottom: 2px !important;
+          }
+
+          .teacher-home-section-head h2 {
+            font-size: 15px !important;
+            line-height: 1.1 !important;
+          }
+
+          .teacher-home-section-head p {
+            font-size: 8.5px !important;
+            line-height: 1.28 !important;
+            margin-top: 3px !important;
+          }
+
+          .teacher-home-swipe-cue {
+            font-size: 6.5px !important;
+            padding: 4px 6px !important;
+            margin-bottom: 4px !important;
+          }
+
+          .teacher-home-table-scroll {
+            border-radius: 9px !important;
+          }
+
+          .teacher-home-table-scroll table {
+            min-width: 500px !important;
+          }
+
+          .teacher-home-table-scroll th,
+          .teacher-home-table-scroll td {
+            padding: 6px 6px !important;
+            font-size: 7.8px !important;
+            line-height: 1.15 !important;
+          }
+
+          .teacher-home-table-scroll th:first-child,
+          .teacher-home-table-scroll td:first-child {
+            width: 108px !important;
+            min-width: 108px !important;
+            max-width: 108px !important;
+          }
+
+          .teacher-home-table-scroll th:not(:first-child) {
+            min-width: 88px !important;
+            font-size: 8px !important;
+          }
+
+          .teacher-home-table-card > div:last-child {
+            margin-top: 5px !important;
+            gap: 3px !important;
+          }
+
+          .teacher-home-table-card > div:last-child > div {
+            padding: 3px 5px !important;
+            font-size: 6px !important;
+          }
+
+          .teacher-home-plan {
+            margin-top: 12px !important;
+            padding: 13px !important;
+            border-radius: 16px !important;
+          }
+
+          .teacher-home-plan > div:last-child > div:first-child {
+            font-size: 6px !important;
+            letter-spacing: .8px !important;
+            margin-bottom: 2px !important;
+          }
+
+          .teacher-home-plan h2 {
+            font-size: 15px !important;
+            line-height: 1.1 !important;
+          }
+
+          .teacher-home-plan p {
+            font-size: 8.5px !important;
+            line-height: 1.28 !important;
+            margin: 3px 0 9px !important;
+          }
+
+          .teacher-home-plan > div:last-child > div:last-child {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 5px !important;
+          }
+
+          .teacher-home-plan > div:last-child > div:last-child > div {
+            padding: 9px !important;
+            border-radius: 10px !important;
+          }
+
+          .teacher-home-plan > div:last-child > div:last-child > div > div:first-child {
+            font-size: 6.5px !important;
+            margin-bottom: 2px !important;
+          }
+
+          .teacher-home-plan > div:last-child > div:last-child > div > div:last-child {
+            font-size: 8px !important;
+            line-height: 1.22 !important;
+          }
+        }
+      `}</style>
+
       {/* ======================================================
           CLASSROOM INTELLIGENCE HERO
          ====================================================== */}
 
       <div
+        className="teacher-home-hero"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -471,6 +835,7 @@ const classroomColumns =
         />
 
         <div
+          className="teacher-home-hero-content"
           style={{
             position: "relative",
             zIndex: 1,
@@ -525,6 +890,7 @@ Welcome Back, {teacherName}!
           {/* Hero badge */}
 
           <div
+            className="teacher-home-badge"
             style={{
               width: "106px",
               height: "106px",
@@ -607,6 +973,7 @@ Welcome Back, {teacherName}!
          ====================================================== */}
 
       <div
+        className="teacher-home-table-card"
         style={{
           background: "#FFFFFF",
 
@@ -624,6 +991,7 @@ Welcome Back, {teacherName}!
         {/* Section title */}
 
         <div
+          className="teacher-home-section-head"
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -692,7 +1060,10 @@ Welcome Back, {teacherName}!
 
         {/* TABLE */}
 
+        <div className="teacher-home-swipe-cue">Swipe left or right to compare classrooms →</div>
+
         <div
+          className="teacher-home-table-scroll"
           style={{
             overflowX: "auto",
 
@@ -954,6 +1325,7 @@ Welcome Back, {teacherName}!
          ====================================================== */}
 
       <div
+        className="teacher-home-plan"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -1339,7 +1711,10 @@ function renderHealthScoreRow(
               }}
             >
               {item.classHealthStatus}
-            </div>
+
+
+
+</div>
           </td>
         )
       )}

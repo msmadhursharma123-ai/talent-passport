@@ -26,19 +26,118 @@ export default function ExamPreparationPage() {
 
   return (
     <div
+      className="tp-compact-page"
       style={{
         padding: "20px",
         background: "#F6F6F3",
         minHeight: "100%",
       }}
     >
+
+
+      <style>{`
+        .exam-prep-swipe-cue { display: none; }
+
+        @media (max-width: 1024px) {
+          .tp-compact-page { padding: 10px !important; box-sizing: border-box !important; overflow-x: hidden !important; }
+
+          .tp-compact-page .exam-prep-hero { padding: 16px 18px !important; margin-bottom: 10px !important; border-radius: 18px !important; }
+          .tp-compact-page .exam-prep-hero > div:last-child { gap: 14px !important; align-items: center !important; }
+          .tp-compact-page .exam-prep-hero > div:last-child > div:first-child { min-width: 0 !important; flex: 1 1 auto !important; }
+          .tp-compact-page .exam-prep-hero-eyebrow { font-size: 10px !important; line-height: 1.15 !important; letter-spacing: 1.4px !important; }
+          .tp-compact-page .exam-prep-hero-title { margin: 6px 0 !important; font-size: 25px !important; line-height: 1.08 !important; letter-spacing: -.45px !important; }
+          .tp-compact-page .exam-prep-hero-description { max-width: 650px !important; font-size: 12px !important; line-height: 1.4 !important; }
+          .tp-compact-page .exam-prep-hero > div:last-child > div:first-child > div:last-child { gap: 7px !important; margin-top: 10px !important; }
+          .tp-compact-page .exam-prep-hero-pill { padding: 6px 9px !important; font-size: 8px !important; line-height: 1 !important; letter-spacing: .4px !important; }
+          .tp-compact-page .exam-prep-hero-badge { width: 62px !important; height: 62px !important; min-width: 62px !important; border-radius: 15px !important; }
+          .tp-compact-page .exam-prep-hero-badge > div:first-child { font-size: 20px !important; }
+          .tp-compact-page .exam-prep-hero-badge > div:last-child { margin-top: 5px !important; font-size: 6px !important; line-height: 1.05 !important; letter-spacing: .55px !important; }
+
+          .tp-compact-page .exam-prep-section { padding: 16px !important; margin-bottom: 10px !important; border-radius: 17px !important; overflow: hidden !important; box-sizing: border-box !important; }
+          .tp-compact-page .exam-prep-section > div:first-child { gap: 10px !important; align-items: flex-start !important; }
+          .tp-compact-page .exam-prep-section > div:first-child > div:first-child { min-width: 0 !important; }
+          .tp-compact-page .exam-prep-section > div:first-child > div:first-child > div:first-child { font-size: 9px !important; line-height: 1.15 !important; letter-spacing: 1.15px !important; }
+          .tp-compact-page .exam-prep-section h2 { margin: 5px 0 0 !important; font-size: 19px !important; line-height: 1.1 !important; letter-spacing: -.2px !important; }
+          .tp-compact-page .exam-prep-section p { margin: 4px 0 0 !important; font-size: 11px !important; line-height: 1.38 !important; }
+          .tp-compact-page .exam-prep-ledger-label { padding-top: 2px !important; font-size: 9px !important; line-height: 1.15 !important; letter-spacing: .8px !important; }
+
+          .tp-compact-page .exam-prep-summary-grid { grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 7px !important; margin-top: 12px !important; margin-bottom: 12px !important; }
+          .tp-compact-page .exam-prep-summary-card { min-width: 0 !important; min-height: 92px !important; padding: 10px !important; border-radius: 12px !important; box-sizing: border-box !important; }
+          .tp-compact-page .exam-prep-summary-card > div:first-child { font-size: 8px !important; line-height: 1.15 !important; letter-spacing: .45px !important; overflow-wrap: anywhere !important; }
+          .tp-compact-page .exam-prep-summary-value { margin-top: 6px !important; font-size: 18px !important; line-height: 1.08 !important; overflow-wrap: anywhere !important; }
+          .tp-compact-page .exam-prep-summary-description { margin-top: 5px !important; font-size: 9px !important; line-height: 1.25 !important; }
+
+          .tp-compact-page .exam-prep-table-workspace { padding: 12px !important; border-radius: 14px !important; box-sizing: border-box !important; }
+          .tp-compact-page .exam-prep-table-workspace > div:first-child { gap: 8px !important; margin-bottom: 8px !important; align-items: flex-start !important; }
+          .tp-compact-page .exam-prep-table-workspace > div:first-child > div:first-child > div:first-child { font-size: 14px !important; line-height: 1.15 !important; }
+          .tp-compact-page .exam-prep-table-workspace > div:first-child > div:first-child > div:last-child { margin-top: 2px !important; font-size: 10px !important; line-height: 1.25 !important; }
+          .tp-compact-page .exam-prep-table-workspace > div:first-child > div:last-child { padding: 5px 8px !important; font-size: 9px !important; }
+
+          .tp-compact-page .exam-prep-swipe-cue { display: block !important; margin: 0 0 7px !important; padding: 6px 9px !important; border: 1px solid #FED7AA !important; border-radius: 8px !important; background: #FFF7ED !important; color: #9A3412 !important; font-size: 9px !important; line-height: 1.15 !important; font-weight: 800 !important; }
+          .tp-compact-page .exam-prep-table-scroll { width: 100% !important; max-width: 100% !important; overflow-x: auto !important; overflow-y: hidden !important; -webkit-overflow-scrolling: touch !important; touch-action: pan-x pan-y !important; border-radius: 11px !important; }
+          .tp-compact-page .exam-prep-table { width: max-content !important; min-width: 100% !important; table-layout: fixed !important; font-size: 9px !important; }
+          .tp-compact-page .exam-prep-table th, .tp-compact-page .exam-prep-table td { padding: 6px 7px !important; height: auto !important; font-size: 9px !important; line-height: 1.2 !important; }
+
+          .tp-compact-page .exam-prep-metric-col { position: sticky !important; left: 0 !important; z-index: 3 !important; width: 190px !important; min-width: 190px !important; max-width: 190px !important; background: #F8FAFC !important; box-shadow: 1px 0 0 #E2E8F0 !important; text-align: left !important; white-space: normal !important; }
+          .tp-compact-page .exam-prep-metric-header { z-index: 5 !important; }
+          .tp-compact-page .exam-prep-student-col { width: 135px !important; min-width: 135px !important; max-width: 135px !important; white-space: normal !important; overflow-wrap: anywhere !important; }
+          .tp-compact-page .exam-prep-table th.exam-prep-student-col > div:first-child { margin-bottom: 2px !important; font-size: 7px !important; }
+          .tp-compact-page .exam-prep-table th.exam-prep-student-col > div:last-child { font-size: 10px !important; line-height: 1.15 !important; }
+          .tp-compact-page .exam-prep-table-workspace > div:last-child { gap: 5px !important; margin-top: 8px !important; }
+          .tp-compact-page .exam-prep-table-workspace > div:last-child > div { gap: 4px !important; padding: 4px 7px !important; font-size: 8px !important; }
+        }
+
+        @media (max-width: 600px) {
+          .tp-compact-page { padding: 7px !important; }
+
+          .tp-compact-page .exam-prep-hero { padding: 12px 13px !important; margin-bottom: 8px !important; border-radius: 14px !important; }
+          .tp-compact-page .exam-prep-hero > div:last-child { gap: 8px !important; }
+          .tp-compact-page .exam-prep-hero-eyebrow { font-size: 7px !important; letter-spacing: .95px !important; }
+          .tp-compact-page .exam-prep-hero-title { margin: 4px 0 !important; font-size: 18px !important; line-height: 1.08 !important; letter-spacing: -.25px !important; }
+          .tp-compact-page .exam-prep-hero-description { font-size: 9px !important; line-height: 1.32 !important; }
+          .tp-compact-page .exam-prep-hero > div:last-child > div:first-child > div:last-child { gap: 5px !important; margin-top: 7px !important; }
+          .tp-compact-page .exam-prep-hero-pill { padding: 5px 7px !important; font-size: 6px !important; }
+          .tp-compact-page .exam-prep-hero-badge { width: 48px !important; height: 48px !important; min-width: 48px !important; border-radius: 11px !important; }
+          .tp-compact-page .exam-prep-hero-badge > div:first-child { font-size: 15px !important; }
+          .tp-compact-page .exam-prep-hero-badge > div:last-child { margin-top: 3px !important; font-size: 4.5px !important; letter-spacing: .3px !important; }
+
+          .tp-compact-page .exam-prep-section { padding: 11px !important; margin-bottom: 8px !important; border-radius: 14px !important; }
+          .tp-compact-page .exam-prep-section > div:first-child { gap: 5px !important; }
+          .tp-compact-page .exam-prep-section > div:first-child > div:first-child > div:first-child { font-size: 7px !important; letter-spacing: .8px !important; }
+          .tp-compact-page .exam-prep-section h2 { font-size: 15px !important; line-height: 1.08 !important; }
+          .tp-compact-page .exam-prep-section p { font-size: 9px !important; line-height: 1.3 !important; }
+          .tp-compact-page .exam-prep-ledger-label { width: 100% !important; padding: 0 !important; font-size: 7px !important; letter-spacing: .65px !important; }
+
+          .tp-compact-page .exam-prep-summary-grid { gap: 5px !important; margin-top: 9px !important; margin-bottom: 9px !important; }
+          .tp-compact-page .exam-prep-summary-card { min-height: 74px !important; padding: 7px !important; border-radius: 10px !important; }
+          .tp-compact-page .exam-prep-summary-card > div:first-child { font-size: 6px !important; line-height: 1.1 !important; letter-spacing: .2px !important; }
+          .tp-compact-page .exam-prep-summary-value { margin-top: 4px !important; font-size: 13px !important; line-height: 1.05 !important; }
+          .tp-compact-page .exam-prep-summary-description { margin-top: 3px !important; font-size: 7px !important; line-height: 1.15 !important; }
+
+          .tp-compact-page .exam-prep-table-workspace { padding: 8px !important; border-radius: 11px !important; }
+          .tp-compact-page .exam-prep-table-workspace > div:first-child { margin-bottom: 6px !important; }
+          .tp-compact-page .exam-prep-table-workspace > div:first-child > div:first-child > div:first-child { font-size: 11px !important; }
+          .tp-compact-page .exam-prep-table-workspace > div:first-child > div:first-child > div:last-child { font-size: 7.5px !important; }
+          .tp-compact-page .exam-prep-table-workspace > div:first-child > div:last-child { padding: 4px 6px !important; font-size: 6.5px !important; }
+          .tp-compact-page .exam-prep-swipe-cue { padding: 4px 6px !important; margin-bottom: 5px !important; font-size: 6.5px !important; }
+
+          .tp-compact-page .exam-prep-table th, .tp-compact-page .exam-prep-table td { padding: 4px 5px !important; font-size: 7.5px !important; line-height: 1.15 !important; }
+          .tp-compact-page .exam-prep-metric-col { width: 145px !important; min-width: 145px !important; max-width: 145px !important; }
+          .tp-compact-page .exam-prep-student-col { width: 108px !important; min-width: 108px !important; max-width: 108px !important; }
+          .tp-compact-page .exam-prep-table th.exam-prep-student-col > div:first-child { font-size: 5.5px !important; }
+          .tp-compact-page .exam-prep-table th.exam-prep-student-col > div:last-child { font-size: 8px !important; }
+          .tp-compact-page .exam-prep-table-workspace > div:last-child { gap: 4px !important; margin-top: 6px !important; }
+          .tp-compact-page .exam-prep-table-workspace > div:last-child > div { padding: 3px 5px !important; font-size: 6.5px !important; }
+        }
+      `}</style>
+
       {/* HEADER */}
 
      {/* =====================================================
     PAGE HERO
    ===================================================== */}
 
-<div style={heroStyle}>
+<div className="tp-page-hero exam-prep-hero" style={heroStyle}>
   <div style={heroOrangeCircle} />
   <div style={heroSoftCircle} />
   <div style={heroBlueCircle} />
@@ -54,11 +153,12 @@ export default function ExamPreparationPage() {
     }}
   >
     <div>
-      <div style={eyebrowStyle}>
+      <div className="exam-prep-hero-eyebrow" style={eyebrowStyle}>
         EXAM PREPARATION INTELLIGENCE
       </div>
 
       <h1
+        className="exam-prep-hero-title"
         style={{
           margin: "8px 0 8px",
           color: "#0F172A",
@@ -68,10 +168,11 @@ export default function ExamPreparationPage() {
           letterSpacing: "-0.7px",
         }}
       >
-        Students Requiring Academic Attention
+        Students Requiring Revision
       </h1>
 
       <p
+        className="exam-prep-hero-description"
         style={{
           margin: 0,
           maxWidth: "720px",
@@ -92,17 +193,17 @@ export default function ExamPreparationPage() {
           marginTop: "14px",
         }}
       >
-        <div style={orangePillStyle}>
+        <div className="exam-prep-hero-pill" style={orangePillStyle}>
           EXAM READINESS
         </div>
 
-        <div style={bluePillStyle}>
+        <div className="exam-prep-hero-pill" style={bluePillStyle}>
           STUDENT ATTENTION
         </div>
       </div>
     </div>
 
-    <div style={heroBadgeStyle}>
+    <div className="exam-prep-hero-badge" style={heroBadgeStyle}>
       <div
         style={{
           fontSize: "28px",
@@ -135,7 +236,7 @@ export default function ExamPreparationPage() {
    ===================================================== */}
 
 {tables.length === 0 && (
-  <div style={sectionCardStyle}>
+  <div className="exam-prep-section" style={sectionCardStyle}>
     <div
       style={{
         display: "flex",
@@ -238,6 +339,7 @@ export default function ExamPreparationPage() {
   (table: any, tableIndex: number) => (
     <div
       key={table.classroom}
+      className="exam-prep-section"
       style={sectionCardStyle}
     >
       {/* SECTION HEADER */}
@@ -267,7 +369,7 @@ export default function ExamPreparationPage() {
           </p>
         </div>
 
-        <div style={ledgerLabelStyle}>
+        <div className="exam-prep-ledger-label" style={ledgerLabelStyle}>
           EXAM ATTENTION LEDGER
         </div>
       </div>
@@ -275,6 +377,7 @@ export default function ExamPreparationPage() {
       {/* CLASSROOM SUMMARY STRIP */}
 
       <div
+        className="exam-prep-summary-grid"
         style={{
           display: "grid",
           gridTemplateColumns:
@@ -285,6 +388,7 @@ export default function ExamPreparationPage() {
         }}
       >
         <div
+          className="exam-prep-summary-card"
           style={{
             ...summaryStripCard,
             background: "#FFF7ED",
@@ -302,16 +406,17 @@ export default function ExamPreparationPage() {
             CLASSROOM
           </div>
 
-          <div style={summaryStripValue}>
+          <div className="exam-prep-summary-value" style={summaryStripValue}>
             {table.classroom}
           </div>
 
-          <div style={summaryStripDescription}>
+          <div className="exam-prep-summary-description" style={summaryStripDescription}>
             Academic classroom
           </div>
         </div>
 
         <div
+          className="exam-prep-summary-card"
           style={{
             ...summaryStripCard,
             background: "#EFF6FF",
@@ -330,6 +435,7 @@ export default function ExamPreparationPage() {
           </div>
 
           <div
+            className="exam-prep-summary-value"
             style={{
               ...summaryStripValue,
               color: "#2563EB",
@@ -338,12 +444,13 @@ export default function ExamPreparationPage() {
             {table.students.length}
           </div>
 
-          <div style={summaryStripDescription}>
+          <div className="exam-prep-summary-description" style={summaryStripDescription}>
             Students analysed
           </div>
         </div>
 
         <div
+          className="exam-prep-summary-card"
           style={{
             ...summaryStripCard,
             background: "#F0FDF4",
@@ -362,6 +469,7 @@ export default function ExamPreparationPage() {
           </div>
 
           <div
+            className="exam-prep-summary-value"
             style={{
               ...summaryStripValue,
               color: "#16A34A",
@@ -371,7 +479,7 @@ export default function ExamPreparationPage() {
             ACTIVE
           </div>
 
-          <div style={summaryStripDescription}>
+          <div className="exam-prep-summary-description" style={summaryStripDescription}>
             Exam preparation analysis
           </div>
         </div>
@@ -379,7 +487,7 @@ export default function ExamPreparationPage() {
 
       {/* TABLE WORKSPACE */}
 
-      <div style={tableWorkspaceStyle}>
+      <div className="exam-prep-table-workspace" style={tableWorkspaceStyle}>
         <div
           style={{
             display: "flex",
@@ -428,7 +536,12 @@ export default function ExamPreparationPage() {
           </div>
         </div>
 
+        <div className="exam-prep-swipe-cue">
+          Swipe left or right to view all students →
+        </div>
+
         <div
+          className="exam-prep-table-scroll"
           style={{
             overflowX: "auto",
             borderRadius: "14px",
@@ -436,6 +549,7 @@ export default function ExamPreparationPage() {
           }}
         >
           <table
+            className="exam-prep-table"
             style={{
               width: "100%",
               borderCollapse: "collapse",
@@ -445,7 +559,7 @@ export default function ExamPreparationPage() {
           >
             <thead>
               <tr>
-                <th style={metricHeaderStyle}>
+                <th className="exam-prep-metric-col exam-prep-metric-header" style={metricHeaderStyle}>
                   METRICS
                 </th>
 
@@ -455,6 +569,7 @@ export default function ExamPreparationPage() {
                     index: number
                   ) => (
                     <th
+                      className="exam-prep-student-col"
                       key={student.studentName}
                       style={{
                         ...tableHeaderStyle,
@@ -586,12 +701,13 @@ function renderExamPreparationRow(
 ) {
   return (
     <tr>
-      <td style={metricColumnStyle}>
+      <td className="exam-prep-metric-col" style={metricColumnStyle}>
         {metricName}
       </td>
 
       {values.map((value, index) => (
         <td
+          className="exam-prep-student-col"
           key={index}
           style={{
             ...tableCellStyle,
@@ -666,7 +782,7 @@ function Legend(props: any) {
       />
 
       {props.label}
-    </div>
+</div>
   );
 }
 

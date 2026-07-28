@@ -37,6 +37,7 @@ export default function TeacherSidebar({
 
   return (
     <aside
+      className="teacher-sidebar"
       style={{
         width: 205,
         minWidth: 205,
@@ -92,6 +93,7 @@ export default function TeacherSidebar({
       {/* PORTAL IDENTITY */}
 
       <div
+        className="teacher-sidebar-identity"
         style={{
           position: "relative",
           zIndex: 1,
@@ -149,6 +151,7 @@ export default function TeacherSidebar({
       {/* SECTION LABEL */}
 
       <div
+        className="teacher-sidebar-label"
         style={{
           position: "relative",
           zIndex: 1,
@@ -170,6 +173,7 @@ export default function TeacherSidebar({
       {/* NAVIGATION */}
 
       <nav
+        className="teacher-sidebar-nav"
         style={{
           position: "relative",
           zIndex: 1,
@@ -316,6 +320,7 @@ export default function TeacherSidebar({
       {/* INTELLIGENCE STATUS */}
 
       <div
+        className="teacher-sidebar-status"
         style={{
           position: "relative",
           zIndex: 1,
@@ -398,6 +403,29 @@ export default function TeacherSidebar({
           Enabled
         </div>
       </div>
-    </aside>
+    
+<style>{`
+@media (max-width: 1024px) {
+ .teacher-sidebar { width:100% !important; min-width:0 !important; min-height:0 !important; height:auto !important; padding:10px 14px !important; border-right:0 !important; border-bottom:1px solid #E2E8F0 !important; overflow-x:auto !important; flex-direction:row !important; align-items:center !important; gap:12px !important; }
+ .teacher-sidebar-identity { padding:0 14px 0 2px !important; border-bottom:0 !important; border-right:1px solid #EEF2F7 !important; flex:0 0 auto; }
+ .teacher-sidebar-identity > div:first-child, .teacher-sidebar-identity > div:last-child { display:none !important; }
+ .teacher-sidebar-identity > div:nth-child(2) { font-size:15px !important; white-space:nowrap; }
+ .teacher-sidebar-label, .teacher-sidebar-status { display:none !important; }
+ .teacher-sidebar-nav { flex-direction:row !important; gap:7px !important; flex:0 0 auto; }
+ .teacher-sidebar-nav button { width:auto !important; padding:7px 9px !important; gap:6px !important; white-space:nowrap; }
+ .teacher-sidebar-nav button > div:first-child { width:24px !important; height:24px !important; font-size:14px !important; }
+ .teacher-sidebar-nav button span { font-size:12px !important; }
+}
+@media (max-width: 600px) {
+ .teacher-sidebar { padding:8px 10px !important; gap:8px !important; scrollbar-width:none; }
+ .teacher-sidebar::-webkit-scrollbar { display:none; }
+ .teacher-sidebar-identity { display:none !important; }
+ .teacher-sidebar-nav { width:max-content; }
+ .teacher-sidebar-nav button { padding:7px 8px !important; border-radius:9px !important; }
+ .teacher-sidebar-nav button > div:first-child { width:22px !important; height:22px !important; font-size:13px !important; }
+ .teacher-sidebar-nav button span { font-size:11px !important; }
+}
+`}</style>
+</aside>
   );
 }

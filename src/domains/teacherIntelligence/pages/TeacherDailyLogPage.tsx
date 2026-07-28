@@ -334,6 +334,7 @@ false
 
   return (
     <div
+      className="tp-compact-page"
       style={{
         minHeight: "100vh",
         padding: "28px",
@@ -360,6 +361,7 @@ false
          ====================================================== */}
 
       <div
+        className="tp-page-hero"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -558,6 +560,7 @@ false
          ====================================================== */}
 
       <div
+        className="tp-publish-card"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -668,6 +671,7 @@ false
          ====================================================== */}
 
       <div
+        className="tp-records-card"
         style={{
           background: "#FFFFFF",
 
@@ -869,6 +873,7 @@ false
           (log: any, index) => (
             <div
               key={log.id}
+              className="tp-record-item"
               style={{
                 position: "relative",
                 overflow: "hidden",
@@ -1078,6 +1083,7 @@ false
          ====================================================== */}
 
       <div
+        className="tp-doubt-card"
         style={{
           background: "#FFFFFF",
 
@@ -1095,6 +1101,7 @@ false
         {/* Doubt ledger heading */}
 
         <div
+          className="tp-doubt-heading"
           style={{
             position: "relative",
             overflow: "hidden",
@@ -1188,6 +1195,7 @@ false
         {/* TABLE */}
 
         <div
+          className="tp-doubt-table"
           style={{
             overflowX: "auto",
 
@@ -1595,7 +1603,83 @@ false
         }
         onSave={handleSave}
       />
-    </div>
+    
+<style>{`
+.tp-mobile-swipe-hint { display: none; }
+
+@media (max-width: 1024px) {
+  .tp-compact-page { padding: 16px !important; overflow-x: hidden !important; box-sizing: border-box !important; }
+
+  .tp-page-hero { padding: 20px 22px !important; margin-bottom: 16px !important; border-radius: 20px !important; }
+  .tp-page-hero > div:last-child { gap: 12px !important; align-items: center !important; }
+  .tp-page-hero > div:last-child > div:first-child { min-width: 0 !important; flex: 1 1 auto !important; }
+  .tp-page-hero > div:last-child > div:first-child > div:first-child { font-size: 8px !important; line-height: 1.15 !important; letter-spacing: 1.2px !important; margin-bottom: 5px !important; }
+  .tp-page-hero h1 { font-size: 22px !important; line-height: 1.08 !important; letter-spacing: -.3px !important; }
+  .tp-page-hero p { font-size: 11px !important; line-height: 1.35 !important; margin: 6px 0 0 !important; }
+  .tp-page-hero > div:last-child > div:last-child { width: 60px !important; height: 60px !important; min-width: 60px !important; border-radius: 15px !important; }
+  .tp-page-hero > div:last-child > div:last-child > div:first-child { font-size: 19px !important; margin-bottom: 1px !important; }
+  .tp-page-hero > div:last-child > div:last-child > div:last-child { font-size: 5px !important; line-height: 1.1 !important; letter-spacing: .5px !important; }
+
+  .tp-publish-card, .tp-records-card, .tp-doubt-card { padding: 16px !important; margin-bottom: 16px !important; border-radius: 20px !important; }
+  .tp-publish-card > div:last-child { gap: 10px !important; }
+  .tp-publish-card > div:last-child > div:first-child > div:first-child,
+  .tp-records-card > div:first-child > div:first-child > div:first-child,
+  .tp-doubt-heading > div:last-child > div:first-child { font-size: 8px !important; letter-spacing: 1.1px !important; margin-bottom: 3px !important; }
+  .tp-publish-card h2, .tp-records-card h2, .tp-doubt-card h2 { font-size: 18px !important; line-height: 1.12 !important; }
+  .tp-publish-card p, .tp-records-card p, .tp-doubt-card p { font-size: 10px !important; line-height: 1.3 !important; margin-top: 4px !important; }
+  .tp-publish-card button { padding: 9px 13px !important; min-height: 0 !important; font-size: 9px !important; border-radius: 10px !important; }
+
+  .tp-records-card > div:first-child { margin-bottom: 10px !important; gap: 8px !important; }
+  .tp-record-item { padding: 11px 12px !important; margin-bottom: 8px !important; border-radius: 13px !important; gap: 9px !important; }
+  .tp-record-item > div:first-child { min-width: 0 !important; }
+  .tp-record-item h2 { font-size: 13px !important; margin-bottom: 6px !important; }
+  .tp-record-item > div:first-child > div:first-child { padding: 3px 6px !important; margin-bottom: 6px !important; font-size: 7px !important; }
+  .tp-record-item > div:first-child > div:nth-child(3) { gap: 5px !important; margin-bottom: 6px !important; }
+  .tp-record-item > div:first-child > div:nth-child(3) > div { padding: 4px 6px !important; font-size: 8px !important; }
+  .tp-record-item > div:last-child { padding: 5px 8px !important; font-size: 7px !important; }
+
+  .tp-doubt-heading { padding: 13px 14px !important; margin-bottom: 10px !important; border-radius: 14px !important; }
+  .tp-doubt-table { border-radius: 11px !important; -webkit-overflow-scrolling: touch; }
+  .tp-doubt-table table { min-width: 590px !important; }
+  .tp-doubt-table th, .tp-doubt-table td { padding: 5px 6px !important; font-size: 8.5px !important; line-height: 1.18 !important; }
+  .tp-doubt-table th:first-child, .tp-doubt-table td:first-child { width: 126px !important; min-width: 126px !important; max-width: 126px !important; position: sticky; left: 0; z-index: 2; }
+  .tp-doubt-table thead th:first-child { z-index: 3; }
+  .tp-doubt-table th:not(:first-child) { min-width: 104px !important; font-size: 9.5px !important; }
+}
+
+@media (max-width: 600px) {
+  .tp-compact-page { padding: 12px !important; }
+
+  .tp-page-hero { padding: 15px 16px !important; margin-bottom: 12px !important; border-radius: 16px !important; }
+  .tp-page-hero > div:last-child { gap: 7px !important; }
+  .tp-page-hero > div:last-child > div:first-child > div:first-child { font-size: 6px !important; letter-spacing: .8px !important; margin-bottom: 3px !important; }
+  .tp-page-hero h1 { font-size: 18px !important; line-height: 1.08 !important; }
+  .tp-page-hero p { font-size: 9px !important; line-height: 1.3 !important; margin-top: 5px !important; }
+  .tp-page-hero > div:last-child > div:last-child { width: 48px !important; height: 48px !important; min-width: 48px !important; border-radius: 12px !important; }
+  .tp-page-hero > div:last-child > div:last-child > div:first-child { font-size: 13px !important; margin-bottom: 0 !important; }
+  .tp-page-hero > div:last-child > div:last-child > div:last-child { font-size: 3.7px !important; line-height: 1 !important; letter-spacing: .25px !important; }
+
+  .tp-publish-card, .tp-records-card, .tp-doubt-card { padding: 12px !important; margin-bottom: 12px !important; border-radius: 16px !important; }
+  .tp-publish-card > div:last-child { display: grid !important; grid-template-columns: 1fr auto !important; align-items: end !important; gap: 8px !important; }
+  .tp-publish-card h2, .tp-records-card h2, .tp-doubt-card h2 { font-size: 15px !important; }
+  .tp-publish-card p, .tp-records-card p, .tp-doubt-card p { font-size: 8.5px !important; line-height: 1.3 !important; }
+  .tp-publish-card button { padding: 8px 10px !important; font-size: 8px !important; }
+
+  .tp-records-card > div:first-child > div:last-child { display: none !important; }
+  .tp-record-item { padding: 9px 10px !important; margin-bottom: 7px !important; border-radius: 12px !important; }
+  .tp-record-item h2 { font-size: 11px !important; }
+  .tp-record-item > div:first-child > div:nth-child(3) > div { font-size: 7px !important; padding: 3px 5px !important; }
+  .tp-record-item p { font-size: 8px !important; }
+  .tp-record-item > div:last-child { font-size: 6px !important; padding: 4px 6px !important; }
+
+  .tp-doubt-heading { padding: 10px 11px !important; margin-bottom: 8px !important; border-radius: 12px !important; }
+  .tp-doubt-table table { min-width: 560px !important; }
+  .tp-doubt-table th, .tp-doubt-table td { padding: 5px !important; font-size: 8px !important; }
+  .tp-doubt-table th:first-child, .tp-doubt-table td:first-child { width: 120px !important; min-width: 120px !important; max-width: 120px !important; }
+  .tp-doubt-table th:not(:first-child) { min-width: 100px !important; font-size: 9px !important; }
+}
+`}</style>
+</div>
   );
 }
 

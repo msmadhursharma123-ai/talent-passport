@@ -547,17 +547,492 @@ const summary = getMonthSummary();
 
 return (
   <div
+      className="tp-compact-page"
     style={{
       padding: "20px",
       background: "#F6F7F9",
       minHeight: "100%",
     }}
   >
+    
+<style>{`
+/* =========================================================
+   RESPONSIVE UI LAYER
+   Desktop inline styles remain the source of truth >1024px.
+   ========================================================= */
+
+@media (max-width: 1024px) {
+  .tp-compact-page {
+    padding: 12px !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ---------- shared hero ---------- */
+  .tp-page-hero {
+    padding: 16px 18px !important;
+    margin-bottom: 12px !important;
+    border-radius: 18px !important;
+  }
+
+  .tp-page-hero > div:last-child {
+    gap: 12px !important;
+    align-items: center !important;
+  }
+
+  .tp-page-hero > div:last-child > div:first-child {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .tp-page-hero h1 {
+    margin: 4px 0 5px !important;
+    font-size: 23px !important;
+    line-height: 1.08 !important;
+  }
+
+  .tp-page-hero p {
+    max-width: none !important;
+    font-size: 11px !important;
+    line-height: 1.38 !important;
+  }
+
+  .tp-page-hero > div:last-child > div:last-child {
+    width: 58px !important;
+    height: 58px !important;
+    min-width: 58px !important;
+    padding: 7px !important;
+    border-radius: 15px !important;
+  }
+
+  /* ---------- all normal sections ---------- */
+  .tp-responsive-section {
+    padding: 15px !important;
+    margin-bottom: 12px !important;
+    border-radius: 17px !important;
+    box-sizing: border-box !important;
+  }
+
+  .tp-section-header {
+    align-items: flex-start !important;
+    gap: 8px 14px !important;
+  }
+
+  .tp-section-header > div:first-child {
+    flex: 1 1 320px !important;
+    min-width: 0 !important;
+  }
+
+  .tp-section-header > div:last-child {
+    flex: 0 1 auto !important;
+    max-width: 44% !important;
+    text-align: right !important;
+    align-self: flex-start !important;
+  }
+
+  .tp-responsive-section h2 {
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+    max-width: none !important;
+    font-size: 19px !important;
+    line-height: 1.08 !important;
+  }
+
+  .tp-responsive-section p {
+    max-width: none !important;
+    margin-top: 4px !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+
+  .tp-responsive-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+    margin-top: 11px !important;
+  }
+
+  .tp-responsive-grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-top: 12px !important;
+  }
+
+  .tp-responsive-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-top: 12px !important;
+  }
+
+  .tp-responsive-card {
+    min-width: 0 !important;
+    min-height: 76px !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ---------- controls ---------- */
+  .tp-compact-page select {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 36px !important;
+    padding: 7px 9px !important;
+    font-size: 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ---------- calendar header ---------- */
+  .tp-calendar-section {
+    padding: 15px !important;
+    margin-bottom: 12px !important;
+    border-radius: 17px !important;
+    box-sizing: border-box !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .tp-calendar-header {
+    gap: 10px !important;
+    align-items: flex-start !important;
+  }
+
+  .tp-calendar-header > div:first-child {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .tp-calendar-header > div:last-child {
+    flex: 0 0 auto !important;
+    max-width: 42% !important;
+    padding: 7px 10px !important;
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+  }
+
+  .tp-calendar-header h2 {
+    margin-top: 4px !important;
+    font-size: 19px !important;
+    line-height: 1.08 !important;
+  }
+
+  .tp-calendar-header p {
+    max-width: none !important;
+    margin-top: 4px !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+
+  .teacher-calendar-swipe-hint,
+  .teacher-table-swipe-hint {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    margin: 10px 0 7px !important;
+    padding: 7px 9px !important;
+    border: 1px solid #FED7AA !important;
+    border-radius: 9px !important;
+    background: #FFF7ED !important;
+    color: #9A3412 !important;
+    font-size: 8px !important;
+    line-height: 1.2 !important;
+  }
+
+  .teacher-calendar-swipe-hint strong,
+  .teacher-table-swipe-hint strong {
+    text-align: right !important;
+  }
+
+  .tp-calendar-track {
+    min-width: 620px !important;
+    gap: 8px !important;
+  }
+
+  .tp-comparison-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 3px !important;
+  }
+
+  .tp-comparison-scroll > * {
+    min-width: 100% !important;
+  }
+
+  /* ---------- classroom assignment cards ---------- */
+  .tp-assignment-grid .tp-responsive-card {
+    min-height: 70px !important;
+    padding: 9px 10px !important;
+  }
+
+  /* ---------- risk cards ---------- */
+  .tp-risk-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .tp-risk-grid .tp-responsive-card {
+    min-height: 0 !important;
+    padding: 11px !important;
+  }
+
+  /* ---------- analytics cards ---------- */
+  .tp-analytics-grid .tp-responsive-card {
+    min-height: 92px !important;
+    padding: 10px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .tp-compact-page {
+    padding: 8px !important;
+  }
+
+  .tp-page-hero {
+    padding: 12px 13px !important;
+    margin-bottom: 8px !important;
+    border-radius: 14px !important;
+  }
+
+  .tp-page-hero h1 {
+    font-size: 18px !important;
+  }
+
+  .tp-page-hero p {
+    font-size: 9px !important;
+    line-height: 1.3 !important;
+  }
+
+  .tp-page-hero > div:last-child > div:last-child {
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    padding: 5px !important;
+    border-radius: 11px !important;
+  }
+
+  .tp-responsive-section,
+  .tp-calendar-section {
+    padding: 11px !important;
+    margin-bottom: 8px !important;
+    border-radius: 14px !important;
+  }
+
+  /* Headers use the full card width instead of reserving a large empty right column */
+  .tp-section-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: start !important;
+    gap: 4px 8px !important;
+  }
+
+  .tp-section-header > div:first-child {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+
+  .tp-section-header > div:last-child {
+    grid-column: 1 / -1 !important;
+    justify-self: start !important;
+    max-width: 100% !important;
+    margin-top: 3px !important;
+    text-align: left !important;
+    font-size: 8px !important;
+    line-height: 1.2 !important;
+    letter-spacing: .7px !important;
+  }
+
+  .tp-responsive-section h2 {
+    font-size: 15px !important;
+    line-height: 1.06 !important;
+  }
+
+  .tp-responsive-section p {
+    font-size: 9px !important;
+    line-height: 1.3 !important;
+  }
+
+  .tp-responsive-grid-2 {
+    gap: 6px !important;
+    margin-top: 8px !important;
+  }
+
+  /* Four information / summary cards stay compact in a 2×2 matrix */
+  .tp-responsive-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    margin-top: 8px !important;
+  }
+
+  .tp-responsive-card {
+    min-height: 64px !important;
+    padding: 8px !important;
+    border-radius: 10px !important;
+  }
+
+  .tp-assignment-grid .tp-responsive-card {
+    min-height: 62px !important;
+    padding: 7px 8px !important;
+  }
+
+  /* Critical / very critical / moderate remain side-by-side as a readable compact ledger */
+  .tp-risk-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+  }
+
+  .tp-risk-grid .tp-responsive-card {
+    padding: 7px !important;
+    border-radius: 10px !important;
+  }
+
+  .tp-risk-grid .tp-responsive-card * {
+    overflow-wrap: anywhere !important;
+  }
+
+  .tp-analytics-grid .tp-responsive-card {
+    min-height: 78px !important;
+    padding: 8px !important;
+  }
+
+  /* Calendar title/description now use the whole width; ledger badge sits beneath them */
+  .tp-calendar-header {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 5px !important;
+  }
+
+  .tp-calendar-header > div:first-child {
+    width: 100% !important;
+  }
+
+  .tp-calendar-header > div:last-child {
+    max-width: 100% !important;
+    justify-self: start !important;
+    padding: 6px 8px !important;
+    font-size: 8px !important;
+  }
+
+  .tp-calendar-header h2 {
+    font-size: 15px !important;
+    line-height: 1.06 !important;
+  }
+
+  .tp-calendar-header p {
+    font-size: 9px !important;
+    line-height: 1.3 !important;
+  }
+
+  .teacher-calendar-swipe-hint,
+  .teacher-table-swipe-hint {
+    margin: 7px 0 5px !important;
+    padding: 6px 7px !important;
+    font-size: 7.5px !important;
+  }
+
+  .tp-calendar-track {
+    min-width: 560px !important;
+    gap: 7px !important;
+  }
+
+  .tp-comparison-scroll > * {
+    min-width: 100% !important;
+  }
+
+  .tp-compact-page select {
+    min-height: 32px !important;
+    padding: 6px 7px !important;
+    font-size: 9px !important;
+    border-radius: 8px !important;
+  }
+}
+
+
+/* =========================================================
+   FREEZE PATCH — REQUESTED SECTIONS ONLY
+   Mobile / tablet only. No desktop, data, logic, or other UI changes.
+   ========================================================= */
+@media (max-width: 1024px) {
+  /* HERO ONLY: compact the two center pills and right JOURNAL badge */
+  .tp-page-hero > div:last-child > div:first-child > div:last-child {
+    flex-wrap: nowrap !important;
+    gap: 5px !important;
+  }
+  .tp-page-hero > div:last-child > div:first-child > div:last-child > div {
+    white-space: nowrap !important;
+    padding: 6px 9px !important;
+    font-size: 8px !important;
+    letter-spacing: .35px !important;
+  }
+  .tp-page-hero > div:last-child > div:last-child {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    padding: 5px !important;
+  }
+  .tp-page-hero > div:last-child > div:last-child > div:first-child {
+    font-size: 18px !important;
+  }
+  .tp-page-hero > div:last-child > div:last-child > div:last-child {
+    margin-top: 3px !important;
+    font-size: 6px !important;
+    line-height: 1 !important;
+    letter-spacing: .3px !important;
+    white-space: nowrap !important;
+  }
+
+  /* COMPARISON TABLE ONLY: wider table, smaller internal cards/typography */
+  .tp-comparison-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .tp-comparison-scroll > * {
+    min-width: 720px !important;
+  }
+  .tp-comparison-scroll > * > * {
+    min-height: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .tp-page-hero > div:last-child > div:first-child > div:last-child > div {
+    padding: 5px 6px !important;
+    font-size: 6.5px !important;
+    letter-spacing: .1px !important;
+  }
+  .tp-page-hero > div:last-child > div:last-child {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    padding: 3px !important;
+    border-radius: 9px !important;
+  }
+  .tp-page-hero > div:last-child > div:last-child > div:first-child {
+    font-size: 14px !important;
+  }
+  .tp-page-hero > div:last-child > div:last-child > div:last-child {
+    font-size: 5px !important;
+    letter-spacing: 0 !important;
+  }
+
+  .tp-comparison-scroll > * {
+    min-width: 680px !important;
+  }
+  .tp-comparison-scroll div {
+    line-height: 1.12 !important;
+  }
+}
+
+`}</style>
+
     {/* =====================================================
         PAGE HERO
        ===================================================== */}
 
-    <div style={heroStyle}>
+    <div className="tp-page-hero" style={heroStyle}>
       <div style={heroOrangeCircle} />
       <div style={heroSoftCircle} />
       <div style={heroBlueCircle} />
@@ -651,8 +1126,9 @@ return (
         JOURNAL CONTROLS
        ===================================================== */}
 
-    <div style={sectionCardStyle}>
+    <div className="tp-responsive-section" style={sectionCardStyle}>
       <div
+        className="tp-section-header"
         style={{
           display: "flex",
           alignItems: "flex-end",
@@ -690,6 +1166,7 @@ return (
       </div>
 
    <div
+  className="tp-responsive-grid-2"
   style={{
     display: "grid",
     gridTemplateColumns:
@@ -768,6 +1245,7 @@ return (
    ===================================================== */}
 
 <div
+  className="tp-calendar-section"
   style={{
     position: "relative",
     overflow: "hidden",
@@ -810,6 +1288,7 @@ return (
      ===================================================== */}
 
   <div
+    className="tp-calendar-header"
     style={{
       position: "relative",
       zIndex: 1,
@@ -900,11 +1379,17 @@ return (
     </div>
   </div>
 
+  <div className="teacher-calendar-swipe-hint">
+    <span>CALENDAR VIEW</span>
+    <strong>Swipe left or right to view the full month →</strong>
+  </div>
+
   {/* =====================================================
       WEEK DAYS
      ===================================================== */}
 
   <div
+    className="tp-calendar-track"
     style={{
       position: "relative",
       zIndex: 1,
@@ -952,6 +1437,7 @@ return (
      ===================================================== */}
 
   <div
+    className="tp-calendar-track"
     style={{
       position: "relative",
       zIndex: 1,
@@ -1574,8 +2060,9 @@ return (
         MONTHLY SUMMARY
        ===================================================== */}
 
-    <div style={sectionCardStyle}>
+    <div className="tp-responsive-section" style={sectionCardStyle}>
       <div
+        className="tp-section-header"
         style={{
           display: "flex",
           alignItems: "flex-end",
@@ -1605,6 +2092,7 @@ return (
       </div>
 
       <div
+        className="tp-responsive-grid-4 tp-analytics-grid"
         style={{
           display: "grid",
           gridTemplateColumns:
@@ -1690,8 +2178,9 @@ return (
         CLASSROOM COMPARISON
        ===================================================== */}
 
-    <div style={sectionCardStyle}>
+    <div className="tp-responsive-section" style={sectionCardStyle}>
       <div
+        className="tp-section-header"
         style={{
           display: "flex",
           alignItems: "flex-end",
@@ -1723,7 +2212,14 @@ return (
 
       {overallClassroomComparison.length >
       0 ? (
+        <>
+        <div className="teacher-table-swipe-hint">
+          <span>CLASSROOM COMPARISON</span>
+          <strong>Swipe left or right to compare classrooms →</strong>
+        </div>
+
         <div
+          className="tp-comparison-scroll"
           style={{
             overflowX: "auto",
             paddingBottom: "3px",
@@ -1845,6 +2341,7 @@ return (
             />
           </div>
         </div>
+      </>
       ) : (
         <div style={emptyStateStyle}>
           <div
@@ -1947,6 +2444,7 @@ function Legend(props: any) {
 function AnalyticsCard(props: any) {
   return (
     <div
+      className="tp-responsive-card"
       style={{
         position: "relative",
         overflow: "hidden",
@@ -2457,7 +2955,168 @@ function ComparisonRow(props: any) {
           </div>
         )
       )}
-    </div>
+    
+<style>{`
+.tp-mobile-swipe-hint { display: none; }
+
+@media (max-width: 1024px) {
+  .tp-compact-page {
+    padding: 16px !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .tp-page-hero {
+    padding: 20px 22px !important;
+    margin-bottom: 16px !important;
+    border-radius: 20px !important;
+  }
+
+  .tp-page-hero > div:last-child {
+    gap: 12px !important;
+    align-items: center !important;
+  }
+
+  .tp-page-hero > div:last-child > div:first-child {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  .tp-page-hero h1 {
+    font-size: 22px !important;
+    line-height: 1.08 !important;
+    letter-spacing: -0.3px !important;
+    margin-top: 6px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .tp-page-hero p {
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+
+  .tp-page-hero > div:last-child > div:last-child {
+    width: 60px !important;
+    height: 60px !important;
+    min-width: 60px !important;
+    border-radius: 15px !important;
+  }
+
+  .tp-compact-page h2 {
+    font-size: 18px !important;
+    line-height: 1.12 !important;
+  }
+
+  .tp-compact-page h3 {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+  }
+
+  .tp-compact-page p {
+    line-height: 1.4 !important;
+  }
+
+  .tp-compact-page select,
+  .tp-compact-page input,
+  .tp-compact-page textarea {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .tp-compact-page table {
+    font-size: 10px !important;
+  }
+
+  .tp-compact-page th,
+  .tp-compact-page td {
+    padding: 7px 8px !important;
+    line-height: 1.2 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .tp-compact-page {
+    padding: 12px !important;
+  }
+
+  .tp-page-hero {
+    padding: 14px 15px !important;
+    margin-bottom: 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .tp-page-hero h1 {
+    font-size: 18px !important;
+    line-height: 1.08 !important;
+  }
+
+  .tp-page-hero p {
+    font-size: 9px !important;
+    line-height: 1.32 !important;
+  }
+
+  .tp-page-hero > div:last-child > div:last-child {
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    border-radius: 13px !important;
+  }
+
+  .tp-compact-page h2 {
+    font-size: 15px !important;
+  }
+
+  .tp-compact-page h3 {
+    font-size: 12px !important;
+  }
+
+  .tp-compact-page select,
+  .tp-compact-page input {
+    min-height: 34px !important;
+    font-size: 9px !important;
+  }
+
+  .tp-compact-page button {
+    min-height: 34px !important;
+    font-size: 9px !important;
+  }
+
+  .tp-compact-page table {
+    font-size: 8px !important;
+  }
+
+  .tp-compact-page th,
+  .tp-compact-page td {
+    padding: 5px 6px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .teacher-calendar-swipe-hint {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    margin: 14px 0 8px !important;
+    padding: 8px 10px !important;
+    border: 1px solid #FED7AA !important;
+    border-radius: 10px !important;
+    background: #FFF7ED !important;
+    color: #9A3412 !important;
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .teacher-calendar-swipe-hint {
+    margin: 10px 0 6px !important;
+    padding: 7px 8px !important;
+    font-size: 8px !important;
+  }
+}
+`}</style>
+</div>
   );
 }
 

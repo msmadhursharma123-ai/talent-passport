@@ -25,6 +25,7 @@ export default function TeacherHeader({
 
   return (
     <header
+      className="teacher-header"
       style={{
         minHeight: 82,
 
@@ -109,6 +110,7 @@ export default function TeacherHeader({
          ===================================================== */}
 
       <div
+        className="teacher-header-date"
         style={{
           position: "relative",
           zIndex: 1,
@@ -164,6 +166,7 @@ export default function TeacherHeader({
          ===================================================== */}
 
       <div
+        className="teacher-header-right"
         style={{
           position: "relative",
           zIndex: 1,
@@ -289,6 +292,25 @@ export default function TeacherHeader({
           Logout
         </button>
       </div>
-    </header>
+    
+<style>{`
+@media (max-width: 1024px) {
+ .teacher-header { min-height: 72px !important; grid-template-columns: auto 1fr !important; padding: 0 18px !important; gap: 14px !important; }
+ .teacher-header > div:nth-of-type(3) { display:none !important; }
+ .teacher-header-date { justify-self:start !important; min-width:0 !important; padding:8px 14px !important; }
+ .teacher-header-right { justify-self:end !important; }
+}
+@media (max-width: 600px) {
+ .teacher-header { min-height:64px !important; padding:8px 12px !important; gap:8px !important; }
+ .teacher-header-date { padding:7px 9px !important; border-radius:10px !important; }
+ .teacher-header-date > div:first-child { font-size:8px !important; letter-spacing:1px !important; }
+ .teacher-header-date > div:last-child { font-size:10px !important; margin-top:3px !important; white-space:nowrap; }
+ .teacher-header-right { gap:7px !important; min-width:0 !important; }
+ .teacher-header-right > div:first-child { display:none !important; }
+ .teacher-header-right > div:nth-child(2) { display:none !important; }
+ .teacher-header-right button { padding:8px 10px !important; font-size:11px !important; border-radius:9px !important; }
+}
+`}</style>
+</header>
   );
 }

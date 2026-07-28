@@ -26,6 +26,7 @@ export default function TeacherLayout({
 
   return (
     <div
+      className="teacher-layout"
       style={{
         display: "flex",
         minHeight: "100vh",
@@ -38,6 +39,7 @@ export default function TeacherLayout({
       />
 
       <div
+        className="teacher-layout-main"
         style={{
           flex: 1,
           display: "flex",
@@ -50,6 +52,7 @@ export default function TeacherLayout({
         />
 
         <div
+          className="teacher-layout-content"
           style={{
             flex: 1,
             overflowY: "auto",
@@ -81,6 +84,14 @@ export default function TeacherLayout({
           )}
         </div>
       </div>
-    </div>
+    
+<style>{`
+@media (max-width: 1024px) {
+ .teacher-layout { flex-direction:column !important; height:100dvh; min-height:100dvh !important; overflow:hidden; }
+ .teacher-layout-main { min-width:0 !important; flex:1 !important; overflow:hidden !important; }
+ .teacher-layout-content { min-width:0 !important; overflow-x:hidden !important; }
+}
+`}</style>
+</div>
   );
 }

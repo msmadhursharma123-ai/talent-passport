@@ -173,6 +173,7 @@ export default function TeacherDailyLogDialog({
 
   return (
     <div
+      className="tp-log-dialog-overlay"
       style={{
         position: "fixed",
         inset: 0,
@@ -191,6 +192,7 @@ export default function TeacherDailyLogDialog({
       }}
     >
       <div
+        className="tp-log-dialog"
         style={{
           position: "relative",
           overflowY: "auto",
@@ -1073,7 +1075,28 @@ export default function TeacherDailyLogDialog({
           </div>
         </div>
       </div>
-    </div>
+    
+<style>{`
+@media (max-width:1024px){
+ .tp-log-dialog-overlay{padding:14px !important}
+ .tp-log-dialog{max-width:600px !important;max-height:94dvh !important;border-radius:20px !important}
+ .tp-log-dialog>div:last-child{padding:20px !important}
+ .tp-log-dialog h1{font-size:23px !important}
+ .tp-log-dialog h3{font-size:14px !important}
+ .tp-log-dialog p{font-size:11px !important;line-height:1.4 !important}
+ .tp-log-dialog input,.tp-log-dialog select,.tp-log-dialog textarea,.tp-log-dialog button{font-size:12px !important}
+}
+@media (max-width:600px){
+ .tp-log-dialog-overlay{padding:6px !important;align-items:flex-end !important}
+ .tp-log-dialog{max-width:none !important;max-height:96dvh !important;border-radius:18px 18px 10px 10px !important}
+ .tp-log-dialog>div:last-child{padding:14px !important}
+ .tp-log-dialog h1{font-size:19px !important;line-height:1.15 !important}
+ .tp-log-dialog h3{font-size:13px !important}
+ .tp-log-dialog p{font-size:10px !important}
+ .tp-log-dialog input,.tp-log-dialog select,.tp-log-dialog textarea,.tp-log-dialog button{font-size:11px !important}
+}
+`}</style>
+</div>
   );
 }
 
