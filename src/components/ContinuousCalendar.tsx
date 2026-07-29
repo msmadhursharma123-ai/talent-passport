@@ -477,8 +477,23 @@ subjectList[0]
 /* Tablet: preserve seven columns, but give each day enough room to read data. */
 @media (min-width: 768px) and (max-width: 1024px) {
   .cc-calendar-shell {
+    overflow: hidden !important;
+  }
+
+  .cc-calendar-scroll {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
     overflow-x: auto !important;
+    overflow-y: visible !important;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+    overscroll-behavior-x: contain;
+  }
+
+  .cc-calendar-track {
+    width: 720px !important;
+    min-width: 720px !important;
   }
 
   .cc-weekdays,
@@ -623,9 +638,24 @@ subjectList[0]
   .cc-calendar-shell {
     padding: 12px 8px 14px !important;
     border-radius: 17px !important;
+    overflow: hidden !important;
+  }
+
+  .cc-calendar-scroll {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
     overflow-x: auto !important;
+    overflow-y: visible !important;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
+    touch-action: pan-x pan-y;
+    overscroll-behavior-x: contain;
+  }
+
+  .cc-calendar-track {
+    width: max-content !important;
+    min-width: 674px !important;
   }
 
   .cc-calendar-shell > div:nth-of-type(2) {
@@ -1206,6 +1236,9 @@ subjectList[0]
   <strong>Swipe left or right to view the full month →</strong>
 </div>
 
+<div className="cc-calendar-scroll">
+<div className="cc-calendar-track">
+
 <div
   className="cc-weekdays"
   style={{
@@ -1398,6 +1431,7 @@ subjectList[0]
 
       <div
         key={day}
+        className="cc-day-card"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -1612,6 +1646,9 @@ subjectList[0]
 
   })}
 
+</div>
+
+</div>
 </div>
 
 </div>
