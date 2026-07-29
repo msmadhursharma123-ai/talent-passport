@@ -13,7 +13,11 @@ import {
 
 import {
     buildEvidenceIntelligence,
-    EvidenceIntelligence
+    normalizeCurrentTalentDNA,
+    normalizeTalentDNAExplanation,
+    EvidenceIntelligence,
+    CurrentTalentDNA,
+    TalentDNAExplanation
 } from "../data/talentEvidenceEngine";
 
 import type {
@@ -73,6 +77,8 @@ export interface PassportViewModel {
     dnaHistory: TalentDNAHistoryRecord[];
     evidenceSummary: TalentEvidenceSummary;
     evidenceIntelligence: EvidenceIntelligence;
+    currentTalentDNA: CurrentTalentDNA;
+    talentDNAExplanation: TalentDNAExplanation;
 
     dnaAverage: number;
     reliability: number;
@@ -204,44 +210,6 @@ Promise<PassportViewModel | null> {
             );
 
         /*
-         * TEMPORARY PHASE 3 RUNTIME VERIFICATION
-         *
-         * Remove after the Evidence Foundation pipeline has been
-         * confirmed in the browser console.
-         */
-        console.log(
-            "===================================="
-        );
-        console.log(
-            "PHASE 3 EVIDENCE VERIFICATION"
-        );
-        console.log({
-            evidenceRecords:
-                evidence.length,
-
-            dnaHistorySnapshots:
-                dnaHistory.length,
-
-            evidenceSummary,
-
-            evidenceIntelligence,
-
-            firstEvidence:
-                evidence[0] ?? null,
-
-            firstSnapshot:
-                dnaHistory[0] ?? null,
-
-            latestSnapshot:
-                dnaHistory.length > 0
-                    ? dnaHistory[dnaHistory.length - 1]
-                    : null
-        });
-        console.log(
-            "===================================="
-        );
-
-        /*
          * BASELINE DNA
          *
          * These are calibrated talent values.
@@ -249,7 +217,7 @@ Promise<PassportViewModel | null> {
          * Future evidence engines may provide evaluated score updates,
          * but those updates must be attributable to real evidence.
          */
-        const sourceScores = {
+        const baselineScores = {
 
             creativity:
                 numeric(
@@ -286,6 +254,49 @@ Promise<PassportViewModel | null> {
                     dna?.critical_thinking_score,
                     numeric(storedPassport?.critical_thinking_score)
                 )
+        };
+
+        /*
+         * PHASE 4 — CURRENT TALENT DNA
+         *
+         * Secure database calculation is authoritative.
+         * Existing DNA is only the compatibility fallback.
+         * Baseline-only students therefore remain unchanged.
+         */
+        const currentTalentDNA =
+            normalizeCurrentTalentDNA(
+                growth.currentTalentDNA,
+                {
+                    ...baselineScores,
+                    profileConfidence:
+                        evidenceIntelligence.profileConfidence,
+                    evidenceSignalCount: 0
+                }
+            );
+
+        const talentDNAExplanation =
+            normalizeTalentDNAExplanation(
+                growth.talentDNAExplanation
+            );
+
+        const sourceScores = {
+            creativity:
+                currentTalentDNA.creativity,
+
+            communication:
+                currentTalentDNA.communication,
+
+            leadership:
+                currentTalentDNA.leadership,
+
+            confidence:
+                currentTalentDNA.confidence,
+
+            collaboration:
+                currentTalentDNA.collaboration,
+
+            criticalThinking:
+                currentTalentDNA.criticalThinking
         };
 
         const passport = {
@@ -385,7 +396,9 @@ Promise<PassportViewModel | null> {
          * It measures profile maturity/trustworthiness, not talent.
          */
         const evidenceCoverage =
-            evidenceIntelligence.profileConfidence;
+            currentTalentDNA.profileConfidence > 0
+                ? currentTalentDNA.profileConfidence
+                : evidenceIntelligence.profileConfidence;
 
         /*
          * Preserve the existing downstream EvidenceContext API while
@@ -444,7 +457,7 @@ Promise<PassportViewModel | null> {
 
         const confidence =
             confidenceFromProfile(
-                evidenceIntelligence.profileConfidence
+                evidenceCoverage
             );
 
         const futureReadiness =
@@ -606,14 +619,16 @@ Promise<PassportViewModel | null> {
         const dnaAverage =
             Math.round(
                 (
-                    sourceScores.creativity +
-                    sourceScores.communication +
-                    sourceScores.leadership +
-                    sourceScores.confidence +
-                    sourceScores.collaboration +
-                    sourceScores.criticalThinking
-                ) / 6
-            );
+                    (
+                        sourceScores.creativity +
+                        sourceScores.communication +
+                        sourceScores.leadership +
+                        sourceScores.confidence +
+                        sourceScores.collaboration +
+                        sourceScores.criticalThinking
+                    ) / 6
+                ) * 100
+            ) / 100;
 
         const hasAnswers =
             Object.keys(
@@ -691,21 +706,6 @@ Promise<PassportViewModel | null> {
             }
         ];
 
-        console.log(
-            "LIVE PASSPORT INTELLIGENCE",
-            {
-                sourceScores,
-                evidenceCoverage,
-                evidenceContext,
-                evidenceSummary,
-                evidenceIntelligence,
-                schoolBenchmark: benchmarks,
-                peerPosition: percentile,
-                distinctiveness: rarity,
-                recommendations: competitions
-            }
-        );
-
         return {
             passport,
             dna,
@@ -724,6 +724,8 @@ Promise<PassportViewModel | null> {
             dnaHistory,
             evidenceSummary,
             evidenceIntelligence,
+            currentTalentDNA,
+            talentDNAExplanation,
             dnaAverage,
             reliability,
             participationReadiness,

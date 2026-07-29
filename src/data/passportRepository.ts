@@ -326,6 +326,77 @@ export async function savePassport(
   }
 }
 
+
+
+/* ============================================================
+   PHASE 4 — AUTHENTICATED LIVE DNA READS
+
+   Student identity is resolved inside the secure RPCs.
+   No student UUID is accepted from the browser.
+============================================================ */
+
+async function getMyCurrentTalentDNA() {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) {
+    throw new Error(
+      "Supabase client is unavailable."
+    );
+  }
+
+  const {
+    data,
+    error
+  } = await (supabase as any)
+    .rpc(
+      "get_my_current_talent_dna"
+    );
+
+  if (error) {
+    console.error(
+      "CURRENT TALENT DNA RPC ERROR",
+      error
+    );
+
+    throw error;
+  }
+
+  return data ?? null;
+}
+
+async function getMyTalentDNAExplanation() {
+
+  const supabase =
+    getSupabaseClient();
+
+  if (!supabase) {
+    throw new Error(
+      "Supabase client is unavailable."
+    );
+  }
+
+  const {
+    data,
+    error
+  } = await (supabase as any)
+    .rpc(
+      "get_my_talent_dna_explanation"
+    );
+
+  if (error) {
+    console.error(
+      "TALENT DNA EXPLANATION RPC ERROR",
+      error
+    );
+
+    throw error;
+  }
+
+  return data ?? null;
+}
+
 /* ============================================================
    GROWTH PLAN DATA
 
@@ -425,7 +496,9 @@ export async function getGrowthPlanData() {
     submissionResult,
     projectResult,
     assessmentResult,
-    evidenceFoundationResult
+    evidenceFoundationResult,
+    currentTalentDNAResult,
+    talentDNAExplanationResult
   ] = await Promise.all([
 
     /*
@@ -507,7 +580,15 @@ export async function getGrowthPlanData() {
      * This repository only receives the authenticated student's:
      * evidence, DNA history and evidence summary.
      */
-    getTalentEvidenceFoundationData()
+    getTalentEvidenceFoundationData(),
+
+    /*
+     * Phase 4 — authoritative evolved DNA.
+     * auth.uid() is resolved server-side.
+     */
+    getMyCurrentTalentDNA(),
+
+    getMyTalentDNAExplanation()
 
   ]);
 
@@ -572,7 +653,13 @@ export async function getGrowthPlanData() {
         dimensionCoverage: 0,
         recentEvidence90Days: 0,
         baselineEvidence: 0
-      }
+      },
+
+    currentTalentDNA:
+      currentTalentDNAResult,
+
+    talentDNAExplanation:
+      talentDNAExplanationResult
 
   };
 }

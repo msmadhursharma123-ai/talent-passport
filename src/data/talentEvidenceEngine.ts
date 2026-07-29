@@ -318,3 +318,304 @@ export function buildEvidenceIntelligence(
       ] ?? null
   };
 }
+
+
+/* ============================================================
+   PHASE 4 — LIVE DNA EVOLUTION
+
+   The database is authoritative for DNA evolution.
+   This client layer normalizes secure authenticated RPC results.
+   It never awards points locally.
+============================================================ */
+
+export interface CurrentTalentDNA {
+  creativity: number;
+  communication: number;
+  leadership: number;
+  confidence: number;
+  collaboration: number;
+  criticalThinking: number;
+  overallScore: number;
+  profileConfidence: number;
+  evidenceSignalCount: number;
+  raw: any;
+}
+
+export interface TalentDNAExplanation {
+  rows: any[];
+  raw: any;
+}
+
+function numberFrom(
+  source: any,
+  keys: string[],
+  fallback = 0
+): number {
+  for (const key of keys) {
+    const value = source?.[key];
+
+    if (
+      value !== null &&
+      value !== undefined &&
+      value !== ""
+    ) {
+      const parsed = Number(value);
+
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+
+  return fallback;
+}
+
+function unwrapRpcObject(
+  value: any
+): any {
+  if (Array.isArray(value)) {
+    return value.length > 0
+      ? value[0]
+      : null;
+  }
+
+  return value ?? null;
+}
+
+export function normalizeCurrentTalentDNA(
+  rpcValue: any,
+  fallback: Partial<CurrentTalentDNA> = {}
+): CurrentTalentDNA {
+
+  const row =
+    unwrapRpcObject(rpcValue) ?? {};
+
+  const creativity =
+    numberFrom(
+      row,
+      [
+        "creativityScore",
+        "creativity_score",
+        "creativity",
+        "Creativity"
+      ],
+      Number(
+        fallback.creativity ?? 0
+      )
+    );
+
+  const communication =
+    numberFrom(
+      row,
+      [
+        "communicationScore",
+        "communication_score",
+        "communication",
+        "Communication"
+      ],
+      Number(
+        fallback.communication ?? 0
+      )
+    );
+
+  const leadership =
+    numberFrom(
+      row,
+      [
+        "leadershipScore",
+        "leadership_score",
+        "leadership",
+        "Leadership"
+      ],
+      Number(
+        fallback.leadership ?? 0
+      )
+    );
+
+  const confidence =
+    numberFrom(
+      row,
+      [
+        "confidenceScore",
+        "confidence_score",
+        "confidence",
+        "Confidence"
+      ],
+      Number(
+        fallback.confidence ?? 0
+      )
+    );
+
+  const collaboration =
+    numberFrom(
+      row,
+      [
+        "collaborationScore",
+        "collaboration_score",
+        "team_score",
+        "collaboration",
+        "Collaboration"
+      ],
+      Number(
+        fallback.collaboration ?? 0
+      )
+    );
+
+  const criticalThinking =
+    numberFrom(
+      row,
+      [
+        "criticalThinkingScore",
+        "critical_thinking_score",
+        "criticalThinking",
+        "critical_thinking",
+        "CriticalThinking"
+      ],
+      Number(
+        fallback.criticalThinking ?? 0
+      )
+    );
+
+  const calculatedOverall =
+    (
+      creativity +
+      communication +
+      leadership +
+      confidence +
+      collaboration +
+      criticalThinking
+    ) / 6;
+
+  return {
+    creativity:
+      clamp100(creativity),
+
+    communication:
+      clamp100(communication),
+
+    leadership:
+      clamp100(leadership),
+
+    confidence:
+      clamp100(confidence),
+
+    collaboration:
+      clamp100(collaboration),
+
+    criticalThinking:
+      clamp100(criticalThinking),
+
+    overallScore:
+      clamp100(
+        numberFrom(
+          row,
+          [
+            "overallScore",
+            "overall_score",
+            "combined_score",
+            "dna_index"
+          ],
+          calculatedOverall
+        )
+      ),
+
+    profileConfidence:
+      clamp100(
+        numberFrom(
+          row,
+          [
+            "profileConfidence",
+            "profile_confidence",
+            "evidence_confidence"
+          ],
+          Number(
+            fallback.profileConfidence ?? 0
+          )
+        )
+      ),
+
+    evidenceSignalCount:
+      Math.max(
+        0,
+        Math.round(
+          numberFrom(
+            row,
+            [
+              "evidence_signal_count",
+              "evidenceSignalCount",
+              "validated_evidence_count",
+              "signal_count"
+            ],
+            Number(
+              fallback.evidenceSignalCount ?? 0
+            )
+          )
+        )
+      ),
+
+    raw:
+      row
+  };
+}
+
+export function normalizeTalentDNAExplanation(
+  rpcValue: any
+): TalentDNAExplanation {
+
+  if (Array.isArray(rpcValue)) {
+    return {
+      rows: rpcValue,
+      raw: rpcValue
+    };
+  }
+
+  if (
+    rpcValue &&
+    Array.isArray(
+      rpcValue.evidence
+    )
+  ) {
+    return {
+      rows:
+        rpcValue.evidence,
+      raw:
+        rpcValue
+    };
+  }
+
+  if (
+    rpcValue &&
+    Array.isArray(
+      rpcValue.rows
+    )
+  ) {
+    return {
+      rows: rpcValue.rows,
+      raw: rpcValue
+    };
+  }
+
+  if (
+    rpcValue &&
+    Array.isArray(
+      rpcValue.explanations
+    )
+  ) {
+    return {
+      rows:
+        rpcValue.explanations,
+      raw:
+        rpcValue
+    };
+  }
+
+  return {
+    rows:
+      rpcValue
+        ? [rpcValue]
+        : [],
+
+    raw:
+      rpcValue ?? null
+  };
+}

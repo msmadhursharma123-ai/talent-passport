@@ -379,7 +379,7 @@ export default function TalentPassport({
                                     <div>
 
                                         <p className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-100">
-                                            Relative DNA Avg
+                                            Overall Score
                                         </p>
 
                                         <div className="mt-2 flex items-end gap-1 sm:justify-center">
