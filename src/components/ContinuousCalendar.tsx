@@ -288,21 +288,39 @@ b.log_date
 
 console.log(filteredLogs);
 
-const selectedMonthDate =
-  new Date(`${selectedMonth} 1`);
+const MONTH_INDEX: Record<string, number> = {
+  January: 0,
+  February: 1,
+  March: 2,
+  April: 3,
+  May: 4,
+  June: 5,
+  July: 6,
+  August: 7,
+  September: 8,
+  October: 9,
+  November: 10,
+  December: 11,
+};
+
+const [selectedMonthName, selectedYearText] =
+  selectedMonth.split(" ");
 
 const selectedYear =
-  selectedMonthDate.getFullYear();
+  Number(selectedYearText);
 
 const selectedMonthIndex =
-  selectedMonthDate.getMonth();
+  MONTH_INDEX[selectedMonthName];
 
 const totalDays =
-  new Date(
-    selectedYear,
-    selectedMonthIndex + 1,
-    0
-  ).getDate();
+  Number.isFinite(selectedYear) &&
+  selectedMonthIndex !== undefined
+    ? new Date(
+        selectedYear,
+        selectedMonthIndex + 1,
+        0
+      ).getDate()
+    : 0;
 
 const subjectTeacher =
 
