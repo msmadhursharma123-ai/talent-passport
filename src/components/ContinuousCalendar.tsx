@@ -1351,6 +1351,564 @@ subjectList[0]
     line-height: 1.4 !important;
   }
 }
+
+/* =========================================================
+   FINAL CALENDAR RENDERER
+   Desktop and mobile/tablet are independent.
+========================================================= */
+
+.cc-desktop-calendar {
+  display: block;
+}
+
+.cc-mobile-calendar {
+  display: none;
+}
+
+
+/* =========================================================
+   MOBILE + TABLET
+========================================================= */
+
+@media (max-width: 1024px) {
+
+  /* -----------------------------------------
+     OUTER CALENDAR CARD
+  ----------------------------------------- */
+
+  .cc-calendar-shell {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+
+    padding: 20px !important;
+
+    border-radius: 22px !important;
+
+    overflow: hidden !important;
+  }
+
+
+  /* -----------------------------------------
+     HEADER
+  ----------------------------------------- */
+
+  .cc-calendar-header {
+    display: block !important;
+
+    width: 100% !important;
+
+    padding: 0 !important;
+  }
+
+  .cc-calendar-header h2 {
+    margin-top: 6px !important;
+
+    font-size: 20px !important;
+    line-height: 1.15 !important;
+  }
+
+  .cc-calendar-header h2 + p {
+    margin-top: 6px !important;
+
+    max-width: 520px;
+
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+
+  .cc-monthly-ledger {
+    display: none !important;
+  }
+
+
+  /* -----------------------------------------
+     SWITCH RENDERERS
+  ----------------------------------------- */
+
+  .cc-desktop-calendar {
+    display: none !important;
+  }
+
+  .cc-mobile-calendar {
+    display: block !important;
+
+    position: relative;
+
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+
+    margin-top: 18px;
+  }
+
+
+  /* -----------------------------------------
+     SWIPE BAR
+
+     THIS DOES NOT SCROLL
+  ----------------------------------------- */
+
+  .cc-mobile-swipe-hint {
+    position: relative;
+    z-index: 5;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    width: 100%;
+
+    padding: 10px 12px;
+
+    border: 1px solid #FED7AA;
+    border-radius: 12px;
+
+    background: #FFF7ED;
+
+    color: #9A3412;
+
+    font-size: 10px;
+    line-height: 1.25;
+  }
+
+  .cc-mobile-swipe-hint span {
+    flex-shrink: 0;
+
+    font-weight: 900;
+
+    text-transform: uppercase;
+
+    letter-spacing: .08em;
+  }
+
+  .cc-mobile-swipe-hint strong {
+    min-width: 0;
+
+    font-weight: 800;
+
+    text-align: right;
+  }
+
+
+  /* -----------------------------------------
+     REAL SCROLL VIEWPORT
+  ----------------------------------------- */
+
+  .cc-mobile-scroll {
+    position: relative;
+
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+
+    margin-top: 14px;
+
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+
+    -webkit-overflow-scrolling: touch;
+
+    overscroll-behavior-x: contain;
+
+    touch-action: pan-x pan-y;
+
+    scrollbar-width: thin;
+
+    padding-bottom: 8px;
+  }
+
+
+  /* -----------------------------------------
+     FIXED-WIDTH TRACK
+
+     7 columns × 96px + gaps.
+     This is intentionally wider than phone.
+  ----------------------------------------- */
+
+  .cc-mobile-track {
+    width: max-content !important;
+    min-width: max-content !important;
+
+    padding-right: 14px;
+  }
+
+
+  /* -----------------------------------------
+     WEEKDAYS
+  ----------------------------------------- */
+
+  .cc-mobile-weekdays {
+    display: grid !important;
+
+    grid-template-columns:
+      repeat(7, 96px) !important;
+
+    gap: 7px !important;
+
+    width: max-content !important;
+
+    margin-bottom: 7px;
+  }
+
+  .cc-mobile-weekday {
+    width: 96px;
+
+    text-align: center;
+
+    color: #64748B;
+
+    font-size: 9px;
+    font-weight: 900;
+
+    letter-spacing: .7px;
+  }
+
+
+  /* -----------------------------------------
+     CALENDAR GRID
+  ----------------------------------------- */
+
+  .cc-mobile-grid {
+    display: grid !important;
+
+    grid-template-columns:
+      repeat(7, 96px) !important;
+
+    gap: 7px !important;
+
+    width: max-content !important;
+  }
+
+
+  /* -----------------------------------------
+     BASE DAY CARD
+  ----------------------------------------- */
+
+  .cc-mobile-day {
+    position: relative;
+
+    width: 96px !important;
+    min-width: 96px !important;
+
+    height: 116px !important;
+    min-height: 116px !important;
+
+    padding: 10px !important;
+
+    border-radius: 13px;
+
+    overflow: hidden;
+
+    display: flex;
+
+    flex-direction: column;
+
+    box-shadow:
+      0 2px 6px rgba(15,23,42,.025);
+  }
+
+
+  /* -----------------------------------------
+     EMPTY DAY
+  ----------------------------------------- */
+
+  .cc-mobile-day-empty {
+    border: 1px solid #FDBA74;
+
+    background:
+      linear-gradient(
+        135deg,
+        #FFF9EF 0%,
+        #FFFCF7 100%
+      );
+  }
+
+
+  /* -----------------------------------------
+     LECTURE DAY
+  ----------------------------------------- */
+
+  .cc-mobile-day-lecture {
+    border: 1px solid #BBF7D0;
+
+    background:
+      linear-gradient(
+        135deg,
+        #F7FFF8 0%,
+        #FFFFFF 100%
+      );
+  }
+
+
+  /* -----------------------------------------
+     DECORATIVE CORNER
+  ----------------------------------------- */
+
+  .cc-mobile-corner {
+    position: absolute;
+
+    width: 40px;
+    height: 40px;
+
+    border-radius: 50%;
+
+    right: -14px;
+    top: -14px;
+
+    pointer-events: none;
+  }
+
+  .cc-mobile-corner-empty {
+    background:
+      rgba(255,237,213,.82);
+  }
+
+  .cc-mobile-corner-lecture {
+    background:
+      rgba(220,252,231,.82);
+  }
+
+
+  /* -----------------------------------------
+     DATE
+  ----------------------------------------- */
+
+  .cc-mobile-date {
+    position: relative;
+    z-index: 1;
+
+    flex-shrink: 0;
+
+    color: #0F172A;
+
+    font-size: 12px;
+    font-weight: 900;
+
+    line-height: 1;
+  }
+
+
+  /* -----------------------------------------
+     EMPTY MESSAGE
+  ----------------------------------------- */
+
+  .cc-mobile-empty-content {
+    position: relative;
+    z-index: 1;
+
+    flex: 1;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    color: #EA580C;
+
+    font-size: 9px;
+    font-weight: 800;
+
+    line-height: 1.3;
+  }
+
+
+  /* -----------------------------------------
+     TOPIC
+  ----------------------------------------- */
+
+  .cc-mobile-topic {
+    position: relative;
+    z-index: 1;
+
+    display: block;
+
+    width: 100%;
+
+    margin-top: 10px;
+
+    padding: 5px 6px;
+
+    border-radius: 8px;
+
+    background: #DCFCE7;
+
+    color: #15803D;
+
+    font-size: 8.5px;
+    font-weight: 900;
+
+    line-height: 1.2;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+  }
+
+
+  /* -----------------------------------------
+     PAGES
+  ----------------------------------------- */
+
+  .cc-mobile-pages {
+    position: relative;
+    z-index: 1;
+
+    margin-top: 6px;
+
+    color: #64748B;
+
+    font-size: 8px;
+    font-weight: 700;
+
+    line-height: 1.2;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+  }
+
+
+  /* -----------------------------------------
+     MORE TOPICS
+  ----------------------------------------- */
+
+  .cc-mobile-view-all {
+    position: relative;
+    z-index: 1;
+
+    align-self: flex-start;
+
+    margin-top: 5px;
+
+    padding: 0;
+
+    border: none;
+
+    background: transparent;
+
+    color: #2563EB;
+
+    font-size: 8px;
+    font-weight: 900;
+
+    cursor: pointer;
+  }
+
+
+  /* -----------------------------------------
+     HOMEWORK
+  ----------------------------------------- */
+
+  .cc-mobile-homework {
+    position: relative;
+    z-index: 1;
+
+    margin-top: auto;
+
+    padding-top: 5px;
+
+    color: #64748B;
+
+    font-size: 8px;
+    font-weight: 700;
+
+    line-height: 1;
+  }
+
+  .cc-mobile-homework strong {
+    color: #334155;
+  }
+
+}
+
+
+/* =========================================================
+   PHONE
+========================================================= */
+
+@media (max-width: 767px) {
+
+  .cc-calendar-shell {
+    padding: 15px 12px 16px !important;
+
+    border-radius: 18px !important;
+  }
+
+  .cc-calendar-header h2 {
+    font-size: 18px !important;
+  }
+
+  .cc-calendar-header h2 + p {
+    font-size: 10.5px !important;
+
+    line-height: 1.4 !important;
+  }
+
+  .cc-mobile-calendar {
+    margin-top: 14px;
+  }
+
+  .cc-mobile-swipe-hint {
+    padding: 9px 10px;
+
+    gap: 8px;
+
+    font-size: 8.5px;
+  }
+
+  .cc-mobile-scroll {
+    margin-top: 12px;
+  }
+
+}
+
+
+/* =========================================================
+   SMALL PHONE
+========================================================= */
+
+@media (max-width: 420px) {
+
+  .cc-calendar-shell {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .cc-mobile-swipe-hint {
+    font-size: 8px;
+  }
+
+  .cc-mobile-weekdays,
+  .cc-mobile-grid {
+    grid-template-columns:
+      repeat(7, 90px) !important;
+
+    gap: 6px !important;
+  }
+
+  .cc-mobile-weekday {
+    width: 90px;
+  }
+
+  .cc-mobile-day {
+    width: 90px !important;
+    min-width: 90px !important;
+  }
+
+}
+
 `}</style>
    {/* =========================================================
     CONTINUOUS CALENDAR HERO
@@ -1727,10 +2285,19 @@ subjectList[0]
 {/* =========================================================
     CONTINUOUS CLASSROOM CALENDAR
 ========================================================= */}
+{/* =========================================================
+    CONTINUOUS CLASSROOM CALENDAR
+    DESKTOP + INDEPENDENT MOBILE/TABLET RENDERER
+========================================================= */}
 
 <div
-  className="cc-calendar-shell relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-sm"
+  className="cc-calendar-shell relative rounded-3xl border border-slate-200 bg-white p-7 shadow-sm"
+  style={{
+    overflow: "hidden",
+  }}
 >
+
+  {/* DECORATIVE BACKGROUND */}
 
   <div
     className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full"
@@ -1739,451 +2306,658 @@ subjectList[0]
     }}
   />
 
-<div className="relative z-10 flex items-start justify-between gap-5">
 
-  <div>
+  {/* =====================================================
+      HEADER
+  ===================================================== */}
 
-    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
-      Learning Continuity
-    </p>
+  <div className="cc-calendar-header relative z-10 flex items-start justify-between gap-5">
 
-    <h2 className="mt-2 text-xl font-black text-slate-900">
-      See Your Classroom Calendar
-    </h2>
+    <div>
 
-    <p className="mt-2 text-sm leading-6 text-slate-500">
-      Review lectures, topics, pages and classroom activity
-      recorded throughout the selected month.
-    </p>
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+        Learning Continuity
+      </p>
+
+      <h2 className="mt-2 text-xl font-black text-slate-900">
+        See Your Classroom Calendar
+      </h2>
+
+      <p className="mt-2 text-sm leading-6 text-slate-500">
+        Review lectures, topics, pages and classroom activity
+        recorded throughout the selected month.
+      </p>
+
+    </div>
+
+
+    <div className="cc-monthly-ledger rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-orange-600">
+      Monthly Learning Ledger
+    </div>
 
   </div>
 
 
-  <div className="hidden rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-orange-600 md:block">
-    Monthly Learning Ledger
-  </div>
+  {/* =========================================================
+      DESKTOP CALENDAR
+      ONLY > 1024px
+  ========================================================= */}
 
-</div>
+  <div className="cc-desktop-calendar">
 
+    {/* WEEK DAYS */}
 
-{/* =========================================================
-    WEEK DAYS
-========================================================= */}
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+        gap: 12,
+        marginTop: 30,
+        marginBottom: 12,
+      }}
+    >
 
-<div className="cc-swipe-hint">
-  <span>Calendar view</span>
-  <strong>Swipe left or right to view the full month →</strong>
-</div>
-
-<div className="cc-calendar-viewport">
-
-<div
-  className="cc-weekdays"
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-    gap: 12,
-    marginTop: 30,
-    marginBottom: 12,
-  }}
->
-  {["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map(
-    (day) => (
-      <div
-        key={day}
-        style={{
-          textAlign: "center",
-          fontWeight: 800,
-          fontSize: 11,
-          letterSpacing: 1.2,
-          color: "#64748B",
-        }}
-      >
-        {day}
-      </div>
-    )
-  )}
-</div>
-
-
-{/* =========================================================
-    CALENDAR GRID
-========================================================= */}
-
-<div
-  className="cc-calendar-grid"
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-    gap: 12,
-  }}
->
-  {Array.from({ length: totalDays }).map((_, index) => {
-
-    const day = index + 1;
-
-    const logsForDay =
-      filteredLogs.filter((item) => {
-
-        const currentDate =
-          new Date(item.log_date);
-
-        return (
-          currentDate.getDate() === day
-        );
-
-      });
-
-
-    const visibleTopics =
-      logsForDay.slice(0, 1);
-
-    const remainingTopics =
-      logsForDay.length - 1;
-
-
-    /* =====================================================
-       EMPTY DAY
-    ===================================================== */
-
-    if (logsForDay.length === 0) {
-
-      return (
+      {[
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN",
+      ].map((day) => (
 
         <div
           key={day}
-          className="cc-day-card"
           style={{
-            position: "relative",
-            overflow: "hidden",
-
-            minHeight: 116,
-
-            padding: "14px 14px",
-
-            borderRadius: 15,
-
-            border:
-              "1px solid #FDBA74",
-
-            background:
-              "linear-gradient(135deg,#FFF9EF 0%,#FFFCF7 100%)",
-
-            display: "flex",
-            flexDirection: "column",
-
-            boxShadow:
-              "0 2px 6px rgba(15,23,42,0.02)",
-          }}
-        >
-
-          {/* TOP RIGHT DECORATIVE CIRCLE */}
-
-          <div
-            style={{
-              position: "absolute",
-
-              width: 54,
-              height: 54,
-
-              borderRadius: "50%",
-
-              right: -18,
-              top: -18,
-
-              background:
-                "rgba(255,237,213,0.75)",
-
-              pointerEvents: "none",
-            }}
-          />
-
-
-          {/* DATE */}
-
-          <div
-            style={{
-              position: "relative",
-              zIndex: 1,
-
-              fontWeight: 800,
-              fontSize: 14,
-
-              lineHeight: 1,
-
-              color: "#0F172A",
-            }}
-          >
-            {day}
-          </div>
-
-
-          {/* EMPTY STATE */}
-
-          <div
-            style={{
-              position: "relative",
-              zIndex: 1,
-
-              flex: 1,
-
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-
-              paddingBottom: 3,
-            }}
-          >
-
-            <p
-              style={{
-                margin: 0,
-
-                textAlign: "center",
-
-                fontSize: 10,
-                lineHeight: 1.3,
-
-                color: "#EA580C",
-
-                fontWeight: 800,
-              }}
-            >
-              No Lecture Conducted
-            </p>
-
-          </div>
-
-        </div>
-
-      );
-
-    }
-
-
-    /* =====================================================
-       LECTURE CONDUCTED
-    ===================================================== */
-
-    return (
-
-      <div
-        key={day}
-        style={{
-          position: "relative",
-          overflow: "hidden",
-
-          minHeight: 116,
-
-          padding: "14px 14px",
-
-          borderRadius: 15,
-
-          border:
-            "1px solid #BBF7D0",
-
-          background:
-            "linear-gradient(135deg,#F0FDF4 0%,#F8FFF9 100%)",
-
-          boxShadow:
-            "0 2px 6px rgba(34,197,94,0.03)",
-        }}
-      >
-
-        {/* TOP RIGHT DECORATIVE CIRCLE */}
-
-        <div
-          style={{
-            position: "absolute",
-
-            width: 54,
-            height: 54,
-
-            borderRadius: "50%",
-
-            right: -18,
-            top: -18,
-
-            background:
-              "rgba(220,252,231,0.8)",
-
-            pointerEvents: "none",
-          }}
-        />
-
-
-        {/* DATE */}
-
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-
+            textAlign: "center",
             fontWeight: 800,
-            fontSize: 14,
-
-            lineHeight: 1,
-
-            color: "#0F172A",
-
-            marginBottom: 13,
+            fontSize: 11,
+            letterSpacing: 1.2,
+            color: "#64748B",
           }}
         >
           {day}
         </div>
 
+      ))}
 
-        {/* TOPIC */}
+    </div>
 
-        {visibleTopics.map((topic) => (
+
+    {/* DESKTOP GRID */}
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+        gap: 12,
+      }}
+    >
+
+      {Array.from({ length: totalDays }).map((_, index) => {
+
+        const day = index + 1;
+
+        const logsForDay =
+          filteredLogs.filter((item) => {
+
+            const currentDate =
+              new Date(item.log_date);
+
+            return (
+              currentDate.getDate() === day
+            );
+
+          });
+
+
+        const visibleTopics =
+          logsForDay.slice(0, 1);
+
+        const remainingTopics =
+          logsForDay.length - 1;
+
+
+        /* =====================================================
+            DESKTOP EMPTY DAY
+        ===================================================== */
+
+        if (logsForDay.length === 0) {
+
+          return (
+
+            <div
+              key={`desktop-${day}`}
+              style={{
+                position: "relative",
+                overflow: "hidden",
+
+                minHeight: 116,
+
+                padding: "14px 14px",
+
+                borderRadius: 15,
+
+                border:
+                  "1px solid #FDBA74",
+
+                background:
+                  "linear-gradient(135deg,#FFF9EF 0%,#FFFCF7 100%)",
+
+                display: "flex",
+                flexDirection: "column",
+
+                boxShadow:
+                  "0 2px 6px rgba(15,23,42,0.02)",
+              }}
+            >
+
+              <div
+                style={{
+                  position: "absolute",
+
+                  width: 54,
+                  height: 54,
+
+                  borderRadius: "50%",
+
+                  right: -18,
+                  top: -18,
+
+                  background:
+                    "rgba(255,237,213,0.75)",
+
+                  pointerEvents: "none",
+                }}
+              />
+
+
+              <div
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+
+                  fontWeight: 800,
+                  fontSize: 14,
+
+                  lineHeight: 1,
+
+                  color: "#0F172A",
+                }}
+              >
+                {day}
+              </div>
+
+
+              <div
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+
+                  flex: 1,
+
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+
+                  paddingBottom: 3,
+                }}
+              >
+
+                <p
+                  style={{
+                    margin: 0,
+
+                    textAlign: "center",
+
+                    fontSize: 10,
+                    lineHeight: 1.3,
+
+                    color: "#EA580C",
+
+                    fontWeight: 800,
+                  }}
+                >
+                  No Lecture Conducted
+                </p>
+
+              </div>
+
+            </div>
+
+          );
+
+        }
+
+
+        /* =====================================================
+            DESKTOP LECTURE DAY
+        ===================================================== */
+
+        return (
 
           <div
-            key={topic.id}
+            key={`desktop-${day}`}
             style={{
               position: "relative",
-              zIndex: 1,
+              overflow: "hidden",
+
+              minHeight: 116,
+
+              padding: "14px 14px",
+
+              borderRadius: 15,
+
+              border:
+                "1px solid #BBF7D0",
+
+              background:
+                "linear-gradient(135deg,#F7FFF8,#FFFFFF)",
+
+              display: "flex",
+              flexDirection: "column",
+
+              boxShadow:
+                "0 2px 6px rgba(15,23,42,0.02)",
             }}
           >
 
             <div
               style={{
-                display: "inline-flex",
+                position: "absolute",
 
-                maxWidth: "100%",
+                width: 54,
+                height: 54,
 
-                padding: "5px 8px",
+                borderRadius: "50%",
 
-                borderRadius: 10,
+                right: -18,
+                top: -18,
 
                 background:
-                  "#DCFCE7",
+                  "rgba(220,252,231,0.75)",
 
-                color:
-                  "#15803D",
+                pointerEvents: "none",
+              }}
+            />
+
+
+            <div
+              style={{
+                position: "relative",
+                zIndex: 1,
 
                 fontWeight: 800,
+                fontSize: 14,
 
-                fontSize: 10,
+                lineHeight: 1,
 
-                marginBottom: 8,
+                color: "#0F172A",
 
-                overflow: "hidden",
-
-                textOverflow: "ellipsis",
-
-                whiteSpace: "nowrap",
+                marginBottom: 12,
               }}
             >
-              {topic.topic_name}
+              {day}
             </div>
 
 
-            <p
+            {visibleTopics.map((topic) => (
+
+              <div
+                key={topic.id}
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+
+                <div
+                  style={{
+                    display: "inline-flex",
+
+                    maxWidth: "100%",
+
+                    padding: "5px 8px",
+
+                    borderRadius: 10,
+
+                    background: "#DCFCE7",
+
+                    color: "#15803D",
+
+                    fontWeight: 800,
+                    fontSize: 10,
+
+                    marginBottom: 8,
+
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {topic.topic_name}
+                </div>
+
+
+                <p
+                  style={{
+                    margin: 0,
+
+                    fontSize: 10,
+                    fontWeight: 600,
+
+                    color: "#64748B",
+                  }}
+                >
+                  Pages: {topic.page_from}–{topic.page_to}
+                </p>
+
+              </div>
+
+            ))}
+
+
+            {remainingTopics > 0 && (
+
+              <button
+                type="button"
+
+                onClick={() => {
+
+                  setSelectedDayTopics(logsForDay);
+
+                  setShowTopicsModal(true);
+
+                }}
+
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+
+                  marginTop: 8,
+
+                  padding: 0,
+
+                  border: "none",
+
+                  background: "transparent",
+
+                  color: "#2563EB",
+
+                  fontSize: 10,
+                  fontWeight: 800,
+
+                  cursor: "pointer",
+
+                  textAlign: "left",
+                }}
+              >
+                View All Topics ({logsForDay.length}) →
+              </button>
+
+            )}
+
+
+            <div
               style={{
-                margin: 0,
+                position: "relative",
+                zIndex: 1,
+
+                marginTop: 8,
 
                 fontSize: 10,
-
-                fontWeight: 600,
 
                 color: "#64748B",
               }}
             >
-              Pages: {topic.page_from}–{topic.page_to}
-            </p>
+              Homework:{" "}
+
+              <strong
+                style={{
+                  color: "#334155",
+                }}
+              >
+                {logsForDay.some(
+                  (item) => item.homework_given
+                )
+                  ? "Yes"
+                  : "No"}
+              </strong>
+
+            </div>
 
           </div>
 
-        ))}
+        );
+
+      })}
+
+    </div>
+
+  </div>
 
 
-        {/* MULTIPLE TOPICS */}
+  {/* =========================================================
+      MOBILE + TABLET CALENDAR
+      INDEPENDENT RENDERER
+      <= 1024px
+  ========================================================= */}
 
-        {remainingTopics > 0 && (
+  <div className="cc-mobile-calendar">
 
-          <button
-            type="button"
+    {/* SWIPE INFORMATION — OUTSIDE SCROLLER */}
 
-            onClick={() => {
+    <div className="cc-mobile-swipe-hint">
 
-              setSelectedDayTopics(
-                logsForDay
+      <span>
+        Calendar View
+      </span>
+
+      <strong>
+        Swipe left or right to view the full month →
+      </strong>
+
+    </div>
+
+
+    {/* =====================================================
+        HORIZONTAL VIEWPORT
+
+        ONLY THIS AREA SCROLLS.
+        HEADER + SWIPE BAR REMAIN FIXED.
+    ===================================================== */}
+
+    <div className="cc-mobile-scroll">
+
+      <div className="cc-mobile-track">
+
+
+        {/* =================================================
+            WEEK DAYS
+        ================================================= */}
+
+        <div className="cc-mobile-weekdays">
+
+          {[
+            "MON",
+            "TUE",
+            "WED",
+            "THU",
+            "FRI",
+            "SAT",
+            "SUN",
+          ].map((day) => (
+
+            <div
+              key={`mobile-week-${day}`}
+              className="cc-mobile-weekday"
+            >
+              {day}
+            </div>
+
+          ))}
+
+        </div>
+
+
+        {/* =================================================
+            MOBILE CALENDAR GRID
+        ================================================= */}
+
+        <div className="cc-mobile-grid">
+
+          {Array.from({ length: totalDays }).map(
+            (_, index) => {
+
+              const day =
+                index + 1;
+
+
+              const logsForDay =
+                filteredLogs.filter((item) => {
+
+                  const currentDate =
+                    new Date(item.log_date);
+
+                  return (
+                    currentDate.getDate() === day
+                  );
+
+                });
+
+
+              const visibleTopic =
+                logsForDay[0];
+
+
+              const remainingTopics =
+                logsForDay.length - 1;
+
+
+              /* =============================================
+                  MOBILE EMPTY DAY
+              ============================================= */
+
+              if (logsForDay.length === 0) {
+
+                return (
+
+                  <div
+                    key={`mobile-${day}`}
+                    className="cc-mobile-day cc-mobile-day-empty"
+                  >
+
+                    <div className="cc-mobile-corner cc-mobile-corner-empty" />
+
+
+                    <div className="cc-mobile-date">
+                      {day}
+                    </div>
+
+
+                    <div className="cc-mobile-empty-content">
+
+                      <span>
+                        No Lecture
+                      </span>
+
+                      <span>
+                        Conducted
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                );
+
+              }
+
+
+              /* =============================================
+                  MOBILE LECTURE DAY
+              ============================================= */
+
+              return (
+
+                <div
+                  key={`mobile-${day}`}
+                  className="cc-mobile-day cc-mobile-day-lecture"
+                >
+
+                  <div className="cc-mobile-corner cc-mobile-corner-lecture" />
+
+
+                  <div className="cc-mobile-date">
+                    {day}
+                  </div>
+
+
+                  <div className="cc-mobile-topic">
+                    {visibleTopic?.topic_name ?? "Topic"}
+                  </div>
+
+
+                  <div className="cc-mobile-pages">
+                    Pages:{" "}
+                    {visibleTopic?.page_from ?? "-"}–
+                    {visibleTopic?.page_to ?? "-"}
+                  </div>
+
+
+                  {remainingTopics > 0 && (
+
+                    <button
+                      type="button"
+
+                      className="cc-mobile-view-all"
+
+                      onClick={() => {
+
+                        setSelectedDayTopics(
+                          logsForDay
+                        );
+
+                        setShowTopicsModal(true);
+
+                      }}
+                    >
+                      +{remainingTopics} more
+                    </button>
+
+                  )}
+
+
+                  <div className="cc-mobile-homework">
+
+                    HW:{" "}
+
+                    <strong>
+                      {logsForDay.some(
+                        (item) =>
+                          item.homework_given
+                      )
+                        ? "Yes"
+                        : "No"}
+                    </strong>
+
+                  </div>
+
+                </div>
+
               );
 
-              setShowTopicsModal(
-                true
-              );
-
-            }}
-
-            style={{
-              position: "relative",
-              zIndex: 1,
-
-              marginTop: 8,
-
-              padding: 0,
-
-              border: "none",
-
-              background:
-                "transparent",
-
-              color:
-                "#2563EB",
-
-              fontSize: 10,
-
-              fontWeight: 800,
-
-              cursor:
-                "pointer",
-            }}
-          >
-            View All Topics ({logsForDay.length}) →
-          </button>
-
-        )}
-
-
-        {/* HOMEWORK */}
-
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-
-            marginTop: 8,
-
-            fontSize: 10,
-
-            color: "#64748B",
-          }}
-        >
-          Homework:{" "}
-
-          <strong
-            style={{
-              color: "#334155",
-            }}
-          >
-            {logsForDay.some(
-              (item) =>
-                item.homework_given
-            )
-              ? "Yes"
-              : "No"}
-          </strong>
+            }
+          )}
 
         </div>
 
       </div>
 
-    );
+    </div>
 
-  })}
-
-</div>
+  </div>
 
 </div>
 
@@ -2455,9 +3229,6 @@ CLOSE TOPICS
 
 </div>
 
-</div>
-
 );
 
 }
-

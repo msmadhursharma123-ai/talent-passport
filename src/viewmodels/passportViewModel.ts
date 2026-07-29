@@ -5,13 +5,22 @@ import { calculateRarity } from "../data/rarityEngine";
 import { getRecommendedCompetitions } from "../data/competitionEngine";
 import { generatePassport } from "../data/passportEngine";
 import {
-    getDNAConfidence,
-    getEvidenceCoverage,
     getFutureReadinessScore,
     getStrongestSkill,
     getWeakestSkill,
     DNAConfidence
 } from "../data/dnaInsightsEngine";
+
+import {
+    buildEvidenceIntelligence,
+    EvidenceIntelligence
+} from "../data/talentEvidenceEngine";
+
+import type {
+    TalentEvidenceRecord,
+    TalentDNAHistoryRecord,
+    TalentEvidenceSummary
+} from "../data/talentEvidenceRepository";
 
 export interface PassportDimension {
     key: string;
@@ -59,6 +68,11 @@ export interface PassportViewModel {
     submissions: any[];
     projects: any[];
     assessments: any[];
+
+    evidence: TalentEvidenceRecord[];
+    dnaHistory: TalentDNAHistoryRecord[];
+    evidenceSummary: TalentEvidenceSummary;
+    evidenceIntelligence: EvidenceIntelligence;
 
     dnaAverage: number;
     reliability: number;
@@ -116,26 +130,19 @@ function readAnswers(
     return {};
 }
 
-function countAcademicEvidence(growth: any): number {
+function confidenceFromProfile(
+    profileConfidence: number
+): DNAConfidence {
 
-    const candidates = [
-        growth?.dailyFeedback,
-        growth?.daily_feedback,
-        growth?.lectureFeedback,
-        growth?.lecture_feedback,
-        growth?.academicHistory,
-        growth?.academic_history,
-        growth?.dailyLogs,
-        growth?.daily_logs
-    ];
+    if (profileConfidence >= 70) {
+        return "High";
+    }
 
-    return candidates.reduce(
-        (best, candidate) =>
-            Array.isArray(candidate)
-                ? Math.max(best, candidate.length)
-                : best,
-        0
-    );
+    if (profileConfidence >= 40) {
+        return "Medium";
+    }
+
+    return "Low";
 }
 
 export async function getPassportViewModel():
@@ -167,6 +174,72 @@ Promise<PassportViewModel | null> {
 
         const assessments =
             growth.assessments ?? [];
+
+        const evidence: TalentEvidenceRecord[] =
+            growth.evidence ?? [];
+
+        const dnaHistory: TalentDNAHistoryRecord[] =
+            growth.dnaHistory ?? [];
+
+        const evidenceSummary: TalentEvidenceSummary =
+            growth.evidenceSummary ?? {
+                totalEvidence: 0,
+                sourceDiversity: 0,
+                dimensionCoverage: 0,
+                recentEvidence90Days: 0,
+                baselineEvidence: 0
+            };
+
+        /*
+         * Phase 3 — Evidence Foundation.
+         *
+         * Evidence Intelligence interprets the authenticated ledger
+         * and history. It does NOT alter the six DNA scores yet.
+         */
+        const evidenceIntelligence =
+            buildEvidenceIntelligence(
+                evidence,
+                dnaHistory,
+                evidenceSummary
+            );
+
+        /*
+         * TEMPORARY PHASE 3 RUNTIME VERIFICATION
+         *
+         * Remove after the Evidence Foundation pipeline has been
+         * confirmed in the browser console.
+         */
+        console.log(
+            "===================================="
+        );
+        console.log(
+            "PHASE 3 EVIDENCE VERIFICATION"
+        );
+        console.log({
+            evidenceRecords:
+                evidence.length,
+
+            dnaHistorySnapshots:
+                dnaHistory.length,
+
+            evidenceSummary,
+
+            evidenceIntelligence,
+
+            firstEvidence:
+                evidence[0] ?? null,
+
+            firstSnapshot:
+                dnaHistory[0] ?? null,
+
+            latestSnapshot:
+                dnaHistory.length > 0
+                    ? dnaHistory[dnaHistory.length - 1]
+                    : null
+        });
+        console.log(
+            "===================================="
+        );
 
         /*
          * BASELINE DNA
@@ -307,16 +380,20 @@ Promise<PassportViewModel | null> {
                 answers
             );
 
-        const academicFeedbackCount =
-            countAcademicEvidence(
-                growth
-            );
+        /*
+         * Evidence Coverage now comes from the Evidence Foundation.
+         * It measures profile maturity/trustworthiness, not talent.
+         */
+        const evidenceCoverage =
+            evidenceIntelligence.profileConfidence;
 
+        /*
+         * Preserve the existing downstream EvidenceContext API while
+         * feeding its verified count from the new evidence ledger.
+         */
         const evidenceContext = {
             verifiedCount:
-                submissions.length +
-                projects.length +
-                assessments.length,
+                evidenceSummary.totalEvidence,
 
             submissionCount:
                 submissions.length,
@@ -327,13 +404,9 @@ Promise<PassportViewModel | null> {
             assessmentCount:
                 assessments.length,
 
-            academicFeedbackCount
+            academicFeedbackCount:
+                0
         };
-
-        const evidenceCoverage =
-            getEvidenceCoverage(
-                evidenceContext
-            );
 
         const [
             benchmarkResult,
@@ -370,8 +443,8 @@ Promise<PassportViewModel | null> {
                 : null;
 
         const confidence =
-            getDNAConfidence(
-                evidenceContext
+            confidenceFromProfile(
+                evidenceIntelligence.profileConfidence
             );
 
         const futureReadiness =
@@ -624,6 +697,8 @@ Promise<PassportViewModel | null> {
                 sourceScores,
                 evidenceCoverage,
                 evidenceContext,
+                evidenceSummary,
+                evidenceIntelligence,
                 schoolBenchmark: benchmarks,
                 peerPosition: percentile,
                 distinctiveness: rarity,
@@ -645,6 +720,10 @@ Promise<PassportViewModel | null> {
             submissions,
             projects,
             assessments,
+            evidence,
+            dnaHistory,
+            evidenceSummary,
+            evidenceIntelligence,
             dnaAverage,
             reliability,
             participationReadiness,

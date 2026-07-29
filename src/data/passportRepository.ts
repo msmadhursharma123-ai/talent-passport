@@ -4,6 +4,10 @@ import {
   requireIdentity
 } from "../services/identityService";
 
+import {
+  getTalentEvidenceFoundationData
+} from "./talentEvidenceRepository";
+
 /* ============================================================
    SAVE PASSPORT
 
@@ -420,7 +424,8 @@ export async function getGrowthPlanData() {
     evaluationResult,
     submissionResult,
     projectResult,
-    assessmentResult
+    assessmentResult,
+    evidenceFoundationResult
   ] = await Promise.all([
 
     /*
@@ -493,7 +498,16 @@ export async function getGrowthPlanData() {
       .eq(
         "student_id",
         studentUuid
-      )
+      ),
+
+    /*
+     * Phase 3 — Evidence Foundation.
+     *
+     * Identity is resolved server-side by the secure evidence RPCs.
+     * This repository only receives the authenticated student's:
+     * evidence, DNA history and evidence summary.
+     */
+    getTalentEvidenceFoundationData()
 
   ]);
 
@@ -543,7 +557,22 @@ export async function getGrowthPlanData() {
       projectResult.data || [],
 
     assessments:
-      assessmentResult.data || []
+      assessmentResult.data || [],
+
+    evidence:
+      evidenceFoundationResult.evidence || [],
+
+    dnaHistory:
+      evidenceFoundationResult.dnaHistory || [],
+
+    evidenceSummary:
+      evidenceFoundationResult.evidenceSummary || {
+        totalEvidence: 0,
+        sourceDiversity: 0,
+        dimensionCoverage: 0,
+        recentEvidence90Days: 0,
+        baselineEvidence: 0
+      }
 
   };
 }
