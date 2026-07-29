@@ -344,11 +344,18 @@ subjectList[0]
     <div className="cc-page space-y-6">
 <style>{`
 /* =========================================================
-   CONTINUOUS CALENDAR RESPONSIVE SYSTEM
-   Desktop remains unchanged.
+   CONTINUOUS CALENDAR — RESPONSIVE SYSTEM
+   Desktop JSX / data / functionality remains untouched.
 ========================================================= */
 
-.cc-swipe-hint { display: none; }
+.cc-page,
+.cc-page * {
+  box-sizing: border-box;
+}
+
+.cc-swipe-hint {
+  display: none;
+}
 
 .cc-calendar-viewport {
   width: 100%;
@@ -356,33 +363,13 @@ subjectList[0]
   min-width: 0;
 }
 
-.cc-page,
-.cc-page * { box-sizing: border-box; }
 
-@media (max-width: 1024px) {
-  .cc-swipe-hint {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 18px;
-    padding: 9px 12px;
-    border: 1px solid #FED7AA;
-    border-radius: 11px;
-    background: #FFF7ED;
-    color: #9A3412;
-    font-size: 10px;
-    line-height: 1.25;
-  }
-  .cc-swipe-hint span {
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-  }
-  .cc-swipe-hint strong {
-    font-weight: 800;
-    text-align: right;
-  }
+/* =========================================================
+   TABLET
+   768px — 1024px
+========================================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
 
   .cc-page {
     width: 100%;
@@ -400,31 +387,56 @@ subjectList[0]
     min-width: 0;
   }
 
+
+  /* -------------------------
+     HERO
+  ------------------------- */
+
   .cc-hero {
     padding: 22px !important;
     border-radius: 22px !important;
   }
 
-  .cc-hero > div:last-child { gap: 18px !important; }
+  .cc-hero > div:last-child {
+    gap: 18px !important;
+  }
+
   .cc-hero h1 {
     font-size: 28px !important;
     line-height: 1.08 !important;
   }
-  .cc-hero p { line-height: 1.45 !important; }
+
+  .cc-hero p {
+    line-height: 1.45 !important;
+  }
+
+
+  /* -------------------------
+     FILTERS
+  ------------------------- */
 
   .cc-filters {
     width: 100%;
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) auto !important;
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr)) auto !important;
     align-items: end !important;
     gap: 10px !important;
   }
 
-  .cc-filters > div { min-width: 0; }
+  .cc-filters > div {
+    min-width: 0;
+  }
+
   .cc-filters select {
     width: 100% !important;
     min-width: 0 !important;
   }
+
+
+  /* -------------------------
+     CUSTOM DATE
+  ------------------------- */
 
   .cc-custom-date {
     padding: 20px !important;
@@ -433,41 +445,187 @@ subjectList[0]
 
   .cc-custom-date > div:last-child {
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
     gap: 12px !important;
   }
 
-  .cc-custom-date input { width: 100% !important; }
+  .cc-custom-date input {
+    width: 100% !important;
+  }
 
-  .cc-facilitator,
-  .cc-calendar-shell {
+
+  /* -------------------------
+     TEACHER
+  ------------------------- */
+
+  .cc-facilitator {
     padding: 22px !important;
     border-radius: 22px !important;
   }
 
+
+  /* =====================================================
+     TABLET CALENDAR
+  ===================================================== */
+
+  .cc-calendar-shell {
+    padding: 22px !important;
+    border-radius: 22px !important;
+
+    /*
+       Important:
+       shell itself does NOT horizontally scroll.
+       Only the calendar viewport scrolls.
+    */
+    overflow: hidden !important;
+  }
+
+
+  .cc-swipe-hint {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    width: 100%;
+    margin-top: 18px;
+    padding: 9px 12px;
+
+    border: 1px solid #FED7AA;
+    border-radius: 11px;
+
+    background: #FFF7ED;
+    color: #9A3412;
+
+    font-size: 10px;
+    line-height: 1.25;
+  }
+
+  .cc-swipe-hint span {
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .cc-swipe-hint strong {
+    font-weight: 800;
+    text-align: right;
+  }
+
+
+  /*
+     The viewport is the ONLY horizontal scroller.
+
+     It remains in normal document flow, therefore its
+     height is determined by the weekday row + calendar grid.
+  */
+
+  .cc-calendar-viewport {
+    display: block !important;
+
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+
+    margin-top: 0;
+
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+
+    -webkit-overflow-scrolling: touch;
+
+    touch-action: pan-x pan-y;
+
+    scrollbar-width: thin;
+
+    position: relative;
+  }
+
+
+  /*
+     Fixed internal calendar width.
+     This prevents seven columns being compressed.
+  */
+
   .cc-weekdays,
-  .cc-calendar-grid { gap: 7px !important; }
+  .cc-calendar-grid {
+    display: grid !important;
+
+    grid-template-columns:
+      repeat(7, 104px) !important;
+
+    width: 764px !important;
+    min-width: 764px !important;
+    max-width: none !important;
+
+    gap: 6px !important;
+  }
+
 
   .cc-weekdays {
     margin-top: 22px !important;
     margin-bottom: 8px !important;
   }
 
-  .cc-day-card {
-    min-width: 0 !important;
-    min-height: 105px !important;
-    padding: 10px !important;
-    border-radius: 13px !important;
+  .cc-weekdays > div {
+    width: 104px !important;
   }
+
+
+  .cc-calendar-grid {
+    grid-auto-flow: row !important;
+    grid-auto-rows: minmax(112px, auto) !important;
+
+    align-items: stretch !important;
+
+    padding-bottom: 4px !important;
+  }
+
+
+  /*
+     Works for both lecture cards and empty cards.
+  */
+
+  .cc-calendar-grid > div {
+    width: 104px !important;
+    min-width: 104px !important;
+
+    min-height: 112px !important;
+
+    padding: 10px !important;
+
+    border-radius: 13px !important;
+
+    position: relative !important;
+    overflow: hidden !important;
+
+    display: block !important;
+
+    visibility: visible !important;
+    opacity: 1 !important;
+
+    transform: none !important;
+  }
+
+
+  /* -------------------------
+     MODAL
+  ------------------------- */
 
   .cc-modal-overlay {
     position: fixed !important;
     inset: 0 !important;
+
     z-index: 9999 !important;
+
     margin: 0 !important;
     padding: 24px !important;
-    background: rgba(15,23,42,.58) !important;
+
+    background: rgba(15, 23, 42, 0.58) !important;
+
     backdrop-filter: blur(5px);
+
     align-items: center !important;
     justify-content: center !important;
   }
@@ -475,112 +633,150 @@ subjectList[0]
   .cc-modal-panel {
     width: min(700px, 100%) !important;
     max-height: 88vh !important;
+
     padding: 24px !important;
+
     border-radius: 22px !important;
   }
 }
 
-/* Tablet: preserve seven columns, but give each day enough room to read data. */
-@media (min-width: 768px) and (max-width: 1024px) {
-  .cc-calendar-shell {
-    overflow: hidden !important;
-  }
 
-  .cc-calendar-viewport {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    overflow-x: auto !important;
-    overflow-y: visible !important;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x pan-y;
-  }
 
-  .cc-weekdays,
-  .cc-calendar-grid {
-    min-width: 720px !important;
-  }
-
-  .cc-day-card {
-    min-height: 112px !important;
-  }
-}
+/* =========================================================
+   MOBILE
+   0px — 767px
+========================================================= */
 
 @media (max-width: 767px) {
-  .cc-swipe-hint {
-    position: sticky;
-    left: 0;
-    width: calc(100vw - 48px);
+
+  .cc-page {
+    width: 100%;
     max-width: 100%;
-    margin-top: 12px;
-    padding: 7px 9px;
-    font-size: 8px;
+    min-width: 0;
+
+    overflow-x: hidden;
+
+    gap: 12px !important;
   }
 
-  .cc-page { gap: 12px !important; }
+
+  .cc-hero,
+  .cc-custom-date,
+  .cc-facilitator,
+  .cc-calendar-shell {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+
+  /* =====================================================
+     HERO
+  ===================================================== */
 
   .cc-hero {
     padding: 15px !important;
     border-radius: 18px !important;
   }
 
-  .cc-hero > div:last-child { gap: 13px !important; }
+  .cc-hero > div:last-child {
+    gap: 13px !important;
+  }
 
   .cc-hero h1 {
     margin-top: 6px !important;
+
     font-size: 22px !important;
     line-height: 1.08 !important;
   }
 
   .cc-hero p:first-child {
     font-size: 8px !important;
-    letter-spacing: .16em !important;
+    letter-spacing: 0.16em !important;
   }
 
   .cc-hero h1 + p {
     margin-top: 6px !important;
+
     max-width: 100% !important;
+
     font-size: 10.5px !important;
     line-height: 1.4 !important;
   }
 
+
+  /* =====================================================
+     FILTERS
+  ===================================================== */
+
   .cc-filters {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    width: 100%;
+
+    display: grid !important;
+
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr)) !important;
+
     gap: 6px !important;
   }
 
-  .cc-filters > div:last-child { display: none !important; }
+  .cc-filters > div {
+    min-width: 0 !important;
+  }
+
+  .cc-filters > div:last-child {
+    display: none !important;
+  }
 
   .cc-filters p {
     margin-bottom: 4px !important;
+
     font-size: 7px !important;
-    letter-spacing: .08em !important;
+    letter-spacing: 0.08em !important;
   }
 
   .cc-filters select {
+    width: 100% !important;
+    min-width: 0 !important;
+
     height: 36px !important;
+
     padding: 0 7px !important;
+
     border-radius: 9px !important;
+
     font-size: 9px !important;
   }
+
+
+  /* =====================================================
+     CUSTOM DATE
+  ===================================================== */
 
   .cc-custom-date {
     padding: 14px !important;
     border-radius: 17px !important;
   }
 
-  .cc-custom-date h2 { font-size: 15px !important; }
+  .cc-custom-date h2 {
+    font-size: 15px !important;
+  }
 
   .cc-custom-date > p {
     margin-top: 4px !important;
+
     font-size: 10px !important;
     line-height: 1.4 !important;
   }
 
   .cc-custom-date > div:last-child {
     margin-top: 12px !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+
+    display: grid !important;
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
+
     gap: 8px !important;
   }
 
@@ -590,11 +786,20 @@ subjectList[0]
   }
 
   .cc-custom-date input {
+    width: 100% !important;
     min-width: 0 !important;
+
     padding: 8px !important;
+
     border-radius: 9px !important;
+
     font-size: 10px !important;
   }
+
+
+  /* =====================================================
+     TEACHER
+  ===================================================== */
 
   .cc-facilitator {
     padding: 14px !important;
@@ -603,209 +808,547 @@ subjectList[0]
 
   .cc-facilitator h2 {
     margin-top: 5px !important;
+
     font-size: 17px !important;
   }
 
   .cc-facilitator h2 + p {
     margin-top: 5px !important;
+
     font-size: 10px !important;
   }
 
   .cc-facilitator > div:last-child {
     margin-top: 12px !important;
+
     padding: 11px !important;
+
     gap: 8px !important;
+
     border-radius: 13px !important;
   }
 
-  .cc-facilitator > div:last-child > div:first-child { gap: 9px !important; }
+  .cc-facilitator
+    > div:last-child
+    > div:first-child {
+    gap: 9px !important;
+  }
 
-  .cc-facilitator > div:last-child > div:first-child > div:first-child {
+  .cc-facilitator
+    > div:last-child
+    > div:first-child
+    > div:first-child {
     width: 36px !important;
     height: 36px !important;
+
     border-radius: 9px !important;
+
     font-size: 15px !important;
   }
 
-  .cc-facilitator h3 { font-size: 13px !important; }
-  .cc-facilitator h3 + p { font-size: 9px !important; }
+  .cc-facilitator h3 {
+    font-size: 13px !important;
+  }
 
-  .cc-facilitator > div:last-child > div:last-child {
+  .cc-facilitator h3 + p {
+    font-size: 9px !important;
+  }
+
+  .cc-facilitator
+    > div:last-child
+    > div:last-child {
     padding: 7px 9px !important;
+
     border-radius: 9px !important;
   }
 
-  /* The outer card still uses the full phone width. */
+
+  /* =====================================================
+     CALENDAR SHELL
+  ===================================================== */
+
   .cc-calendar-shell {
+    width: 100% !important;
+    max-width: 100% !important;
+
     padding: 12px 8px 14px !important;
+
     border-radius: 17px !important;
+
+    /*
+       The outside card stays fixed to the phone width.
+       Horizontal scrolling happens INSIDE viewport.
+    */
+
     overflow: hidden !important;
   }
 
-  .cc-calendar-viewport {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    overflow-x: auto !important;
-    overflow-y: visible !important;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    touch-action: pan-x pan-y;
-  }
-
-  .cc-calendar-shell > div:nth-of-type(2) {
-    position: sticky;
-    left: 0;
-    width: calc(100vw - 48px);
-    max-width: 100%;
-    padding: 0 4px !important;
-  }
 
   .cc-calendar-shell h2 {
     margin-top: 4px !important;
+
     font-size: 16px !important;
     line-height: 1.15 !important;
   }
 
   .cc-calendar-shell h2 + p {
     margin-top: 4px !important;
+
     font-size: 9.5px !important;
     line-height: 1.35 !important;
   }
 
-  /* Critical fix:
-     do not squeeze 7 information-rich cards into ~700px.
-     Give the calendar a readable width and let the user swipe horizontally. */
-  .cc-weekdays,
-  .cc-calendar-grid {
-    grid-template-columns: repeat(7, 92px) !important;
-    width: max-content !important;
-    min-width: 100% !important;
-    gap: 5px !important;
+
+  /* =====================================================
+     SWIPE MESSAGE
+  ===================================================== */
+
+  .cc-swipe-hint {
+    display: flex !important;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+
+    width: 100% !important;
+
+    margin-top: 12px;
+
+    padding: 7px 9px;
+
+    border: 1px solid #FED7AA;
+    border-radius: 11px;
+
+    background: #FFF7ED;
+
+    color: #9A3412;
+
+    font-size: 8px;
+    line-height: 1.25;
   }
+
+  .cc-swipe-hint span {
+    flex-shrink: 0;
+
+    font-weight: 900;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.08em;
+  }
+
+  .cc-swipe-hint strong {
+    font-weight: 800;
+
+    text-align: right;
+  }
+
+
+  /* =====================================================
+     REAL MOBILE CALENDAR VIEWPORT
+
+     IMPORTANT:
+     - stays in normal document flow
+     - receives its height from the calendar
+     - horizontal scrolling only
+     - no sticky positioning
+     - no absolute positioning
+     - no max-content
+     - no viewport-width calculations
+  ===================================================== */
+
+  .cc-calendar-viewport {
+    display: block !important;
+
+    position: relative !important;
+
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+
+    height: auto !important;
+    min-height: 0 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+
+    -webkit-overflow-scrolling: touch;
+
+    touch-action: pan-x pan-y;
+
+    overscroll-behavior-x: contain;
+
+    scrollbar-width: thin;
+  }
+
+
+  /* =====================================================
+     WEEKDAY TRACK
+
+     7 × 92px
+     6 × 5px gaps
+
+     Total:
+     644 + 30 = 674px
+  ===================================================== */
 
   .cc-weekdays {
+    display: grid !important;
+
+    grid-template-columns:
+      repeat(7, 92px) !important;
+
+    column-gap: 5px !important;
+    row-gap: 0 !important;
+
+    width: 674px !important;
+    min-width: 674px !important;
+    max-width: none !important;
+
     margin-top: 14px !important;
     margin-bottom: 5px !important;
+
+    position: relative !important;
+
+    visibility: visible !important;
+    opacity: 1 !important;
   }
+
 
   .cc-weekdays > div {
-    width: 92px !important;
-    font-size: 8px !important;
-    letter-spacing: .25px !important;
-  }
+    display: block !important;
 
-  .cc-day-card {
     width: 92px !important;
     min-width: 92px !important;
-    min-height: 104px !important;
-    padding: 7px !important;
-    border-radius: 10px !important;
-    overflow: hidden !important;
+
+    font-size: 8px !important;
+
+    letter-spacing: 0.25px !important;
+
+    text-align: center !important;
+
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
-  .cc-day-card > div:first-child {
+
+  /* =====================================================
+     CALENDAR GRID
+
+     Completely rebuilt responsive behaviour.
+
+     JSX remains the desktop JSX.
+     Data remains the desktop data.
+  ===================================================== */
+
+  .cc-calendar-grid {
+    display: grid !important;
+
+    grid-template-columns:
+      repeat(7, 92px) !important;
+
+    grid-auto-flow: row !important;
+
+    /*
+       This is important.
+
+       Each row has a REAL height, meaning Safari/iOS cannot
+       collapse the calendar beneath the weekday labels.
+    */
+
+    grid-auto-rows: 104px !important;
+
+    column-gap: 5px !important;
+    row-gap: 5px !important;
+
+    width: 674px !important;
+    min-width: 674px !important;
+    max-width: none !important;
+
+    height: auto !important;
+    min-height: 104px !important;
+
+    margin: 0 !important;
+
+    padding: 0 0 3px 0 !important;
+
+    position: relative !important;
+
+    align-items: stretch !important;
+
+    visibility: visible !important;
+    opacity: 1 !important;
+
+    overflow: visible !important;
+
+    transform: none !important;
+  }
+
+
+  /* =====================================================
+     EVERY CALENDAR CELL
+
+     Target the DIRECT grid children rather than depending
+     on cc-day-card being present.
+
+     This means:
+     - empty days appear
+     - lecture days appear
+     - existing desktop JSX does not need modification
+  ===================================================== */
+
+  .cc-calendar-grid > div {
+    display: block !important;
+
+    position: relative !important;
+
+    width: 92px !important;
+    min-width: 92px !important;
+    max-width: 92px !important;
+
+    height: 104px !important;
+    min-height: 104px !important;
+    max-height: 104px !important;
+
+    padding: 7px !important;
+
+    margin: 0 !important;
+
+    border-radius: 10px !important;
+
+    overflow: hidden !important;
+
+    visibility: visible !important;
+    opacity: 1 !important;
+
+    transform: none !important;
+
+    flex: none !important;
+
+    align-self: stretch !important;
+  }
+
+
+  /* =====================================================
+     DECORATIVE CIRCLE
+  ===================================================== */
+
+  .cc-calendar-grid
+    > div
+    > div:first-child {
     width: 34px !important;
     height: 34px !important;
+
     right: -12px !important;
     top: -12px !important;
   }
 
-  .cc-day-card > div:nth-child(2) {
-    font-size: 11px !important;
+
+  /* =====================================================
+     DATE NUMBER
+  ===================================================== */
+
+  .cc-calendar-grid
+    > div
+    > div:nth-child(2) {
     margin-bottom: 7px !important;
+
+    font-size: 11px !important;
   }
 
-  .cc-day-card > div:nth-child(3) {
+
+  /* =====================================================
+     TOPIC AREA
+  ===================================================== */
+
+  .cc-calendar-grid
+    > div
+    > div:nth-child(3) {
     min-width: 0 !important;
+    max-width: 100% !important;
   }
 
-  .cc-day-card > div:nth-child(3) > div {
+
+  .cc-calendar-grid
+    > div
+    > div:nth-child(3)
+    > div {
     display: block !important;
+
     width: 100% !important;
     max-width: 100% !important;
+
     padding: 4px 5px !important;
+
     margin-bottom: 5px !important;
+
     border-radius: 7px !important;
+
     font-size: 8px !important;
     line-height: 1.15 !important;
+
     overflow: hidden !important;
+
     text-overflow: ellipsis !important;
+
     white-space: nowrap !important;
   }
 
-  .cc-day-card > div:nth-child(3) > p {
+
+  .cc-calendar-grid
+    > div
+    > div:nth-child(3)
+    > p {
     font-size: 8px !important;
+
     line-height: 1.25 !important;
   }
 
-  .cc-day-card button {
+
+  /* =====================================================
+     VIEW TOPICS BUTTON
+  ===================================================== */
+
+  .cc-calendar-grid button {
     display: block !important;
+
     width: 100% !important;
+
     margin-top: 5px !important;
+
+    padding: 0 !important;
+
     font-size: 7.5px !important;
     line-height: 1.25 !important;
+
     text-align: left !important;
+
     white-space: normal !important;
   }
 
-  .cc-day-card > div:last-child {
+
+  /* =====================================================
+     PAGE / HOMEWORK AREA
+  ===================================================== */
+
+  .cc-calendar-grid
+    > div
+    > div:last-child {
     margin-top: 5px !important;
+
     font-size: 7.5px !important;
     line-height: 1.25 !important;
   }
 
-  .cc-day-card > div:nth-child(2):last-child p {
+
+  .cc-calendar-grid
+    > div
+    > div:last-child p {
+    margin: 0 !important;
+
     font-size: 7.5px !important;
     line-height: 1.15 !important;
-    overflow-wrap: normal !important;
   }
 
-  .cc-modal-overlay { padding: 10px !important; }
+
+  /* =====================================================
+     EMPTY DAY MESSAGE
+
+     The existing inline flex rules remain intact.
+  ===================================================== */
+
+  .cc-calendar-grid
+    > div
+    > div:last-child
+    > p {
+    max-width: 100% !important;
+
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+
+
+  /* =====================================================
+     MODAL
+  ===================================================== */
+
+  .cc-modal-overlay {
+    position: fixed !important;
+
+    inset: 0 !important;
+
+    z-index: 9999 !important;
+
+    margin: 0 !important;
+
+    padding: 10px !important;
+
+    background: rgba(15, 23, 42, 0.58) !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
 
   .cc-modal-panel {
     width: 100% !important;
+
     max-height: 92vh !important;
+
     padding: 12px !important;
+
     border-radius: 17px !important;
   }
 
+
   .cc-modal-panel > div:first-child {
     padding: 15px !important;
+
     margin-bottom: 12px !important;
+
     border-radius: 14px !important;
   }
 
-  .cc-modal-panel > div:first-child p { font-size: 8px !important; }
 
-  .cc-modal-panel > div:first-child h1 {
+  .cc-modal-panel
+    > div:first-child p {
+    font-size: 8px !important;
+  }
+
+
+  .cc-modal-panel
+    > div:first-child h1 {
     margin: 5px 0 !important;
+
     font-size: 18px !important;
   }
 
-  .cc-modal-panel > div:not(:first-child) {
+
+  .cc-modal-panel
+    > div:not(:first-child) {
     padding: 12px !important;
+
     margin-bottom: 9px !important;
+
     border-radius: 12px !important;
   }
 
+
   .cc-modal-panel h3 {
     margin-bottom: 8px !important;
+
     font-size: 14px !important;
   }
 
-  .cc-modal-panel p {
-    margin: 5px 0 !important;
-    font-size: 10px !important;
-    line-height: 1.35 !important;
-  }
 
-  .cc-modal-panel > button {
-    width: 100% !important;
-    padding: 11px 14px !important;
-    border-radius: 11px !important;
-    font-size: 11px !important;
+  .cc-modal-panel p {
+    font-size: 10px !important;
+
+    line-height: 1.4 !important;
   }
 }
 `}</style>
@@ -1917,3 +2460,4 @@ CLOSE TOPICS
 );
 
 }
+
