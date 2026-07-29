@@ -288,25 +288,57 @@ Promise<PassportViewModel | null> {
                 growth.talentDNAExplanation
             );
 
-        const sourceScores = {
-            creativity:
-                currentTalentDNA.creativity,
+        /*
+         * CURRENT DNA SAFETY GATE
+         *
+         * The secure current-DNA RPC may return an initialized all-zero
+         * profile before the questionnaire baseline has been incorporated
+         * into the evidence ledger. That zero profile must not erase a
+         * valid saved baseline.
+         */
+        const currentScoreTotal =
+            numeric(currentTalentDNA.creativity) +
+            numeric(currentTalentDNA.communication) +
+            numeric(currentTalentDNA.leadership) +
+            numeric(currentTalentDNA.confidence) +
+            numeric(currentTalentDNA.collaboration) +
+            numeric(currentTalentDNA.criticalThinking);
 
-            communication:
-                currentTalentDNA.communication,
+        const baselineScoreTotal =
+            numeric(baselineScores.creativity) +
+            numeric(baselineScores.communication) +
+            numeric(baselineScores.leadership) +
+            numeric(baselineScores.confidence) +
+            numeric(baselineScores.collaboration) +
+            numeric(baselineScores.criticalThinking);
 
-            leadership:
-                currentTalentDNA.leadership,
+        const useBaselineScores =
+            currentScoreTotal <= 0 &&
+            baselineScoreTotal > 0;
 
-            confidence:
-                currentTalentDNA.confidence,
+        const sourceScores = useBaselineScores
+            ? {
+                creativity: clamp100(baselineScores.creativity),
+                communication: clamp100(baselineScores.communication),
+                leadership: clamp100(baselineScores.leadership),
+                confidence: clamp100(baselineScores.confidence),
+                collaboration: clamp100(baselineScores.collaboration),
+                criticalThinking: clamp100(baselineScores.criticalThinking)
+            }
+            : {
+                creativity: clamp100(currentTalentDNA.creativity),
+                communication: clamp100(currentTalentDNA.communication),
+                leadership: clamp100(currentTalentDNA.leadership),
+                confidence: clamp100(currentTalentDNA.confidence),
+                collaboration: clamp100(currentTalentDNA.collaboration),
+                criticalThinking: clamp100(currentTalentDNA.criticalThinking)
+            };
 
-            collaboration:
-                currentTalentDNA.collaboration,
-
-            criticalThinking:
-                currentTalentDNA.criticalThinking
-        };
+        if (useBaselineScores) {
+            console.warn(
+                "Current Talent DNA returned an initialized zero profile; using saved questionnaire baseline."
+            );
+        }
 
         const passport = {
             ...storedPassport,

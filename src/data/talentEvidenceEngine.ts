@@ -486,24 +486,75 @@ export function normalizeCurrentTalentDNA(
       criticalThinking
     ) / 6;
 
+  /*
+   * Compatibility safety:
+   * An RPC can legitimately return an initialized all-zero object when a
+   * student's questionnaire baseline has not yet reached the evidence ledger.
+   * Zero is syntactically valid, so numberFrom() cannot distinguish that state.
+   * If a real non-zero fallback baseline exists, preserve it instead of
+   * allowing the initialized RPC object to erase the student's Day-0 DNA.
+   */
+  const rpcTotal =
+    creativity +
+    communication +
+    leadership +
+    confidence +
+    collaboration +
+    criticalThinking;
+
+  const fallbackTotal =
+    Number(fallback.creativity ?? 0) +
+    Number(fallback.communication ?? 0) +
+    Number(fallback.leadership ?? 0) +
+    Number(fallback.confidence ?? 0) +
+    Number(fallback.collaboration ?? 0) +
+    Number(fallback.criticalThinking ?? 0);
+
+  const useFallbackBaseline =
+    rpcTotal <= 0 &&
+    fallbackTotal > 0;
+
+  const resolvedCreativity =
+    useFallbackBaseline ? Number(fallback.creativity ?? 0) : creativity;
+  const resolvedCommunication =
+    useFallbackBaseline ? Number(fallback.communication ?? 0) : communication;
+  const resolvedLeadership =
+    useFallbackBaseline ? Number(fallback.leadership ?? 0) : leadership;
+  const resolvedConfidence =
+    useFallbackBaseline ? Number(fallback.confidence ?? 0) : confidence;
+  const resolvedCollaboration =
+    useFallbackBaseline ? Number(fallback.collaboration ?? 0) : collaboration;
+  const resolvedCriticalThinking =
+    useFallbackBaseline ? Number(fallback.criticalThinking ?? 0) : criticalThinking;
+
+  const resolvedOverall =
+    (
+      resolvedCreativity +
+      resolvedCommunication +
+      resolvedLeadership +
+      resolvedConfidence +
+      resolvedCollaboration +
+      resolvedCriticalThinking
+    ) / 6;
+
   return {
     creativity:
-      clamp100(creativity),
+      clamp100(resolvedCreativity),
 
     communication:
-      clamp100(communication),
+      clamp100(resolvedCommunication),
 
     leadership:
-      clamp100(leadership),
+      clamp100(resolvedLeadership),
 
     confidence:
-      clamp100(confidence),
+      clamp100(resolvedConfidence),
 
     collaboration:
-      clamp100(collaboration),
+      clamp100(resolvedCollaboration),
 
     criticalThinking:
-      clamp100(criticalThinking),
+      clamp100(resolvedCriticalThinking),
 
     overallScore:
       clamp100(
@@ -515,7 +566,7 @@ export function normalizeCurrentTalentDNA(
             "combined_score",
             "dna_index"
           ],
-          calculatedOverall
+          resolvedOverall
         )
       ),
 

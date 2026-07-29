@@ -27,9 +27,9 @@ const isVerified=(r:any)=>r?.verified===true||r?.is_verified===true||String(r?.v
 export async function getStudentEvidenceSnapshot(){
  const supabase=getSupabaseClient(); if(!supabase)throw new Error("Supabase client not initialized");
  const [performances,projects,skills,achievements]=await Promise.all([getStudentPerformances(),getStudentProjects(),getStudentSkills(),getStudentAchievements()]);
- const studentCode=getTableIdentity("talent_passport_scores"),creditId=getTableIdentity("credit_transactions"),walletId=getTableIdentity("student_wallets");
+ const submissionId=getTableIdentity("submissions"),creditId=getTableIdentity("credit_transactions"),walletId=getTableIdentity("student_wallets");
  const [subs,tx,wallet]=await Promise.all([
-  (supabase as any).from("submissions").select("id").eq("student_id",studentCode),
+  (supabase as any).from("submissions").select("id").eq("student_id",submissionId),
   (supabase as any).from("credit_transactions").select("id").eq("student_id",creditId),
   (supabase as any).from("student_wallets").select("lifetime_earned").eq("student_id",walletId).maybeSingle()
  ]);
