@@ -3,6 +3,8 @@ import { getStudentGrowthIntelligence } from "../services/growthIntelligenceServ
 import type { GrowthIntelligenceProfile } from "../engines/growthIntelligenceEngine";
 import { getStudentLearningIntelligence } from "../services/learningIntelligenceService";
 import type { LearningIntelligenceProfile } from "../engines/learningIntelligenceEngine";
+import { getPersonalGrowthActionPlan } from "../services/personalGrowthActionService";
+import type { PersonalGrowthActionPlan } from "../engines/personalGrowthActionEngine";
 import { getPercentileData } from "../data/passportAnalytics";
 import { getSchoolBenchmarks } from "../data/schoolBenchmarkEngine";
 import { calculateRarity } from "../data/rarityEngine";
@@ -85,6 +87,7 @@ export interface PassportViewModel {
     talentDNAExplanation: TalentDNAExplanation;
     growthIntelligence: GrowthIntelligenceProfile | null;
     learningIntelligence: LearningIntelligenceProfile | null;
+    personalGrowthPlan: PersonalGrowthActionPlan;
 
     dnaAverage: number;
     reliability: number;
@@ -742,6 +745,51 @@ Promise<PassportViewModel | null> {
             }
         ];
 
+
+        const personalGrowthPlan =
+            getPersonalGrowthActionPlan({
+                dimensions: dimensions.map(dimension => ({
+                    key: dimension.key,
+                    label: dimension.label as
+                        | "Creativity"
+                        | "Communication"
+                        | "Leadership"
+                        | "Confidence"
+                        | "Collaboration"
+                        | "Critical Thinking",
+                    value: dimension.value,
+                    average: dimension.average,
+                    percentile: dimension.percentile,
+                    schoolPercentile: dimension.schoolPercentile
+                })),
+                projections,
+                participationReadiness,
+                evidenceCoverage,
+                growth: growthIntelligence
+                    ? {
+                        overallChange: growthIntelligence.overallChange,
+                        overallDirection: growthIntelligence.overallDirection,
+                        profileConfidence: growthIntelligence.profileConfidence,
+                        totalEvidence: growthIntelligence.totalEvidence,
+                        sourceDiversity: growthIntelligence.sourceDiversity,
+                        dimensionCoverage: growthIntelligence.dimensionCoverage,
+                        recentEvidence90Days: growthIntelligence.recentEvidence90Days,
+                        evidenceSources: growthIntelligence.evidenceSources
+                    }
+                    : null,
+                learning: learningIntelligence
+                    ? {
+                        recordedLectures: learningIntelligence.recordedLectures,
+                        understandingScore: learningIntelligence.understandingScore,
+                        consistencyScore: learningIntelligence.consistencyScore,
+                        subjectUnderstanding: learningIntelligence.subjectUnderstanding,
+                        persistentChallenges: learningIntelligence.persistentChallenges
+                    }
+                    : null,
+                competitions
+            });
+
+
         return {
             passport,
             dna,
@@ -764,6 +812,7 @@ Promise<PassportViewModel | null> {
             talentDNAExplanation,
             growthIntelligence,
             learningIntelligence,
+            personalGrowthPlan,
             dnaAverage,
             reliability,
             participationReadiness,

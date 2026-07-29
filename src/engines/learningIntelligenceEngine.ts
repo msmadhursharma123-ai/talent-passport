@@ -11,18 +11,28 @@ export interface LearningFeedbackRecord {
     submitted_at?: string | null;
 }
 
+export interface SubjectLearningChallenge {
+    concept: string;
+    signals: number;
+}
+
 export interface SubjectUnderstanding {
     subject: string;
     feedbackCount: number;
     fullyUnderstood: number;
     partiallyUnderstood: number;
     didntUnderstand: number;
+    fullyUnderstoodPercent: number;
+    partiallyUnderstoodPercent: number;
+    didntUnderstandPercent: number;
     understandingScore: number;
+    challenges: SubjectLearningChallenge[];
 }
 
 export interface PersistentLearningChallenge {
     concept: string;
     signals: number;
+    subjects: string[];
 }
 
 export interface LearningIntelligenceProfile {
@@ -55,6 +65,38 @@ function weightedUnderstandingScore(records: LearningFeedbackRecord[]): number {
     }, 0);
 
     return Math.round((points / records.length) * 100);
+}
+
+function cleanConcept(value: string): string {
+    return value.trim().replace(/\s+/g, " ");
+}
+
+function buildSubjectChallenges(
+    records: LearningFeedbackRecord[]
+): SubjectLearningChallenge[] {
+    const map = new Map<string, { label: string; signals: number }>();
+
+    for (const record of records) {
+        for (const rawConcept of record.concepts_not_understood ?? []) {
+            const concept = cleanConcept(rawConcept);
+            if (!concept) continue;
+
+            const key = concept.toLowerCase();
+            const existing = map.get(key);
+
+            map.set(key, {
+                label: existing?.label ?? concept,
+                signals: (existing?.signals ?? 0) + 1,
+            });
+        }
+    }
+
+    return Array.from(map.values())
+        .map(item => ({
+            concept: item.label,
+            signals: item.signals,
+        }))
+        .sort((a, b) => b.signals - a.signals || a.concept.localeCompare(b.concept));
 }
 
 export function buildLearningIntelligence(
@@ -90,42 +132,72 @@ export function buildLearningIntelligence(
 
     const subjectUnderstanding: SubjectUnderstanding[] =
         Array.from(subjectMap.entries())
-            .map(([subject, subjectRecords]) => ({
-                subject,
-                feedbackCount: subjectRecords.length,
-                fullyUnderstood: subjectRecords.filter(
+            .map(([subject, subjectRecords]) => {
+                const subjectFully = subjectRecords.filter(
                     x => x.understanding_level === "I completely understood."
-                ).length,
-                partiallyUnderstood: subjectRecords.filter(
+                ).length;
+
+                const subjectPartially = subjectRecords.filter(
                     x => x.understanding_level === "I partially understood."
-                ).length,
-                didntUnderstand: subjectRecords.filter(
+                ).length;
+
+                const subjectDidnt = subjectRecords.filter(
                     x => x.understanding_level === "I didn't understand."
-                ).length,
-                understandingScore: weightedUnderstandingScore(subjectRecords),
-            }))
-            .sort((a, b) => b.feedbackCount - a.feedbackCount);
+                ).length;
 
-    const challengeMap = new Map<string, number>();
+                return {
+                    subject,
+                    feedbackCount: subjectRecords.length,
+                    fullyUnderstood: subjectFully,
+                    partiallyUnderstood: subjectPartially,
+                    didntUnderstand: subjectDidnt,
+                    fullyUnderstoodPercent: percent(subjectFully, subjectRecords.length),
+                    partiallyUnderstoodPercent: percent(subjectPartially, subjectRecords.length),
+                    didntUnderstandPercent: percent(subjectDidnt, subjectRecords.length),
+                    understandingScore: weightedUnderstandingScore(subjectRecords),
+                    challenges: buildSubjectChallenges(subjectRecords),
+                };
+            })
+            .sort(
+                (a, b) =>
+                    a.understandingScore - b.understandingScore ||
+                    b.feedbackCount - a.feedbackCount
+            );
 
-    for (const record of valid) {
-        for (const rawConcept of record.concepts_not_understood ?? []) {
-            const concept = rawConcept.trim();
-            if (!concept) continue;
-            challengeMap.set(concept, (challengeMap.get(concept) ?? 0) + 1);
+    const globalChallengeMap = new Map<
+        string,
+        { label: string; signals: number; subjects: Set<string> }
+    >();
+
+    for (const [subject, subjectRecords] of subjectMap.entries()) {
+        for (const challenge of buildSubjectChallenges(subjectRecords)) {
+            const key = challenge.concept.toLowerCase();
+            const existing = globalChallengeMap.get(key);
+
+            if (existing) {
+                existing.signals += challenge.signals;
+                existing.subjects.add(subject);
+            } else {
+                globalChallengeMap.set(key, {
+                    label: challenge.concept,
+                    signals: challenge.signals,
+                    subjects: new Set([subject]),
+                });
+            }
         }
     }
 
     const persistentChallenges: PersistentLearningChallenge[] =
-        Array.from(challengeMap.entries())
-            .map(([concept, signals]) => ({ concept, signals }))
-            .sort((a, b) => b.signals - a.signals)
-            .slice(0, 5);
+        Array.from(globalChallengeMap.values())
+            .map(item => ({
+                concept: item.label,
+                signals: item.signals,
+                subjects: Array.from(item.subjects).sort(),
+            }))
+            .sort((a, b) => b.signals - a.signals || a.concept.localeCompare(b.concept));
 
     const understandingScore = weightedUnderstandingScore(valid);
 
-    // Consistency means how often learning was at least partially understood.
-    // It is intentionally separate from Talent DNA and does not change capability scores.
     const consistencyScore =
         valid.length === 0
             ? 0

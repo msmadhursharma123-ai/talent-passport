@@ -22,7 +22,7 @@ const tabs: {
   key: StudentTab;
   label: string;
 }[] = [
-  { key: "dna-radar", label: "🏅 New User DNA Radar" },
+  { key: "dna-radar", label: "🏅 User DNA Radar" },
   { key: "homeboard", label: "Home Board" },
   { key: "timeline", label: "Timeline" },
   { key: "portfolio", label: "Portfolio" },
