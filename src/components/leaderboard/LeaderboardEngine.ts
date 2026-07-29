@@ -9,6 +9,7 @@ export interface LeaderboardRow {
   school_name: string;
   class_name: string;
 
+  creativity_score: number;
   communication_score: number;
   leadership_score: number;
   critical_thinking_score: number;
@@ -38,6 +39,7 @@ export interface EventLeaderboardRow {
   event_name: string;
   pathway: string;
 
+  creativity_score: number;
   communication_score: number;
   leadership_score: number;
   critical_thinking_score: number;
@@ -84,6 +86,20 @@ const scores: any[] =
     if (!studentScores.length) {
       continue;
     }
+
+    const creativity =
+      average(
+        studentScores.reduce(
+          (
+            sum: number,
+            item: any
+          ) =>
+            sum +
+            (item.creativity_score || 0),
+          0
+        ),
+        studentScores.length
+      );
 
     const communication =
       average(
@@ -194,6 +210,9 @@ const scores: any[] =
 
       class_name:
         student.class_name,
+
+      creativity_score:
+        creativity,
 
       communication_score:
         communication,
@@ -381,6 +400,9 @@ const scores: any[] =
 
       pathway:
         score.pathway,
+
+      creativity_score:
+        score.creativity_score || 0,
 
       communication_score:
         score.communication_score || 0,

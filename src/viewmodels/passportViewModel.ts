@@ -1,4 +1,8 @@
 import { getGrowthPlanData } from "../data/passportRepository";
+import { getStudentGrowthIntelligence } from "../services/growthIntelligenceService";
+import type { GrowthIntelligenceProfile } from "../engines/growthIntelligenceEngine";
+import { getStudentLearningIntelligence } from "../services/learningIntelligenceService";
+import type { LearningIntelligenceProfile } from "../engines/learningIntelligenceEngine";
 import { getPercentileData } from "../data/passportAnalytics";
 import { getSchoolBenchmarks } from "../data/schoolBenchmarkEngine";
 import { calculateRarity } from "../data/rarityEngine";
@@ -79,6 +83,8 @@ export interface PassportViewModel {
     evidenceIntelligence: EvidenceIntelligence;
     currentTalentDNA: CurrentTalentDNA;
     talentDNAExplanation: TalentDNAExplanation;
+    growthIntelligence: GrowthIntelligenceProfile | null;
+    learningIntelligence: LearningIntelligenceProfile | null;
 
     dnaAverage: number;
     reliability: number;
@@ -424,7 +430,9 @@ Promise<PassportViewModel | null> {
         const [
             benchmarkResult,
             percentileResult,
-            rarityResult
+            rarityResult,
+            growthIntelligenceResult,
+            learningIntelligenceResult
         ] = await Promise.allSettled([
 
             getSchoolBenchmarks(
@@ -437,7 +445,11 @@ Promise<PassportViewModel | null> {
 
             calculateRarity(
                 passport.combined_score
-            )
+            ),
+
+            getStudentGrowthIntelligence(),
+
+            getStudentLearningIntelligence(30)
         ]);
 
         const benchmarks =
@@ -454,6 +466,30 @@ Promise<PassportViewModel | null> {
             rarityResult.status === "fulfilled"
                 ? rarityResult.value
                 : null;
+
+        const growthIntelligence =
+            growthIntelligenceResult.status === "fulfilled"
+                ? growthIntelligenceResult.value
+                : null;
+
+        if (growthIntelligenceResult.status === "rejected") {
+            console.error(
+                "Growth Intelligence failed",
+                growthIntelligenceResult.reason
+            );
+        }
+
+        const learningIntelligence =
+            learningIntelligenceResult.status === "fulfilled"
+                ? learningIntelligenceResult.value
+                : null;
+
+        if (learningIntelligenceResult.status === "rejected") {
+            console.error(
+                "Learning Intelligence failed",
+                learningIntelligenceResult.reason
+            );
+        }
 
         const confidence =
             confidenceFromProfile(
@@ -726,6 +762,8 @@ Promise<PassportViewModel | null> {
             evidenceIntelligence,
             currentTalentDNA,
             talentDNAExplanation,
+            growthIntelligence,
+            learningIntelligence,
             dnaAverage,
             reliability,
             participationReadiness,

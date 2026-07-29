@@ -142,6 +142,19 @@ const growthData =
       score: item.overall_score
     }));
 
+const avgCreativity =
+  hasCompetitionData
+    ? Math.round(
+        studentScores.reduce(
+          (sum, row) =>
+            sum +
+            (row.creativity_score || 0),
+          0
+        ) /
+          studentScores.length
+      )
+    : "--";
+
 const avgCommunication =
   hasCompetitionData
     ? Math.round(
@@ -224,6 +237,12 @@ const overallScore =
 
 
     const dimensions = [
+{
+name: "Creativity",
+score: avgCreativity,
+color: "#F97316",
+icon: "🎨"
+},
 {
 name: "Communication",
 score: avgCommunication,
@@ -338,7 +357,7 @@ const closeVideo = () =>
                 Talent Score Summary
               </h2>
               <p className="mt-1 text-[10px] font-medium text-[#58708F] sm:text-[12px]">
-                Your current scores across the five talent dimensions.
+                Your current scores across the six talent dimensions.
               </p>
             </div>
             <span className="hidden text-[9px] font-black uppercase tracking-[0.14em] text-[#8A9BB3] sm:block">
@@ -346,9 +365,10 @@ const closeVideo = () =>
             </span>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2.5 md:grid-cols-3 lg:grid-cols-5">
+          <div className="mt-4 grid grid-cols-2 gap-2.5 md:grid-cols-3 lg:grid-cols-6">
             {dimensions.map((item, index) => {
               const styles = [
+                { border: "#FFC58F", bg: "#FFF9F2", circle: "#FFF0E1" },
                 { border: "#FFC58F", bg: "#FFF9F2", circle: "#FFF0E1" },
                 { border: "#B9D2FF", bg: "#F4F8FF", circle: "#E8F0FF" },
                 { border: "#D5C5FF", bg: "#F8F5FF", circle: "#EFE8FF" },
@@ -409,11 +429,17 @@ const closeVideo = () =>
             </div>
           </div>
 
-          <div className="mt-4 overflow-x-auto rounded-[12px] border border-[#DCE3EC] [-webkit-overflow-scrolling:touch]">
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-[#FFD1AE] bg-[#FFF9F3] px-3 py-2 lg:hidden">
+            <span className="text-[8px] font-black uppercase tracking-[0.12em] text-[#A64C19]">Scorecard</span>
+            <span className="text-right text-[8px] font-bold text-[#A64C19] sm:text-[9px]">Swipe left or right to view the full scorecard →</span>
+          </div>
+
+          <div className="mt-2 overflow-x-auto rounded-[12px] border border-[#DCE3EC] [-webkit-overflow-scrolling:touch] lg:mt-4">
             <div className="min-w-[900px]">
-              <div className="grid grid-cols-[2fr_1fr_repeat(5,1fr)_0.8fr] gap-2 bg-[#061632] px-4 py-3 text-[8px] font-black uppercase tracking-[0.04em] text-white">
+              <div className="grid grid-cols-[2fr_1fr_repeat(6,1fr)_0.8fr] gap-2 bg-[#061632] px-4 py-3 text-[8px] font-black uppercase tracking-[0.04em] text-white">
                 <div>Competition</div>
                 <div>Pathway</div>
+                <div>Creativity</div>
                 <div>Communication</div>
                 <div>Leadership</div>
                 <div>Critical Thinking</div>
@@ -422,12 +448,13 @@ const closeVideo = () =>
                 <div>Overall</div>
               </div>
 
-              <div className="grid grid-cols-[2fr_1fr_repeat(5,1fr)_0.8fr] items-center gap-2 border-b border-[#F4D0B6] bg-[#FFF9F3] px-4 py-3">
+              <div className="grid grid-cols-[2fr_1fr_repeat(6,1fr)_0.8fr] items-center gap-2 border-b border-[#F4D0B6] bg-[#FFF9F3] px-4 py-3">
                 <div>
                   <p className="text-[11px] font-black text-[#F05A0A]">Talent Passport Average</p>
                   <p className="mt-0.5 text-[8px] font-semibold text-[#71819A]">Combined performance across all competitions</p>
                 </div>
                 <div className="text-[10px] font-bold text-[#8A9BB3]">—</div>
+                <div className="text-[10px] font-black text-[#07142D]">{avgCreativity}</div>
                 <div className="text-[10px] font-black text-[#07142D]">{avgCommunication}</div>
                 <div className="text-[10px] font-black text-[#07142D]">{avgLeadership}</div>
                 <div className="text-[10px] font-black text-[#07142D]">{avgThinking}</div>
@@ -444,13 +471,14 @@ const closeVideo = () =>
                 studentScores.map((row) => (
                   <div
                     key={row.id}
-                    className="grid grid-cols-[2fr_1fr_repeat(5,1fr)_0.8fr] items-center gap-2 border-b border-[#E8EDF3] px-4 py-3 last:border-b-0"
+                    className="grid grid-cols-[2fr_1fr_repeat(6,1fr)_0.8fr] items-center gap-2 border-b border-[#E8EDF3] px-4 py-3 last:border-b-0"
                   >
                     <div className="min-w-0">
                       <p className="truncate text-[10px] font-black text-[#07142D]">{row.event_name}</p>
                       <p className="mt-0.5 text-[8px] font-semibold text-[#8A9BB3]">Competition Evaluation</p>
                     </div>
                     <div className="text-[9px] font-black text-[#F05A0A]">{row.pathway}</div>
+                    <div className="text-[9px] font-bold text-[#52637C]">{row.creativity_score || 0}</div>
                     <div className="text-[9px] font-bold text-[#52637C]">{row.communication_score}</div>
                     <div className="text-[9px] font-bold text-[#52637C]">{row.leadership_score}</div>
                     <div className="text-[9px] font-bold text-[#52637C]">{row.critical_thinking_score}</div>
@@ -508,9 +536,14 @@ const closeVideo = () =>
               </div>
             </div>
           ) : (
-            <div className="mt-4 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
-              <div className="flex gap-3">
-                {submissions.map((item) => (
+            <>
+              <div className="mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-[#FFD1AE] bg-[#FFF9F3] px-3 py-2 lg:hidden">
+                <span className="text-[8px] font-black uppercase tracking-[0.12em] text-[#A64C19]">Submissions</span>
+                <span className="text-right text-[8px] font-bold text-[#A64C19] sm:text-[9px]">Swipe left or right to view all submissions →</span>
+              </div>
+              <div className="mt-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] lg:mt-4">
+                <div className="flex gap-3">
+                  {submissions.map((item) => (
                   <article
                     key={item.id}
                     className="w-[225px] shrink-0 rounded-[14px] border border-[#FFC58F] bg-[#FFF9F3] p-3.5 sm:w-[245px]"
@@ -533,8 +566,9 @@ const closeVideo = () =>
                     </button>
                   </article>
                 ))}
+                </div>
               </div>
-            </div>
+            </>
           )}
 
           <div className="mt-4 grid grid-cols-3 gap-2.5">
@@ -587,6 +621,7 @@ const closeVideo = () =>
                       <XAxis dataKey="event_name" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
                       <YAxis domain={[50, 100]} tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
                       <Tooltip />
+                      <Line type="monotone" dataKey="creativity_score" stroke="#F97316" strokeWidth={2.5} dot={false} />
                       <Line type="monotone" dataKey="communication_score" stroke="#F97316" strokeWidth={2.5} dot={false} />
                       <Line type="monotone" dataKey="leadership_score" stroke="#2563EB" strokeWidth={2.5} dot={false} />
                       <Line type="monotone" dataKey="critical_thinking_score" stroke="#7C3AED" strokeWidth={2.5} dot={false} />

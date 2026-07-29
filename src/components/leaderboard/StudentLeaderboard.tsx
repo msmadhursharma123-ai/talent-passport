@@ -285,6 +285,11 @@ export default function StudentLeaderboard() {
   const competencies = myRow
     ? [
         {
+          title: "Creativity",
+          score:
+            myRow.creativity_score,
+        },
+        {
           title: "Communication",
           score:
             myRow.communication_score,
@@ -395,72 +400,7 @@ export default function StudentLeaderboard() {
           .student-leaderboard {
             width: 100%;
             max-width: 100%;
-            gap: 14px;
-          }
-
-          /* Compact tablet cards/sections to reduce total page height */
-          .sl-hero {
-            min-height: 158px !important;
-          }
-
-          .sl-hero-content {
-            max-width: calc(100% - 150px) !important;
-            padding: 24px 24px !important;
-          }
-
-          .sl-hero-content h1 {
-            font-size: 31px !important;
-            line-height: 1.08 !important;
-          }
-
-          .sl-hero-content > div:first-child {
-            margin-bottom: 10px !important;
-          }
-
-          .sl-hero-content > div:last-child {
-            font-size: 12px !important;
-            line-height: 1.45 !important;
-          }
-
-          .sl-hero-trophy {
-            width: 132px !important;
-            height: 132px !important;
-            right: 16px !important;
-            top: 50% !important;
-            bottom: auto !important;
-            transform: translateY(-50%) scale(0.78) !important;
-            transform-origin: center right !important;
-          }
-
-          .sl-ledger-section,
-          .sl-competency-section,
-          .sl-insights-section {
-            padding: 20px !important;
-          }
-
-          .sl-position-summary {
-            padding: 16px 18px !important;
-          }
-
-          .sl-competency-grid > div {
-            padding: 13px 12px !important;
-          }
-
-          .sl-profile-grid > div {
-            padding: 14px 15px !important;
-          }
-
-          .sl-insight-grid > div {
-            min-height: 0 !important;
-            padding: 16px !important;
-          }
-
-          .sl-insight-grid > div > div > div:nth-child(2) {
-            margin-top: 14px !important;
-          }
-
-          .sl-benchmark-row {
-            gap: 14px !important;
+            gap: 18px;
           }
 
           .sl-hero-content {
@@ -518,142 +458,40 @@ export default function StudentLeaderboard() {
 
         @media (max-width: 767px) {
           .student-leaderboard {
-            gap: 10px;
+            gap: 14px;
             width: 100%;
             max-width: 100%;
             min-width: 0;
           }
 
-          /* Mobile density: same information, substantially less vertical space */
           .sl-hero {
-            min-height: 142px !important;
+            min-height: auto !important;
+            border-radius: 20px !important;
           }
 
           .sl-hero-content {
-            max-width: calc(100% - 104px) !important;
-            padding: 18px 8px 18px 16px !important;
+            max-width: 100% !important;
+            padding: 24px 20px 118px !important;
           }
 
           .sl-hero-content h1 {
-            font-size: 24px !important;
-            line-height: 1.06 !important;
-            letter-spacing: -0.45px !important;
-          }
-
-          .sl-hero-content > div:first-child {
-            font-size: 9px !important;
-            line-height: 1.2 !important;
-            letter-spacing: 1.5px !important;
-            margin-bottom: 9px !important;
+            font-size: 30px !important;
+            letter-spacing: -0.6px !important;
           }
 
           .sl-hero-content > div:last-child {
-            font-size: 11px !important;
-            line-height: 1.4 !important;
-            max-width: 100% !important;
+            font-size: 13px !important;
+            line-height: 1.65 !important;
           }
 
           .sl-hero-trophy {
-            width: 94px !important;
-            height: 94px !important;
-            right: 8px !important;
-            top: 50% !important;
-            bottom: auto !important;
-            transform: translateY(-50%) scale(0.72) !important;
-            transform-origin: center right !important;
-          }
-
-          .sl-ledger-section,
-          .sl-competency-section,
-          .sl-insights-section {
-            padding: 15px 12px !important;
-          }
-
-          .sl-ledger-header,
-          .sl-section-header {
-            gap: 8px !important;
-            margin-bottom: 13px !important;
-          }
-
-          .sl-position-summary {
-            padding: 13px 12px !important;
-            gap: 11px !important;
-          }
-
-          .sl-competency-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            gap: 7px !important;
-          }
-
-          .sl-competency-grid > div {
-            padding: 10px !important;
-          }
-
-          .sl-competency-grid > div > div:first-child {
-            margin-bottom: 8px !important;
-          }
-
-          .sl-profile-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            gap: 7px !important;
-          }
-
-          .sl-profile-grid > div {
-            padding: 11px 10px !important;
-          }
-
-          .sl-profile-grid > div > div:first-child {
-            margin-bottom: 8px !important;
-          }
-
-          .sl-filter-bar {
-            padding: 12px !important;
-            gap: 10px !important;
-          }
-
-          .sl-filter-controls {
-            flex-direction: row !important;
-            gap: 7px !important;
-          }
-
-          .sl-filter-select {
-            flex: 1 1 0 !important;
-          }
-
-          .sl-filter-select select {
-            height: 38px !important;
-            font-size: 10px !important;
-          }
-
-          .sl-insight-grid {
-            grid-template-columns: 1fr !important;
-            gap: 7px !important;
-          }
-
-          .sl-insight-grid > div {
-            min-height: 0 !important;
-            padding: 13px 12px !important;
-          }
-
-          .sl-insight-grid > div > div > div:nth-child(2) {
-            margin-top: 10px !important;
-          }
-
-          .sl-insight-grid > div > div > div:nth-child(3) {
-            margin-top: 10px !important;
-          }
-
-          .sl-benchmark-row {
-            gap: 10px !important;
-          }
-
-          .sl-benchmark-metrics > div {
-            padding: 7px 5px !important;
-          }
-
-          .sl-hero {
-            min-height: 142px !important;
-            border-radius: 20px !important;
+            width: 120px !important;
+            height: 100px !important;
+            right: 12px !important;
+            top: auto !important;
+            bottom: 8px !important;
+            transform: scale(0.72);
+            transform-origin: bottom right;
           }
 
           .sl-ledger-section,
@@ -792,32 +630,19 @@ export default function StudentLeaderboard() {
 
         @media (max-width: 430px) {
           .sl-hero-content {
-            max-width: calc(100% - 94px) !important;
-            padding: 16px 6px 16px 14px !important;
+            padding: 22px 18px 112px !important;
           }
 
           .sl-hero-content h1 {
-            font-size: 22px !important;
-            line-height: 1.05 !important;
-          }
-
-          .sl-hero-content > div:last-child {
-            font-size: 10.5px !important;
-            line-height: 1.35 !important;
-          }
-
-          .sl-hero-trophy {
-            width: 86px !important;
-            height: 86px !important;
-            right: 6px !important;
+            font-size: 28px !important;
           }
 
           .sl-competency-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            grid-template-columns: 1fr !important;
           }
 
           .sl-profile-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            grid-template-columns: 1fr !important;
           }
 
           .sl-position-metrics {
@@ -1086,7 +911,7 @@ export default function StudentLeaderboard() {
           <table
             style={{
               width: "100%",
-              minWidth: 1050,
+              minWidth: 1150,
               borderCollapse: "separate",
               borderSpacing: 0,
               background: "#FFFFFF",
@@ -1102,6 +927,7 @@ export default function StudentLeaderboard() {
                   "Rank",
                   "Student",
                   "School",
+                  "Creativity",
                   "Communication",
                   "Leadership",
                   "Critical Thinking",
@@ -1124,7 +950,7 @@ export default function StudentLeaderboard() {
                       textTransform: "uppercase",
                       whiteSpace: "nowrap",
                       borderRight:
-                        index < 8
+                        index < 9
                           ? "1px solid rgba(255,255,255,0.07)"
                           : "none",
                     }}
@@ -1322,6 +1148,21 @@ export default function StudentLeaderboard() {
                         }}
                       >
                         {row.school_name || "—"}
+                      </td>
+
+                      {/* Creativity */}
+
+                      <td
+                        style={{
+                          padding: "17px 16px",
+                          borderBottom: "1px solid #E2E8F0",
+                          textAlign: "center",
+                          color: "#334155",
+                          fontSize: 13,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {row.creativity_score}
                       </td>
 
                       {/* Communication */}
@@ -1690,10 +1531,120 @@ export default function StudentLeaderboard() {
             className="sl-competency-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+              gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
               gap: 12,
             }}
           >
+            {/* Creativity */}
+
+            <div
+              style={{
+                minWidth: 0,
+                borderRadius: 16,
+                border: "1px solid #FED7AA",
+                background: "#FFF7ED",
+                padding: "17px 16px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  marginBottom: 14,
+                }}
+              >
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    background: "#FFEDD5",
+                    color: "#F97316",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 16,
+                    flexShrink: 0,
+                  }}
+                >
+                  🎨
+                </div>
+
+                <span
+                  style={{
+                    color: "#F97316",
+                    fontSize: 9,
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.7,
+                  }}
+                >
+                  Creativity
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-end",
+                  justifyContent: "space-between",
+                  gap: 10,
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      color: "#64748B",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.6,
+                    }}
+                  >
+                    Position
+                  </div>
+
+                  <div
+                    style={{
+                      color: "#0F172A",
+                      fontSize: 26,
+                      fontWeight: 900,
+                      lineHeight: 1,
+                      marginTop: 5,
+                    }}
+                  >
+                    #{myRow.creativity_rank ?? myRow.rank ?? 0}
+                  </div>
+                </div>
+
+                <div style={{ textAlign: "right" }}>
+                  <div
+                    style={{
+                      color: "#64748B",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Score
+                  </div>
+
+                  <div
+                    style={{
+                      color: "#F97316",
+                      fontSize: 17,
+                      fontWeight: 900,
+                      marginTop: 3,
+                    }}
+                  >
+                    {myRow.creativity_score}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Communication */}
 
             <div

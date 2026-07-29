@@ -4,22 +4,6 @@ import React, {
 } from "react";
 
 import {
-    calculateTalentDNA
-} from "../data/talentDNAEngine";
-
-import {
-    getStudentAchievements
-} from "../data/timelineRepository";
-
-import {
-    generatePassport
-} from "../data/passportEngine";
-
-import {
-    savePassport
-} from "../data/passportRepository";
-
-import {
     requireIdentity,
     clearStudentIdentity
 } from "../services/identityService";
@@ -198,6 +182,62 @@ export default function TalentPassport({
     const weakestSkill =
         passportModel?.weakestSkill ?? "";
 
+    const growthIntelligence =
+        passportModel?.growthIntelligence ?? null;
+
+    const learningIntelligence =
+        passportModel?.learningIntelligence ?? null;
+
+    const baselineOverall =
+        growthIntelligence?.baselineOverall ?? null;
+
+    const currentOverall =
+        growthIntelligence?.currentOverall ?? dnaAverage;
+
+    const overallGrowth =
+        growthIntelligence?.overallChange ?? null;
+
+    const growthDirection =
+        growthIntelligence?.overallDirection ?? "No History";
+
+    const growthProfileConfidence =
+        growthIntelligence?.profileConfidence ??
+        passportModel?.evidenceCoverage ??
+        0;
+
+    const growthProfileConfidenceLabel =
+        growthIntelligence?.profileConfidenceLabel ??
+        "Early Profile";
+
+    const formatSigned = (value: number | null) => {
+        if (value === null) return "—";
+        const rounded = Math.round(value * 100) / 100;
+        return rounded > 0 ? `+${rounded}` : `${rounded}`;
+    };
+
+    const growthDimensionRows =
+        dimensions.map((dimension: PassportDimension) => {
+            const dimensionName =
+                dimension.label === "Critical Thinking"
+                    ? "CriticalThinking"
+                    : dimension.label;
+
+            const growthDimension =
+                growthIntelligence?.dimensions?.[
+                    dimensionName as keyof NonNullable<
+                        PassportViewModel["growthIntelligence"]
+                    >["dimensions"]
+                ];
+
+            return {
+                ...dimension,
+                baseline: growthDimension?.baseline ?? null,
+                current: growthDimension?.current ?? dimension.value,
+                change: growthDimension?.change ?? null,
+                direction: growthDimension?.direction ?? "No History"
+            };
+        });
+
     const dimensionColors: Record<string, string> = {
         creativity: "#F97316",
         communication: "#2563EB",
@@ -331,15 +371,15 @@ export default function TalentPassport({
 
     return (
 
-        <div className="min-h-screen bg-[#F7F9FC] px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
+        <div className="min-h-screen bg-[#F7F9FC] px-2.5 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-5">
 
-            <div className="mx-auto max-w-[1600px] space-y-3 sm:space-y-4 lg:space-y-4">
+            <div className="mx-auto max-w-[1600px] space-y-2.5 sm:space-y-3 lg:space-y-3">
 
                 {/* =========================================================
                     HERO / TALENT PASSPORT OVERVIEW
                 ========================================================= */}
 
-                <section className="relative overflow-hidden rounded-[22px] border border-slate-200 bg-gradient-to-br from-white via-white to-[#F7F9FF] shadow-sm sm:rounded-[26px] lg:rounded-[28px]">
+                <section className="relative overflow-hidden rounded-[18px] border border-slate-200 bg-gradient-to-br from-white via-white to-[#F7F9FF] shadow-sm sm:rounded-[20px] lg:rounded-[22px]">
 
                     <div className="pointer-events-none absolute -right-20 -top-28 h-[300px] w-[300px] rounded-full bg-orange-50/80" />
 
@@ -347,27 +387,26 @@ export default function TalentPassport({
 
                     <div className="pointer-events-none absolute -bottom-36 right-[13%] h-[250px] w-[250px] rounded-full bg-indigo-50/70" />
 
-                    <div className="relative z-10 px-5 py-5 sm:px-6 sm:py-5 lg:px-7 lg:py-6">
+                    <div className="relative z-10 px-3.5 py-3.5 sm:px-5 sm:py-4 lg:px-6 lg:py-5">
 
                         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
 
                             <div className="min-w-0 max-w-3xl">
 
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500 sm:text-xs sm:tracking-[0.24em]">
-                                    Pre-Term Talent Profiling
+                                    Live Talent Passport
                                 </p>
 
-                                <h1 className="mt-3 text-[28px] font-black leading-[1.08] tracking-tight text-[#07142D] sm:text-3xl lg:text-[38px]">
-                                    Co-Curricular Diagnostic Calibration
+                                <h1 className="mt-3 text-[24px] font-black leading-[1.08] tracking-tight text-[#07142D] sm:text-[28px] lg:text-[34px]">
+                                    Talent Growth Intelligence
                                 </h1>
 
                                 <p className="mt-3 text-sm font-bold text-slate-500">
                                     {studentName}
                                 </p>
 
-                                <p className="mt-2 max-w-2xl text-xs font-medium leading-5 text-slate-500 sm:text-sm sm:leading-6">
-                                    A structured view of your current co-curricular strengths,
-                                    development gaps, school positioning and future readiness.
+                                <p className="mt-2 max-w-2xl text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs sm:leading-5">
+                                    This is your child's live growth record. The questionnaire shows where they started on Day 0; new meaningful evidence shows where they are today, how they are growing, and how they compare with similar students.
                                 </p>
 
                             </div>
@@ -379,13 +418,13 @@ export default function TalentPassport({
                                     <div>
 
                                         <p className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-100">
-                                            Overall Score
+                                            Current Talent DNA
                                         </p>
 
                                         <div className="mt-2 flex items-end gap-1 sm:justify-center">
 
                                             <span className="text-3xl font-black leading-none sm:text-4xl">
-                                                {dnaAverage}
+                                                {currentOverall}
                                             </span>
 
                                             <span className="pb-1 text-xs font-bold text-orange-100">
@@ -399,11 +438,13 @@ export default function TalentPassport({
                                     <div className="rounded-xl bg-white/15 px-3 py-2 text-right sm:mt-3 sm:text-center">
 
                                         <p className="text-[9px] font-black uppercase tracking-wider text-orange-100">
-                                            Reliability
+                                            Day 0 Baseline
                                         </p>
 
                                         <p className="mt-1 text-lg font-black">
-                                            {reliability}%
+                                            {baselineOverall !== null
+                                                ? `${baselineOverall}/100`
+                                                : "Recorded"}
                                         </p>
 
                                     </div>
@@ -416,20 +457,20 @@ export default function TalentPassport({
 
                         {/* SUMMARY METRICS */}
 
-                        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                        <div className="mt-3.5 grid grid-cols-2 gap-3 lg:grid-cols-4">
 
                             <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-3.5 sm:p-4">
 
                                 <p className="text-[9px] font-black uppercase tracking-wider text-blue-700 sm:text-[10px]">
-                                    Participation Readiness
+                                    Profile Confidence
                                 </p>
 
                                 <p className="mt-2 text-2xl font-black text-[#07142D] sm:text-3xl">
-                                    {participationReadiness}
+                                    {growthProfileConfidence}%
                                 </p>
 
                                 <p className="mt-1 text-[10px] font-semibold text-blue-600">
-                                    Current readiness score
+                                    {growthProfileConfidenceLabel}
                                 </p>
 
                             </div>
@@ -437,15 +478,15 @@ export default function TalentPassport({
                             <div className="rounded-2xl border border-purple-100 bg-purple-50/70 p-3.5 sm:p-4">
 
                                 <p className="text-[9px] font-black uppercase tracking-wider text-purple-700 sm:text-[10px]">
-                                    Future Readiness
+                                    Growth Momentum
                                 </p>
 
                                 <p className="mt-2 text-2xl font-black text-[#07142D] sm:text-3xl">
-                                    {futureReadiness}
+                                    {formatSigned(overallGrowth)}
                                 </p>
 
                                 <p className="mt-1 text-[10px] font-semibold text-purple-600">
-                                    Growth trajectory indicator
+                                    {growthDirection}
                                 </p>
 
                             </div>
@@ -461,7 +502,7 @@ export default function TalentPassport({
                                 </p>
 
                                 <p className="mt-1 text-[10px] font-semibold text-green-600">
-                                    Leading DNA dimension
+                                    The capability currently supported by your child's strongest score and evidence.
                                 </p>
 
                             </div>
@@ -477,7 +518,7 @@ export default function TalentPassport({
                                 </p>
 
                                 <p className="mt-1 text-[10px] font-semibold text-orange-600">
-                                    Current profile confidence
+                                    How reliable the live profile is based on the evidence available so far.
                                 </p>
 
                             </div>
@@ -492,7 +533,7 @@ export default function TalentPassport({
                     DNA PROFILE
                 ========================================================= */}
 
-                <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:rounded-[28px] lg:p-6">
+                <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-5 lg:rounded-[22px] lg:p-6">
 
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 
@@ -502,12 +543,12 @@ export default function TalentPassport({
                                 Talent DNA Intelligence
                             </p>
 
-                            <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
-                                New User DNA Radar
+                            <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
+                                Current Talent DNA
                             </h2>
 
-                            <p className="mt-1 max-w-2xl text-xs font-medium leading-5 text-slate-500 sm:text-sm sm:leading-6">
-                                Your six-dimensional co-curricular profile based on the current diagnostic calibration.
+                            <p className="mt-1 max-w-2xl text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs sm:leading-5">
+                                These six scores show your child's current strengths across creativity, communication, leadership, confidence, collaboration and critical thinking. They change only when new meaningful evidence is added.
                             </p>
 
                         </div>
@@ -518,7 +559,7 @@ export default function TalentPassport({
 
                     </div>
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
 
                         {dimensions.map((dimension: PassportDimension) => {
 
@@ -599,23 +640,23 @@ export default function TalentPassport({
                     STRENGTHS + GROWTH GAPS
                 ========================================================= */}
 
-                <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+                <div className="grid gap-2.5 lg:grid-cols-2 lg:gap-3">
 
-                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+                    <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-green-600">
                             Strength Intelligence
                         </p>
 
-                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                        <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
                             Top Strengths
                         </h2>
 
-                        <p className="mt-1 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
-                            Your strongest calibrated talent dimensions.
+                        <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
+                            The capabilities where your child currently shows the strongest evidence. Use these strengths to choose activities where they can build confidence, depth and real-world experience.
                         </p>
 
-                        <div className="mt-4 space-y-2.5">
+                        <div className="mt-3 space-y-2.5">
 
                             {topStrengths.map((dimension: PassportDimension, index: number) => (
 
@@ -664,21 +705,21 @@ export default function TalentPassport({
 
                     </section>
 
-                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+                    <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
                             Growth Intelligence
                         </p>
 
-                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
-                            Growth Gaps
+                        <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
+                            Development Opportunities
                         </h2>
 
-                        <p className="mt-1 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
-                            Dimensions with the highest opportunity for development.
+                        <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
+                            These are not weaknesses. They are capabilities with more room to grow, helping you choose the right practice, projects or opportunities for your child.
                         </p>
 
-                        <div className="mt-4 space-y-2.5">
+                        <div className="mt-3 space-y-2.5">
 
                             {growthGaps.map((dimension: PassportDimension, index: number) => (
 
@@ -730,26 +771,264 @@ export default function TalentPassport({
                 </div>
 
                 {/* =========================================================
+                    GROWTH INTELLIGENCE — DAY 0 → CURRENT
+                ========================================================= */}
+
+                <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-5 lg:rounded-[22px] lg:p-6">
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-600">
+                                Growth Intelligence
+                            </p>
+
+                            <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
+                                Growth Since Day 0
+                            </h2>
+
+                            <p className="mt-1 max-w-2xl text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs sm:leading-5">
+                                This shows how your child has changed since joining. Day 0 is the questionnaire baseline; Current is the latest evidence-backed profile; Growth is the difference between the two.
+                            </p>
+                        </div>
+
+                        <div className="w-fit rounded-full bg-purple-50 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-purple-700">
+                            {growthDirection}
+                        </div>
+
+                    </div>
+
+                    <div className="mt-3.5 grid gap-3 sm:grid-cols-3">
+
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                            <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">
+                                Day 0 Talent DNA
+                            </p>
+                            <p className="mt-2 text-2xl font-black text-[#07142D]">
+                                {baselineOverall ?? "—"}
+                            </p>
+                        </div>
+
+                        <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                            <p className="text-[9px] font-black uppercase tracking-wider text-blue-700">
+                                Current Talent DNA
+                            </p>
+                            <p className="mt-2 text-2xl font-black text-[#07142D]">
+                                {currentOverall}
+                            </p>
+                        </div>
+
+                        <div className="rounded-2xl border border-purple-100 bg-purple-50/70 p-4">
+                            <p className="text-[9px] font-black uppercase tracking-wider text-purple-700">
+                                Overall Growth
+                            </p>
+                            <p className="mt-2 text-2xl font-black text-[#07142D]">
+                                {formatSigned(overallGrowth)}
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+
+                        {growthDimensionRows.map((dimension) => (
+
+                            <div
+                                key={dimension.key}
+                                className="rounded-2xl border border-slate-100 bg-slate-50/70 p-3.5"
+                            >
+
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="text-sm font-black text-[#07142D]">
+                                        {dimension.label}
+                                    </span>
+
+                                    <span className="text-xs font-black text-purple-700">
+                                        {formatSigned(dimension.change)}
+                                    </span>
+                                </div>
+
+                                <div className="mt-3 flex items-center justify-between text-[10px] font-bold text-slate-500">
+                                    <span>
+                                        Day 0: {dimension.baseline ?? "—"}
+                                    </span>
+
+                                    <span>
+                                        Current: {dimension.current}
+                                    </span>
+                                </div>
+
+                                <p className="mt-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                    {dimension.direction}
+                                </p>
+
+                            </div>
+
+                        ))}
+
+                    </div>
+
+                    {!growthIntelligence && (
+                        <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
+                            <p className="text-xs font-bold text-slate-500">
+                                Growth history is still building. Current Talent DNA remains available while baseline-to-current history becomes available.
+                            </p>
+                        </div>
+                    )}
+
+                </section>
+
+                {/* =========================================================
+                    LEARNING INTELLIGENCE
+                ========================================================= */}
+
+                <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:rounded-[20px] sm:p-4 lg:rounded-[22px] lg:p-5">
+
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p className="text-[9px] font-black uppercase tracking-[0.18em] text-cyan-600">
+                                Learning Intelligence
+                            </p>
+
+                            <h2 className="mt-1.5 text-lg font-black text-[#07142D] sm:text-xl">
+                                Classroom Understanding
+                            </h2>
+
+                            <p className="mt-1 max-w-3xl text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs sm:leading-5">
+                                Shows how well your child has understood recent classroom lessons from the feedback they submitted. It helps parents see understanding patterns, subjects needing attention and concepts that may need revision.
+                            </p>
+                        </div>
+
+                        <div className="w-fit rounded-full bg-cyan-50 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-cyan-700">
+                            Last {learningIntelligence?.periodDays ?? 30} Days
+                        </div>
+                    </div>
+
+                    {!learningIntelligence || learningIntelligence.recordedLectures === 0 ? (
+                        <div className="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-3">
+                            <p className="text-[11px] font-bold text-slate-500">
+                                Learning intelligence will appear after classroom feedback is submitted.
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                <div className="rounded-xl border border-cyan-100 bg-cyan-50/60 p-2.5">
+                                    <p className="text-[8px] font-black uppercase tracking-wider text-cyan-700">Understanding</p>
+                                    <p className="mt-1 text-xl font-black text-[#07142D]">{learningIntelligence.understandingScore}%</p>
+                                    <p className="mt-0.5 text-[9px] font-semibold text-slate-500">Overall recent learning</p>
+                                </div>
+
+                                <div className="rounded-xl border border-green-100 bg-green-50/60 p-2.5">
+                                    <p className="text-[8px] font-black uppercase tracking-wider text-green-700">Fully Understood</p>
+                                    <p className="mt-1 text-xl font-black text-[#07142D]">{learningIntelligence.fullyUnderstoodPercent}%</p>
+                                    <p className="mt-0.5 text-[9px] font-semibold text-slate-500">Lessons understood clearly</p>
+                                </div>
+
+                                <div className="rounded-xl border border-amber-100 bg-amber-50/60 p-2.5">
+                                    <p className="text-[8px] font-black uppercase tracking-wider text-amber-700">Partly Understood</p>
+                                    <p className="mt-1 text-xl font-black text-[#07142D]">{learningIntelligence.partiallyUnderstoodPercent}%</p>
+                                    <p className="mt-0.5 text-[9px] font-semibold text-slate-500">Lessons needing some revision</p>
+                                </div>
+
+                                <div className="rounded-xl border border-rose-100 bg-rose-50/60 p-2.5">
+                                    <p className="text-[8px] font-black uppercase tracking-wider text-rose-700">Needs Attention</p>
+                                    <p className="mt-1 text-xl font-black text-[#07142D]">{learningIntelligence.didntUnderstandPercent}%</p>
+                                    <p className="mt-0.5 text-[9px] font-semibold text-slate-500">Lessons not yet understood</p>
+                                </div>
+                            </div>
+
+                            <div className="mt-2.5 grid gap-2.5 lg:grid-cols-2">
+                                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs font-black text-[#07142D]">Subject Understanding</p>
+                                            <p className="mt-0.5 text-[9px] font-medium text-slate-500">
+                                                Recent understanding score by subject.
+                                            </p>
+                                        </div>
+                                        <span className="text-[9px] font-black text-cyan-700">
+                                            {learningIntelligence.recordedLectures} responses
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                                        {learningIntelligence.subjectUnderstanding.slice(0, 6).map((subject) => (
+                                            <div key={subject.subject} className="flex items-center justify-between rounded-lg bg-white px-2.5 py-2">
+                                                <span className="truncate pr-2 text-[10px] font-bold text-slate-600">{subject.subject}</span>
+                                                <span className="shrink-0 text-[10px] font-black text-cyan-700">{subject.understandingScore}%</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs font-black text-[#07142D]">Learning Consistency</p>
+                                            <p className="mt-0.5 text-[9px] font-medium text-slate-500">
+                                                How often your child understood at least part of the lesson.
+                                            </p>
+                                        </div>
+                                        <span className="text-lg font-black text-purple-700">{learningIntelligence.consistencyScore}%</span>
+                                    </div>
+
+                                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                                        <div
+                                            className="h-full rounded-full bg-purple-500"
+                                            style={{ width: `${learningIntelligence.consistencyScore}%` }}
+                                        />
+                                    </div>
+
+                                    <p className="mt-3 text-xs font-black text-[#07142D]">Concepts Needing Attention</p>
+                                    <p className="mt-0.5 text-[9px] font-medium text-slate-500">
+                                        Concepts repeatedly selected as difficult in student feedback.
+                                    </p>
+
+                                    <div className="mt-2 flex flex-wrap gap-1.5">
+                                        {learningIntelligence.persistentChallenges.length === 0 ? (
+                                            <span className="rounded-full bg-green-50 px-2.5 py-1 text-[9px] font-bold text-green-700">
+                                                No repeated challenge identified
+                                            </span>
+                                        ) : (
+                                            learningIntelligence.persistentChallenges.map((challenge) => (
+                                                <span
+                                                    key={challenge.concept}
+                                                    className="rounded-full border border-orange-100 bg-orange-50 px-2.5 py-1 text-[9px] font-bold text-orange-700"
+                                                >
+                                                    {challenge.concept} · {challenge.signals}
+                                                </span>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                </section>
+
+                {/* =========================================================
                     BENCHMARK + SCHOOL POSITIONING
                 ========================================================= */}
 
-                <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+                <div className="grid gap-2.5 lg:grid-cols-2 lg:gap-3">
 
-                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+                    <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">
                             Comparative Intelligence
                         </p>
 
-                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                        <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
                             Benchmark Analysis
                         </h2>
 
-                        <p className="mt-1 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
-                            Difference between your score and the current benchmark average.
+                        <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
+                            Shows whether your child's actual score is above or below the average score of participating students in the same school and class. A + number means above the benchmark; a − number means below it.
                         </p>
 
-                        <div className="mt-5 divide-y divide-slate-100">
+                        <div className="mt-3.5 divide-y divide-slate-100">
 
                             {dimensions.map((dimension: PassportDimension) => {
 
@@ -800,21 +1079,21 @@ export default function TalentPassport({
 
                     </section>
 
-                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+                    <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-600">
                             School Benchmark
                         </p>
 
-                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                        <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
                             School Positioning
                         </h2>
 
-                        <p className="mt-1 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
-                            Your relative percentile position across each talent dimension.
+                        <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
+                            Shows where your child stands among participating students in the same school and class. For example, 80th percentile means the score is higher than about 80% of that comparison group.
                         </p>
 
-                        <div className="mt-4 space-y-2.5">
+                        <div className="mt-3 space-y-2.5">
 
                             {dimensions.map((dimension: PassportDimension) => (
 
@@ -860,19 +1139,23 @@ export default function TalentPassport({
                     RARITY + PERCENTILES
                 ========================================================= */}
 
-                <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+                <div className="grid gap-2.5 lg:grid-cols-2 lg:gap-3">
 
-                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+                    <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
                             Profile Distinctiveness
                         </p>
 
-                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                        <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
                             Talent Distinctiveness
                         </h2>
 
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
+                            Shows how unusual your child's overall combination of the six Talent DNA capabilities is compared with students in the same class across the platform. A higher score means the overall profile is less common; it does not mean better or worse.
+                        </p>
+
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
 
                             {rarityRows.map((row: RarityRow) => (
 
@@ -897,17 +1180,21 @@ export default function TalentPassport({
 
                     </section>
 
-                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+                    <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">
                             Relative Standing
                         </p>
 
-                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                        <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
                             Class Peer Position
                         </h2>
 
-                        <div className="mt-4 space-y-2.5">
+                        <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
+                            Shows where your child's score stands against participating students in the same class across all schools on Talent Passport. For example, 82nd percentile means the score is higher than about 82% of comparable peers.
+                        </p>
+
+                        <div className="mt-3 space-y-2.5">
 
                             {percentileRows.map((row: PercentileRow) => (
 
@@ -948,7 +1235,7 @@ export default function TalentPassport({
 
                 <div className="grid gap-4 lg:grid-cols-[0.75fr_1.25fr] lg:gap-6">
 
-                    <section className="relative overflow-hidden rounded-[22px] bg-orange-500 p-5 text-white shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+                    <section className="relative overflow-hidden rounded-[18px] bg-orange-500 p-5 text-white shadow-sm sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
 
@@ -960,7 +1247,7 @@ export default function TalentPassport({
                                 Participation Intelligence
                             </p>
 
-                            <h2 className="mt-2 text-xl font-black sm:text-2xl">
+                            <h2 className="mt-2 text-lg font-black sm:text-xl">
                                 Participation Readiness
                             </h2>
 
@@ -996,18 +1283,18 @@ export default function TalentPassport({
 
                     </section>
 
-                    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:p-6">
+                    <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-green-600">
                             Opportunity Matching
                         </p>
 
-                        <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                        <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
                             Recommended Competitions
                         </h2>
 
-                        <p className="mt-1 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
-                            Competition recommendations aligned with your current Talent DNA.
+                        <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
+                            Activities matched to your child's current strengths and development needs. These suggestions help turn Passport insights into useful next experiences and new evidence.
                         </p>
 
                         {recommendedCompetitions.length === 0 ? (
@@ -1026,7 +1313,7 @@ export default function TalentPassport({
 
                         ) : (
 
-                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                            <div className="mt-3 grid gap-3 sm:grid-cols-2">
 
                                 {recommendedCompetitions.map((competition) => (
 
@@ -1067,7 +1354,7 @@ export default function TalentPassport({
                     YEAR-END PROJECTION
                 ========================================================= */}
 
-                <section className="relative overflow-hidden rounded-[22px] bg-[#071A38] p-5 text-white shadow-sm sm:rounded-[26px] sm:p-5 lg:rounded-[28px] lg:p-6">
+                <section className="relative overflow-hidden rounded-[18px] bg-[#071A38] p-5 text-white shadow-sm sm:rounded-[20px] sm:p-5 lg:rounded-[22px] lg:p-6">
 
                     <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-blue-400/10" />
 
@@ -1079,15 +1366,15 @@ export default function TalentPassport({
                             Growth Forecast
                         </p>
 
-                        <h2 className="mt-2 text-xl font-black sm:text-2xl">
+                        <h2 className="mt-2 text-lg font-black sm:text-xl">
                             Year-End Projection
                         </h2>
 
                         <p className="mt-1 max-w-2xl text-xs font-medium leading-5 text-slate-300 sm:text-sm">
-                            Projected development across your talent dimensions based on the current profile.
+                            An estimate of where each capability could reach by year end if the current development pattern continues. It is a forecast for planning, not a guaranteed future score.
                         </p>
 
-                        <div className="mt-5 grid gap-3 md:grid-cols-2">
+                        <div className="mt-3.5 grid gap-3 md:grid-cols-2">
 
                             {projections.map((projection: PassportProjection) => (
 
@@ -1133,7 +1420,7 @@ export default function TalentPassport({
                     TALENT INTELLIGENCE
                 ========================================================= */}
 
-                <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[26px] sm:p-5 lg:rounded-[28px] lg:p-6">
+                <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-5 lg:rounded-[22px] lg:p-6">
 
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 
@@ -1143,11 +1430,11 @@ export default function TalentPassport({
                                 Passport Intelligence
                             </p>
 
-                            <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
+                            <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
                                 Talent Intelligence
                             </h2>
 
-                            <p className="mt-1 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
+                            <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
                                 A concise interpretation of your current Talent Passport profile.
                             </p>
 
@@ -1159,7 +1446,7 @@ export default function TalentPassport({
 
                     </div>
 
-                    <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <div className="mt-3.5 grid grid-cols-2 gap-3 lg:grid-cols-4">
 
                         <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-3.5 sm:p-4">
 

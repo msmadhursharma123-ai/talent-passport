@@ -10,11 +10,10 @@ import {
 
 import { createClient } from '@supabase/supabase-js';
 import { Submission } from './types';
+import { requestCompetitionEvaluation } from "./services/competitionEvaluationEngine";
 
 const supabaseUrl = ((import.meta as any).env?.VITE_SUPABASE_URL as string) || '';
 const supabaseAnonKey = ((import.meta as any).env?.VITE_SUPABASE_ANON_KEY as string) || '';
-const geminiApiKey =
-  ((import.meta as any).env?.VITE_GEMINI_API_KEY as string) || "";
 /**
  * Checks if the user has configured custom Supabase credentials.
  */
@@ -424,301 +423,291 @@ export const evaluateSubmission = async (
     if (error) throw error;
 
     const submission: any = data;
-const { data: existingEvaluation } = await supabase
-  .from("evaluations")
-  .select("id")
-  .eq("submission_id", submissionId)
-  .limit(1);
 
-if (
-  existingEvaluation &&
-  existingEvaluation.length > 0
-) {
-  return {
-    error: "Evaluation already exists for this submission"
-  };
-}
+    const { data: existingEvaluation, error: existingEvaluationError } =
+      await supabase
+        .from("evaluations")
+        .select("id")
+        .eq("submission_id", submissionId)
+        .limit(1);
+
+    if (existingEvaluationError) {
+      throw existingEvaluationError;
+    }
+
+    if (existingEvaluation && existingEvaluation.length > 0) {
+      return {
+        error: "Evaluation already exists for this submission"
+      };
+    }
+
+    // Six-dimension development evaluation. No external API key or Edge Function.
+    // The scorer is deterministic and replay-stable; Phase 5 publication below
+    // remains identical when a real evaluator is introduced later.
+    const evaluation = await requestCompetitionEvaluation(
+      supabase as any,
+      {
+        id: submission.id,
+        student_id: submission.student_id,
+        pathway: submission.pathway,
+        event_name: submission.event_name,
+        description: submission.description,
+        transcript: submission.transcript,
+        video_url: submission.video_url,
+      }
+    );
+
     const scores = {
-      communication: Math.floor(Math.random() * 21) + 70,
-      confidence: Math.floor(Math.random() * 21) + 70,
-      leadership: Math.floor(Math.random() * 21) + 70,
-      critical_thinking: Math.floor(Math.random() * 21) + 70,
-      collaboration: Math.floor(Math.random() * 21) + 70,
-      feedback:
-        "Strong performance. Demonstrates good communication, confidence and leadership potential."
+      creativity: evaluation.scores.Creativity,
+      communication: evaluation.scores.Communication,
+      leadership: evaluation.scores.Leadership,
+      confidence: evaluation.scores.Confidence,
+      collaboration: evaluation.scores.Collaboration,
+      critical_thinking: evaluation.scores.CriticalThinking,
+      feedback: evaluation.feedback
     };
 
-    const overall = Math.round(
-      (
-        scores.communication +
-        scores.confidence +
-        scores.leadership +
-        scores.critical_thinking +
-        scores.collaboration
-      ) / 5
-    );
+    const overall = evaluation.overallScore;
 
-    await (supabase as any)
-      .from("evaluations")
-      .insert([
-        {
-          submission_id: submission.id,
-          pathway: submission.pathway,
-          event_name: submission.event_name,
+    // Keep the legacy five metric columns populated so the existing
+    // CompetitionEntries UI continues to work unchanged.
+    const { data: insertedEvaluation, error: evaluationInsertError } =
+      await (supabase as any)
+        .from("evaluations")
+        .insert([
+          {
+            submission_id: submission.id,
+            pathway: submission.pathway,
+            event_name: submission.event_name,
 
-          metric_1_name: "Communication",
-          metric_1_score: scores.communication,
+            metric_1_name: "Communication",
+            metric_1_score: scores.communication,
 
-          metric_2_name: "Confidence",
-          metric_2_score: scores.confidence,
+            metric_2_name: "Confidence",
+            metric_2_score: scores.confidence,
 
-          metric_3_name: "Leadership",
-          metric_3_score: scores.leadership,
+            metric_3_name: "Leadership",
+            metric_3_score: scores.leadership,
 
-          metric_4_name: "Critical Thinking",
-          metric_4_score: scores.critical_thinking,
+            metric_4_name: "Critical Thinking",
+            metric_4_score: scores.critical_thinking,
 
-          metric_5_name: "Collaboration",
-          metric_5_score: scores.collaboration,
+            metric_5_name: "Collaboration",
+            metric_5_score: scores.collaboration,
 
+            creativity_score: scores.creativity,
+            communication_score: scores.communication,
+            leadership_score: scores.leadership,
+            confidence_score: scores.confidence,
+            collaboration_score: scores.collaboration,
+            critical_thinking_score: scores.critical_thinking,
+
+            overall_score: overall,
+            ai_feedback: scores.feedback,
+
+            evaluation_status: "validated",
+            evaluator_type: evaluation.evaluatorType,
+            evaluation_model: evaluation.model,
+            evaluation_version: evaluation.version,
+            evaluation_metadata: evaluation.metadata ?? {}
+          }
+        ])
+        .select("id")
+        .single();
+
+    if (evaluationInsertError) {
+      throw evaluationInsertError;
+    }
+
+    const evaluationId = insertedEvaluation?.id;
+
+    if (!evaluationId) {
+      throw new Error("Evaluation was saved but no evaluation id was returned.");
+    }
+
+    const { error: submissionUpdateError } =
+      await (supabase as any)
+        .from("submissions")
+        .update({
+          creativity_score: scores.creativity,
+          communication_score: scores.communication,
+          confidence_score: scores.confidence,
+          leadership_score: scores.leadership,
+          critical_thinking_score: scores.critical_thinking,
+          collaboration_score: scores.collaboration,
           overall_score: overall,
+          ai_feedback: scores.feedback,
+          processing_status: "Completed",
+        })
+        .eq("id", submission.id);
 
-          ai_feedback: scores.feedback
+    if (submissionUpdateError) {
+      throw submissionUpdateError;
+    }
+
+    // Preserve the existing legacy score stream. Creativity is included only
+    // if the table has the Phase 5 column; the fallback keeps older schemas working.
+    let passportInsertResult =
+      await (supabase as any)
+        .from("talent_passport_scores")
+        .insert([
+          {
+            student_id: submission.student_id,
+            submission_id: submission.id,
+            pathway: submission.pathway,
+            event_name: submission.event_name,
+            creativity_score: scores.creativity,
+            communication_score: scores.communication,
+            leadership_score: scores.leadership,
+            critical_thinking_score: scores.critical_thinking,
+            collaboration_score: scores.collaboration,
+            confidence_score: scores.confidence,
+            overall_score: overall
+          }
+        ]);
+
+    if (
+      passportInsertResult?.error &&
+      String(passportInsertResult.error.message ?? "")
+        .toLowerCase()
+        .includes("creativity_score")
+    ) {
+      passportInsertResult =
+        await (supabase as any)
+          .from("talent_passport_scores")
+          .insert([
+            {
+              student_id: submission.student_id,
+              submission_id: submission.id,
+              pathway: submission.pathway,
+              event_name: submission.event_name,
+              communication_score: scores.communication,
+              leadership_score: scores.leadership,
+              critical_thinking_score: scores.critical_thinking,
+              collaboration_score: scores.collaboration,
+              confidence_score: scores.confidence,
+              overall_score: overall
+            }
+          ]);
+    }
+
+    if (passportInsertResult?.error) {
+      console.warn(
+        "Legacy talent_passport_scores insert failed. Canonical Talent DNA publication will still be attempted.",
+        passportInsertResult.error
+      );
+    }
+
+    // Preserve the legacy aggregate for existing screens, but never use
+    // Leadership as Creativity. Creativity always comes from its own dimension.
+    const { data: allScores } =
+      await (supabase as any)
+        .from("talent_passport_scores")
+        .select("*")
+        .eq("student_id", submission.student_id);
+
+    if (allScores && allScores.length > 0) {
+      const average = (field: string) => {
+        const valid = allScores
+          .map((row: any) => Number(row?.[field]))
+          .filter((value: number) => Number.isFinite(value));
+
+        if (valid.length === 0) return null;
+
+        return Math.round(
+          valid.reduce((sum: number, value: number) => sum + value, 0) /
+            valid.length
+        );
+      };
+
+      const communicationAvg = average("communication_score");
+      const leadershipAvg = average("leadership_score");
+      const thinkingAvg = average("critical_thinking_score");
+      const collaborationAvg = average("collaboration_score");
+      const confidenceAvg = average("confidence_score");
+      const creativityAvg = average("creativity_score");
+      const overallAvg = average("overall_score");
+
+      const skillCandidates = [
+        { name: "Creativity", value: creativityAvg },
+        { name: "Communication", value: communicationAvg },
+        { name: "Leadership", value: leadershipAvg },
+        { name: "Critical Thinking", value: thinkingAvg },
+        { name: "Collaboration", value: collaborationAvg },
+        { name: "Confidence", value: confidenceAvg },
+      ].filter(
+        (skill): skill is { name: string; value: number } =>
+          skill.value !== null
+      );
+
+      const strongestSkill = skillCandidates.sort(
+        (a, b) => b.value - a.value
+      )[0];
+
+      const legacyPassportPayload: any = {
+        student_id: submission.student_id,
+        communication_score: communicationAvg ?? 0,
+        critical_thinking_score: thinkingAvg ?? 0,
+        team_score: collaborationAvg ?? 0,
+        combined_score: overallAvg ?? overall,
+        final_feedback: strongestSkill
+          ? `Current strongest area: ${strongestSkill.name}`
+          : scores.feedback
+      };
+
+      // Only write real Creativity. Never substitute Leadership.
+      if (creativityAvg !== null) {
+        legacyPassportPayload.creativity_score = creativityAvg;
+      }
+
+      const { error: legacyPassportError } =
+        await (supabase as any)
+          .from("talent_passports_v2")
+          .upsert([legacyPassportPayload]);
+
+      if (legacyPassportError) {
+        console.warn(
+          "Legacy talent_passports_v2 aggregate update failed. Canonical Talent DNA publication will still be attempted.",
+          legacyPassportError
+        );
+      }
+    }
+
+    // Canonical Phase 5 publication. The SQL bridge publishes all six
+    // validated scores through record_validated_talent_evidence(), whose
+    // source-event uniqueness prevents replay inflation.
+    const { data: evidencePublication, error: evidencePublicationError } =
+      await (supabase as any).rpc(
+        "publish_competition_evaluation_evidence",
+        {
+          p_evaluation_uuid: evaluationId
         }
-      ]);
+      );
 
-      const { error: submissionUpdateError } =
-  await (supabase as any)
-    .from("submissions")
-    .update({
-      communication_score: scores.communication,
-      confidence_score: scores.confidence,
-      leadership_score: scores.leadership,
-      critical_thinking_score: scores.critical_thinking,
-      collaboration_score: scores.collaboration,
-      overall_score: overall,
-      ai_feedback: scores.feedback,
-      processing_status: "Completed",
-    })
-    .eq("id", submission.id);
+    if (evidencePublicationError) {
+      throw new Error(
+        `Evaluation saved, but Talent DNA evidence publication failed: ${evidencePublicationError.message}`
+      );
+    }
 
-if (submissionUpdateError) {
-  throw submissionUpdateError;
-}
+    console.log("PASSPORT INSERT RESULT", passportInsertResult);
+    console.log("TALENT EVIDENCE PUBLICATION", evidencePublication);
 
-const passportInsertResult =
-  await (supabase as any)
-    .from("talent_passport_scores")
-    .insert([
-      {
-        student_id:
-          submission.student_id,
-
-        submission_id:
-          submission.id,
-
-        pathway:
-          submission.pathway,
-
-        event_name:
-          submission.event_name,
-
-        communication_score:
-          scores.communication,
-
-        leadership_score:
-          scores.leadership,
-
-        critical_thinking_score:
-          scores.critical_thinking,
-
-        collaboration_score:
-          scores.collaboration,
-
-        confidence_score:
-          scores.confidence,
-
-        overall_score:
-          overall
-      }
-    ]);
-
-// =====================================
-// UPDATE TALENT PASSPORT AGGREGATE
-// =====================================
-
-const { data: allScores } =
-  await (supabase as any)
-    .from("talent_passport_scores")
-    .select("*")
-    .eq(
-      "student_id",
-      submission.student_id
-    );
-
-if (
-  allScores &&
-  allScores.length > 0
-) {
-
-  const communicationAvg =
-    Math.round(
-      allScores.reduce(
-        (
-          sum: number,
-          row: any
-        ) =>
-          sum +
-          (row.communication_score || 0),
-        0
-      ) /
-      allScores.length
-    );
-
-  const leadershipAvg =
-    Math.round(
-      allScores.reduce(
-        (
-          sum: number,
-          row: any
-        ) =>
-          sum +
-          (row.leadership_score || 0),
-        0
-      ) /
-      allScores.length
-    );
-
-  const thinkingAvg =
-    Math.round(
-      allScores.reduce(
-        (
-          sum: number,
-          row: any
-        ) =>
-          sum +
-          (row.critical_thinking_score || 0),
-        0
-      ) /
-      allScores.length
-    );
-
-  const collaborationAvg =
-    Math.round(
-      allScores.reduce(
-        (
-          sum: number,
-          row: any
-        ) =>
-          sum +
-          (row.collaboration_score || 0),
-        0
-      ) /
-      allScores.length
-    );
-
-  const confidenceAvg =
-    Math.round(
-      allScores.reduce(
-        (
-          sum: number,
-          row: any
-        ) =>
-          sum +
-          (row.confidence_score || 0),
-        0
-      ) /
-      allScores.length
-    );
-
-  const overallAvg =
-    Math.round(
-      allScores.reduce(
-        (
-          sum: number,
-          row: any
-        ) =>
-          sum +
-          (row.overall_score || 0),
-        0
-      ) /
-      allScores.length
-    );
-
-  const strongestSkill =
-    [
-      {
-        name: "Communication",
-        value: communicationAvg,
-      },
-      {
-        name: "Leadership",
-        value: leadershipAvg,
-      },
-      {
-        name: "Critical Thinking",
-        value: thinkingAvg,
-      },
-      {
-        name: "Collaboration",
-        value: collaborationAvg,
-      },
-      {
-        name: "Confidence",
-        value: confidenceAvg,
-      },
-    ].sort(
-      (a, b) =>
-        b.value - a.value
-    )[0];
-
-  await (supabase as any)
-    .from(
-      "talent_passports_v2"
-    )
-    .upsert([
-      {
-        student_id:
-          submission.student_id,
-
-        communication_score:
-          communicationAvg,
-
-        creativity_score:
-          leadershipAvg,
-
-        critical_thinking_score:
-          thinkingAvg,
-
-        team_score:
-          collaborationAvg,
-
-        combined_score:
-          overallAvg,
-
-        final_feedback:
-          `Current strongest area: ${strongestSkill.name}`
-      }
-    ]);
-}
-
-
-console.log(
-  "PASSPORT INSERT RESULT",
-  passportInsertResult
-);
     return {
       success: true,
-      scores
+      scores,
+      evaluationId,
+      evidencePublication
     };
   } catch (err: any) {
     console.error(err);
 
     return {
-      error: String(err)
+      error: err?.message || String(err)
     };
   }
 };
+
 export const getEvaluationBySubmissionId = async (
   submissionId: string
 ) => {

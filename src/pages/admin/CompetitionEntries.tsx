@@ -1111,7 +1111,7 @@ setPassportScores(
 
 }}
                                 >
-                                  AI Evaluate
+                                  Evaluate
                                 </button>
 
                                 <button
@@ -1216,18 +1216,29 @@ if (
     );
   }
 
-  const avgCommunication =
-    Math.round(
-      studentScores.reduce(
-        (sum, row) =>
-          sum +
-          (row.communication_score || 0),
-        0
-      ) /
-      studentScores.length
-    );
+const avgCommunication =
+  Math.round(
+    studentScores.reduce(
+      (sum, row) =>
+        sum +
+        (row.communication_score || 0),
+      0
+    ) /
+    studentScores.length
+  );
 
-  const avgLeadership =
+const avgCreativity =
+  Math.round(
+    studentScores.reduce(
+      (sum, row) =>
+        sum +
+        (row.creativity_score || 0),
+      0
+    ) /
+    studentScores.length
+  );
+
+const avgLeadership =
     Math.round(
       studentScores.reduce(
         (sum, row) =>
@@ -1305,9 +1316,11 @@ if (
 
             <th>Event</th>
 
-            <th>Communication</th>
+<th>Communication</th>
 
-            <th>Leadership</th>
+<th>Creativity</th>
+
+<th>Leadership</th>
 
             <th>Thinking</th>
 
@@ -1330,11 +1343,13 @@ if (
               fontWeight: 700,
             }}
           >
-            <td>TOTAL</td>
+           <td>TOTAL</td>
 
-            <td>{avgCommunication}</td>
+<td>{avgCommunication}</td>
 
-            <td>{avgLeadership}</td>
+<td>{avgCreativity}</td>
+
+<td>{avgLeadership}</td>
 
             <td>{avgThinking}</td>
 
@@ -1358,17 +1373,23 @@ if (
                   }
                 </td>
 
-                <td>
-                  {
-                    row.communication_score
-                  }
-                </td>
+              <td>
+  {
+    row.communication_score
+  }
+</td>
 
-                <td>
-                  {
-                    row.leadership_score
-                  }
-                </td>
+<td>
+  {
+    row.creativity_score
+  }
+</td>
+
+<td>
+  {
+    row.leadership_score
+  }
+</td>
 
                 <td>
                   {
@@ -1541,7 +1562,7 @@ if (
           >
 
             <h2>
-              AI Evaluation Report
+              Evaluation Report
             </h2>
 
             <ScoreRow
@@ -1552,6 +1573,13 @@ if (
                 selectedEvaluation.metric_1_score
               }
             />
+
+<ScoreRow
+  title="Creativity"
+  value={
+    selectedEvaluation.creativity_score ?? 0
+  }
+/>
 
             <ScoreRow
               title={
