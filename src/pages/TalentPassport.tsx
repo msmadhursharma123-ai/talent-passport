@@ -830,7 +830,7 @@ export default function TalentPassport({
                                         </span>
 
                                         <span className="text-sm font-black text-purple-700">
-                                            {dimension.percentile}%
+                                            {dimension.schoolPercentile}%
                                         </span>
 
                                     </div>
@@ -840,7 +840,7 @@ export default function TalentPassport({
                                         <div
                                             className="h-full rounded-full bg-purple-500"
                                             style={{
-                                                width: `${dimension.percentile}%`
+                                                width: `${dimension.schoolPercentile}%`
                                             }}
                                         />
 
@@ -869,7 +869,7 @@ export default function TalentPassport({
                         </p>
 
                         <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
-                            Rarity Index
+                            Talent Distinctiveness
                         </h2>
 
                         <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -904,7 +904,7 @@ export default function TalentPassport({
                         </p>
 
                         <h2 className="mt-2 text-xl font-black text-[#07142D] sm:text-2xl">
-                            Percentile Ranking
+                            Class Peer Position
                         </h2>
 
                         <div className="mt-4 space-y-2.5">
@@ -921,7 +921,15 @@ export default function TalentPassport({
                                     </span>
 
                                     <span className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-black text-blue-700 shadow-sm">
-                                        {row.percentile}th Percentile
+                                        {(() => {
+                                            const value = Math.max(0, Math.min(100, Math.round(row.percentile)));
+                                            const mod100 = value % 100;
+                                            if (mod100 >= 11 && mod100 <= 13) return `${value}th Percentile`;
+                                            if (value % 10 === 1) return `${value}st Percentile`;
+                                            if (value % 10 === 2) return `${value}nd Percentile`;
+                                            if (value % 10 === 3) return `${value}rd Percentile`;
+                                            return `${value}th Percentile`;
+                                        })()}
                                     </span>
 
                                 </div>

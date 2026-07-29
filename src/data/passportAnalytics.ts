@@ -6,18 +6,19 @@ import { getSupabaseClient } from "../supabaseClient";
    Source:
    get_my_talent_comparative_intelligence()
 
-   Cohort:
-   same class across the Talent Passport platform
+   Peer cohort:
+   same class across the Talent Passport platform.
 
-   IMPORTANT:
-   This is deliberately different from School Positioning.
-   School Positioning = same school + same class.
-   Peer Position = same class + all schools.
+   School Positioning is intentionally NOT calculated here.
 ============================================================ */
 
 function numeric(value: unknown): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function clamp100(value: unknown): number {
+  return Math.min(100, Math.max(0, Math.round(numeric(value))));
 }
 
 export async function getPercentileData(
@@ -61,31 +62,40 @@ export async function getPercentileData(
 
   return {
     creativity:
-      numeric(peer?.creativity),
+      clamp100(peer?.creativity),
 
     communication:
-      numeric(peer?.communication),
+      clamp100(peer?.communication),
 
     leadership:
-      numeric(peer?.leadership),
+      clamp100(peer?.leadership),
 
     confidence:
-      numeric(peer?.confidence),
+      clamp100(peer?.confidence),
 
     collaboration:
-      numeric(peer?.collaboration),
+      clamp100(peer?.collaboration),
 
     criticalThinking:
-      numeric(peer?.criticalThinking),
+      clamp100(peer?.criticalThinking),
 
     overall:
-      numeric(peer?.overall),
+      clamp100(peer?.overall),
 
     totalStudents:
-      numeric(peer?.totalStudents),
+      Math.max(
+        0,
+        Math.round(
+          numeric(peer?.totalStudents)
+        )
+      ),
 
     className:
-      peer?.className ?? "",
+      String(
+        peer?.className ??
+        passport?.class_name ??
+        ""
+      ),
 
     scope:
       peer?.scope ??

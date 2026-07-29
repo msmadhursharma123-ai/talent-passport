@@ -7,15 +7,32 @@ import { getSupabaseClient } from "../supabaseClient";
    get_my_talent_comparative_intelligence()
 
    Cohort:
-   same school + same class
+   same school + same class.
 
-   The browser supplies no school, class or student identifier.
-   Authentication is resolved inside the RPC.
+   Authentication and cohort identity are resolved inside RPC.
 ============================================================ */
 
 function numeric(value: unknown): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function clamp100(value: unknown): number {
+  return Math.min(100, Math.max(0, Math.round(numeric(value))));
+}
+
+function benchmarkDimension(value: any) {
+  return {
+    average:
+      Math.round(
+        numeric(value?.average)
+      ),
+
+    percentile:
+      clamp100(
+        value?.percentile
+      )
+  };
 }
 
 export async function getSchoolBenchmarks(
@@ -58,44 +75,59 @@ export async function getSchoolBenchmarks(
   }
 
   return {
-    creativity: {
-      average: numeric(school?.creativity?.average),
-      percentile: numeric(school?.creativity?.percentile)
-    },
+    creativity:
+      benchmarkDimension(
+        school?.creativity
+      ),
 
-    communication: {
-      average: numeric(school?.communication?.average),
-      percentile: numeric(school?.communication?.percentile)
-    },
+    communication:
+      benchmarkDimension(
+        school?.communication
+      ),
 
-    leadership: {
-      average: numeric(school?.leadership?.average),
-      percentile: numeric(school?.leadership?.percentile)
-    },
+    leadership:
+      benchmarkDimension(
+        school?.leadership
+      ),
 
-    confidence: {
-      average: numeric(school?.confidence?.average),
-      percentile: numeric(school?.confidence?.percentile)
-    },
+    confidence:
+      benchmarkDimension(
+        school?.confidence
+      ),
 
-    collaboration: {
-      average: numeric(school?.collaboration?.average),
-      percentile: numeric(school?.collaboration?.percentile)
-    },
+    collaboration:
+      benchmarkDimension(
+        school?.collaboration
+      ),
 
-    criticalThinking: {
-      average: numeric(school?.criticalThinking?.average),
-      percentile: numeric(school?.criticalThinking?.percentile)
-    },
+    criticalThinking:
+      benchmarkDimension(
+        school?.criticalThinking
+      ),
 
     totalStudents:
-      numeric(school?.totalStudents),
+      Math.max(
+        0,
+        Math.round(
+          numeric(
+            school?.totalStudents
+          )
+        )
+      ),
 
     schoolName:
-      school?.schoolName ?? "",
+      String(
+        school?.schoolName ??
+        passport?.school_name ??
+        ""
+      ),
 
     className:
-      school?.className ?? "",
+      String(
+        school?.className ??
+        passport?.class_name ??
+        ""
+      ),
 
     scope:
       school?.scope ??

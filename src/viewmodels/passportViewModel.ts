@@ -6,6 +6,7 @@ import { getRecommendedCompetitions } from "../data/competitionEngine";
 import { generatePassport } from "../data/passportEngine";
 import {
     getDNAConfidence,
+    getEvidenceCoverage,
     getFutureReadinessScore,
     getStrongestSkill,
     getWeakestSkill,
@@ -47,6 +48,7 @@ export interface PassportViewModel {
     competitions: {
         name: string;
         score: number;
+        [key: string]: any;
     }[];
 
     futureReadiness: number;
@@ -61,6 +63,7 @@ export interface PassportViewModel {
     dnaAverage: number;
     reliability: number;
     participationReadiness: number;
+    evidenceCoverage: number;
 
     dimensions: PassportDimension[];
     topStrengths: PassportDimension[];
@@ -113,31 +116,26 @@ function readAnswers(
     return {};
 }
 
-function ordinal(percentile: number): string {
+function countAcademicEvidence(growth: any): number {
 
-    const value =
-        clamp100(percentile);
+    const candidates = [
+        growth?.dailyFeedback,
+        growth?.daily_feedback,
+        growth?.lectureFeedback,
+        growth?.lecture_feedback,
+        growth?.academicHistory,
+        growth?.academic_history,
+        growth?.dailyLogs,
+        growth?.daily_logs
+    ];
 
-    const mod100 =
-        value % 100;
-
-    if (
-        mod100 >= 11 &&
-        mod100 <= 13
-    ) {
-        return `${value}th Percentile`;
-    }
-
-    switch (value % 10) {
-        case 1:
-            return `${value}st Percentile`;
-        case 2:
-            return `${value}nd Percentile`;
-        case 3:
-            return `${value}rd Percentile`;
-        default:
-            return `${value}th Percentile`;
-    }
+    return candidates.reduce(
+        (best, candidate) =>
+            Array.isArray(candidate)
+                ? Math.max(best, candidate.length)
+                : best,
+        0
+    );
 }
 
 export async function getPassportViewModel():
@@ -170,6 +168,14 @@ Promise<PassportViewModel | null> {
         const assessments =
             growth.assessments ?? [];
 
+        /*
+         * BASELINE DNA
+         *
+         * These are calibrated talent values.
+         * Merely opening/using a portal feature NEVER changes them.
+         * Future evidence engines may provide evaluated score updates,
+         * but those updates must be attributable to real evidence.
+         */
         const sourceScores = {
 
             creativity:
@@ -210,7 +216,6 @@ Promise<PassportViewModel | null> {
         };
 
         const passport = {
-
             ...storedPassport,
 
             creativity_score:
@@ -274,7 +279,6 @@ Promise<PassportViewModel | null> {
             );
 
         const engineScores = {
-
             Communication:
                 sourceScores.communication * 0.6,
 
@@ -294,7 +298,6 @@ Promise<PassportViewModel | null> {
                 sourceScores.confidence * 0.6,
 
             Resilience: 0,
-
             Entrepreneurship: 0
         };
 
@@ -304,15 +307,38 @@ Promise<PassportViewModel | null> {
                 answers
             );
 
+        const academicFeedbackCount =
+            countAcademicEvidence(
+                growth
+            );
+
+        const evidenceContext = {
+            verifiedCount:
+                submissions.length +
+                projects.length +
+                assessments.length,
+
+            submissionCount:
+                submissions.length,
+
+            projectCount:
+                projects.length,
+
+            assessmentCount:
+                assessments.length,
+
+            academicFeedbackCount
+        };
+
+        const evidenceCoverage =
+            getEvidenceCoverage(
+                evidenceContext
+            );
+
         const [
             benchmarkResult,
             percentileResult,
-            rarityResult,
-            competitionResult,
-            confidenceResult,
-            readinessResult,
-            strongestResult,
-            weakestResult
+            rarityResult
         ] = await Promise.allSettled([
 
             getSchoolBenchmarks(
@@ -325,54 +351,6 @@ Promise<PassportViewModel | null> {
 
             calculateRarity(
                 passport.combined_score
-            ),
-
-            Promise.resolve(
-                getRecommendedCompetitions({
-                    normalizedScores: {
-                        Creativity:
-                            sourceScores.creativity,
-
-                        Communication:
-                            sourceScores.communication,
-
-                        Leadership:
-                            sourceScores.leadership,
-
-                        Confidence:
-                            sourceScores.confidence,
-
-                        Collaboration:
-                            sourceScores.collaboration,
-
-                        CriticalThinking:
-                            sourceScores.criticalThinking
-                    }
-                })
-            ),
-
-            Promise.resolve(
-                getDNAConfidence(
-                    submissions.length
-                )
-            ),
-
-            Promise.resolve(
-                getFutureReadinessScore(
-                    dnaProfile
-                )
-            ),
-
-            Promise.resolve(
-                getStrongestSkill(
-                    dnaProfile
-                )
-            ),
-
-            Promise.resolve(
-                getWeakestSkill(
-                    dnaProfile
-                )
             )
         ]);
 
@@ -391,111 +369,108 @@ Promise<PassportViewModel | null> {
                 ? rarityResult.value
                 : null;
 
-        const competitions =
-            competitionResult.status === "fulfilled"
-                ? competitionResult.value
-                : [];
-
         const confidence =
-            confidenceResult.status === "fulfilled"
-                ? confidenceResult.value
-                : "Low";
+            getDNAConfidence(
+                evidenceContext
+            );
 
         const futureReadiness =
-            readinessResult.status === "fulfilled"
-                ? readinessResult.value
-                : 0;
+            getFutureReadinessScore(
+                dnaProfile,
+                evidenceContext
+            );
 
         const strongestSkill =
-            strongestResult.status === "fulfilled"
-                ? strongestResult.value
-                : "";
+            getStrongestSkill(
+                dnaProfile
+            );
 
         const weakestSkill =
-            weakestResult.status === "fulfilled"
-                ? weakestResult.value
-                : "";
+            getWeakestSkill(
+                dnaProfile
+            );
+
+        const competitions =
+            getRecommendedCompetitions({
+                normalizedScores: {
+                    Creativity:
+                        sourceScores.creativity,
+
+                    Communication:
+                        sourceScores.communication,
+
+                    Leadership:
+                        sourceScores.leadership,
+
+                    Confidence:
+                        sourceScores.confidence,
+
+                    Collaboration:
+                        sourceScores.collaboration,
+
+                    CriticalThinking:
+                        sourceScores.criticalThinking
+                },
+
+                evidenceConfidence:
+                    evidenceCoverage
+            });
 
         /*
-         * IMPORTANT SEPARATION:
+         * THREE DIFFERENT COMPARISONS:
          *
-         * average          = same school + same class average
-         * schoolPercentile = same school + same class position
-         * percentile       = same class across all schools
+         * average          = school + class cohort average
+         * schoolPercentile = school + class relative position
+         * percentile       = class cohort across the platform
          */
-
         const dimensions: PassportDimension[] = [
-
             {
                 key: "creativity",
                 label: "Creativity",
                 value: sourceScores.creativity,
-                average:
-                    benchmarks?.creativity?.average ?? 0,
-                schoolPercentile:
-                    benchmarks?.creativity?.percentile ?? 0,
-                percentile:
-                    percentile?.creativity ?? 0
+                average: benchmarks?.creativity?.average ?? 0,
+                schoolPercentile: benchmarks?.creativity?.percentile ?? 0,
+                percentile: percentile?.creativity ?? 0
             },
-
             {
                 key: "communication",
                 label: "Communication",
                 value: sourceScores.communication,
-                average:
-                    benchmarks?.communication?.average ?? 0,
-                schoolPercentile:
-                    benchmarks?.communication?.percentile ?? 0,
-                percentile:
-                    percentile?.communication ?? 0
+                average: benchmarks?.communication?.average ?? 0,
+                schoolPercentile: benchmarks?.communication?.percentile ?? 0,
+                percentile: percentile?.communication ?? 0
             },
-
             {
                 key: "leadership",
                 label: "Leadership",
                 value: sourceScores.leadership,
-                average:
-                    benchmarks?.leadership?.average ?? 0,
-                schoolPercentile:
-                    benchmarks?.leadership?.percentile ?? 0,
-                percentile:
-                    percentile?.leadership ?? 0
+                average: benchmarks?.leadership?.average ?? 0,
+                schoolPercentile: benchmarks?.leadership?.percentile ?? 0,
+                percentile: percentile?.leadership ?? 0
             },
-
             {
                 key: "confidence",
                 label: "Confidence",
                 value: sourceScores.confidence,
-                average:
-                    benchmarks?.confidence?.average ?? 0,
-                schoolPercentile:
-                    benchmarks?.confidence?.percentile ?? 0,
-                percentile:
-                    percentile?.confidence ?? 0
+                average: benchmarks?.confidence?.average ?? 0,
+                schoolPercentile: benchmarks?.confidence?.percentile ?? 0,
+                percentile: percentile?.confidence ?? 0
             },
-
             {
                 key: "collaboration",
                 label: "Collaboration",
                 value: sourceScores.collaboration,
-                average:
-                    benchmarks?.collaboration?.average ?? 0,
-                schoolPercentile:
-                    benchmarks?.collaboration?.percentile ?? 0,
-                percentile:
-                    percentile?.collaboration ?? 0
+                average: benchmarks?.collaboration?.average ?? 0,
+                schoolPercentile: benchmarks?.collaboration?.percentile ?? 0,
+                percentile: percentile?.collaboration ?? 0
             },
-
             {
                 key: "criticalThinking",
                 label: "Critical Thinking",
                 value: sourceScores.criticalThinking,
-                average:
-                    benchmarks?.criticalThinking?.average ?? 0,
-                schoolPercentile:
-                    benchmarks?.criticalThinking?.percentile ?? 0,
-                percentile:
-                    percentile?.criticalThinking ?? 0
+                average: benchmarks?.criticalThinking?.average ?? 0,
+                schoolPercentile: benchmarks?.criticalThinking?.percentile ?? 0,
+                percentile: percentile?.criticalThinking ?? 0
             }
         ];
 
@@ -517,7 +492,6 @@ Promise<PassportViewModel | null> {
 
         const projectionMap:
             Record<string, number> = {
-
             Creativity:
                 generatedMetrics.projectedScores.Creativity,
 
@@ -573,6 +547,11 @@ Promise<PassportViewModel | null> {
                 answers
             ).length > 0;
 
+        /*
+         * Questionnaire reliability describes baseline calibration.
+         * Evidence confidence is a separate live concept and is exposed
+         * through DNA Confidence/evidenceCoverage.
+         */
         const reliability =
             hasAnswers
                 ? generatedMetrics.reliability
@@ -602,11 +581,6 @@ Promise<PassportViewModel | null> {
                 })
             );
 
-        /*
-         * Rarity is no longer six duplicated percentile cards.
-         * It is one profile-level Talent Distinctiveness result.
-         */
-
         const rarityRows: RarityRow[] = [
             {
                 label:
@@ -617,7 +591,6 @@ Promise<PassportViewModel | null> {
                         ? `${clamp100(rarity.score)}/100`
                         : "—"
             },
-
             {
                 label:
                     "Profile Signal",
@@ -626,16 +599,14 @@ Promise<PassportViewModel | null> {
                     rarity?.label ??
                     "Unavailable"
             },
-
             {
                 label:
                     "Evidence Confidence",
 
                 value:
                     rarity?.confidence ??
-                    "Low"
+                    confidence
             },
-
             {
                 label:
                     "Class Cohort",
@@ -648,22 +619,15 @@ Promise<PassportViewModel | null> {
         ];
 
         console.log(
-            "PASSPORT COMPARATIVE INTELLIGENCE",
+            "LIVE PASSPORT INTELLIGENCE",
             {
-                schoolBenchmark:
-                    benchmarks,
-                schoolPosition:
-                    dimensions.map(
-                        item => ({
-                            label: item.label,
-                            percentile:
-                                item.schoolPercentile
-                        })
-                    ),
-                peerPosition:
-                    percentile,
-                distinctiveness:
-                    rarity
+                sourceScores,
+                evidenceCoverage,
+                evidenceContext,
+                schoolBenchmark: benchmarks,
+                peerPosition: percentile,
+                distinctiveness: rarity,
+                recommendations: competitions
             }
         );
 
@@ -684,6 +648,7 @@ Promise<PassportViewModel | null> {
             dnaAverage,
             reliability,
             participationReadiness,
+            evidenceCoverage,
             dimensions,
             topStrengths,
             growthGaps,
