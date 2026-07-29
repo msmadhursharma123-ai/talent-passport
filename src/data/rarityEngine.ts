@@ -1,128 +1,109 @@
+import { getSupabaseClient } from "../supabaseClient";
+
 /* ============================================================
-   RARITY ENGINE
+   TALENT DISTINCTIVENESS ENGINE
 
-   Pure Classification Engine
+   Replaces the old score-band "rarity" logic.
 
-   Responsibilities
+   Distinctiveness is NOT another performance percentile.
 
-   • Calculate rarity tier
-   • Calculate percentile
-   • No Repository
-   • No Identity
-   • No Supabase
+   It measures how uncommon the student's complete six-skill
+   profile is among students in the same class across the portal.
+
+   The RPC:
+   1. builds the same-class cohort,
+   2. calculates the six-dimensional cohort centroid,
+   3. measures every student's distance from that centroid,
+   4. percentile-ranks the current student's distance.
+
+   Higher = less common profile combination.
 ============================================================ */
 
 export interface RarityResult {
-
+  score: number;
   percentile: number;
-
   label: string;
-
+  confidence: string;
+  totalStudents: number;
+  className: string;
+  scope: string;
+  distanceFromClassProfile: number;
 }
 
-const RARITY_BANDS: ReadonlyArray<{
+function numeric(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
-  minimumScore: number;
+export async function calculateRarity(
+  _score?: number
+): Promise<RarityResult> {
 
-  percentile: number;
+  const supabase =
+    getSupabaseClient();
 
-  label: string;
-
-}> = [
-
-  {
-
-    minimumScore: 90,
-
-    percentile: 95,
-
-    label: "Exceptional"
-
-  },
-
-  {
-
-    minimumScore: 80,
-
-    percentile: 85,
-
-    label: "Advanced"
-
-  },
-
-  {
-
-    minimumScore: 70,
-
-    percentile: 70,
-
-    label: "Strong"
-
-  },
-
-  {
-
-    minimumScore: 60,
-
-    percentile: 55,
-
-    label: "Average+"
-
-  },
-
-  {
-
-    minimumScore: 50,
-
-    percentile: 40,
-
-    label: "Average"
-
-  },
-
-  {
-
-    minimumScore: 0,
-
-    percentile: 20,
-
-    label: "Developing"
-
+  if (!supabase) {
+    return {
+      score: 0,
+      percentile: 0,
+      label: "Unavailable",
+      confidence: "Low",
+      totalStudents: 0,
+      className: "",
+      scope: "same-class-platform",
+      distanceFromClassProfile: 0
+    };
   }
 
-];
+  const { data, error } =
+    await (supabase as any)
+      .rpc(
+        "get_my_talent_comparative_intelligence"
+      );
 
-/* ============================================================
-   CALCULATE RARITY
-============================================================ */
-
-export function calculateRarity(
-
-  score: number
-
-): RarityResult {
-
-  const safeScore =
-    Number.isFinite(Number(score))
-      ? Math.min(100, Math.max(0, Number(score)))
-      : 0;
-
-  const rarity =
-
-    RARITY_BANDS.find(
-
-      band =>
-
-        safeScore >= band.minimumScore
-
+  if (error) {
+    console.error(
+      "Talent distinctiveness RPC failed",
+      error
     );
 
-  return rarity ?? {
+    return {
+      score: 0,
+      percentile: 0,
+      label: "Unavailable",
+      confidence: "Low",
+      totalStudents: 0,
+      className: "",
+      scope: "same-class-platform",
+      distanceFromClassProfile: 0
+    };
+  }
 
-    percentile: 20,
+  const result =
+    data?.distinctiveness ?? {};
 
-    label: "Developing"
+  const score =
+    numeric(result?.score);
 
+  return {
+    score,
+    percentile: score,
+    label:
+      result?.label ??
+      "Early Signal",
+    confidence:
+      result?.confidence ??
+      "Low",
+    totalStudents:
+      numeric(result?.totalStudents),
+    className:
+      result?.className ?? "",
+    scope:
+      result?.scope ??
+      "same-class-platform",
+    distanceFromClassProfile:
+      numeric(
+        result?.distanceFromClassProfile
+      )
   };
-
 }

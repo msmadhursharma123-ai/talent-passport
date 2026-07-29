@@ -350,6 +350,12 @@ subjectList[0]
 
 .cc-swipe-hint { display: none; }
 
+.cc-calendar-viewport {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .cc-page,
 .cc-page * { box-sizing: border-box; }
 
@@ -480,20 +486,15 @@ subjectList[0]
     overflow: hidden !important;
   }
 
-  .cc-calendar-scroll {
+  .cc-calendar-viewport {
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     overflow-x: auto !important;
     overflow-y: visible !important;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x pan-y;
-    overscroll-behavior-x: contain;
-  }
-
-  .cc-calendar-track {
-    width: 720px !important;
-    min-width: 720px !important;
   }
 
   .cc-weekdays,
@@ -641,21 +642,16 @@ subjectList[0]
     overflow: hidden !important;
   }
 
-  .cc-calendar-scroll {
+  .cc-calendar-viewport {
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     overflow-x: auto !important;
     overflow-y: visible !important;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     touch-action: pan-x pan-y;
-    overscroll-behavior-x: contain;
-  }
-
-  .cc-calendar-track {
-    width: max-content !important;
-    min-width: 674px !important;
   }
 
   .cc-calendar-shell > div:nth-of-type(2) {
@@ -1236,8 +1232,7 @@ subjectList[0]
   <strong>Swipe left or right to view the full month →</strong>
 </div>
 
-<div className="cc-calendar-scroll">
-<div className="cc-calendar-track">
+<div className="cc-calendar-viewport">
 
 <div
   className="cc-weekdays"
@@ -1431,7 +1426,6 @@ subjectList[0]
 
       <div
         key={day}
-        className="cc-day-card"
         style={{
           position: "relative",
           overflow: "hidden",
@@ -1646,9 +1640,6 @@ subjectList[0]
 
   })}
 
-</div>
-
-</div>
 </div>
 
 </div>
@@ -1918,6 +1909,8 @@ CLOSE TOPICS
 )
 
 }
+
+</div>
 
 </div>
 
