@@ -1,7 +1,8 @@
 import { useState } from "react";
 
 import {
-    signIn
+    signIn,
+    signOut
 } from "../../../services/authenticationService";
 
 interface Props {
@@ -43,6 +44,25 @@ export default function SchoolLogin({
 
                 return;
 
+            }
+
+            if (result.identity?.role !== "school") {
+                const role = result.identity?.role;
+                await signOut();
+
+                const portalName =
+                    role === "student" ? "Student"
+                    : role === "teacher" ? "Teacher"
+                    : role === "partner" ? "Partner"
+                    : role === "admin" ? "Admin"
+                    : null;
+
+                alert(
+                    portalName
+                        ? `This account belongs to the ${portalName} Portal. Please use ${portalName} Login.`
+                        : "Unable to determine account role."
+                );
+                return;
             }
 
             if (result.requiresPasswordReset) {

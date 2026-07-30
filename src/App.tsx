@@ -429,6 +429,24 @@ break;
 
 }
 
+case "school": {
+
+setSelectedRole(
+"school"
+);
+
+setUserType(
+"existing"
+);
+
+setActiveTab(
+"school-dashboard"
+);
+
+break;
+
+}
+
     case "partner": {
 
       setSelectedRole("partner");

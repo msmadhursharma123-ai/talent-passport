@@ -170,11 +170,15 @@ setParentEmail(email);
       return;
 
   }
+  if (!/^\d{10}$/.test(parentMobile)) {
+      alert(
+          "Parent Mobile Number must contain exactly 10 digits."
+      );
+      return;
+  }
 
   setLoading(true);
 
-
-  
   try {
 
 
@@ -408,13 +412,22 @@ background:"#F1F5F9",
 />
 
         <input
+          type="tel"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={10}
           placeholder="Parent Mobile Number"
           value={parentMobile}
-          onChange={(e) =>
-            setParentMobile(
+          onChange={(e) => {
+            const digitsOnly =
               e.target.value
-            )
-          }
+                .replace(/\D/g, "")
+                .slice(0, 10);
+
+            setParentMobile(
+              digitsOnly
+            );
+          }}
           style={inputStyle}
         />
 

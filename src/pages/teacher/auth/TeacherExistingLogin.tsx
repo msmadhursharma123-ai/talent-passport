@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 
 import {
-    signIn
+    signIn,
+    signOut
 } from "../../../services/authenticationService";
 
 interface Props {
@@ -55,14 +56,6 @@ export default function TeacherExistingLogin({
                     password
                 );
 
-console.log("LOGIN RESULT");
-console.log(result);
-
-console.log("LOGIN IDENTITY");
-console.log(result.identity);
-
-console.log("LOGIN ROLE");
-console.log(result.identity?.role);
 
             if (!result.success) {
 
@@ -75,51 +68,29 @@ console.log(result.identity?.role);
 
             }
 
-            switch (
-                result.identity?.role
-            ) {
+            if (result.identity?.role !== "teacher") {
+                const role = result.identity?.role;
+                await signOut();
 
-                case "student":
+                const portalName =
+                    role === "student"
+                        ? "Student"
+                        : role === "school"
+                        ? "School"
+                        : role === "partner"
+                        ? "Partner"
+                        : role === "admin"
+                        ? "Admin"
+                        : null;
 
-                    console.log(
-                        "Student authenticated."
-                    );
-
-                    break;
-
-case "teacher":
-
-    console.log(
-        "Teacher authenticated."
-    );
-
-    break;
-
-                case "partner":
-
-                    console.log(
-                        "Partner authenticated."
-                    );
-
-                    break;
-
-                case "admin":
-
-                    console.log(
-                        "Admin authenticated."
-                    );
-
-                    break;
-
-                default:
-
-                    alert(
-                        "Unable to determine user role."
-                    );
-
-                    return;
-
+                alert(
+                    portalName
+                        ? `This account belongs to the ${portalName} Portal. Please use ${portalName} Login.`
+                        : "Unable to determine user role."
+                );
+                return;
             }
+
 
             onSuccess();
 

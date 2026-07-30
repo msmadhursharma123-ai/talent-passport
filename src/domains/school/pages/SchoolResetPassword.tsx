@@ -30,12 +30,6 @@ export default function SchoolResetPassword({
             return;
         }
 
-        /*
-            Next Step
-            ----------
-            Here we will call authenticationService.updatePassword()
-            and update school_admins.account_status = ACTIVE.
-        */
 
    const result = await updatePassword(
 

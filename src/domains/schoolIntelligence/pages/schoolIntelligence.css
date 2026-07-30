@@ -1,0 +1,44 @@
+:root {
+  --school-navy:#0b1f3a;
+  --school-orange:#ff6508;
+  --school-bg:#f5f7fa;
+  --school-border:#dce4ee;
+  --school-muted:#5d708e;
+}
+.school-page{width:100%;box-sizing:border-box;padding:18px 20px 28px}
+.school-stack{display:grid;gap:16px}
+.school-hero{position:relative;overflow:hidden;border:1px solid var(--school-border);border-radius:22px;background:linear-gradient(110deg,#fff 0%,#fff 72%,#fff7ef 100%);padding:28px;box-shadow:0 8px 24px rgba(15,35,60,.05)}
+.school-hero:before,.school-hero:after,.school-card:after{content:"";position:absolute;border-radius:999px;pointer-events:none}
+.school-hero:before{width:150px;height:150px;right:14%;bottom:-92px;background:#eef4ff}
+.school-hero:after{width:115px;height:115px;right:-32px;top:-35px;background:#fff0e4}
+.school-eyebrow{margin:0;color:var(--school-orange);font-size:11px;font-weight:900;letter-spacing:.18em;text-transform:uppercase}
+.school-title{margin:8px 0 0;color:var(--school-navy);font-size:32px;line-height:1.05;font-weight:900;letter-spacing:-.035em}
+.school-copy{margin:9px 0 0;color:var(--school-muted);font-size:14px;line-height:1.55}
+.school-section{border:1px solid var(--school-border);border-radius:22px;background:#fff;padding:20px;box-shadow:0 8px 24px rgba(15,35,60,.045)}
+.school-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px}
+.school-section-title{margin:5px 0 0;color:var(--school-navy);font-size:21px;font-weight:900}
+.school-section-copy{margin:5px 0 0;color:var(--school-muted);font-size:13px}
+.school-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.school-card{position:relative;overflow:hidden;min-width:0;border:1px solid #e0e6ef;border-radius:16px;padding:16px;background:#fff}
+.school-card:after{width:62px;height:62px;right:-22px;top:-22px;background:rgba(255,101,8,.07)}
+.school-card.orange{border-color:#ffc797;background:#fffaf5}.school-card.blue{border-color:#bcd3ff;background:#f5f8ff}.school-card.green{border-color:#b7e8c7;background:#f4fff7}.school-card.purple{border-color:#d9c7ff;background:#faf7ff}
+.school-card-label{color:#5f7190;font-size:10px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+.school-card-value{margin-top:8px;color:var(--school-navy);font-size:27px;font-weight:900}
+.school-card-note{margin-top:4px;color:var(--school-muted);font-size:11px}
+.school-table-wrap{width:100%;overflow-x:auto;border:1px solid #e2e8f0;border-radius:15px}
+.school-table{width:100%;min-width:840px;border-collapse:collapse;font-size:12px}
+.school-table th{background:var(--school-navy);color:#fff;padding:13px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.school-table td{padding:13px 12px;border-top:1px solid #e7edf4;color:#263a56}
+.school-table tbody tr:first-child td{border-top:0}
+.school-pill{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;background:#fff3e9;color:#e85400;font-size:10px;font-weight:900}
+.school-list{display:grid;gap:10px}
+.school-row-card{border:1px solid #e1e7ef;border-radius:16px;padding:16px;background:#fff}
+.school-row-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.school-row-title{margin:0;color:var(--school-navy);font-size:16px;font-weight:900}
+.school-row-sub{margin:5px 0 0;color:var(--school-muted);font-size:12px}
+.school-row-metrics{display:grid;grid-template-columns:repeat(4,minmax(80px,1fr));gap:8px;margin-top:14px}
+.school-mini{border-radius:12px;background:#f7f9fc;padding:10px}.school-mini span{display:block;color:#6a7c96;font-size:9px;font-weight:800;text-transform:uppercase}.school-mini b{display:block;margin-top:4px;color:var(--school-navy);font-size:15px}
+.school-empty{padding:24px;text-align:center;color:var(--school-muted);font-size:13px}
+.school-range{display:flex;gap:7px;flex-wrap:wrap}.school-range button{border:1px solid #dce4ee;border-radius:10px;background:#f4f7fb;color:#52647f;padding:8px 11px;font-weight:800;cursor:pointer}.school-range button.active{border-color:#ffb277;background:#fff3e8;color:#e95700}
+@media(max-width:1024px){.school-page{padding:16px}.school-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-title{font-size:29px}}
+@media(max-width:600px){.school-page{padding:12px}.school-stack{gap:12px}.school-hero{padding:20px 17px;border-radius:18px}.school-title{font-size:25px}.school-copy{font-size:13px}.school-section{padding:15px;border-radius:18px}.school-section-head{align-items:flex-start;flex-direction:column}.school-section-title{font-size:18px}.school-metric-grid{grid-template-columns:1fr 1fr;gap:8px}.school-card{padding:13px;border-radius:14px}.school-card-value{font-size:23px}.school-row-top{flex-direction:column}.school-row-metrics{grid-template-columns:1fr 1fr}.school-table{min-width:760px}}

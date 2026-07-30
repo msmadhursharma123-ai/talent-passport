@@ -220,23 +220,33 @@ interface SchoolRow {
 
     id: string;
 
-    school_uuid: string;
+    school_admin_id: string | null;
 
-    auth_user_id: string | null;
+    school_admin_uuid: string | null;
 
-    school_id: string;
+    full_name: string;
 
-    school_name: string;
+    email: string;
+
+    phone: string | null;
 
     organization_uuid: string | null;
 
     organization_name: string | null;
 
-    board_uuid: string | null;
+    school_uuid: string;
 
-    principal_name: string | null;
+    school_name: string;
 
-    is_active: boolean | null;
+    designation: string | null;
+
+    department: string | null;
+
+    auth_user_id: string | null;
+
+    account_status: string | null;
+
+    last_login_at: string | null;
 
 }
 
@@ -294,7 +304,7 @@ async function fetchStudentByAuthId(
             "auth_user_id",
             authUserId
         )
-        .single();
+        .maybeSingle();
 
     if (error) {
 
@@ -302,7 +312,7 @@ async function fetchStudentByAuthId(
 
     }
 
-    return data as StudentRow;
+    return data as unknown as StudentRow | null;
 
 }
 
@@ -378,7 +388,7 @@ async function fetchPartnerByAuthId(
                 "auth_user_id",
                 authUserId
             )
-            .single();
+            .maybeSingle();
 
     if (error) {
 
@@ -386,7 +396,7 @@ async function fetchPartnerByAuthId(
 
     }
 
-    return data as PartnerRow;
+    return data as unknown as PartnerRow | null;
 
 }
 
@@ -562,63 +572,9 @@ partnerUuid:
 
     }
 
-    const session = await getCurrentSession();
+    return null;
 
-if (
-    session?.user?.email
-) {
 
-    console.log(
-        "No identity found. Bootstrapping student..."
-    );
-
-    const bootstrap =
-        await bootstrapStudentIdentity({
-
-            studentName:
-                session.user.user_metadata?.full_name ??
-                session.user.user_metadata?.name ??
-                "New Student",
-
-            studentEmail:
-                session.user.email,
-
-            studentCode:
-                session.user.email
-                    .replace("@", "_")
-                    .replace(/\./g, "_"),
-
-            schoolName: "",
-
-            className: ""
-
-        });
-
-    if (bootstrap.success) {
-
-        const student =
-            await fetchStudentByAuthId(
-                session.user.id
-            );
-
-        if (student) {
-
-            return {
-
-                role: "student",
-
-                identity:
-                    createStudentIdentity(student)
-
-            };
-
-        }
-
-    }
-
-}
-
-return null;
 
 }
 
@@ -640,7 +596,7 @@ async function fetchAdminByAuthId(
                 "auth_user_id",
                 authUserId
             )
-            .single();
+            .maybeSingle();
 
     if (error) {
 
@@ -648,7 +604,7 @@ async function fetchAdminByAuthId(
 
     }
 
-    return data as AdminRow;
+    return data as unknown as AdminRow | null;
 
 }
 
@@ -784,11 +740,14 @@ function createSchoolIdentity(
         authUserId:
             row.auth_user_id ?? undefined,
 
+        email:
+            row.email ?? undefined,
+
         schoolUuid:
             row.school_uuid,
 
         schoolId:
-            row.school_id,
+            row.school_admin_id ?? row.school_admin_uuid ?? row.id,
 
         schoolName:
             row.school_name,
@@ -799,14 +758,17 @@ function createSchoolIdentity(
         organizationName:
             row.organization_name ?? undefined,
 
-        boardUuid:
-            row.board_uuid ?? undefined,
-
         principalName:
-            row.principal_name ?? undefined,
+            row.full_name ?? undefined,
 
         isActive:
-            row.is_active ?? true
+            (row.account_status ?? "Active").toLowerCase() !== "suspended",
+
+        role:
+            "school",
+
+        permissions:
+            []
 
     });
 
@@ -892,13 +854,7 @@ const admin = schoolAdmin as any;
 
     admin &&
 
-    (
-
-        admin.account_status === "Temporary" ||
-
-        admin.last_login_at === null
-
-    )
+    admin.account_status === "Temporary"
 
 ) {
 
@@ -917,136 +873,60 @@ const admin = schoolAdmin as any;
 }
 
       if (!resolved) {
+            await supabase.auth.signOut();
+            clearStudentIdentity();
+            clearTeacherIdentity();
+            clearSchoolIdentity();
+            clearPartnerIdentity();
+            clearAdminIdentity();
+            clearAuthSession();
 
-    console.log(
-        "No linked identity found. Attempting student bootstrap..."
-    );
-
-    const bootstrap = await bootstrapStudentIdentity({
-
-       studentName:
-    authUser.user_metadata?.full_name ??
-    authUser.user_metadata?.name ??
-    "New Student",
-
-studentEmail:
-    authUser.email ?? "",
-
-studentCode:
-    (authUser.email ?? "")
-        .replace("@", "_")
-        .replace(/\./g, "_"),
-
-        schoolName: "",
-
-        className: ""
-
-    });
-
-    if (bootstrap.success) {
-
-        console.log(
-            "Bootstrap successful. Restoring identity..."
-        );
-
-        return await restoreSession();
-
-    }
-
-    console.log(
-        "Bootstrap failed. Signing out."
-    );
-
-    await supabase.auth.signOut();
-
-    clearStudentIdentity();
-    clearPartnerIdentity();
-    clearAdminIdentity();
-    clearAuthSession();
-
-    return {
-
-        success: false,
-
-        error:
-            bootstrap.error ??
-            "No linked profile found."
-
-    };
-
-}
-
-        /**
-         * ==========================================
-         * Identity Kernel Rule
-         *
-         * Never clear the active identity.
-         * Only clear identities that belong
-         * to other roles.
-         * ==========================================
-         */
+            return {
+                success: false,
+                error: "No linked portal profile found for this account."
+            };
+        }
 
         switch (resolved.role) {
-
             case "student":
-
+                clearTeacherIdentity();
+                clearSchoolIdentity();
                 clearPartnerIdentity();
                 clearAdminIdentity();
-
-                saveStudentIdentity(
-                    resolved.identity
-                );
-
+                saveStudentIdentity(resolved.identity);
                 break;
 
-case "teacher":
+            case "teacher":
+                clearStudentIdentity();
+                clearSchoolIdentity();
+                clearPartnerIdentity();
+                clearAdminIdentity();
+                saveTeacherIdentity(resolved.identity);
+                break;
 
-    clearStudentIdentity();
-    clearSchoolIdentity();
-    clearPartnerIdentity();
-    clearAdminIdentity();
-
-    saveTeacherIdentity(
-        resolved.identity
-    );
-
-    break;
-
-case "school":
-
-    clearStudentIdentity();
-    clearTeacherIdentity();
-    clearPartnerIdentity();
-    clearAdminIdentity();
-
-    saveSchoolIdentity(
-        resolved.identity
-    );
-
-    break;
+            case "school":
+                clearStudentIdentity();
+                clearTeacherIdentity();
+                clearPartnerIdentity();
+                clearAdminIdentity();
+                saveSchoolIdentity(resolved.identity);
+                break;
 
             case "partner":
-
                 clearStudentIdentity();
+                clearTeacherIdentity();
+                clearSchoolIdentity();
                 clearAdminIdentity();
-
-                savePartnerIdentity(
-                    resolved.identity
-                );
-
+                savePartnerIdentity(resolved.identity);
                 break;
 
             case "admin":
-
                 clearStudentIdentity();
+                clearTeacherIdentity();
+                clearSchoolIdentity();
                 clearPartnerIdentity();
-
-                saveAdminIdentity(
-                    resolved.identity
-                );
-
+                saveAdminIdentity(resolved.identity);
                 break;
-
         }
 
         markAuthSessionInitialized();
@@ -1491,8 +1371,10 @@ export async function createSchoolAdmin(
                 auth_user_id:
                     authUserId,
 
+                // New school-admin accounts remain Temporary until
+                // the mandatory first-login password change succeeds.
                 account_status:
-                    "Active"
+                    "Temporary"
 
             });
 
@@ -1782,66 +1664,45 @@ clearAdminIdentity();
          */
 
         switch (resolved.role) {
-
             case "student":
-
+                clearTeacherIdentity();
+                clearSchoolIdentity();
                 clearPartnerIdentity();
                 clearAdminIdentity();
-
-                saveStudentIdentity(
-                    resolved.identity
-                );
-
+                saveStudentIdentity(resolved.identity);
                 break;
 
-case "teacher":
+            case "teacher":
+                clearStudentIdentity();
+                clearSchoolIdentity();
+                clearPartnerIdentity();
+                clearAdminIdentity();
+                saveTeacherIdentity(resolved.identity);
+                break;
 
-    clearStudentIdentity();
-    clearSchoolIdentity();
-    clearPartnerIdentity();
-    clearAdminIdentity();
-
-    saveTeacherIdentity(
-        resolved.identity
-    );
-
-    break;
-
-case "school":
-
-    clearStudentIdentity();
-    clearTeacherIdentity();
-    clearPartnerIdentity();
-    clearAdminIdentity();
-
-    saveSchoolIdentity(
-        resolved.identity
-    );
-
-    break;
+            case "school":
+                clearStudentIdentity();
+                clearTeacherIdentity();
+                clearPartnerIdentity();
+                clearAdminIdentity();
+                saveSchoolIdentity(resolved.identity);
+                break;
 
             case "partner":
-
                 clearStudentIdentity();
+                clearTeacherIdentity();
+                clearSchoolIdentity();
                 clearAdminIdentity();
-
-                savePartnerIdentity(
-                    resolved.identity
-                );
-
+                savePartnerIdentity(resolved.identity);
                 break;
 
             case "admin":
-
                 clearStudentIdentity();
+                clearTeacherIdentity();
+                clearSchoolIdentity();
                 clearPartnerIdentity();
-
-                saveAdminIdentity(
-                    resolved.identity
-                );
-
+                saveAdminIdentity(resolved.identity);
                 break;
-
         }
 
         markAuthSessionInitialized();
@@ -2201,25 +2062,69 @@ export async function updatePassword(
 
         }
 
-        await (supabase as any)
+        const {
+
+            data: schoolAdmin,
+
+            error: schoolAdminLookupError
+
+        } = await (supabase as any)
 
             .from("school_admins")
 
-            .update({
+            .select("id")
 
-                account_status: "Active",
+            .eq("auth_user_id", authUser.id)
 
-                last_login_at: new Date().toISOString()
+            .maybeSingle();
 
-            })
+        if (schoolAdminLookupError) {
 
-            .eq(
+            return {
 
-                "auth_user_id",
+                success: false,
 
-                authUser.id
+                error: schoolAdminLookupError.message
 
-            );
+            };
+
+        }
+
+        // Only school-admin password changes own the school first-login flag.
+        // Other portal roles keep their existing password-update behaviour.
+        if (schoolAdmin) {
+
+            const {
+
+                error: schoolAdminUpdateError
+
+            } = await (supabase as any)
+
+                .from("school_admins")
+
+                .update({
+
+                    account_status: "Active",
+
+                    last_login_at: new Date().toISOString()
+
+                })
+
+                .eq("auth_user_id", authUser.id);
+
+            if (schoolAdminUpdateError) {
+
+                return {
+
+                    success: false,
+
+                    error: schoolAdminUpdateError.message
+
+                };
+
+            }
+
+        }
 
         return {
 

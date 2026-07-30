@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 
 import {
-    signIn
+    signIn,
+    signOut
 } from "../services/authenticationService";
 
 interface Props {
@@ -64,43 +65,29 @@ export default function PartnerLogin({
 
             }
 
-            switch (
-                result.identity?.role
-            ) {
+            if (result.identity?.role !== "partner") {
+                const role = result.identity?.role;
+                await signOut();
 
-                case "partner":
+                const portalName =
+                    role === "student"
+                        ? "Student"
+                        : role === "teacher"
+                        ? "Teacher"
+                        : role === "school"
+                        ? "School"
+                        : role === "admin"
+                        ? "Admin"
+                        : null;
 
-                    console.log(
-                        "Partner authenticated."
-                    );
-
-                    break;
-
-                case "student":
-
-                    alert(
-                        "This account belongs to a Student. Please use Student Login."
-                    );
-
-                    return;
-
-                case "admin":
-
-                    alert(
-                        "This account belongs to an Admin. Please use Admin Login."
-                    );
-
-                    return;
-
-                default:
-
-                    alert(
-                        "Unable to determine user role."
-                    );
-
-                    return;
-
+                alert(
+                    portalName
+                        ? `This account belongs to the ${portalName} Portal. Please use ${portalName} Login.`
+                        : "Unable to determine user role."
+                );
+                return;
             }
+
 
             onSuccess();
 
