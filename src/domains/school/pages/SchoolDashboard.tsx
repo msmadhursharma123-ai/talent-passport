@@ -11,7 +11,7 @@ type Tab = "overview" | "teachers" | "classrooms" | "academic";
 const tabs: {key:Tab;label:string;short:string}[] = [
   {key:"overview",label:"School Overview",short:"Overview"},
   {key:"teachers",label:"Teacher Intelligence",short:"Teachers"},
-  {key:"classrooms",label:"Classroom Intelligence",short:"Classes"},
+  {key:"classrooms",label:"Classroom Feedback Intelligence",short:"Classes"},
   {key:"academic",label:"Academic Intelligence",short:"Academic"},
 ];
 

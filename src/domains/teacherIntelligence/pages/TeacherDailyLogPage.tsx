@@ -1324,7 +1324,7 @@ false
                 )}
 
                 {renderPendingDoubtRow(
-                  "Most Difficult Concept from that topic",
+                  "Most difficult common subtopic from that topic",
                   doubtLedgerClassrooms.map(
                     () => "-"
                   )

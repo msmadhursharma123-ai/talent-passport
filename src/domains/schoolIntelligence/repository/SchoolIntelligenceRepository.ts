@@ -40,7 +40,6 @@ export async function getSchoolIntelligenceRawData(
       .select("id,teacher_uuid,school_uuid,academic_year,is_active,class_name,section_name,subject_name")
       .eq("school_uuid", schoolUuid),
 
-    // students_master currently has school_name, not school_uuid.
     supabase
       .from("students_master")
       .select("student_uuid,student_name,school_name,class_name,section_name")
@@ -65,7 +64,7 @@ export async function getSchoolIntelligenceRawData(
 
   let logsQuery = supabase
     .from("teacher_daily_logs")
-    .select("id,teacher_assignment_uuid,topic_name,log_date,class_name,section_name,subject_name,concepts_covered")
+    .select("id,teacher_assignment_uuid,topic_name,log_date,created_at,class_name,section_name,subject_name,concepts_covered")
     .in("teacher_assignment_uuid", assignmentIds);
 
   if (startDate) logsQuery = logsQuery.gte("log_date", startDate);
@@ -89,10 +88,9 @@ export async function getSchoolIntelligenceRawData(
     feedback = feedbackResult.data ?? [];
   }
 
-  // pending_teacher_doubts stores school_name and assignment UUID as text.
   let doubtsQuery = supabase
     .from("pending_teacher_doubts")
-    .select("id,teacher_assignment_uuid,daily_log_uuid,status,school_name,class_name,section_name,subject_name,log_date,doubt_resolved")
+    .select("id,student_uuid,student_name,teacher_assignment_uuid,daily_log_uuid,status,student_response,school_name,class_name,section_name,subject_name,previous_topic_name,previous_difficult_concept,log_date,doubt_resolved,revision_checked_at,created_at")
     .eq("school_name", schoolName)
     .in("teacher_assignment_uuid", assignmentIds.map(String));
 

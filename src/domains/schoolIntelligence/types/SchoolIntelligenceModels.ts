@@ -1,4 +1,5 @@
 export type SchoolTrendRange = 30 | 60 | 90;
+export type SchoolIntelligenceRange = SchoolTrendRange | "custom";
 
 export interface SchoolOverviewStats {
   activeTeachers: number;
@@ -10,6 +11,8 @@ export interface SchoolOverviewStats {
   partiallyUnderstood: number;
   didntUnderstand: number;
   understandingRate: number;
+  partialUnderstandingRate: number;
+  doubtRate: number;
   activeDoubts: number;
   resolvedDoubts: number;
   doubtResolutionRate: number;
@@ -25,10 +28,12 @@ export interface SchoolClassroomHealthRow {
   teacherName: string;
   topicsTaught: number;
   responses: number;
+  responseRate: number;
   completelyUnderstood: number;
   partiallyUnderstood: number;
   didntUnderstand: number;
   understandingRate: number;
+  partialUnderstandingRate: number;
   doubtRate: number;
 }
 
@@ -40,6 +45,7 @@ export interface SchoolTeacherIntelligenceRow {
   topicsTaught: number;
   responses: number;
   understandingRate: number;
+  partialUnderstandingRate: number;
   doubtRate: number;
 }
 
@@ -47,7 +53,25 @@ export interface SchoolAcademicTrendPoint {
   date: string;
   responses: number;
   understandingRate: number;
+  partialUnderstandingRate: number;
   doubtRate: number;
+}
+
+
+export interface SchoolDailyClassroomIntelligenceRow {
+  assignmentUuid:string; teacherUuid:string; teacherName:string;
+  classroom:string; className:string; sectionName:string; subjectName:string;
+  latestLectureUuid:string; latestLectureDate:string; latestTopic:string;
+  totalStudents:number; feedbackSubmitted:number; feedbackRemaining:number;
+  completelyUnderstood:number; completelyUnderstoodRate:number;
+  partiallyUnderstood:number; partiallyUnderstoodRate:number;
+  didntUnderstand:number; didntUnderstandRate:number;
+  classHealthScore:number; classHealthStatus:string;
+  mostDifficultConcept:string; studentsRequiringAttention:string[];
+}
+export interface SchoolTeacherDailyIntelligence {
+  teacherUuid:string; teacherName:string;
+  classrooms:SchoolDailyClassroomIntelligenceRow[];
 }
 
 export interface SchoolIntelligenceSnapshot {
@@ -57,4 +81,21 @@ export interface SchoolIntelligenceSnapshot {
   classrooms: SchoolClassroomHealthRow[];
   teachers: SchoolTeacherIntelligenceRow[];
   trends: SchoolAcademicTrendPoint[];
+  dailyClassroomIntelligence: SchoolTeacherDailyIntelligence[];
+  examPreparation: SchoolExamPreparationClassroom[];
+}
+
+
+export interface SchoolExamPreparationStudent {
+  studentUuid:string; studentName:string; totalUnresolvedDoubts:number;
+  topics:string[]; highestRiskTopic:string; attentionLevel:"HIGH"|"MEDIUM"|"LOW";
+}
+export interface SchoolExamPreparationSubject {
+  assignmentUuid:string; subjectName:string; teacherUuid:string; teacherName:string;
+  students:SchoolExamPreparationStudent[]; totalStudentsWithUnresolvedDoubts:number;
+  doubtsPerKid:number; commonDoubts:string[];
+}
+export interface SchoolExamPreparationClassroom {
+  classroomKey:string; classroom:string; className:string; sectionName:string;
+  subjects:SchoolExamPreparationSubject[];
 }

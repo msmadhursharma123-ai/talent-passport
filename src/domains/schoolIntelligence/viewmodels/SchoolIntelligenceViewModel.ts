@@ -5,9 +5,21 @@ function isoDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-export async function loadSchoolIntelligence(days?: 30 | 60 | 90) {
+export async function loadSchoolIntelligence(
+  days?: 7 | 14 | 21 | 30 | 60 | 90,
+  customStartDate?: string,
+  customEndDate?: string
+) {
+  if (customStartDate || customEndDate) {
+    return buildSchoolIntelligenceSnapshot(
+      await getSchoolIntelligenceRawData(customStartDate, customEndDate)
+    );
+  }
+
   if (!days) {
-    return buildSchoolIntelligenceSnapshot(await getSchoolIntelligenceRawData());
+    return buildSchoolIntelligenceSnapshot(
+      await getSchoolIntelligenceRawData()
+    );
   }
 
   const end = new Date();
