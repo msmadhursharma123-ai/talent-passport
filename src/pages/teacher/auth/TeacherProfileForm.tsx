@@ -16,6 +16,9 @@ import {
 useEffect
 } from "react";
 
+import { checkSchoolProfileCapacity }
+from "../../../services/schoolProfileCapacity";
+
 interface Props {
   onContinue: () => void;
   onBack: () => void;
@@ -121,6 +124,23 @@ return;
 setLoading(true);
 
 try {
+
+const capacity =
+await checkSchoolProfileCapacity(
+schoolUuid,
+"teacher"
+);
+
+if (!capacity.allowed) {
+
+alert(
+capacity.message ??
+"Teacher profile limit exhausted. Please contact school administration for creating the profile."
+);
+
+return;
+
+}
 
 const identity =
 await createTeacherProfile({

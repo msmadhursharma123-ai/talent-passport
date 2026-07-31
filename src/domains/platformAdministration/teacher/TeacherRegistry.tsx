@@ -45,6 +45,10 @@ useTeacherManagementViewModel();
 
     ] = useState("");
 
+    const [studentProfileLimit, setStudentProfileLimit] = useState("");
+    const [teacherProfileLimit, setTeacherProfileLimit] = useState("");
+    const [schoolAdminProfileLimit, setSchoolAdminProfileLimit] = useState("");
+
 const [
 
     editing,
@@ -69,7 +73,10 @@ async function handleSave(){
 
         !board ||
 
-        !city
+        !city ||
+        studentProfileLimit === "" ||
+        teacherProfileLimit === "" ||
+        schoolAdminProfileLimit === ""
 
     ){
 
@@ -97,7 +104,13 @@ async function handleSave(){
 
             board,
 
-            city
+            city,
+
+            {
+                studentProfileLimit: Number(studentProfileLimit),
+                teacherProfileLimit: Number(teacherProfileLimit),
+                schoolAdminProfileLimit: Number(schoolAdminProfileLimit)
+            }
 
         );
 
@@ -113,7 +126,13 @@ async function handleSave(){
 
             board,
 
-            city
+            city,
+
+            {
+                studentProfileLimit: Number(studentProfileLimit),
+                teacherProfileLimit: Number(teacherProfileLimit),
+                schoolAdminProfileLimit: Number(schoolAdminProfileLimit)
+            }
 
         );
 
@@ -136,6 +155,9 @@ async function handleSave(){
     setBoard("");
 
     setCity("");
+    setStudentProfileLimit("");
+    setTeacherProfileLimit("");
+    setSchoolAdminProfileLimit("");
 
     setEditing(false);
 
@@ -149,11 +171,11 @@ async function handleSave(){
       <header style={headerStyle}>
         <div>
           <h1 style={titleStyle}>
-            Teacher Management
+            School Management & Profile Capacity
           </h1>
 
           <p style={subtitleStyle}>
-           Manage schools available during Teacher Registration.
+           Manage school contracts, registration access and profile capacity for students, teachers and school administrators.
           </p>
         </div>
       </header>
@@ -188,9 +210,10 @@ async function handleSave(){
 
 </h3>
 
+            <label style={fieldLabelStyle}>School Name</label>
             <input
 
-                placeholder="School Name"
+                placeholder="Enter School Name"
 
                 value={schoolName}
 
@@ -216,9 +239,10 @@ async function handleSave(){
 
             />
 
+            <label style={fieldLabelStyle}>Education Board</label>
             <input
 
-                placeholder="Board"
+                placeholder="Enter Board (CBSE / ICSE)"
 
                 value={board}
 
@@ -244,9 +268,10 @@ async function handleSave(){
 
             />
 
+            <label style={fieldLabelStyle}>School City</label>
             <input
 
-                placeholder="City"
+                placeholder="Enter City"
 
                 value={city}
 
@@ -271,6 +296,55 @@ async function handleSave(){
                 }}
 
             />
+
+            <div style={{
+                display:"grid",
+                gridTemplateColumns:"repeat(3, minmax(0, 1fr))",
+                gap:12,
+                marginBottom:20
+            }}>
+                <div>
+                <label style={fieldLabelStyle}>Student Profile Limit</label>
+                <div style={fieldHelpStyle}>Maximum student profiles allowed under this school contract.</div>
+                <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    placeholder="Maximum Students"
+                    value={studentProfileLimit}
+                    onChange={(e)=>setStudentProfileLimit(e.target.value)}
+                    style={{width:"100%",padding:12,boxSizing:"border-box"}}
+                />
+                </div>
+
+                <div>
+                <label style={fieldLabelStyle}>Teacher Profile Limit</label>
+                <div style={fieldHelpStyle}>Maximum teacher profiles allowed under this school contract.</div>
+                <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    placeholder="Maximum Teachers"
+                    value={teacherProfileLimit}
+                    onChange={(e)=>setTeacherProfileLimit(e.target.value)}
+                    style={{width:"100%",padding:12,boxSizing:"border-box"}}
+                />
+                </div>
+
+                <div>
+                <label style={fieldLabelStyle}>School Admin Profile Limit</label>
+                <div style={fieldHelpStyle}>Maximum school administrator profiles allowed.</div>
+                <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    placeholder="Maximum School Admins"
+                    value={schoolAdminProfileLimit}
+                    onChange={(e)=>setSchoolAdminProfileLimit(e.target.value)}
+                    style={{width:"100%",padding:12,boxSizing:"border-box"}}
+                />
+                </div>
+            </div>
 
             <button
 
@@ -426,6 +500,10 @@ editing
 
                         </th>
 
+                        <th align="left">Student Profiles<br/><small>Used / Limit</small></th>
+                        <th align="left">Teacher Profiles<br/><small>Used / Limit</small></th>
+                        <th align="left">School Admin Profiles<br/><small>Used / Limit</small></th>
+
                         <th align="left">
 
                             Status
@@ -484,6 +562,18 @@ editing
 
                                         }
 
+                                    </td>
+
+                                    <td>
+                                        {school.studentProfilesUsed} / {school.studentProfileLimit}
+                                    </td>
+
+                                    <td>
+                                        {school.teacherProfilesUsed} / {school.teacherProfileLimit}
+                                    </td>
+
+                                    <td>
+                                        {school.schoolAdminProfilesUsed} / {school.schoolAdminProfileLimit}
                                     </td>
 
                                     <td>
@@ -551,6 +641,10 @@ editing
                 school.city
 
             );
+
+            setStudentProfileLimit(String(school.studentProfileLimit));
+            setTeacherProfileLimit(String(school.teacherProfileLimit));
+            setSchoolAdminProfileLimit(String(school.schoolAdminProfileLimit));
 
         }}
 
@@ -659,4 +753,20 @@ const subtitleStyle: React.CSSProperties = {
   marginTop: "8px",
   color: "#64748B",
   fontSize: "15px",
+};
+
+const fieldLabelStyle: React.CSSProperties = {
+  display: "block",
+  marginBottom: 6,
+  color: "#334155",
+  fontSize: 12,
+  fontWeight: 800,
+};
+
+const fieldHelpStyle: React.CSSProperties = {
+  minHeight: 30,
+  marginBottom: 7,
+  color: "#64748B",
+  fontSize: 10,
+  lineHeight: 1.4,
 };

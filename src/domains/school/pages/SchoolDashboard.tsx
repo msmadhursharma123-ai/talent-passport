@@ -12,7 +12,7 @@ const tabs: {key:Tab;label:string;short:string}[] = [
   {key:"overview",label:"School Health",short:"Overview"},
   {key:"teachers",label:"Daily Teacher Logs",short:"Teachers"},
   {key:"classrooms",label:"Classroom Feedback Intelligence",short:"Classes"},
-  {key:"academic",label:"Academic Intelligence",short:"Academic"},
+  {key:"academic",label:"Doubt Intelligence",short:"Academic"},
 ];
 
 export default function SchoolDashboard({ onLogout }: Props) {

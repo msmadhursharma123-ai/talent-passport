@@ -29,6 +29,9 @@ export default function TeacherDailyLogPage() {
   const [openDialog, setOpenDialog] =
     useState(false);
 
+  const [isPublishing, setIsPublishing] =
+    useState(false);
+
   const [logs, setLogs] = useState<any[]>([]);
 
 const [
@@ -318,17 +321,35 @@ async function handleSave(
 data: Record<string, unknown>
 ) {
 
-await saveTeacherDailyLog(
-data
-);
+setIsPublishing(true);
 
-await fetchLogs();
+try {
 
-await loadPendingDoubtLedger();
+  await saveTeacherDailyLog(
+    data
+  );
 
-setOpenDialog(
-false
-);
+  /*
+   * The publish itself is complete here.
+   * Close the dialog before refreshing the rest
+   * of the page so the UI responds immediately.
+   */
+  setOpenDialog(false);
+
+  /*
+   * These page refreshes are independent, so run
+   * them together instead of one after the other.
+   */
+  await Promise.all([
+    fetchLogs(),
+    loadPendingDoubtLedger(),
+  ]);
+
+} finally {
+
+  setIsPublishing(false);
+
+}
 
 }
 
@@ -1598,14 +1619,60 @@ false
 
       <TeacherDailyLogDialog
         open={openDialog}
-        onClose={() =>
-          setOpenDialog(false)
-        }
+        submitting={isPublishing}
+        onClose={() => {
+          if (!isPublishing) {
+            setOpenDialog(false);
+          }
+        }}
         onSave={handleSave}
       />
+
+      {isPublishing && !openDialog && (
+        <div
+          className="tp-publish-progress"
+          style={{
+            position: "fixed",
+            right: "24px",
+            bottom: "24px",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: "14px 17px",
+            background: "#FFFFFF",
+            border: "1px solid #FED7AA",
+            borderRadius: "16px",
+            boxShadow: "0 14px 34px rgba(15, 23, 42, 0.14)",
+          }}
+        >
+          <div className="tp-publish-spinner" />
+          <div>
+            <div style={{ color: "#0F172A", fontSize: "12px", fontWeight: 800 }}>
+              Publishing lecture...
+            </div>
+            <div style={{ marginTop: "2px", color: "#64748B", fontSize: "10px", fontWeight: 600 }}>
+              Updating today's classroom records. Kindly wait.
+            </div>
+          </div>
+        </div>
+      )}
     
 <style>{`
 .tp-mobile-swipe-hint { display: none; }
+
+.tp-publish-spinner {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  border: 3px solid #FFEDD5;
+  border-top-color: #F97316;
+  border-radius: 50%;
+  animation: tpPublishSpin .75s linear infinite;
+}
+@keyframes tpPublishSpin {
+  to { transform: rotate(360deg); }
+}
 
 @media (max-width: 1024px) {
   .tp-compact-page { padding: 16px !important; overflow-x: hidden !important; box-sizing: border-box !important; }

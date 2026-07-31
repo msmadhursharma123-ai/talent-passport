@@ -14,12 +14,14 @@ interface Props {
   onSave: (
     data: Record<string, unknown>
   ) => Promise<void>;
+  submitting?: boolean;
 }
 
 export default function TeacherDailyLogDialog({
   open,
   onClose,
   onSave,
+  submitting = false,
 }: Props) {
   const [
     selectedAssignmentId,
@@ -62,6 +64,24 @@ export default function TeacherDailyLogDialog({
   useEffect(() => {
     loadTeacherAssignments();
   }, []);
+
+  useEffect(() => {
+    if (open) {
+      resetForm();
+    }
+  }, [open]);
+
+  function resetForm() {
+    setSelectedAssignmentId("");
+    setTopicName("");
+    setPageFrom("");
+    setPageTo("");
+    setHomeworkGiven(false);
+    setActivityConducted(false);
+    setTeacherNotes("");
+    setConceptInput("");
+    setConceptsCovered([]);
+  }
 
   async function loadTeacherAssignments() {
     const teacher =
@@ -168,6 +188,7 @@ export default function TeacherDailyLogDialog({
         new Date().toISOString(),
     });
 
+    resetForm();
     onClose();
   }
 
@@ -283,6 +304,43 @@ export default function TeacherDailyLogDialog({
             padding: "30px",
           }}
         >
+          {submitting && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 20,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "24px",
+                background: "rgba(255, 255, 255, 0.78)",
+                backdropFilter: "blur(2px)",
+                borderRadius: "28px",
+              }}
+            >
+              <div
+                style={{
+                  width: "min(100%, 360px)",
+                  padding: "24px",
+                  textAlign: "center",
+                  background: "linear-gradient(145deg, #FFFFFF 0%, #FFF8F1 100%)",
+                  border: "1px solid #FED7AA",
+                  borderRadius: "20px",
+                  boxShadow: "0 18px 42px rgba(15, 23, 42, 0.12)",
+                }}
+              >
+                <div className="tp-dialog-publish-spinner" />
+                <div style={{ marginTop: "14px", color: "#0F172A", fontSize: "16px", fontWeight: 800 }}>
+                  Submitting Daily Log
+                </div>
+                <div style={{ marginTop: "6px", color: "#64748B", fontSize: "12px", lineHeight: 1.55, fontWeight: 600 }}>
+                  Publishing the lecture and updating classroom intelligence. Kindly wait...
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* =========================================
               HEADER
              ========================================= */}
@@ -1060,16 +1118,26 @@ export default function TeacherDailyLogDialog({
             >
               <button
                 onClick={onClose}
-                style={cancelButton}
+                disabled={submitting}
+                style={{
+                  ...cancelButton,
+                  opacity: submitting ? 0.55 : 1,
+                  cursor: submitting ? "not-allowed" : "pointer",
+                }}
               >
                 Cancel
               </button>
 
               <button
                 onClick={handleSave}
-                style={saveButton}
+                disabled={submitting}
+                style={{
+                  ...saveButton,
+                  opacity: submitting ? 0.82 : 1,
+                  cursor: submitting ? "wait" : "pointer",
+                }}
               >
-                Publish Lecture →
+                {submitting ? "Publishing... Kindly wait" : "Publish Lecture →"}
               </button>
             </div>
           </div>
@@ -1077,6 +1145,18 @@ export default function TeacherDailyLogDialog({
       </div>
     
 <style>{`
+.tp-dialog-publish-spinner {
+  width: 30px;
+  height: 30px;
+  margin: 0 auto;
+  border: 4px solid #FFEDD5;
+  border-top-color: #F97316;
+  border-radius: 50%;
+  animation: tpDialogPublishSpin .75s linear infinite;
+}
+@keyframes tpDialogPublishSpin {
+  to { transform: rotate(360deg); }
+}
 @media (max-width:1024px){
  .tp-log-dialog-overlay{padding:14px !important}
  .tp-log-dialog{max-width:600px !important;max-height:94dvh !important;border-radius:20px !important}

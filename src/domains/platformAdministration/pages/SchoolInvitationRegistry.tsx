@@ -17,6 +17,9 @@ import {
 }
 from "../../../services/authenticationService";
 
+import { checkSchoolProfileCapacity }
+from "../../../services/schoolProfileCapacity";
+
 export default function SchoolInvitationRegistry() {
 
     console.log("SchoolInvitationRegistry Loaded");
@@ -167,6 +170,20 @@ function generatePassword(){
             return;
 
         }
+
+const capacity =
+await checkSchoolProfileCapacity(
+    schoolUuid,
+    "school_admin"
+);
+
+if (!capacity.allowed) {
+    alert(
+        capacity.message ??
+        "School Admin profile limit exhausted. Please contact school administration for creating the profile."
+    );
+    return;
+}
 
       const result =
 

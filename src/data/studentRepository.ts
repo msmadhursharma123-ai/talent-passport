@@ -65,8 +65,10 @@ const studentCode =
     .replace("@", "_")
     .replace(/\./g, "_");
 
+const { school_uuid: selectedSchoolUuid, ...legacyStudentFields } = student;
+
 const payload = {
-  ...student,
+  ...legacyStudentFields,
 
    class_name: normalizeClassName(
       student.class_name
@@ -160,6 +162,9 @@ student_uuid: studentRow.student_uuid,
 
       student_email:
         student.parent_email,
+
+      school_uuid:
+        selectedSchoolUuid,
 
       school_name:
         student.school_name,

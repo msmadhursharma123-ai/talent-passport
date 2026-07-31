@@ -17,6 +17,9 @@ getSupabaseClient
 }
 from "../supabaseClient";
 
+import { checkSchoolProfileCapacity }
+from "../services/schoolProfileCapacity";
+
 interface Props {
   onContinue: () => void;
   onBack: () => void;
@@ -55,6 +58,9 @@ export default function StudentProfileForm({
     useState("");
 
   const [schoolName, setSchoolName] =
+    useState("");
+
+  const [schoolUuid, setSchoolUuid] =
     useState("");
 
 
@@ -156,6 +162,7 @@ setParentEmail(email);
       !parentEmail ||
       !parentMobile ||
       !schoolName ||
+      !schoolUuid ||
       !className ||
       !studentAge ||
       !gender ||
@@ -181,6 +188,20 @@ setParentEmail(email);
 
   try {
 
+      const capacity =
+          await checkSchoolProfileCapacity(
+              schoolUuid,
+              "student"
+          );
+
+      if (!capacity.allowed) {
+          alert(
+              capacity.message ??
+              "Student profile limit exhausted. Please contact school administration for creating the profile."
+          );
+          return;
+      }
+
 
     
       const student =
@@ -197,6 +218,9 @@ setParentEmail(email);
 
               school_name:
                   schoolName,
+
+              school_uuid:
+                  schoolUuid,
 
               class_name:
                   className,
@@ -343,9 +367,9 @@ return (
       />
    <div
   style={{
-    width: 760,
+    width: "min(760px, 100%)",
     background: "white",
-    padding: 60,
+    padding: 48,
     borderRadius: 32,
     boxShadow:
       "0 10px 30px rgba(0,0,0,0.08)",
@@ -391,7 +415,7 @@ alert(
         </h1>
 
         <input
-          placeholder="Student Name"
+          placeholder="Student Name *" aria-label="Student Name"
           value={studentName}
           onChange={(e) =>
             setStudentName(
@@ -416,7 +440,7 @@ background:"#F1F5F9",
           inputMode="numeric"
           pattern="[0-9]*"
           maxLength={10}
-          placeholder="Parent Mobile Number"
+          placeholder="Parent Mobile Number *" aria-label="Parent Mobile Number"
           value={parentMobile}
           onChange={(e) => {
             const digitsOnly =
@@ -432,12 +456,24 @@ background:"#F1F5F9",
         />
 
 <select
-value={schoolName}
-onChange={(e)=>
-setSchoolName(
+value={schoolUuid}
+onChange={(e)=>{
+
+const selected =
+schools.find(
+school =>
+school.school_uuid === e.target.value
+);
+
+setSchoolUuid(
 e.target.value
-)
-}
+);
+
+setSchoolName(
+selected?.school_name ?? ""
+);
+
+}}
 style={inputStyle}
 >
 
@@ -451,7 +487,7 @@ schools.map((school)=>(
 
 <option
 key={school.school_uuid}
-value={school.school_name}
+value={school.school_uuid}
 >
 
 {school.school_name}
