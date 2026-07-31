@@ -2,8 +2,8 @@ export default function StudentInsightPanel() {
   return (
     <div
       style={{
-        background: "white",
-        borderRadius: "16px",
+        background: "linear-gradient(145deg,#FFFFFF,#F8FBFF)",
+        borderRadius: "20px",
         padding: "20px",
         border: "1px solid #E5E7EB",
       }}
@@ -17,7 +17,7 @@ export default function StudentInsightPanel() {
           style={{
             fontSize: "42px",
             fontWeight: 700,
-            color: "#143B73",
+            color: "#123F78",
             marginTop: "8px",
           }}
         >

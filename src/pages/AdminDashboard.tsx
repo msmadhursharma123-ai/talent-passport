@@ -922,9 +922,9 @@ const topEvents =
   return (
     <div
       style={{
-        padding: "40px",
+        padding: "24px",
         background:
-          "#F3F4F6",
+          "linear-gradient(180deg,#F8FAFD 0%,#F3F6FA 100%)",
         minHeight:
           "100vh",
       }}
@@ -959,9 +959,11 @@ const topEvents =
 <h3
   style={{
     margin: "8px 0 16px",
-    color: "#071952",
-    fontSize: "18px",
-    fontWeight: 700,
+    color: "#0B1F3A",
+    fontSize: "13px",
+    fontWeight: 800,
+    letterSpacing: "1.5px",
+    textTransform: "uppercase",
   }}
 >
   Executive Intelligence
@@ -974,9 +976,11 @@ const topEvents =
 <h3
   style={{
     margin: "8px 0 16px",
-    color: "#071952",
-    fontSize: "18px",
-    fontWeight: 700,
+    color: "#0B1F3A",
+    fontSize: "13px",
+    fontWeight: 800,
+    letterSpacing: "1.5px",
+    textTransform: "uppercase",
   }}
 >
   Platform Snapshot
@@ -1023,9 +1027,11 @@ const topEvents =
 <h3
   style={{
     margin: "8px 0 16px",
-    color: "#071952",
-    fontSize: "18px",
-    fontWeight: 700,
+    color: "#0B1F3A",
+    fontSize: "13px",
+    fontWeight: 800,
+    letterSpacing: "1.5px",
+    textTransform: "uppercase",
   }}
 >
   Platform Insights
@@ -1090,9 +1096,11 @@ const topEvents =
 <h3
   style={{
     margin: "8px 0 16px",
-    color: "#071952",
-    fontSize: "18px",
-    fontWeight: 700,
+    color: "#0B1F3A",
+    fontSize: "13px",
+    fontWeight: 800,
+    letterSpacing: "1.5px",
+    textTransform: "uppercase",
   }}
 >
   Talent Intelligence
@@ -1226,7 +1234,7 @@ function InfoCard({
 
           marginBottom: "20px",
 
-          color: "#071952"
+          color: "#0B1F3A"
 
         }}
 

@@ -360,9 +360,9 @@ const missingEvents =
 
     <div
       style={{
-        padding: "30px",
+        padding: "24px",
         background:
-          "radial-gradient(circle at top left, #0B2A4A 0%, #163A63 45%, #2A5A8E 100%)",
+          "linear-gradient(180deg,#F8FAFD 0%,#F3F6FA 100%)",
         minHeight: "100vh",
       }}
     >
@@ -377,7 +377,7 @@ const missingEvents =
 
         <h1
           style={{
-            color: "white",
+            color: "#0B1F3A",
             fontSize: "36px",
             marginBottom: "8px",
           }}
@@ -387,7 +387,7 @@ const missingEvents =
 
         <p
           style={{
-            color: "#CBD5E1",
+            color: "#C9D6E5",
           }}
         >
           Student Evaluation &
@@ -399,8 +399,10 @@ const missingEvents =
 
       <div
         style={{
-          background: "white",
-          borderRadius: "24px",
+          background: "linear-gradient(135deg,#FFFFFF,#FCFDFF)",
+          border: "1px solid #DCE5F0",
+          boxShadow: "0 10px 30px rgba(15,39,71,0.06)",
+          borderRadius: "20px",
           padding: "20px",
           marginBottom: "24px",
         }}
@@ -569,8 +571,10 @@ const missingEvents =
 
       <div
         style={{
-          background: "white",
-          borderRadius: "24px",
+          background: "linear-gradient(135deg,#FFFFFF,#FCFDFF)",
+          border: "1px solid #DCE5F0",
+          boxShadow: "0 10px 30px rgba(15,39,71,0.06)",
+          borderRadius: "20px",
           overflow: "hidden",
         }}
       >
@@ -585,7 +589,7 @@ const missingEvents =
           <h2
             style={{
               margin: 0,
-              color: "#143B73",
+              color: "#123F78",
             }}
           >
             Student Registry
@@ -600,9 +604,9 @@ const missingEvents =
             padding:
               "16px 24px",
             background:
-              "#F8FAFC",
+              "#F7F9FD",
             fontWeight: 700,
-            color: "#475569",
+            color: "#40516B",
           }}
         >
           <div>
@@ -678,7 +682,7 @@ const missingEvents =
                       fontSize:
                         "12px",
                       color:
-                        "#64748B",
+                        "#66758D",
                     }}
                   >
                     {
@@ -789,7 +793,7 @@ const missingEvents =
                     padding:
                       "24px",
                     background:
-                      "#F8FAFC",
+                      "#F7F9FD",
                   }}
                 >
 
@@ -930,7 +934,7 @@ const missingEvents =
 
   <p
     style={{
-      color: "#64748B",
+      color: "#66758D",
       marginTop: "4px",
     }}
   >
@@ -1677,7 +1681,7 @@ function MetricCard({
       <div
         style={{
           color:
-            "#64748B",
+            "#66758D",
         }}
       >
         {title}
@@ -1689,7 +1693,7 @@ function MetricCard({
             "36px",
           fontWeight: 700,
           color:
-            "#143B73",
+            "#123F78",
         }}
       >
         {value}
@@ -1746,7 +1750,7 @@ const orangeButton = {
 };
 
 const grayButton = {
-  background: "#E5E7EB",
+  background: "#DCE5F0",
   color: "#334155",
   border: "none",
   padding: "12px 18px",

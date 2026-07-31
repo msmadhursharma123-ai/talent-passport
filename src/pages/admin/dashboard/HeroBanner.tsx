@@ -27,11 +27,16 @@ export default function HeroBanner({
 ============================================================ */
 
 const heroContainer: React.CSSProperties = {
+  position: "relative",
+  overflow: "hidden",
   background:
-    "linear-gradient(135deg,#08123B,#132A73)",
-  borderRadius: "28px",
-  padding: "34px 40px",
-  color: "#FFFFFF",
+    "radial-gradient(circle at 88% 18%, rgba(255,126,31,0.12) 0 58px, transparent 59px), radial-gradient(circle at 76% 100%, rgba(43,102,246,0.10) 0 82px, transparent 83px), linear-gradient(135deg,#FFFDF9 0%,#FFFFFF 62%,#FFF8F1 100%)",
+  border: "1px solid #DCE5F0",
+  boxShadow: "0 10px 30px rgba(15,39,71,0.06)",
+  borderRadius: "24px",
+  padding: "30px 34px",
+  color: "#0B1F3A",
+  marginBottom: "18px",
 };
 
 const eyebrow: React.CSSProperties = {
@@ -44,7 +49,7 @@ const eyebrow: React.CSSProperties = {
 
 const titleStyle: React.CSSProperties = {
   margin: 0,
-  fontSize: "54px",
+  fontSize: "38px",
   fontWeight: 700,
 };
 
@@ -52,7 +57,7 @@ const subtitleStyle: React.CSSProperties = {
   marginTop: "18px",
   marginBottom: 0,
   fontSize: "18px",
-  color: "#E2E8F0",
+  color: "#DFE7F1",
   maxWidth: "900px",
   lineHeight: 1.6,
 };

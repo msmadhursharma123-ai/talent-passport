@@ -38,6 +38,7 @@ export default function ExecutiveDetailDrawer({
           maxWidth: "95vw",
           height: "100vh",
           background: "#FFFFFF",
+          borderLeft: "1px solid #DCE5F0",
           boxShadow: "-8px 0 30px rgba(15,23,42,0.15)",
           zIndex: 1001,
           display: "flex",
@@ -59,7 +60,7 @@ export default function ExecutiveDetailDrawer({
               style={{
                 fontSize: 22,
                 fontWeight: 700,
-                color: "#071952",
+                color: "#0B1F3A",
               }}
             >
               {title}
@@ -69,7 +70,7 @@ export default function ExecutiveDetailDrawer({
               style={{
                 marginTop: 6,
                 fontSize: 14,
-                color: "#64748B",
+                color: "#66758D",
               }}
             >
               Executive Intelligence Details
@@ -83,7 +84,7 @@ export default function ExecutiveDetailDrawer({
               background: "transparent",
               cursor: "pointer",
               fontSize: 28,
-              color: "#64748B",
+              color: "#66758D",
               padding: 0,
               lineHeight: 1,
             }}
@@ -98,7 +99,7 @@ export default function ExecutiveDetailDrawer({
             flex: 1,
             overflowY: "auto",
             padding: 24,
-            background: "#F8FAFC",
+            background: "linear-gradient(180deg,#F8FAFD,#F3F6FA)",
           }}
         >
           {children}

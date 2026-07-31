@@ -101,6 +101,6 @@ case "users":
 ============================================================ */
 
 const settingsStyle: React.CSSProperties = {
-  padding: "40px",
+  padding: "24px",
 };
 

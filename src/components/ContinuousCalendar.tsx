@@ -67,6 +67,12 @@ const [lectureLogs,setLectureLogs]
 =
 useState<any[]>([]);
 
+const [isLoadingCalendar, setIsLoadingCalendar] =
+useState(true);
+
+const [isFilteringCalendar, setIsFilteringCalendar] =
+useState(false);
+
 
 useEffect(() => {
 
@@ -76,14 +82,29 @@ loadLectureLogs();
 
 },[]);
 
+function showCalendarFilterLoading() {
+
+  setIsFilteringCalendar(true);
+
+  window.setTimeout(() => {
+    setIsFilteringCalendar(false);
+  }, 120);
+
+}
+
 async function loadLectureLogs(){
 
-const logs =
-await getStudentMonthlyLectureLogs();
+setIsLoadingCalendar(true);
 
-setLectureLogs(
-logs
-);
+try {
+  const logs = await getStudentMonthlyLectureLogs();
+  setLectureLogs(logs);
+} catch (error) {
+  console.error("CONTINUOUS CALENDAR LOAD FAILED", error);
+  setLectureLogs([]);
+} finally {
+  setIsLoadingCalendar(false);
+}
 
 }
 
@@ -97,8 +118,8 @@ if(
 
 selectedSubject &&
 
-log.subject_name !==
-selectedSubject
+String(log.subject_name ?? "").trim().toLowerCase() !==
+String(selectedSubject).trim().toLowerCase()
 
 ){
 
@@ -110,7 +131,11 @@ return false;
 /* MONTH FILTER */
 
 
-const logDate = new Date(log.log_date);
+const [logYear, logMonth] =
+  String(log.log_date ?? "").slice(0, 10).split("-").map(Number);
+
+const logDate =
+  new Date(logYear, (logMonth || 1) - 1, 1);
 
 const logMonthYear =
   logDate.toLocaleString("default", {
@@ -370,6 +395,24 @@ subjectList[0]
 .cc-page * {
   box-sizing: border-box;
 }
+
+.cc-loading-wrap {
+  min-height: 250px; display: flex; align-items: center;
+  justify-content: center; padding: 28px 18px;
+}
+.cc-loading-card {
+  width: min(480px, 100%); padding: 28px 24px;
+  border: 1px solid #dbe4ef; border-radius: 20px; background: #fff;
+  box-shadow: 0 8px 28px rgba(15,23,42,.06); text-align: center;
+}
+.cc-loading-spinner {
+  width: 42px; height: 42px; margin: 0 auto;
+  border: 4px solid #ffedd5; border-top-color: #f97316;
+  border-radius: 50%; animation: cc-loading-spin .8s linear infinite;
+}
+.cc-loading-title { margin: 16px 0 0; color: #0f172a; font-size: 18px; font-weight: 900; }
+.cc-loading-copy { margin: 7px auto 0; max-width: 400px; color: #64748b; font-size: 13px; line-height: 1.5; }
+@keyframes cc-loading-spin { to { transform: rotate(360deg); } }
 
 .cc-swipe-hint {
   display: none;
@@ -1927,6 +1970,121 @@ subjectList[0]
 
 }
 
+
+/* =========================================================
+   COMPACT TOPICS MODAL — VIEWPORT CENTER
+   UI-only override for desktop / tablet / mobile.
+========================================================= */
+
+.cc-modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  margin: 0 !important;
+  padding: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: rgba(15, 23, 42, 0.38) !important;
+  backdrop-filter: blur(3px);
+}
+
+.cc-modal-panel {
+  width: min(420px, calc(100vw - 28px)) !important;
+  max-width: 420px !important;
+  max-height: calc(100vh - 28px) !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  border-radius: 17px !important;
+  overflow-y: auto !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.24) !important;
+}
+
+.cc-modal-panel > div:first-child {
+  padding: 17px !important;
+  margin-bottom: 12px !important;
+  border-radius: 14px !important;
+}
+
+.cc-modal-panel > div:first-child p {
+  font-size: 9px !important;
+  line-height: 1.35 !important;
+}
+
+.cc-modal-panel > div:first-child h1 {
+  margin: 5px 0 !important;
+  font-size: 18px !important;
+  line-height: 1.15 !important;
+}
+
+.cc-modal-panel > div:not(:first-child) {
+  padding: 13px !important;
+  margin-bottom: 9px !important;
+  border-radius: 12px !important;
+}
+
+.cc-modal-panel h3 {
+  margin-bottom: 7px !important;
+  font-size: 13px !important;
+  line-height: 1.3 !important;
+}
+
+.cc-modal-panel p {
+  margin-top: 5px !important;
+  margin-bottom: 5px !important;
+  font-size: 10px !important;
+  line-height: 1.4 !important;
+}
+
+.cc-modal-panel > button {
+  padding: 9px 14px !important;
+  border-radius: 10px !important;
+  font-size: 10px !important;
+}
+
+@media (max-width: 767px) {
+  .cc-modal-overlay {
+    padding: 10px !important;
+  }
+
+  .cc-modal-panel {
+    width: min(330px, calc(100vw - 20px)) !important;
+    max-width: 330px !important;
+    max-height: calc(100vh - 20px) !important;
+    padding: 12px !important;
+    border-radius: 15px !important;
+  }
+
+  .cc-modal-panel > div:first-child {
+    padding: 13px !important;
+    margin-bottom: 9px !important;
+  }
+
+  .cc-modal-panel > div:first-child h1 {
+    font-size: 15px !important;
+  }
+
+  .cc-modal-panel > div:not(:first-child) {
+    padding: 10px !important;
+    margin-bottom: 7px !important;
+  }
+
+  .cc-modal-panel h3 {
+    font-size: 11px !important;
+  }
+
+  .cc-modal-panel p {
+    font-size: 9px !important;
+  }
+
+  .cc-modal-panel > button {
+    padding: 7px 11px !important;
+    font-size: 9px !important;
+  }
+}
+
 `}</style>
    {/* =========================================================
     CONTINUOUS CALENDAR HERO
@@ -1999,9 +2157,10 @@ subjectList[0]
 
         <select
           value={selectedSubject}
-          onChange={(e) =>
-            setSelectedSubject(e.target.value)
-          }
+          onChange={(e) => {
+            setSelectedSubject(e.target.value);
+            showCalendarFilterLoading();
+          }}
           className="h-11 w-48 rounded-xl border border-orange-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-orange-400"
         >
 
@@ -2031,9 +2190,10 @@ subjectList[0]
 
         <select
           value={selectedMonth}
-          onChange={(e) =>
-            setSelectedMonth(e.target.value)
-          }
+          onChange={(e) => {
+            setSelectedMonth(e.target.value);
+            showCalendarFilterLoading();
+          }}
           className="h-11 w-44 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-orange-400"
         >
 
@@ -2092,9 +2252,10 @@ subjectList[0]
 
         <select
           value={selectedWeek}
-          onChange={(e) =>
-            setSelectedWeek(e.target.value)
-          }
+          onChange={(e) => {
+            setSelectedWeek(e.target.value);
+            showCalendarFilterLoading();
+          }}
           className="h-11 w-44 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-orange-400"
         >
 
@@ -2171,9 +2332,10 @@ subjectList[0]
           <input
             type="date"
             value={fromDate}
-            onChange={(e) =>
-              setFromDate(e.target.value)
-            }
+            onChange={(e) => {
+              setFromDate(e.target.value);
+              showCalendarFilterLoading();
+            }}
             className="rounded-xl border border-gray-300 px-4 py-3"
           />
 
@@ -2189,9 +2351,10 @@ subjectList[0]
           <input
             type="date"
             value={toDate}
-            onChange={(e) =>
-              setToDate(e.target.value)
-            }
+            onChange={(e) => {
+              setToDate(e.target.value);
+              showCalendarFilterLoading();
+            }}
             className="rounded-xl border border-gray-300 px-4 py-3"
           />
 
@@ -2307,6 +2470,20 @@ subjectList[0]
     CONTINUOUS CLASSROOM CALENDAR
     DESKTOP + INDEPENDENT MOBILE/TABLET RENDERER
 ========================================================= */}
+
+{(isLoadingCalendar || isFilteringCalendar) ? (
+
+<div className="cc-loading-wrap">
+  <div className="cc-loading-card">
+    <div className="cc-loading-spinner" />
+    <h2 className="cc-loading-title">Loading your classroom calendar</h2>
+    <p className="cc-loading-copy">
+      We are loading your classroom calendar so you can check what topics were taught on which days.
+    </p>
+  </div>
+</div>
+
+) : (
 
 <div
   className="cc-calendar-shell relative rounded-3xl border border-slate-200 bg-white p-7 shadow-sm"
@@ -2676,7 +2853,7 @@ subjectList[0]
             ))}
 
 
-            {remainingTopics > 0 && (
+            {logsForDay.length > 0 && (
 
               <button
                 type="button"
@@ -2835,11 +3012,11 @@ subjectList[0]
               const logsForDay =
                 filteredLogs.filter((item) => {
 
-                  const currentDate =
-                    new Date(item.log_date);
+                  const logDay =
+                    Number(String(item.log_date ?? "").slice(8, 10));
 
                   return (
-                    currentDate.getDate() === day
+                    logDay === day
                   );
 
                 });
@@ -2924,24 +3101,17 @@ subjectList[0]
                   </div>
 
 
-                  {remainingTopics > 0 && (
+                  {logsForDay.length > 0 && (
 
                     <button
                       type="button"
-
                       className="cc-mobile-view-all"
-
                       onClick={() => {
-
-                        setSelectedDayTopics(
-                          logsForDay
-                        );
-
+                        setSelectedDayTopics(logsForDay);
                         setShowTopicsModal(true);
-
                       }}
                     >
-                      +{remainingTopics} more
+                      View All Topics ({logsForDay.length}) →
                     </button>
 
                   )}
@@ -2978,6 +3148,8 @@ subjectList[0]
   </div>
 
 </div>
+
+)}
 
 {
 

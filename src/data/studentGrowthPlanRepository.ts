@@ -219,51 +219,58 @@ console.log("================================");
     return [];
   }
 
-  const enrichedLogs = [];
-
-for (const log of logs ?? []) {
-
-  const assignment =
-    assignments.find(
-      (item: any) =>
-        item.id ===
-        log.teacher_assignment_uuid
-    );
-
-
-  if (!assignment) {
-
-    enrichedLogs.push(log);
-
-    continue;
-
-  }
-
-
-
-const {
-  data: teacher,
-  error: teacherError,
-} = await (supabase as any)
-  .from("teachers_master")
-  .select("*")
-  .eq(
-    "teacher_uuid",
-    assignment.teacher_uuid
+  const teacherUuids = Array.from(
+    new Set(
+      (assignments ?? [])
+        .map((item: any) => item.teacher_uuid)
+        .filter(Boolean)
+    )
   );
 
+  let teacherMap = new Map<string, string>();
 
-enrichedLogs.push({
+  if (teacherUuids.length > 0) {
+    const { data: teachers, error: teachersError } =
+      await (supabase as any)
+        .from("teachers_master")
+        .select("teacher_uuid, full_name")
+        .in("teacher_uuid", teacherUuids);
 
-  ...log,
+    if (teachersError) {
+      console.error("TEACHER FETCH ERROR", teachersError);
+    } else {
+      teacherMap = new Map(
+        (teachers ?? []).map((teacher: any) => [
+          teacher.teacher_uuid,
+          teacher.full_name ?? "Teacher",
+        ])
+      );
+    }
+  }
 
-teacher_name:
-teacher?.[0]?.full_name ??
-"Teacher",
+  const assignmentMap = new Map(
+    (assignments ?? []).map((assignment: any) => [
+      assignment.id,
+      assignment,
+    ])
+  );
 
-});
+  const enrichedLogs =
+    (logs ?? []).map((log: any) => {
+      const assignment: any =
+        assignmentMap.get(log.teacher_assignment_uuid);
 
-}
+      return {
+        ...log,
+        teacher_uuid: log.teacher_uuid ?? assignment?.teacher_uuid,
+        school_uuid: log.school_uuid ?? assignment?.school_uuid,
+        class_name: log.class_name ?? assignment?.class_name,
+        section_name: log.section_name ?? assignment?.section_name,
+        subject_name: log.subject_name ?? assignment?.subject_name,
+        teacher_name:
+          teacherMap.get(assignment?.teacher_uuid) ?? "Teacher",
+      };
+    });
 
 console.log("================================");
 console.log("STEP 6 : FINAL LOGS");
@@ -285,10 +292,14 @@ export async function getTodaysLectureLogs() {
   const logs =
     await getStudentDailyLectureLogs();
 
+  const now = new Date();
+
   const today =
-    new Date()
-      .toISOString()
-      .split("T")[0];
+    [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0"),
+    ].join("-");
 
   return logs.filter(
     (log: any) =>

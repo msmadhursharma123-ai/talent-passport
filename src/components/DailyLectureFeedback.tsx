@@ -41,6 +41,7 @@ requireIdentity,
 
 export default function DailyLectureFeedback() {
   const [lectureLogs, setLectureLogs] = useState<any[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(true);
 
 
   
@@ -144,15 +145,20 @@ loadSubmittedFeedback();
 }, [lectureLogs]);
 
 async function loadDailyLogs() {
-  const logs =
-await getTodaysLectureLogs();
 
-  console.log(
-    "STUDENT DAILY LECTURE LOGS:",
-    logs
-  );
+  setIsLoadingLogs(true);
 
-  setLectureLogs(logs);
+  try {
+    const logs = await getTodaysLectureLogs();
+
+    console.log("STUDENT DAILY LECTURE LOGS:", logs);
+    setLectureLogs(logs);
+  } catch (error) {
+    console.error("DAILY LECTURE LOG LOAD FAILED", error);
+    setLectureLogs([]);
+  } finally {
+    setIsLoadingLogs(false);
+  }
 }
 
 async function loadPendingDoubts(){
@@ -179,29 +185,20 @@ setPendingDoubts(doubts);
 
 async function loadSubmittedFeedback() {
 
+  const feedbackEntries = await Promise.all(
+    lectureLogs.map(async (log) => [
+      log.id,
+      await getStudentFeedbackByLecture(log.id),
+    ] as const)
+  );
+
   const feedbackMap: Record<string, any> = {};
 
-  for (const log of lectureLogs) {
-
-    const feedback =
-
-      await getStudentFeedbackByLecture(
-
-        log.id
-
-      );
-
-
-    if (feedback) {
-
-      feedbackMap[log.id] = feedback;
-
-    }
-
+  for (const [logId, feedback] of feedbackEntries) {
+    if (feedback) feedbackMap[logId] = feedback;
   }
 
   setSubmittedFeedback(feedbackMap);
-
 }
 
 
@@ -686,6 +683,23 @@ return (
         line-height: 1.42;
       }
 
+
+      .dlf-loading {
+        min-height: 220px; display: flex; align-items: center;
+        justify-content: center; padding: 28px 18px; text-align: center;
+      }
+      .dlf-loading-card {
+        width: min(470px, 100%); padding: 26px 22px;
+        border: 1px solid #dbe4ef; border-radius: 18px; background: #f8fafc;
+      }
+      .dlf-loading-spinner {
+        width: 40px; height: 40px; margin: 0 auto;
+        border: 4px solid #ffedd5; border-top-color: #f97316;
+        border-radius: 50%; animation: dlf-spin .8s linear infinite;
+      }
+      .dlf-loading-title { margin: 15px 0 0; color: #0f172a; font-size: 17px; font-weight: 900; }
+      .dlf-loading-copy { margin: 7px auto 0; max-width: 390px; color: #64748b; font-size: 13px; line-height: 1.5; }
+      @keyframes dlf-spin { to { transform: rotate(360deg); } }
 
       /* =========================================================
          DAILY FEEDBACK LEDGER
@@ -2109,7 +2123,20 @@ return (
         </div>
 
 
-        {lectureLogs.length === 0 ? (
+        {isLoadingLogs ? (
+
+          <div className="dlf-loading">
+            <div className="dlf-loading-card">
+              <div className="dlf-loading-spinner" />
+              <h2 className="dlf-loading-title">Loading your recent topic logs</h2>
+              <p className="dlf-loading-copy">
+                We are loading your recent classroom topics. Kindly give feedback
+                on your understanding level to help your teacher understand your learning progress.
+              </p>
+            </div>
+          </div>
+
+        ) : lectureLogs.length === 0 ? (
 
           <div className="dlf-empty">
 

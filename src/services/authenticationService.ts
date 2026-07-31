@@ -140,6 +140,8 @@ phone: string | null;
 
 school_name: string | null;
 
+    school_uuid: string | null;
+
     class_name: string | null;
 
     section: string | null;
@@ -151,6 +153,8 @@ school_name: string | null;
     wallet_id?: string | null;
 
     passport_id?: string | null;
+
+    account_status?: string | null;
 
 }
 
@@ -426,6 +430,40 @@ async function resolveIdentity(
     | null
 > {
 
+    /*
+     * PLATFORM ADMIN MUST BE RESOLVED FIRST.
+     * If an old/dummy portal profile shares this auth UUID, the authoritative
+     * admins row wins instead of incorrectly resolving the user as student.
+     */
+    const platformAdmin =
+        await fetchAdminByAuthId(authUserId);
+
+    if (platformAdmin) {
+
+        return {
+
+            role: "admin",
+
+            identity: {
+
+                adminId:
+                    platformAdmin.id,
+
+                adminName:
+                    platformAdmin.admin_name,
+
+                email:
+                    platformAdmin.admin_email,
+
+                role:
+                    "admin"
+
+            }
+
+        };
+
+    }
+
     const student =
         await fetchStudentByAuthId(authUserId);
 
@@ -543,35 +581,6 @@ partnerUuid:
 
     }
 
-    const admin =
-        await fetchAdminByAuthId(authUserId);
-
-    if (admin) {
-
-        return {
-
-            role: "admin",
-
-            identity: {
-
-                adminId:
-                    admin.id,
-
-                adminName:
-                    admin.admin_name,
-
-                email:
-                    admin.admin_email,
-
-                role:
-                    "admin"
-
-            }
-
-        };
-
-    }
-
     return null;
 
 
@@ -634,6 +643,9 @@ function createStudentIdentity(
 
         schoolName:
             row.school_name ?? undefined,
+
+        schoolUuid:
+            row.school_uuid ?? undefined,
 
         className:
             row.class_name ?? undefined,
@@ -774,6 +786,48 @@ function createSchoolIdentity(
 
 }
 
+async function isResolvedAccountSuspended(
+    role: AuthRole,
+    identity: StudentIdentity | TeacherIdentity | SchoolIdentity | PartnerIdentity | AdminIdentity
+): Promise<boolean> {
+    if (role === "admin") return false;
+
+    const supabase = getClient();
+    let query: any;
+
+    if (role === "student") {
+        query = (supabase as any).from("students_master")
+            .select("account_status")
+            .eq("student_uuid", (identity as StudentIdentity).studentUuid)
+            .maybeSingle();
+    } else if (role === "teacher") {
+        query = (supabase as any).from("teachers_master")
+            .select("account_status")
+            .eq("teacher_uuid", (identity as TeacherIdentity).teacherUuid)
+            .maybeSingle();
+    } else if (role === "school") {
+        query = (supabase as any).from("school_admins")
+            .select("account_status")
+            .eq("school_uuid", (identity as SchoolIdentity).schoolUuid)
+            .eq("auth_user_id", (identity as SchoolIdentity).authUserId)
+            .maybeSingle();
+    } else {
+        query = (supabase as any).from("partners_master")
+            .select("status")
+            .eq("partner_uuid", (identity as PartnerIdentity).partnerUuid)
+            .maybeSingle();
+    }
+
+    const { data, error } = await query;
+    if (error) {
+        console.error("Unable to verify account status.", error);
+        return false;
+    }
+
+    const value = String(data?.account_status ?? data?.status ?? "").toLowerCase();
+    return value === "suspended" || value === "inactive";
+}
+
 export async function signIn(
     email: string,
     password: string
@@ -825,6 +879,21 @@ export async function signIn(
             await resolveIdentity(
                 authUser.id
             );
+
+        if (resolved && await isResolvedAccountSuspended(resolved.role, resolved.identity)) {
+            await supabase.auth.signOut();
+            clearStudentIdentity();
+            clearTeacherIdentity();
+            clearSchoolIdentity();
+            clearPartnerIdentity();
+            clearAdminIdentity();
+            clearAuthSession();
+
+            return {
+                success: false,
+                error: "This account has been suspended. Please contact the platform administrator."
+            };
+        }
 
 /* ============================================================
    SCHOOL FIRST LOGIN CHECK
@@ -1626,6 +1695,21 @@ clearAdminIdentity();
             await resolveIdentity(
                 session.user.id
             );
+
+        if (resolved && await isResolvedAccountSuspended(resolved.role, resolved.identity)) {
+            await supabase.auth.signOut();
+            clearStudentIdentity();
+            clearTeacherIdentity();
+            clearSchoolIdentity();
+            clearPartnerIdentity();
+            clearAdminIdentity();
+            clearAuthSession();
+
+            return {
+                success: false,
+                error: "This account has been suspended."
+            };
+        }
 
         if (!resolved) {
 

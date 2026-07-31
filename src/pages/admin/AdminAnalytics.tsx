@@ -297,7 +297,7 @@ const matchesArea =
 
     <div
       style={{
-        padding:"30px"
+        padding:"24px", background:"linear-gradient(180deg,#F8FAFD,#F3F6FA)", minHeight:"100vh"
       }}
     >
 
@@ -309,7 +309,7 @@ const matchesArea =
           alignItems:
             "center",
           marginBottom:
-            "20px"
+            "18px"
         }}
       >
 
@@ -325,7 +325,7 @@ const matchesArea =
 
           <div
             style={{
-              color:"#64748B",
+              color:"#66758D",
               marginTop:"6px"
             }}
           >
@@ -819,7 +819,7 @@ const matchesArea =
   <thead>
   <tr
     style={{
-      background: "#F8FAFC",
+      background: "#F7F9FD",
       borderBottom: "2px solid #E2E8F0",
     }}
   >
@@ -1154,7 +1154,7 @@ function KPI({
 
       <div
         style={{
-          color:"#64748B",
+          color:"#66758D",
           fontSize:"14px",
           fontWeight:500
         }}
@@ -1239,7 +1239,7 @@ function MetricRow({
 
       <span
         style={{
-          color:"#475569"
+          color:"#40516B"
         }}
       >
         {label}
@@ -1294,7 +1294,7 @@ const searchStyle = {
 
 const activeTabStyle = {
 
-  background:"#143B73",
+  background:"#123F78",
 
   color:"white",
 
@@ -1312,9 +1312,9 @@ const activeTabStyle = {
 
 const inactiveTabStyle = {
 
-  background:"#E2E8F0",
+  background:"#DFE7F1",
 
-  color:"#475569",
+  color:"#40516B",
 
   border:"none",
 
@@ -1333,7 +1333,7 @@ const headerCell: React.CSSProperties = {
   textAlign: "left",
   fontSize: 13,
   fontWeight: 700,
-  color: "#475569",
+  color: "#40516B",
   textTransform: "uppercase",
   letterSpacing: ".05em",
 };
@@ -1346,7 +1346,7 @@ const bodyCell: React.CSSProperties = {
 };
 
 const filterCard: React.CSSProperties = {
-  background: "#F8FAFC",
+  background: "#F7F9FD",
   border: "1px solid #E2E8F0",
   borderRadius: 14,
   padding: "14px 16px",
@@ -1355,7 +1355,7 @@ const filterCard: React.CSSProperties = {
 const filterLabel: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 700,
-  color: "#64748B",
+  color: "#66758D",
   marginBottom: 8,
   textTransform: "uppercase",
   letterSpacing: ".05em",

@@ -1,81 +1,10 @@
-import { useState } from "react";
-
-import StudentLayout, {
-  StudentTab,
-} from "./StudentLayout";
-
-import TalentPassport from "../TalentPassport";
-import Homeboard from "./Homeboard";
-import Timeline from "./TimelineV3";
-import Portfolio from "./Portfolio";
-import Competitions from "./Competitions";
-import MyAnalysis from "./MyAnalysis";
-import Opportunities from "./Opportunities.tsx";
-import GrowthPlan from "./GrowthPlan";
-import MaukePeChauka
-from "./MaukePeChauka";
-
-interface Props {
-  onLogout: () => void;
-  onStartDNA: () => void;
-}
-
-export default function StudentPortal({
-  onLogout,
-  onStartDNA,
-}: Props) {
-  const [activeTab, setActiveTab] =
-    useState<StudentTab>("dna-radar");
-
- const currentPage = (() => {
-
-  switch (activeTab) {
-
-    case "dna-radar":
-      return (
-        <TalentPassport
-          onStartDNA={onStartDNA}
-        />
-      );
-
-    case "homeboard":
-      return <Homeboard />;
-
-    case "timeline":
-      return <Timeline />;
-
-    case "portfolio":
-      return <Portfolio />;
-
-    case "competitions":
-      return <Competitions />;
-
-    case "opportunities":
-      return <Opportunities />;
-
-    case "mauke-pe-chauka":
-      return <MaukePeChauka />;
-
-    case "my-analysis":
-      return <MyAnalysis />;
-
-    case "growth-plan":
-      return <GrowthPlan />;
-
-    default:
-      return <Homeboard />;
-
-  }
-
-})();
-
-  return (
-    <StudentLayout
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      onLogout={onLogout}
-    >
-      {currentPage}
-    </StudentLayout>
-  );
-}
+import {useEffect,useState} from "react";
+import StudentLayout,{StudentTab} from "./StudentLayout";
+import TalentPassport from "../TalentPassport";import Homeboard from "./Homeboard";import Timeline from "./TimelineV3";import Portfolio from "./Portfolio";import Competitions from "./Competitions";import MyAnalysis from "./MyAnalysis";import Opportunities from "./Opportunities.tsx";import GrowthPlan from "./GrowthPlan";import MaukePeChauka from "./MaukePeChauka";
+import {getCurrentStudent} from "../../services/identityService";import {getSchoolFeatureKeys,STUDENT_FEATURES} from "../../data/schoolFeatureAccessRepository";
+interface Props{onLogout:()=>void;onStartDNA:()=>void;}
+export default function StudentPortal({onLogout,onStartDNA}:Props){const[activeTab,setActiveTab]=useState<StudentTab>("dna-radar");const[enabled,setEnabled]=useState<string[]|null>(null);
+useEffect(()=>{void(async()=>{const identity=getCurrentStudent();if(!identity?.schoolUuid){setEnabled(STUDENT_FEATURES.map(x=>x.key));return;}const keys=await getSchoolFeatureKeys(identity.schoolUuid,"student");setEnabled(keys);if(keys.length&&!keys.includes(activeTab))setActiveTab(keys[0] as StudentTab);})();},[]);
+if(enabled===null)return null;if(enabled.length===0)return <StudentLayout activeTab={activeTab} setActiveTab={setActiveTab} onLogout={onLogout} enabledTabs={[]}><div style={{padding:32}}>No Student Portal modules are enabled for this school.</div></StudentLayout>;
+const page=enabled.includes(activeTab)?(()=>{switch(activeTab){case"dna-radar":return <TalentPassport onStartDNA={onStartDNA}/>;case"homeboard":return <Homeboard/>;case"timeline":return <Timeline/>;case"portfolio":return <Portfolio/>;case"competitions":return <Competitions/>;case"opportunities":return <Opportunities/>;case"mauke-pe-chauka":return <MaukePeChauka/>;case"my-analysis":return <MyAnalysis/>;case"growth-plan":return <GrowthPlan/>;default:return <Homeboard/>;}})():null;
+return <StudentLayout activeTab={activeTab} setActiveTab={setActiveTab} onLogout={onLogout} enabledTabs={enabled}>{page}</StudentLayout>;}

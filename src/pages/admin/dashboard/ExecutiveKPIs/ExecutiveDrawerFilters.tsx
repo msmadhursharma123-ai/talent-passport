@@ -26,6 +26,11 @@ export default function ExecutiveDrawerFilters({
           "2fr repeat(3,1fr)",
         gap: 16,
         marginBottom: 24,
+        padding: 16,
+        border: "1px solid #DCE5F0",
+        borderRadius: 16,
+        background: "linear-gradient(135deg,#FFFFFF,#FBFCFF)",
+        boxShadow: "0 8px 22px rgba(15,39,71,0.05)",
       }}
     >
       {filters.map((filter) => {

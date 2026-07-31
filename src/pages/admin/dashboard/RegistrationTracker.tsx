@@ -244,7 +244,7 @@ const searchMatch =
     background:
       index % 2 === 0
         ? "#FFFFFF"
-        : "#F8FAFC",
+        : "#F7F9FD",
   }}
 >
 
@@ -328,9 +328,11 @@ STYLES
 ============================================================ */
 
 const containerStyle: React.CSSProperties = {
-  background: "#FFFFFF",
-  borderRadius: "24px",
-  padding: "28px",
+  background: "linear-gradient(135deg,#FFFFFF,#FCFDFF)",
+  border: "1px solid #DCE5F0",
+  boxShadow: "0 10px 30px rgba(15,39,71,0.06)",
+  borderRadius: "20px",
+  padding: "24px",
 };
 
 const headerRow: React.CSSProperties = {
@@ -389,7 +391,7 @@ const studentName: React.CSSProperties = {
 
 const studentMeta: React.CSSProperties = {
   marginTop: "8px",
-  color: "#64748B",
+  color: "#66758D",
 };
 
 const missingTitle: React.CSSProperties = {
@@ -406,7 +408,7 @@ const missingList: React.CSSProperties = {
 const emptyState: React.CSSProperties = {
   textAlign: "center",
   padding: "50px",
-  color: "#64748B",
+  color: "#66758D",
 };
 
 const studentHeader: React.CSSProperties = {
@@ -449,7 +451,7 @@ const buttonRow: React.CSSProperties = {
 };
 
 const primaryButton: React.CSSProperties = {
-  background: "#143B73",
+  background: "#0B2447",
   color: "#FFFFFF",
   border: "none",
   padding: "12px 20px",
@@ -459,7 +461,7 @@ const primaryButton: React.CSSProperties = {
 };
 
 const secondaryButton: React.CSSProperties = {
-  background: "#F8FAFC",
+  background: "#F7F9FD",
   color: "#334155",
   border: "1px solid #CBD5E1",
   padding: "12px 20px",
@@ -470,7 +472,7 @@ const secondaryButton: React.CSSProperties = {
 
 const tableContainer: React.CSSProperties = {
   border: "1px solid #E5E7EB",
-  borderRadius: "14px",
+  borderRadius: "12px",
   overflow: "hidden",
 };
 
@@ -479,7 +481,7 @@ const tableHeader: React.CSSProperties = {
   gridTemplateColumns:
     "2fr 2fr 1fr 1fr 2fr 150px",
 
-  background: "#143B73",
+  background: "#0B2447",
 
   color: "#FFFFFF",
 
@@ -570,7 +572,7 @@ const searchInput: React.CSSProperties = {
 };
 
 const toolbarStats: React.CSSProperties = {
-  color: "#64748B",
+  color: "#66758D",
   fontWeight: 600,
   fontSize: "13px",
 };

@@ -73,9 +73,11 @@ export default function DashboardFilters({
 const containerStyle: React.CSSProperties = {
   display: "flex",
   gap: "14px",
-  padding: "20px",
-  background: "#FFFFFF",
-  borderRadius: "20px",
+  padding: "16px 18px",
+  background: "linear-gradient(135deg,#FFFFFF,#FBFCFF)",
+  border: "1px solid #DCE5F0",
+  boxShadow: "0 8px 24px rgba(15,39,71,0.05)",
+  borderRadius: "18px",
   alignItems: "center",
   flexWrap: "wrap",
 };
@@ -91,7 +93,7 @@ const selectStyle: React.CSSProperties = {
 
 const activeButton: React.CSSProperties = {
   border: "none",
-  background: "#F97316",
+  background: "#FF6B0B",
   color: "#FFFFFF",
   padding: "14px 22px",
   borderRadius: "12px",
@@ -101,8 +103,8 @@ const activeButton: React.CSSProperties = {
 
 const inactiveButton: React.CSSProperties = {
   border: "none",
-  background: "#E2E8F0",
-  color: "#475569",
+  background: "#DFE7F1",
+  color: "#40516B",
   padding: "14px 22px",
   borderRadius: "12px",
   cursor: "pointer",

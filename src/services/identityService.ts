@@ -41,6 +41,8 @@ export interface StudentIdentity {
 
   schoolName?: string;
 
+  schoolUuid?: string;
+
   className?: string;
 
   section?: string;
@@ -1418,6 +1420,9 @@ export function buildIdentity(
 
     schoolName:
       data.schoolName,
+
+    schoolUuid:
+      data.schoolUuid,
 
     className:
       data.className,

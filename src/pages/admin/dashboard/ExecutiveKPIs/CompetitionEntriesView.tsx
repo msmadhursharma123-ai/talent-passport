@@ -352,7 +352,7 @@ const rows =
           marginTop: 12,
           marginBottom: 12,
           fontSize: 14,
-          color: "#64748B",
+          color: "#66758D",
           fontWeight: 600,
         }}
       >

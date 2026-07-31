@@ -61,8 +61,20 @@ export default function QuestionWizard({
 }: Props) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, any>>({});
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const current = questions[step];
+
+  const currentStudent: any = getCurrentStudent();
+  const studentDisplayName =
+    currentStudent?.studentName ??
+    currentStudent?.student_name ??
+    currentStudent?.fullName ??
+    currentStudent?.full_name ??
+    currentStudent?.name ??
+    "";
+  const studentFirstName =
+    String(studentDisplayName).trim().split(/\s+/)[0] || "";
 
   return (
   <div
@@ -222,6 +234,20 @@ export default function QuestionWizard({
           >
             {title}
           </div>
+
+          {step === 0 && studentFirstName && (
+            <div
+              style={{
+                marginBottom: "12px",
+                color: "#64748B",
+                fontSize: "16px",
+                lineHeight: 1.45,
+                fontWeight: 700,
+              }}
+            >
+              Hello {studentFirstName}, let's create your Talent Passport.
+            </div>
+          )}
 
           <h1
             style={{
@@ -554,8 +580,10 @@ option,
 </button>
 
   <button
-  disabled={false}
+  disabled={isCompleting}
   onClick={async () => {
+
+    if (isCompleting) return;
 
     // NEXT QUESTION
 
@@ -694,6 +722,8 @@ return;
 
     // SAVE
 
+    setIsCompleting(true);
+
     localStorage.setItem(
       "studentCalibration",
       JSON.stringify(answers)
@@ -788,6 +818,7 @@ catch (error) {
     "Your Talent Passport could not be saved. Please try again."
   );
 
+  setIsCompleting(false);
   return;
 
 }
@@ -809,22 +840,27 @@ console.log(
   studentProfile?.id
 );
 
-await saveAssessment(
-  answers,
-  scores,
-  passport
-);
+try {
 
-await saveStudentDNA(
-  answers,
-  scores
-);
+  await Promise.all([
+    saveAssessment(answers, scores, passport),
+    saveStudentDNA(answers, scores),
+  ]);
 
-console.log(
-  "ASSESSMENT SAVED TO SUPABASE"
-);
+  console.log("ASSESSMENT SAVED TO SUPABASE");
 
-onComplete?.();
+  onComplete?.();
+
+} catch (error) {
+
+  console.error("FINAL ONBOARDING SAVE FAILED", error);
+  setIsCompleting(false);
+
+  alert(
+    "Your Talent Passport could not be completed. Please try again."
+  );
+
+}
   }}
   style={{
     background: "#F4A623",
