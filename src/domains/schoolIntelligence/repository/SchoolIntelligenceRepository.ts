@@ -64,7 +64,7 @@ export async function getSchoolIntelligenceRawData(
 
   let logsQuery = supabase
     .from("teacher_daily_logs")
-    .select("id,teacher_assignment_uuid,topic_name,log_date,created_at,class_name,section_name,subject_name,concepts_covered")
+    .select("id,teacher_assignment_uuid,topic_name,log_date,created_at,class_name,section_name,subject_name,concepts_covered,page_from,page_to,homework_given,activity_conducted,teacher_notes")
     .in("teacher_assignment_uuid", assignmentIds);
 
   if (startDate) logsQuery = logsQuery.gte("log_date", startDate);

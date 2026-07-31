@@ -5,6 +5,7 @@ import type {
   SchoolTeacherIntelligenceRow,
   SchoolTeacherDailyIntelligence,
   SchoolExamPreparationClassroom,
+  SchoolTeacherLiveStatus,
 } from "../types/SchoolIntelligenceModels";
 import type { SchoolIntelligenceRawData } from "../repository/SchoolIntelligenceRepository";
 
@@ -154,6 +155,43 @@ function buildDailyClassroomIntelligence(raw:SchoolIntelligenceRawData):SchoolTe
   }).filter(t=>t.classrooms.length>0).sort((a,b)=>a.teacherName.localeCompare(b.teacherName));
 }
 
+
+
+function localIsoDate(date:Date){
+ const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,"0"),d=String(date.getDate()).padStart(2,"0");
+ return `${y}-${m}-${d}`;
+}
+function buildTeacherLiveStatus(raw:SchoolIntelligenceRawData):SchoolTeacherLiveStatus[]{
+ const today=localIsoDate(new Date());
+ return raw.teachers.filter((t:any)=>t.is_active!==false).map((t:any)=>{
+  const teacherUuid=String(t.teacher_uuid??"");
+  const assignments=raw.assignments.filter((a:any)=>String(a.teacher_uuid??"")===teacherUuid&&a.is_active!==false);
+  const ids=new Set(assignments.map((a:any)=>String(a.id??"")));
+  const amap=new Map(assignments.map((a:any)=>[String(a.id??""),a]));
+  const logs=raw.logs.filter((l:any)=>ids.has(String(l.teacher_assignment_uuid??""))&&String(l.log_date??"").slice(0,10)===today)
+    .sort((a:any,b:any)=>latestLogTime(b)-latestLogTime(a));
+  const subjects=Array.from(new Set(assignments.map((a:any)=>String(a.subject_name??"").trim()).filter(Boolean))) as string[];
+  const classrooms=Array.from(new Set(assignments.map((a:any)=>{
+   const c=String(a.class_name??"").trim(),s=String(a.section_name??"").trim();
+   return c&&s?`${c} - Section ${s}`:c;
+  }).filter(Boolean))) as string[];
+  const todayLectures=logs.map((l:any)=>{
+   const a:any=amap.get(String(l.teacher_assignment_uuid??""));
+   const className=String(l.class_name??a?.class_name??""),sectionName=String(l.section_name??a?.section_name??"");
+   const num=(v:any)=>v===null||v===undefined||v===""?null:Number(v);
+   return {logUuid:String(l.id??""),assignmentUuid:String(l.teacher_assignment_uuid??""),className,sectionName,
+    classroom:className&&sectionName?`${className} - Section ${sectionName}`:className,
+    subjectName:String(l.subject_name??a?.subject_name??"Subject"),topicName:String(l.topic_name??"Topic not recorded"),
+    conceptsCovered:Array.isArray(l.concepts_covered)?l.concepts_covered.map(String):[],
+    pageFrom:num(l.page_from),pageTo:num(l.page_to),homeworkGiven:l.homework_given===true,
+    activityConducted:l.activity_conducted===true,teacherNotes:String(l.teacher_notes??""),
+    logDate:String(l.log_date??""),createdAt:String(l.created_at??"")};
+  });
+  return {teacherUuid,teacherName:String(t.full_name??"Teacher"),subjects,classrooms,
+   isPresentToday:todayLectures.length>0,todayLogCount:todayLectures.length,
+   lastActivityAt:todayLectures[0]?.createdAt??"",todayLectures};
+ }).sort((a,b)=>a.isPresentToday===b.isPresentToday?a.teacherName.localeCompare(b.teacherName):(a.isPresentToday?-1:1));
+}
 
 function buildSchoolExamPreparation(raw:SchoolIntelligenceRawData):SchoolExamPreparationClassroom[]{
   const teacherNames=new Map<string,string>(raw.teachers.map((t:any)=>[String(t.teacher_uuid??""),String(t.full_name??"Teacher")]));
@@ -368,6 +406,7 @@ export function buildSchoolIntelligenceSnapshot(
     teachers,
     trends,
     dailyClassroomIntelligence: buildDailyClassroomIntelligence(raw),
+    teacherLiveStatus: buildTeacherLiveStatus(raw),
     examPreparation: buildSchoolExamPreparation(raw),
   };
 }

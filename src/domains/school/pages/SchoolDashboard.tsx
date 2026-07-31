@@ -9,8 +9,8 @@ interface Props { onLogout: () => void; }
 type Tab = "overview" | "teachers" | "classrooms" | "academic";
 
 const tabs: {key:Tab;label:string;short:string}[] = [
-  {key:"overview",label:"School Overview",short:"Overview"},
-  {key:"teachers",label:"Teacher Intelligence",short:"Teachers"},
+  {key:"overview",label:"School Health",short:"Overview"},
+  {key:"teachers",label:"Daily Teacher Logs",short:"Teachers"},
   {key:"classrooms",label:"Classroom Feedback Intelligence",short:"Classes"},
   {key:"academic",label:"Academic Intelligence",short:"Academic"},
 ];

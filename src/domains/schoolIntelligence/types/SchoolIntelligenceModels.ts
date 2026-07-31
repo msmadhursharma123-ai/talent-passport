@@ -74,6 +74,19 @@ export interface SchoolTeacherDailyIntelligence {
   classrooms:SchoolDailyClassroomIntelligenceRow[];
 }
 
+
+export interface SchoolTeacherLiveLecture {
+  logUuid:string; assignmentUuid:string; className:string; sectionName:string;
+  classroom:string; subjectName:string; topicName:string; conceptsCovered:string[];
+  pageFrom:number|null; pageTo:number|null; homeworkGiven:boolean;
+  activityConducted:boolean; teacherNotes:string; logDate:string; createdAt:string;
+}
+export interface SchoolTeacherLiveStatus {
+  teacherUuid:string; teacherName:string; subjects:string[]; classrooms:string[];
+  isPresentToday:boolean; todayLogCount:number; lastActivityAt:string;
+  todayLectures:SchoolTeacherLiveLecture[];
+}
+
 export interface SchoolIntelligenceSnapshot {
   schoolUuid: string;
   schoolName: string;
@@ -82,6 +95,7 @@ export interface SchoolIntelligenceSnapshot {
   teachers: SchoolTeacherIntelligenceRow[];
   trends: SchoolAcademicTrendPoint[];
   dailyClassroomIntelligence: SchoolTeacherDailyIntelligence[];
+  teacherLiveStatus: SchoolTeacherLiveStatus[];
   examPreparation: SchoolExamPreparationClassroom[];
 }
 
