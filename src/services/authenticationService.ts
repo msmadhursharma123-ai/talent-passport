@@ -55,6 +55,9 @@ isQuestionnaireCompleted
 
 from "../data/studentRepository";
 
+import SchoolSubscriptionService
+from "./schoolSubscriptionService";
+
 export type AuthRole =
     | "student"
     | "teacher"
@@ -828,6 +831,89 @@ async function isResolvedAccountSuspended(
     return value === "suspended" || value === "inactive";
 }
 
+/* ============================================================
+   SCHOOL SUBSCRIPTION VALIDATION
+
+   Platform Admin bypasses subscription validation.
+============================================================ */
+
+async function validateSchoolSubscriptionAccess(
+    role: AuthRole,
+    identity:
+        StudentIdentity |
+        TeacherIdentity |
+        SchoolIdentity |
+        PartnerIdentity |
+        AdminIdentity
+): Promise<string | null> {
+
+    if (role === "admin") {
+
+        return null;
+
+    }
+
+    let schoolUuid: string | undefined;
+
+    if (role === "student") {
+
+        schoolUuid =
+            (identity as StudentIdentity).schoolUuid;
+
+    }
+
+    else if (role === "teacher") {
+
+        schoolUuid =
+            (identity as TeacherIdentity).schoolUuid;
+
+    }
+
+    else if (role === "school") {
+
+        schoolUuid =
+            (identity as SchoolIdentity).schoolUuid;
+
+    }
+
+    else {
+
+        return null;
+
+    }
+
+    if (!schoolUuid) {
+
+        return null;
+
+    }
+
+    const result =
+
+        await SchoolSubscriptionService
+
+            .canLogin(
+
+                schoolUuid
+
+            );
+
+    if (result.allowed) {
+
+        return null;
+
+    }
+
+    return (
+
+        result.message ??
+
+        "Your school's subscription has expired. Please contact your school administrator."
+
+    );
+
+}
+
 export async function signIn(
     email: string,
     password: string
@@ -875,12 +961,56 @@ export async function signIn(
 
         }
 
-        const resolved =
-            await resolveIdentity(
-                authUser.id
-            );
+const resolved =
+    await resolveIdentity(
+        authUser.id
+    );
 
-        if (resolved && await isResolvedAccountSuspended(resolved.role, resolved.identity)) {
+/* ============================================================
+   SCHOOL SUBSCRIPTION VALIDATION
+============================================================ */
+
+if (resolved) {
+
+    const subscriptionError =
+
+        await validateSchoolSubscriptionAccess(
+
+            resolved.role,
+
+            resolved.identity
+
+        );
+
+    if (subscriptionError) {
+
+        await supabase.auth.signOut();
+
+        clearStudentIdentity();
+
+        clearTeacherIdentity();
+
+        clearSchoolIdentity();
+
+        clearPartnerIdentity();
+
+        clearAdminIdentity();
+
+        clearAuthSession();
+
+        return {
+
+            success: false,
+
+            error: subscriptionError
+
+        };
+
+    }
+
+}
+
+if (resolved && await isResolvedAccountSuspended(resolved.role, resolved.identity)) {
             await supabase.auth.signOut();
             clearStudentIdentity();
             clearTeacherIdentity();
@@ -1691,12 +1821,56 @@ clearAdminIdentity();
 
         }
 
-        const resolved =
-            await resolveIdentity(
-                session.user.id
-            );
+     const resolved =
+    await resolveIdentity(
+        session.user.id
+    );
 
-        if (resolved && await isResolvedAccountSuspended(resolved.role, resolved.identity)) {
+/* ============================================================
+   SCHOOL SUBSCRIPTION VALIDATION
+============================================================ */
+
+if (resolved) {
+
+    const subscriptionError =
+
+        await validateSchoolSubscriptionAccess(
+
+            resolved.role,
+
+            resolved.identity
+
+        );
+
+    if (subscriptionError) {
+
+        await supabase.auth.signOut();
+
+        clearStudentIdentity();
+
+        clearTeacherIdentity();
+
+        clearSchoolIdentity();
+
+        clearPartnerIdentity();
+
+        clearAdminIdentity();
+
+        clearAuthSession();
+
+        return {
+
+            success: false,
+
+            error: subscriptionError
+
+        };
+
+    }
+
+}
+
+if (resolved && await isResolvedAccountSuspended(resolved.role, resolved.identity)) {
             await supabase.auth.signOut();
             clearStudentIdentity();
             clearTeacherIdentity();
