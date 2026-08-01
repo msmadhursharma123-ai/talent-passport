@@ -4,6 +4,7 @@ import useTeacherManagementViewModel
 from "../teacher/TeacherManagementViewModel";
 
 import type {
+    SchoolRecord,
     SchoolSubscriptionDetails
 } from "../teacher/TeacherManagementRepository";
 
@@ -426,20 +427,14 @@ function calculateEndDate(
                 const ok = editing
 
             ? await editSchool(
-
-                  editingSchoolUuid,
-
-                  schoolName,
-
-                  board,
-
-                  city,
-
-                  limits,
-
-                  studentFeatures,
-
-                  teacherFeatures
+    editingSchoolUuid,
+    schoolName,
+    board,
+    city,
+    limits,
+    subscription,
+    studentFeatures,
+    teacherFeatures
 
               )
 
@@ -477,9 +472,9 @@ function calculateEndDate(
 
     }
 
-    async function startEdit(
-        s: any
-    ) {
+   async function startEdit(
+    s: SchoolRecord
+) {
 
         setEditing(true);
 
@@ -516,6 +511,27 @@ function calculateEndDate(
                 s.schoolAdminProfileLimit
             )
         );
+
+        setSubscriptionPlan(
+    s.subscriptionPlan ?? "CUSTOM"
+);
+
+setSubscriptionStartDate(
+    s.subscriptionStartDate ??
+    new Date()
+        .toISOString()
+        .slice(0, 10)
+);
+
+setSubscriptionEndDate(
+    s.subscriptionEndDate ?? ""
+);
+
+setGracePeriodDays(
+    String(
+        s.gracePeriodDays ?? 0
+    )
+);
 
         const f =
             await getSchoolFeatureConfiguration(
@@ -1404,583 +1420,350 @@ function calculateEndDate(
 
             </section>
 
-         <section
-
+      <section
     style={{
-
-        background: "white",
-
+        background: "#FFFFFF",
         borderRadius: 20,
-
         padding: 28,
-
         boxShadow: "0 4px 14px rgba(15,23,42,.06)"
-
     }}
-
 >
 
     <div
-
         style={{
-
-            display:"flex",
-
-            justifyContent:"space-between",
-
-            alignItems:"center",
-
-            marginBottom:28,
-
-            flexWrap:"wrap",
-
-            gap:18
-
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 18,
+            marginBottom: 28
         }}
-
     >
 
         <div>
 
             <h2
-
                 style={{
-
-                    margin:0,
-
-                    color:"#143B73",
-
-                    fontWeight:700,
-
-                    fontSize:28
-
+                    margin: 0,
+                    fontSize: 28,
+                    fontWeight: 700,
+                    color: "#143B73"
                 }}
-
             >
-
                 Schools
-
             </h2>
 
             <div
-
                 style={{
-
-                    marginTop:6,
-
-                    color:"#64748B",
-
-                    fontSize:15
-
+                    marginTop: 6,
+                    color: "#64748B",
+                    fontSize: 15
                 }}
-
             >
-
-                Manage schools, profile capacity,
-
-                subscription status and portal access.
-
+                Manage schools, profile capacity, subscriptions and portal access.
             </div>
 
         </div>
 
         <div
-
             style={{
-
-                background:"#EFF6FF",
-
-                color:"#1D4ED8",
-
-                borderRadius:999,
-
-                padding:"10px 18px",
-
-                fontWeight:700,
-
-                fontSize:15
-
+                background: "#EFF6FF",
+                color: "#1D4ED8",
+                padding: "10px 18px",
+                borderRadius: 999,
+                fontWeight: 700
             }}
-
         >
-
             {schools.length} Schools
-
         </div>
 
     </div>
 
-    {
-
-        loading &&
-
-        <p>
-
-            Loading...
-
-        </p>
-
-    }
+    {loading && <p>Loading...</p>}
 
     <div
-
         style={{
-
-            display:"grid",
-
-            gridTemplateColumns:
-
-                "repeat(auto-fit,minmax(430px,1fr))",
-
-            gap:22
-
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(430px,1fr))",
+            gap: 22
         }}
-
     >
 
-        {
-
-    schools.map(
-
-        s => (
+        {schools.map((s) => (
 
             <div
-
                 key={s.schoolUuid}
-
                 style={{
-
-                    background:"#FFFFFF",
-
-                    border:"1px solid #E2E8F0",
-
-                    borderRadius:18,
-
-                    padding:22,
-
-                    display:"flex",
-
-                    flexDirection:"column",
-
-                    gap:18,
-
-                    boxShadow:"0 2px 8px rgba(15,23,42,.05)"
-
+                    background: "#FFF",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: 18,
+                    padding: 22,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 18,
+                    boxShadow: "0 2px 8px rgba(15,23,42,.05)"
                 }}
-
             >
 
                 <div
-
                     style={{
-
-                        display:"flex",
-
-                        justifyContent:"space-between",
-
-                        alignItems:"flex-start",
-
-                        gap:12
-
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        gap: 18
                     }}
-
                 >
 
-                    <div>
+                    <div style={{ flex: 1 }}>
 
                         <div
-
                             style={{
-
-                                fontSize:22,
-
-                                fontWeight:700,
-
-                                color:"#143B73"
-
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                flexWrap: "wrap"
                             }}
-
                         >
 
-                            🏫 {s.schoolName}
+                            <span
+                                style={{
+                                    fontSize: 22,
+                                    fontWeight: 700,
+                                    color: "#143B73"
+                                }}
+                            >
+                                🏫 {s.schoolName}
+                            </span>
+
+                            <span
+                                style={{
+                                    background: s.isActive ? "#DCFCE7" : "#FEE2E2",
+                                    color: s.isActive ? "#166534" : "#991B1B",
+                                    padding: "6px 12px",
+                                    borderRadius: 999,
+                                    fontWeight: 700,
+                                    fontSize: 11
+                                }}
+                            >
+                                {s.isActive ? "ACTIVE" : "INACTIVE"}
+                            </span>
+
+                            <span
+                                style={{
+                                    background: "#EFF6FF",
+                                    color: "#1D4ED8",
+                                    padding: "6px 12px",
+                                    borderRadius: 999,
+                                    fontWeight: 700,
+                                    fontSize: 11
+                                }}
+                            >
+                                {s.subscriptionPlan ?? "CUSTOM"}
+                            </span>
 
                         </div>
 
                         <div
-
                             style={{
-
-                                color:"#64748B",
-
-                                marginTop:4
-
+                                marginTop: 8,
+                                color: "#64748B"
                             }}
+                        >
+                            {s.board} • {s.city}
+                        </div>
 
+                        <div
+                            style={{
+                                marginTop: 10,
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 16,
+                                color: "#64748B",
+                                fontSize: 13
+                            }}
                         >
 
-                            {s.board}
+                            <span>
+                                📅 Start:
+                                {" "}
+                                {s.subscriptionStartDate ?? "--"}
+                            </span>
 
-                            {" • "}
+                            <span>
+                                📅 End:
+                                {" "}
+                                {s.subscriptionEndDate ?? "Unlimited"}
+                            </span>
 
-                            {s.city}
+                            <span>
+                                ⏳ Grace:
+                                {" "}
+                                {s.gracePeriodDays ?? 0}
+                                {" "}
+                                days
+                            </span>
 
                         </div>
 
                     </div>
 
-                    <span
+                </div>
 
+                <div
+                    style={{
+                        display: "grid",
+                        gap: 14
+                    }}
+                >
+
+                    <div>
+
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                marginBottom: 6,
+                                fontWeight: 600
+                            }}
+                        >
+                            <span>Students</span>
+
+                            <span>
+                                {s.studentProfilesUsed} / {s.studentProfileLimit}
+                            </span>
+
+                        </div>
+
+                        <progress
+                            value={s.studentProfilesUsed}
+                            max={s.studentProfileLimit || 1}
+                            style={{
+                                width: "100%",
+                                height: 10
+                            }}
+                        />
+
+                    </div>
+
+                    <div>
+
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                marginBottom: 6,
+                                fontWeight: 600
+                            }}
+                        >
+                            <span>Teachers</span>
+
+                            <span>
+                                {s.teacherProfilesUsed} / {s.teacherProfileLimit}
+                            </span>
+
+                        </div>
+
+                        <progress
+                            value={s.teacherProfilesUsed}
+                            max={s.teacherProfileLimit || 1}
+                            style={{
+                                width: "100%",
+                                height: 10
+                            }}
+                        />
+
+                    </div>
+
+                    <div>
+
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                marginBottom: 6,
+                                fontWeight: 600
+                            }}
+                        >
+                            <span>School Admins</span>
+
+                            <span>
+                                {s.schoolAdminProfilesUsed} / {s.schoolAdminProfileLimit}
+                            </span>
+
+                        </div>
+
+                        <progress
+                            value={s.schoolAdminProfilesUsed}
+                            max={s.schoolAdminProfileLimit || 1}
+                            style={{
+                                width: "100%",
+                                height: 10
+                            }}
+                        />
+
+                    </div>
+
+                </div>
+
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginTop: 10,
+                        flexWrap: "wrap",
+                        gap: 12
+                    }}
+                >
+
+                    <div
                         style={{
-
-                            background:
-
-                                s.isActive
-
-                                    ? "#DCFCE7"
-
-                                    : "#FEE2E2",
-
-                            color:
-
-                                s.isActive
-
-                                    ? "#166534"
-
-                                    : "#B91C1C",
-
-                            padding:"8px 14px",
-
-                            borderRadius:999,
-
-                            fontWeight:700,
-
-                            fontSize:12
-
+                            fontSize: 12,
+                            color: "#94A3B8"
                         }}
+                    >
+                        {s.schoolUuid}
+                    </div>
 
+                    <div
+                        style={{
+                            display: "flex",
+                            gap: 10
+                        }}
                     >
 
-                        {
-
-                            s.isActive
-
-                                ? "ACTIVE"
-
-                                : "INACTIVE"
-
-                        }
-
-                    </span>
-
-                </div>
-
-                <div
-
-                    style={{
-
-                        display:"grid",
-
-                        gap:14
-
-                    }}
-
-                >
-
-                    <div>
-
-                        <div
-
-                            style={{
-
-                                display:"flex",
-
-                                justifyContent:"space-between",
-
-                                marginBottom:6,
-
-                                fontWeight:600
-
-                            }}
-
+                        <button
+                            onClick={() => startEdit(s)}
+                            style={small}
                         >
+                            ✏️ Edit
+                        </button>
 
-                            <span>
-
-                                Students
-
-                            </span>
-
-                            <span>
-
-                                {
-
-                                    s.studentProfilesUsed
-
-                                }
-
-                                /
-
-                                {
-
-                                    s.studentProfileLimit
-
-                                }
-
-                            </span>
-
-                        </div>
-
-                        <progress
-
-                            value={
-
-                                s.studentProfilesUsed
-
-                            }
-
-                            max={
-
-                                s.studentProfileLimit || 1
-
-                            }
-
-                            style={{
-
-                                width:"100%",
-
-                                height:10
-
-                            }}
-
-                        />
-
-                    </div>
-
-                    <div>
-
-                        <div
-
-                            style={{
-
-                                display:"flex",
-
-                                justifyContent:"space-between",
-
-                                marginBottom:6,
-
-                                fontWeight:600
-
-                            }}
-
-                        >
-
-                            <span>
-
-                                Teachers
-
-                            </span>
-
-                            <span>
-
-                                {
-
-                                    s.teacherProfilesUsed
-
-                                }
-
-                                /
-
-                                {
-
-                                    s.teacherProfileLimit
-
-                                }
-
-                            </span>
-
-                        </div>
-
-                        <progress
-
-                            value={
-
-                                s.teacherProfilesUsed
-
-                            }
-
-                            max={
-
-                                s.teacherProfileLimit || 1
-
-                            }
-
-                            style={{
-
-                                width:"100%",
-
-                                height:10
-
-                            }}
-
-                        />
-
-                    </div>
-
-                    <div>
-
-                        <div
-
-                            style={{
-
-                                display:"flex",
-
-                                justifyContent:"space-between",
-
-                                marginBottom:6,
-
-                                fontWeight:600
-
-                            }}
-
-                        >
-
-                            <span>
-
-                                School Admins
-
-                            </span>
-
-                            <span>
-
-                                {
-
-                                    s.schoolAdminProfilesUsed
-
-                                }
-
-                                /
-
-                                {
-
-                                    s.schoolAdminProfileLimit
-
-                                }
-
-                            </span>
-
-                        </div>
-
-                        <progress
-
-                            value={
-
-                                s.schoolAdminProfilesUsed
-
-                            }
-
-                            max={
-
-                                s.schoolAdminProfileLimit || 1
-
-                            }
-
-                            style={{
-
-                                width:"100%",
-
-                                height:10
-
-                            }}
-
-                        />
-
-                    </div>
-
-                </div>
-
-                <div
-
-                    style={{
-
-                        display:"flex",
-
-                        justifyContent:"flex-end",
-
-                        gap:10,
-
-                        marginTop:6,
-
-                        flexWrap:"wrap"
-
-                    }}
-
-                >
-
-                    <button
-
-                        onClick={() =>
-
-                            startEdit(s)
-
-                        }
-
-                        style={small}
-
-                    >
-
-                        ✏️ Edit
-
-                    </button>
-
-                    {
-
-                        s.isActive && (
+                        {s.isActive && (
 
                             <button
-
-                                onClick={() =>
-
-                                    removeSchool(
-
-                                        s.schoolUuid
-
-                                    )
-
-                                }
-
+                                onClick={() => removeSchool(s.schoolUuid)}
                                 style={{
-
                                     ...small,
-
-                                    background:"#FFFFFF",
-
-                                    color:"#DC2626",
-
-                                    border:"1px solid #DC2626"
-
+                                    background: "#FFFFFF",
+                                    color: "#DC2626",
+                                    border: "1px solid #DC2626"
                                 }}
-
                             >
-
                                 Deactivate
-
                             </button>
 
-                        )
+                        )}
 
-                    }
+                    </div>
 
                 </div>
 
             </div>
 
-        )
+        ))}
 
-    )
-
-}
-
-</div>
+    </div>
 
 </section>
 

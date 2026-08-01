@@ -111,37 +111,34 @@ export async function updateSubscriptionStatus(
         );
 
 }
-
 /* ============================================================
    SUBSCRIPTION VALIDATION
 ============================================================ */
 
 export async function validateSchoolSubscription(
-
     schoolUuid: string
-
 ): Promise<SubscriptionValidationResult> {
 
     const subscription =
+        await SubscriptionRepository.getSchoolSubscription(
+            schoolUuid
+        );
 
-        await SubscriptionRepository
-
-            .getSchoolSubscription(
-
-                schoolUuid
-
-            );
-
+    /*
+     * Backward compatibility.
+     *
+     * Schools created before the subscription
+     * feature existed should continue working.
+     */
     if (!subscription) {
 
         return {
 
-            allowed: false,
+            allowed: true,
 
-            status: null,
+            status: "ACTIVE",
 
-            message:
-                EXPIRED_MESSAGE,
+            message: null,
 
             subscription: null
 
@@ -149,13 +146,10 @@ export async function validateSchoolSubscription(
 
     }
 
-    if (
-
-        subscription.subscriptionStatus ===
-
-        "SUSPENDED"
-
-    ) {
+    /*
+     * Manual suspension always wins.
+     */
+    if (subscription.subscriptionStatus === "SUSPENDED") {
 
         return {
 
@@ -163,8 +157,7 @@ export async function validateSchoolSubscription(
 
             status: "SUSPENDED",
 
-            message:
-                SUSPENDED_MESSAGE,
+            message: SUSPENDED_MESSAGE,
 
             subscription
 
@@ -172,13 +165,10 @@ export async function validateSchoolSubscription(
 
     }
 
-    if (
-
-        subscription.subscriptionStatus ===
-
-        "EXPIRED"
-
-    ) {
+    /*
+     * Manual expiry always wins.
+     */
+    if (subscription.subscriptionStatus === "EXPIRED") {
 
         return {
 
@@ -186,8 +176,50 @@ export async function validateSchoolSubscription(
 
             status: "EXPIRED",
 
-            message:
-                EXPIRED_MESSAGE,
+            message: EXPIRED_MESSAGE,
+
+            subscription
+
+        };
+
+    }
+
+    /*
+     * Empty / null status means the school
+     * has never been configured.
+     * Allow access.
+     */
+    if (
+        subscription.subscriptionStatus == null
+    ) {
+
+        return {
+
+            allowed: true,
+
+            status: "ACTIVE",
+
+            message: null,
+
+            subscription
+
+        };
+
+    }
+
+    /*
+     * No end date means no expiry has been
+     * configured yet.
+     */
+    if (!subscription.subscriptionEndDate) {
+
+        return {
+
+            allowed: true,
+
+            status: subscription.subscriptionStatus,
+
+            message: null,
 
             subscription
 
@@ -196,64 +228,25 @@ export async function validateSchoolSubscription(
     }
 
     const endDate =
-
-        subscription.subscriptionEndDate
-
-            ? new Date(
-
-                subscription.subscriptionEndDate
-
-              )
-
-            : null;
-
-    if (!endDate) {
-
-        return {
-
-            allowed: false,
-
-            status:
-                subscription.subscriptionStatus,
-
-            message:
-                EXPIRED_MESSAGE,
-
-            subscription
-
-        };
-
-    }
+        new Date(subscription.subscriptionEndDate);
 
     endDate.setHours(
-
         0,
-
         0,
-
         0,
-
         0
-
     );
 
     const graceEndDate =
-
         addDays(
-
             endDate,
-
-            subscription.gracePeriodDays
-
+            subscription.gracePeriodDays ?? 0
         );
 
-    if (
-
-        today() >
-
-        graceEndDate
-
-    ) {
+    /*
+     * Expired after grace period.
+     */
+    if (today() > graceEndDate) {
 
         return {
 
@@ -261,8 +254,7 @@ export async function validateSchoolSubscription(
 
             status: "EXPIRED",
 
-            message:
-                EXPIRED_MESSAGE,
+            message: EXPIRED_MESSAGE,
 
             subscription
 
@@ -270,12 +262,14 @@ export async function validateSchoolSubscription(
 
     }
 
+    /*
+     * Active subscription.
+     */
     return {
 
         allowed: true,
 
-        status:
-            subscription.subscriptionStatus,
+        status: "ACTIVE",
 
         message: null,
 

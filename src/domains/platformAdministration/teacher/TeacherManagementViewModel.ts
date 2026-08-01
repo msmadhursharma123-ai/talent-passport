@@ -100,7 +100,7 @@ export default function useTeacherManagementViewModel() {
 
   }
 
-  async function editSchool(
+ async function editSchool(
 
     uuid: string,
 
@@ -112,51 +112,59 @@ export default function useTeacherManagementViewModel() {
 
     limits: SchoolProfileLimits,
 
+    subscription: SchoolSubscriptionDetails,
+
     studentFeatures: string[],
 
     teacherFeatures: string[]
 
-  ) {
+) {
 
-    const ok = await updateSchool(
+    const ok =
 
-      uuid,
+        await updateSchool(
 
-      name,
+            uuid,
 
-      board,
+            name,
 
-      city,
+            board,
 
-      limits
+            city,
 
-    );
+            limits,
+
+            subscription
+
+        );
 
     if (!ok) {
 
-      return false;
+        return false;
 
     }
 
-    const featuresOk = await saveSchoolFeatures(
+    const featuresOk =
 
-      uuid,
+        await saveSchoolFeatures(
 
-      studentFeatures,
+            uuid,
 
-      teacherFeatures
+            studentFeatures,
 
-    );
+            teacherFeatures
+
+        );
 
     if (featuresOk) {
 
-      await loadSchools();
+        await loadSchools();
 
     }
 
     return featuresOk;
 
-  }
+}
 
   async function removeSchool(
     uuid: string
