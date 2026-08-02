@@ -1,100 +1,104 @@
 import "../../styles/problemSection.css";
 import SectionHeader from "../common/SectionHeader";
 
-const todayJourney = [
-
-  "Parents encourage participation.",
-
-  "Students join competitions.",
-
-  "Achievements are celebrated.",
-
-  "Certificates are collected.",
-
-  "Awards are stored away.",
-
-  "Records become difficult to find.",
-
-  "Years of effort lose visibility."
-
+const traditionalJourney = [
+  "Learning stops when the school day ends.",
+  "Teachers lack real-time visibility into student understanding.",
+  "Learning lack real-time visibilty into student understanding",
+  "Parents wait for report cards to understand progress.",
+  "Students have limited Opportunities to showcase diverse talents.",
+  "Students Projects, Assignments and Performances become scattered and forgotten over time.",
+  "Financial barriers prevent talented students from reaching their full potential.",
+  "Students and academies struggle to discover each other.",
+  "Finding the right class or scholarship is difficult and time consuming.",
+  "Parents lack trusted guidance for their child's unique potential."
+  
 ];
 
 const passportJourney = [
+  "Continuous learning beyond every classroom.",
+  "Concept-level insights after every class.",
+  "Weak concepts identified after every class.",
+  "Parents recieve continuous visibility into daliy learning.",
+  "20+ competition formats across four skill categories.",
+  "One lifelong Talent Passport for every achievement.",
+  "Achievements unlock scholarships and learning opportunities.",
+  "A marketplace connecting talent with opportunity.",
+  "Discover classes, workshops, auditions, and scholarships in one place.",
+  "Expert mentoring powered by Talent Credits.",
+];
 
-  "Parents encourage participation.",
+const schoolBenefits = [
+  "Improving their Acadmeic Results",
+  "Helping them grow Admissions",
+  "Giving them Continuous learning intelligence",
+  "Teacher & classroom analytics",
+  "NEP-ready student records",
+  "Helping them Create Better Student Opportunities",
+];
 
-  "Every activity is securely recorded.",
+const studentBenefits = [
+  "Helps in doubt tracking",
+  "Improves learning Experience",
+  "Earn Talent Credits",
+  "Build One lifelong digital identity",
+  "Excess to Scholarships & opportunities",
+  "Continuous skill tracking",
+];
 
-  "Achievements stay connected.",
-
-  "Growth is tracked continuously.",
-
-  "Skills become permanently verified.",
-
-  "Progress builds year after year.",
-
-  "One lifelong Talent Passport."
-
+const partnerBenefits = [
+  "Discover verified talent",
+  "Improves your institute footfall",
+  "Promotes internships & outreach",
+  "Meaningful student engagement",
+  "Long-term talent pipeline",
+  "Helps you grow admissions",
 ];
 
 export default function ProblemSection() {
-
   return (
-
     <section className="problem-section">
 
       <div className="problem-container">
 
         <SectionHeader
-
           eyebrow="WHY TALENT PASSPORT"
-
           title="Every Student Has A Journey. Not Every Journey Has An Identity."
-
-          description="Years of effort deserve more than memories."
-
+          description=""
         />
-
-        {/* ==========================================================
-            COMPARISON
-        ========================================================== */}
 
         <div className="journey-comparison">
 
-          {/* ======================================================
-              TODAY
+          {/* =====================================================
+              TRADITIONAL EDUCATION
           ====================================================== */}
 
           <div className="journey-column">
 
             <div className="journey-label today">
-
-              TODAY
-
+              TRADITIONAL EDUCATION
             </div>
 
             <h3>
-
-              Today's Journey
-
+              Learning Happens.
+              <br />
+              Identity Doesn't.
             </h3>
 
             <p className="journey-subtitle">
-
-              Success is celebrated, but rarely preserved for the future.
-
+             
             </p>
 
             <div className="journey-notes">
 
-              {todayJourney.map((item) => (
+              {traditionalJourney.map((item) => (
 
                 <div
                   key={item}
                   className="journey-note"
                 >
 
-                  <span className="note-dot"></span>
+                  <span className="note-dot" />
 
                   <span className="note-text">
 
@@ -110,28 +114,24 @@ export default function ProblemSection() {
 
           </div>
 
-                    {/* ======================================================
+                    {/* =====================================================
               TALENT PASSPORT
           ====================================================== */}
 
           <div className="journey-column">
 
             <div className="journey-label passport">
-
               TALENT PASSPORT
-
             </div>
 
             <h3>
-
-              Talent Passport Journey
-
+              Continuous Learning.
+              <br />
+              Lifelong Identity.
             </h3>
 
             <p className="journey-subtitle">
-
-              Every milestone becomes part of one lifelong student identity.
-
+              
             </p>
 
             <div className="journey-notes">
@@ -143,7 +143,7 @@ export default function ProblemSection() {
                   className="journey-note success"
                 >
 
-                  <span className="note-dot"></span>
+                  <span className="note-dot" />
 
                   <span className="note-text">
 
@@ -161,115 +161,105 @@ export default function ProblemSection() {
 
         </div>
 
-        {/* ==========================================================
-            BUILT FOR EVERYONE
-        ========================================================== */}
+        {/* =====================================================
+            VALUE SECTION
+        ====================================================== */}
 
         <div className="value-system">
 
           <SectionHeader
-
-            eyebrow="BUILT FOR EVERYONE"
-
-            title="One Platform. Value For Everyone."
-
-            description="Talent Passport creates measurable value for every stakeholder in the ecosystem."
-
+            eyebrow="ONE PLATFORM"
+            title="Built For Every Stakeholder"
+            description=""
           />
 
           <div className="value-grid">
 
-            {/* Schools */}
+            {/* ==============================================
+                SCHOOL
+            ============================================== */}
 
             <div className="value-card">
 
               <div className="value-tag">
-
                 FOR SCHOOLS
-
               </div>
 
               <h3>
-
-                Win More Admissions
-
+                Better Learning.
+                <br />
+                Better Outcomes.
               </h3>
 
               <ul>
 
-                <li>National talent rankings.</li>
+                {schoolBenefits.map((item) => (
 
-                <li>NEP 2020 documentation.</li>
+                  <li key={item}>
+                    {item}
+                  </li>
 
-                <li>Talent analytics dashboard.</li>
-
-                <li>Teacher development records.</li>
-
-                <li>Admission-ready student profiles.</li>
+                ))}
 
               </ul>
 
             </div>
 
-            {/* Students */}
+                        {/* ==============================================
+                STUDENTS
+            ============================================== */}
 
             <div className="value-card">
 
               <div className="value-tag">
-
                 FOR STUDENTS
-
               </div>
 
               <h3>
-
-                Real Growth. Real Recognition.
-
+                Every Effort.
+                <br />
+                Forever Recognised.
               </h3>
 
               <ul>
 
-                <li>Verified achievements.</li>
+                {studentBenefits.map((item) => (
 
-                <li>One lifelong Talent Passport.</li>
+                  <li key={item}>
+                    {item}
+                  </li>
 
-                <li>National visibility.</li>
-
-                <li>Scholarships & opportunities.</li>
-
-                <li>Skills that stay with you.</li>
+                ))}
 
               </ul>
 
             </div>
 
-            {/* Partners */}
+            {/* ==============================================
+                PARTNERS
+            ============================================== */}
 
             <div className="value-card">
 
               <div className="value-tag">
-
                 FOR PARTNERS
-
               </div>
 
               <h3>
-
-                Reach The Right Talent
-
+                Connect With
+                <br />
+                Verified Talent.
               </h3>
 
               <ul>
 
-                <li>Discover verified students.</li>
+                {partnerBenefits.map((item) => (
 
-                <li>Direct talent outreach.</li>
+                  <li key={item}>
+                    {item}
+                  </li>
 
-                <li>Scholarship campaigns.</li>
-
-                <li>Meaningful engagement.</li>
-
-                <li>Long-term brand visibility.</li>
+                ))}
 
               </ul>
 

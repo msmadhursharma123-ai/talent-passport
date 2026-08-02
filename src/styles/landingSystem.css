@@ -1,186 +1,155 @@
 /* ==========================================================
-   TALENT PASSPORT
-   LANDING DESIGN SYSTEM
+   PREMIUM SECTION HEADER SYSTEM
 ========================================================== */
 
-/* ==========================================================
-   ROOT VARIABLES
-========================================================== */
-
-:root{
-
-    /* ---------- Layout ---------- */
-
-    --landing-max-width:1240px;
-
-    --landing-section-space:88px;
-
-    --landing-card-radius:28px;
-
-    /* ---------- Typography ---------- */
-
-    --landing-title:
-        clamp(2.6rem,3.8vw,3.8rem);
-
-    --landing-copy:
-        1.08rem;
-
-    --landing-small:
-        .92rem;
-
-    /* ---------- Shadows ---------- */
-
-    --shadow-soft:
-        0 18px 50px rgba(15,23,42,.06);
-
-    --shadow-medium:
-        0 28px 70px rgba(15,23,42,.08);
-
-    --shadow-large:
-        0 45px 120px rgba(15,23,42,.12);
-
-}
-
-/* ==========================================================
-   MAIN WRAPPER
-========================================================== */
-
-.landing-shell{
-
-    position:relative;
-
-    overflow-x:hidden;
-
-    background:#ffffff;
-
-}
-
-/* ==========================================================
-   COMMON CONTAINER
-========================================================== */
-
-.landing-shell .landing-container{
-
-    width:min(
-
-        var(--landing-max-width),
-
-        92%
-
-    );
-
-    margin-inline:auto;
-
-}
-
-/* ==========================================================
-   PANEL SYSTEM
-========================================================== */
-
-.landing-shell .landing-panel{
-
-    min-height:88vh;
+.landing-shell .section-header{
 
     display:flex;
 
+    flex-direction:column;
+
     align-items:center;
 
-    padding:
+    justify-content:center;
 
-        var(--landing-section-space)
+    text-align:center;
 
-        0;
+    max-width:760px;
+
+    margin:0 auto 32px;
+
+}
+
+.landing-shell .section-left{
+
+    align-items:flex-start;
+
+    text-align:left;
+
+    margin-left:0;
+
+}
+
+.landing-shell .section-center{
+
+    align-items:center;
+
+    text-align:center;
 
 }
 
 /* ==========================================================
-   TYPOGRAPHY
+   EYEBROW
+========================================================== */
+
+.landing-shell .section-eyebrow{
+
+    position:relative;
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:10px 0;
+
+    margin-bottom:10px;
+
+    font-size:18px;
+
+    font-weight:700;
+
+    letter-spacing:.22em;
+
+    text-transform:uppercase;
+
+    color:#B68432;
+
+}
+
+.landing-shell .section-eyebrow::after{
+
+    content:"";
+
+    width:42px;
+
+    height:2px;
+
+    border-radius:999px;
+
+    background:#D8B15A;
+
+}
+
+/* ==========================================================
+   TITLE
 ========================================================== */
 
 .landing-shell .section-title{
 
+    max-width:760px;
+
+    margin:0;
+
+    font-family:
+
+        Georgia,
+
+        "Times New Roman",
+
+        serif;
+
     font-size:
 
-        var(--landing-title);
+        clamp(2.1rem,3vw,3rem);
+
+    font-weight:500;
+
+    line-height:1.16;
+
+    letter-spacing:-.02em;
+
+    color:#111827;
 
 }
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
 
 .landing-shell .section-description{
 
-    max-width:760px;
+    max-width:560px;
 
-    margin-inline:auto;
+    margin:14px auto 0;
 
-    font-size:
+    font-size:15px;
 
-        var(--landing-copy);
+    font-weight:400;
 
-    line-height:1.85;
+    line-height:1.72;
 
-}
-
-.landing-shell .section-eyebrow{
-
-    margin-bottom:20px;
+    color:#667085;
 
 }
 
-/* ==========================================================
-   CARD SYSTEM
-========================================================== */
+.landing-shell .section-left .section-description{
 
-.landing-shell .glass-card,
+    margin-left:0;
 
-.landing-shell .passport-card,
+}
 
-.landing-shell .credential-card,
+.landing-shell .section-center .section-description{
 
-.landing-shell .problem-column,
+    margin-left:auto;
 
-.landing-shell .journey-card,
-
-.landing-shell .recognition-card,
-
-.landing-shell .community-card,
-
-.landing-shell .opportunity-card,
-
-.landing-shell .impact-card{
-
-    border-radius:
-
-        var(--landing-card-radius);
+    margin-right:auto;
 
 }
 
 /* ==========================================================
-   IMAGES
-========================================================== */
-
-.landing-shell img{
-
-    max-width:100%;
-
-    display:block;
-
-}
-
-/* ==========================================================
-   DESKTOP FLOW
-========================================================== */
-
-@media(min-width:1200px){
-
-.landing-shell section{
-
-    scroll-margin-top:80px;
-
-}
-
-}
-
-/* ==========================================================
-   COMPACT VERTICAL RHYTHM
+   VERTICAL RHYTHM
 ========================================================== */
 
 .hero-section,
@@ -190,19 +159,25 @@
 .recognition-section,
 .opportunity-section,
 .community-section,
-.impact-section{
+.impact-section,
+.founder-section,
+.nationals-section{
 
-    padding-top:50px !important;
+    padding-top:44px !important;
 
-    padding-bottom:50px !important;
+    padding-bottom:44px !important;
 
 }
 
 .section-header{
 
-    margin-bottom:45px !important;
+    margin-bottom:28px !important;
 
 }
+
+/* ==========================================================
+   CONTAINER SPACING
+========================================================== */
 
 .problem-container,
 .imagine-container,
@@ -210,32 +185,128 @@
 .recognition-container,
 .opportunity-container,
 .community-container,
-.impact-container{
+.impact-container,
+.founder-container,
+.nationals-container{
 
-    row-gap:28px;
-
-}
-
-.problem-column,
-.passport-card,
-.credential-card,
-.imagine-card,
-.journey-card,
-.recognition-card,
-.community-card,
-.opportunity-card,
-.impact-card{
-
-    padding:26px !important;
+    row-gap:22px;
 
 }
 
-.passport-bottom,
+/* ==========================================================
+   PREMIUM SPACING
+========================================================== */
+
 .problem-bottom-text,
+.passport-bottom,
 .community-bottom,
-.impact-bottom{
+.impact-bottom,
+.journey-bottom{
 
-    margin-top:45px !important;
+    margin-top:34px !important;
 
 }
 
+/* ==========================================================
+   GLOBAL CARD SYSTEM
+========================================================== */
+
+.landing-shell .glass-card,
+.landing-shell .passport-card,
+.landing-shell .credential-card,
+.landing-shell .problem-column,
+.landing-shell .journey-card,
+.landing-shell .recognition-card,
+.landing-shell .community-card,
+.landing-shell .opportunity-card,
+.landing-shell .impact-card{
+
+    border-radius:18px;
+
+    padding:22px !important;
+
+    box-shadow:
+        0 10px 28px rgba(15,23,42,.045);
+
+    transition:
+        transform .25s ease,
+        box-shadow .25s ease,
+        border-color .25s ease;
+
+}
+
+.landing-shell .glass-card:hover,
+.landing-shell .passport-card:hover,
+.landing-shell .credential-card:hover,
+.landing-shell .problem-column:hover,
+.landing-shell .journey-card:hover,
+.landing-shell .recognition-card:hover,
+.landing-shell .community-card:hover,
+.landing-shell .opportunity-card:hover,
+.landing-shell .impact-card:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:
+        0 18px 42px rgba(15,23,42,.08);
+
+}
+
+/* ==========================================================
+   COMMON CONTENT WIDTH
+========================================================== */
+
+.landing-shell .section-title,
+.landing-shell .section-description{
+
+    width:100%;
+
+}
+
+.landing-shell .section-title{
+
+    max-width:760px;
+
+}
+
+.landing-shell .section-description{
+
+    max-width:560px;
+
+}
+
+/* ==========================================================
+   GLOBAL LIST SPACING
+========================================================== */
+
+.landing-shell ul{
+
+    margin-top:0;
+
+    margin-bottom:0;
+
+}
+
+.landing-shell li{
+
+    margin-bottom:8px;
+
+    line-height:1.5;
+
+}
+
+.landing-shell li:last-child{
+
+    margin-bottom:0;
+
+}
+
+/* ==========================================================
+   PREMIUM IMAGE SYSTEM
+========================================================== */
+
+.landing-shell img{
+
+    border-radius:16px;
+
+}

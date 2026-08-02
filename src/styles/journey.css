@@ -109,7 +109,7 @@
 
     gap:22px;
 
-    margin:70px 0 80px;
+    margin:70px 0 28px;
 
 }
 
@@ -376,6 +376,456 @@
 .journey-item:hover p{
 
     color:#4E5E77;
+
+}
+
+/* ==========================================================
+   ROAD TO NATIONALS
+========================================================== */
+
+.journey-roadmap{
+
+    margin-top:16px;
+
+    padding-top:24px;
+
+    border-top:none;
+
+}
+
+.roadmap-heading{
+
+    max-width:700px;
+
+    margin:0 auto 22px;
+
+    text-align:center;
+
+}
+
+.roadmap-tag{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:8px 18px;
+
+    border-radius:999px;
+
+    background:#FFF7E8;
+
+    color:#C5891A;
+
+    font-size:11px;
+
+    font-weight:700;
+
+    letter-spacing:.18em;
+
+    text-transform:uppercase;
+
+}
+
+.roadmap-heading h3{
+
+    margin:12px 0 10px;
+
+    font-family:Georgia,"Times New Roman",serif;
+
+    font-size:40px;
+
+    line-height:1.15;
+
+    font-weight:500;
+
+    color:#173F7A;
+
+}
+
+.roadmap-heading p{
+
+    margin:0;
+
+    font-size:16px;
+
+    line-height:1.7;
+
+    color:#64748B;
+
+}
+
+/* ==========================================================
+   ROADMAP TIMELINE
+========================================================== */
+
+.roadmap-timeline{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:22px;
+
+    align-items:start;
+
+}
+
+.roadmap-stage{
+
+    position:relative;
+
+}
+
+.roadmap-top{
+
+    position:relative;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    margin-bottom:22px;
+
+}
+
+.roadmap-circle{
+
+    width:58px;
+
+    height:58px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    background:linear-gradient(
+        135deg,
+        #173F7A,
+        #2E5F9E
+    );
+
+    color:#FFFFFF;
+
+    font-size:24px;
+
+    font-weight:700;
+
+    box-shadow:
+
+        0 12px 30px rgba(23,63,122,.18);
+
+    z-index:2;
+
+}
+
+.roadmap-line{
+
+    position:absolute;
+
+    top:50%;
+
+    left:calc(50% + 34px);
+
+    width:calc(100% - 68px);
+
+    height:3px;
+
+    transform:translateY(-50%);
+
+    background:linear-gradient(
+        90deg,
+        #C5891A,
+        #173F7A
+    );
+
+    border-radius:999px;
+
+}
+
+/* ==========================================================
+   ROADMAP CARDS
+========================================================== */
+
+.roadmap-card{
+
+    background:#FFFFFF;
+
+    border:1px solid rgba(17,24,39,.06);
+
+    border-radius:18px;
+
+    padding:14px 16px;
+
+    text-align:center;
+
+    box-shadow:
+
+        0 12px 30px rgba(15,36,68,.05);
+
+    transition:
+
+        transform .25s ease,
+
+        box-shadow .25s ease,
+
+        border-color .25s ease;
+
+}
+
+.roadmap-card:hover{
+
+    transform:translateY(-4px);
+
+    border-color:rgba(197,137,26,.20);
+
+    box-shadow:
+
+        0 20px 45px rgba(15,36,68,.09);
+
+}
+
+.roadmap-status{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:6px 14px;
+
+    border-radius:999px;
+
+    background:#FFF6E4;
+
+    color:#C5891A;
+
+    font-size:10px;
+
+    font-weight:700;
+
+    letter-spacing:.14em;
+
+    text-transform:uppercase;
+
+    margin-bottom:14px;
+
+}
+
+.roadmap-card h4{
+
+    margin:0 0 8px;
+
+    font-family:
+
+        Georgia,
+
+        "Times New Roman",
+
+        serif;
+
+    font-size:18px;
+
+    line-height:1.25;
+
+    font-weight:500;
+
+    color:#173F7A;
+
+}
+
+.roadmap-card p{
+
+    margin:0;
+
+    font-size:12px;
+
+    line-height:1.45;
+
+    color:#64748B;
+
+}
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media (max-width:1100px){
+
+    .journey-roadmap{
+
+        margin-top:56px;
+
+        padding-top:40px;
+
+    }
+
+    .roadmap-heading{
+
+        margin-bottom:32px;
+
+    }
+
+    .roadmap-heading h3{
+
+        font-size:32px;
+
+    }
+
+    .roadmap-timeline{
+
+        grid-template-columns:repeat(2,1fr);
+
+        gap:24px;
+
+    }
+
+    .roadmap-top{
+
+        margin-bottom:18px;
+
+    }
+
+    .roadmap-line{
+
+        display:none;
+
+    }
+
+}
+
+@media (max-width:768px){
+
+    .journey-roadmap{
+
+        margin-top:44px;
+
+        padding-top:32px;
+
+    }
+
+    .roadmap-heading{
+
+        margin-bottom:28px;
+
+    }
+
+    .roadmap-heading h3{
+
+        font-size:28px;
+
+        line-height:1.2;
+
+    }
+
+    .roadmap-heading p{
+
+        font-size:14px;
+
+        line-height:1.6;
+
+    }
+
+    .roadmap-timeline{
+
+        grid-template-columns:1fr;
+
+        gap:22px;
+
+    }
+
+    .roadmap-stage{
+
+        max-width:420px;
+
+        margin:0 auto;
+
+    }
+
+    .roadmap-circle{
+
+        width:50px;
+
+        height:50px;
+
+        font-size:20px;
+
+    }
+
+    .roadmap-card{
+
+        padding:16px;
+
+    }
+
+    .roadmap-card h4{
+
+        font-size:18px;
+
+    }
+
+    .roadmap-card p{
+
+        font-size:13px;
+
+    }
+
+}
+
+@media (max-width:480px){
+
+    .journey-roadmap{
+
+        margin-top:36px;
+
+        padding-top:28px;
+
+    }
+
+    .roadmap-tag{
+
+        font-size:10px;
+
+        padding:6px 14px;
+
+    }
+
+    .roadmap-heading h3{
+
+        font-size:24px;
+
+    }
+
+    .roadmap-card{
+
+        border-radius:16px;
+
+        padding:14px;
+
+    }
+
+    .roadmap-status{
+
+        font-size:9px;
+
+        padding:5px 12px;
+
+    }
+
+    .roadmap-card h4{
+
+        font-size:17px;
+
+    }
 
 }
 

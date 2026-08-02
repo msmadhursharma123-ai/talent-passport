@@ -639,12 +639,16 @@ schoolName: string;
   }
 />
 
-   {activeTab === "identity" && (
-  <IdentityWorld
-    onContinue={() =>
-      setActiveTab("role-selection")
-    }
-  />
+{activeTab === "identity" && (
+
+    <IdentityWorld
+
+        onContinue={() =>
+            setActiveTab("role-selection")
+        }
+
+    />
+
 )}
 
 {activeTab === "role-selection" && (

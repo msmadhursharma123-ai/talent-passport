@@ -6,23 +6,28 @@ const benefits = [
   "Students build one lifelong Talent Passport recognised everywhere.",
 ];
 
-const credentialRows = [
+const credentialHighlights = [
+
   {
-    label: "Journey",
+    title: "Journey",
     value: "Projects • Competitions • Portfolio",
   },
+
   {
-    label: "Recognition",
+    title: "Recognition",
     value: "Achievements & Milestones",
   },
+
   {
-    label: "Growth",
-    value: "Updated Throughout School Life",
+    title: "Growth",
+    value: "Improves Daily Academic Learning",
   },
+
   {
-    label: "Identity",
+    title: "Identity",
     value: "One Lifelong Student Passport",
   },
+
 ];
 
 export default function ImagineSection() {
@@ -34,9 +39,9 @@ export default function ImagineSection() {
       <div className="imagine-container">
 
         <SectionHeader
-          eyebrow="THE TALENT PASSPORT"
-          title="One Identity. One Story. A Lifetime Of Growth."
-          description="Talent Passport transforms everyday learning into one trusted digital identity that grows with every project, competition, achievement and experience."
+          eyebrow=""
+          title=""
+          description=""
         />
 
         <div className="credential-layout">
@@ -65,10 +70,9 @@ export default function ImagineSection() {
 
             <p>
 
-              Every Talent Passport participant receives one verified
-              lifelong student credential that grows with projects,
-              competitions, portfolios and achievements instead of
-              disconnected certificates.
+              Every student from a registered school receives one verified
+              Talent Passport that grows with daily school learnings, projects,
+              competitions, portfolios and achievements.
 
             </p>
 
@@ -120,107 +124,93 @@ export default function ImagineSection() {
 
             <div className="credential-watermark">
 
-              HPC
+              
 
             </div>
 
-            <div className="credential-header">
+        <div className="credential-header">
 
-              <div className="credential-chip">
+  <div className="credential-header-top">
 
-                TALENT PASSPORT • HPC
+    <div className="credential-chip">
 
-              </div>
+      TALENT PASSPORT • HPC
 
-              <h3>
+    </div>
 
-                Student Growth Credential
+    <div className="credential-status">
 
-              </h3>
+      VERIFIED
 
-              <p>
+    </div>
 
-                Verified lifelong student identity
+  </div>
 
-              </p>
+  <h3>
 
-            </div>
+    Student Growth Credential
 
-            <div className="credential-preview">
+  </h3>
 
-              <img
-                src="/landing/talentpassport.webp"
-                alt="Talent Passport Credential"
-              />
+  <p>
 
-            </div>
+    Verified lifelong student identity
 
-            <div className="credential-details">
+  </p>
 
-              {credentialRows.map((row) => (
+</div>
 
-                <div
-                  key={row.label}
-                  className="credential-row"
-                >
+        <div className="credential-preview">
 
-                  <span>
+  <img
+    src="/landing/talentpassport.webp"
+    alt="Talent Passport Credential"
+  />
 
-                    {row.label}
+  <div className="credential-image-caption">
 
-                  </span>
+    Live Preview Of Student Talent Passport
 
-                  <strong>
+  </div>
 
-                    {row.value}
+</div>
 
-                  </strong>
-
-                </div>
-
-              ))}
-
-            </div>
-
-            <div className="credential-verification">
-
-              <div className="verification-icon">
-
-                ✓
-
-              </div>
-
-              <div className="verification-text">
-
-                <h4>
-
-                  Verified Digital Credential
-
-                </h4>
-
-                <p>
-
-                  Secure lifelong student identity with continuous
-                  academic, co-curricular and achievement verification.
-
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
+                 </div>
 
         </div>
 
-        <div className="credential-bottom">
+        {/* =====================================================
+            PASSPORT SPECIFICATIONS
+        ===================================================== */}
 
-          <blockquote>
+        <div className="credential-specifications">
 
-            "A student's journey should never be forgotten.
-            Every experience deserves a permanent place."
+          <div className="credential-spec-grid">
 
-          </blockquote>
+            {credentialHighlights.map((item) => (
+
+              <div
+                key={item.title}
+                className="credential-grid-item"
+              >
+
+                <div className="credential-grid-label">
+
+                  {item.title}
+
+                </div>
+
+                <div className="credential-grid-value">
+
+                  {item.value}
+
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
 
         </div>
 

@@ -7,13 +7,10 @@ import ProblemSection from "../components/landing/ProblemSection";
 
 import ImageSection from "../components/common/ImageSection";
 import JourneySection from "../components/common/JourneySection";
-import RecognitionSection from "../components/common/RecognitionSection";
-import OpportunitySection from "../components/common/OpportunitySection";
-import CommunitySection from "../components/common/CommunitySection";
-import ImpactSection from "../components/common/ImpactSection";
+
 import FounderSection from "../components/landing/FounderSection";
 import TestimonialsSection from "../components/landing/TestimonialsSection";
-import NationalsJourneySection from "../components/landing/NationalsJourneySection";
+import AcademicIntelligenceSection from "../components/identityWorld/sections/AcademicIntelligenceSection";
 import LandingCTA from "../components/common/LandingCTA";
 import LandingFooter from "../components/common/LandingFooter";
 
@@ -75,6 +72,16 @@ export default function IdentityWorld({
 
     </section>
 
+        {/* ===========================
+        academic
+    =========================== */}
+
+    <section id="academicintelligence">
+
+        <AcademicIntelligenceSection />
+
+    </section>
+
     {/* ===========================
         JOURNEY
     =========================== */}
@@ -85,55 +92,6 @@ export default function IdentityWorld({
 
     </section>
 
-    {/* ===========================
-        RECOGNITION
-    =========================== */}
-
-    <section id="recognition">
-
-        <RecognitionSection />
-
-    </section>
-
-    {/* ===========================
-        ROAD TO NATIONALS
-    =========================== */}
-
-    <section id="nationals">
-
-        <NationalsJourneySection />
-
-    </section>
-
-    {/* ===========================
-        OPPORTUNITIES
-    =========================== */}
-
-    <section id="opportunities">
-
-        <OpportunitySection />
-
-    </section>
-
-    {/* ===========================
-        COMMUNITY
-    =========================== */}
-
-    <section id="community">
-
-        <CommunitySection />
-
-    </section>
-
-    {/* ===========================
-        IMPACT
-    =========================== */}
-
-    <section id="impact">
-
-        <ImpactSection />
-
-    </section>
 
     {/* ===========================
         FOUNDER MESSAGE

@@ -8,7 +8,7 @@
 
     overflow:hidden;
 
-    padding:150px 0;
+    padding:42px 0 36px;
 
     background:#fbfaf7;
 
@@ -64,13 +64,48 @@
 
     display:grid;
 
-    grid-template-columns:44% 56%;
+    grid-template-columns:42% 58%;
 
-    align-items:center;
+    align-items:start;
 
-    gap:90px;
+    gap:42px;
 
-    margin-top:90px;
+    margin-top:0;
+
+}
+
+/* ==========================================================
+   PASSPORT SPECIFICATIONS
+========================================================== */
+
+.credential-specifications{
+
+    width:100%;
+
+    margin-top:34px;
+
+    padding:24px 28px;
+
+    border-radius:22px;
+
+    background:#ffffff;
+
+    border:1px solid rgba(17,24,39,.08);
+
+    box-shadow:
+        0 14px 40px rgba(17,24,39,.05);
+
+}
+
+.credential-spec-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:16px;
+
+    margin-bottom:22px;
 
 }
 
@@ -121,7 +156,7 @@
         "Times New Roman",
         serif;
 
-    font-size:clamp(56px,5vw,82px);
+  font-size:clamp(42px,3.8vw,58px);
 
     line-height:1.02;
 
@@ -139,13 +174,13 @@
 
 .credential-left p{
 
-    margin:0 0 22px;
+    margin:0 0 14px;
 
-    max-width:620px;
+    max-width:520px;
 
-    font-size:19px;
+    font-size:15px;
 
-    line-height:1.95;
+    line-height:1.65;
 
     color:#5F6674;
 
@@ -165,9 +200,11 @@
 
     width:max-content;
 
-    margin:22px 0 40px;
+margin:14px 0 22px;
 
-    padding:12px 26px;
+padding:10px 20px;
+
+font-size:11px;
 
     border-radius:999px;
 
@@ -176,8 +213,6 @@
     background:transparent;
 
     color:#173F7A;
-
-    font-size:13px;
 
     font-weight:700;
 
@@ -203,7 +238,7 @@
 
     flex-direction:column;
 
-    gap:18px;
+    gap:10px;
 
 }
 
@@ -215,9 +250,9 @@
 
     gap:16px;
 
-    font-size:17px;
+    font-size:14px;
 
-    line-height:1.8;
+    line-height:1.5;
 
     color:#4B5563;
 
@@ -249,14 +284,14 @@
 
     background:#ffffff;
 
-    border-radius:36px;
+    border-radius:24px;
 
-    padding:42px;
+    padding:24px;
 
     border:1px solid rgba(17,24,39,.08);
 
     box-shadow:
-        0 30px 90px rgba(17,24,39,.08);
+        0 18px 48px rgba(17,24,39,.07);
 
 }
 
@@ -314,6 +349,48 @@
     position:relative;
 
     z-index:2;
+
+    margin-bottom:14px;
+
+}
+
+.credential-header-top{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:16px;
+
+    margin-bottom:14px;
+
+}
+
+.credential-status{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:6px 12px;
+
+    border-radius:999px;
+
+    background:#EAF7EF;
+
+    color:#1F7A43;
+
+    font-size:10px;
+
+    font-weight:700;
+
+    letter-spacing:.16em;
+
+    text-transform:uppercase;
 
 }
 
@@ -384,15 +461,33 @@
 
 .credential-preview{
 
-    margin:34px 0 38px;
+    margin:18px 0;
 
-    padding:14px;
+    padding:8px;
 
-    border-radius:24px;
+    border-radius:16px;
 
     background:#F7F7F5;
 
     border:1px solid rgba(17,24,39,.06);
+
+}
+
+.credential-image-caption{
+
+    margin-top:10px;
+
+    text-align:center;
+
+    font-size:11px;
+
+    font-weight:600;
+
+    letter-spacing:.12em;
+
+    text-transform:uppercase;
+
+    color:#8B96A8;
 
 }
 
@@ -421,33 +516,6 @@
    CREDENTIAL DETAILS
 ========================================================== */
 
-.credential-details{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:2px;
-
-    margin-top:8px;
-
-}
-
-.credential-row{
-
-    display:grid;
-
-    grid-template-columns:140px 1fr;
-
-    align-items:center;
-
-    gap:20px;
-
-    padding:18px 0;
-
-    border-bottom:1px solid rgba(17,24,39,.08);
-
-}
 
 .credential-row:last-child{
 
@@ -455,13 +523,49 @@
 
 }
 
-.credential-row span{
+.credential-grid{
 
-    font-size:12px;
+    display:contents;
+
+}
+
+.credential-grid-item{
+
+    padding:18px;
+
+    border-radius:16px;
+
+    background:#FAFBFC;
+
+    border:1px solid rgba(17,24,39,.06);
+
+    transition:
+
+        transform .25s ease,
+
+        box-shadow .25s ease;
+
+}
+
+.credential-grid-item:hover{
+
+    transform:translateY(-3px);
+
+    box-shadow:
+
+        0 10px 28px rgba(17,24,39,.06);
+
+}
+
+.credential-grid-label{
+
+    margin-bottom:6px;
+
+    font-size:10px;
 
     font-weight:700;
 
-    letter-spacing:.18em;
+    letter-spacing:.16em;
 
     text-transform:uppercase;
 
@@ -469,13 +573,13 @@
 
 }
 
-.credential-row strong{
+.credential-grid-value{
 
-    font-size:16px;
+    font-size:13px;
+
+    line-height:1.45;
 
     font-weight:600;
-
-    line-height:1.6;
 
     color:#111827;
 
@@ -485,31 +589,31 @@
    VERIFICATION PANEL
 ========================================================== */
 
-.credential-verification{
+/* ==========================================================
+   VERIFIED FOOTER
+========================================================== */
+
+.credential-footer{
 
     display:flex;
 
-    align-items:center;
+    align-items:flex-start;
 
-    gap:18px;
+    gap:14px;
 
-    margin-top:34px;
+    margin-top:18px;
 
-    padding:22px 24px;
+    padding-top:16px;
 
-    border-radius:20px;
-
-    background:#FAFBFC;
-
-    border:1px solid rgba(17,24,39,.08);
+    border-top:1px solid rgba(17,24,39,.08);
 
 }
 
-.verification-icon{
+.credential-footer-icon{
 
-    width:58px;
+    width:34px;
 
-    height:58px;
+    height:34px;
 
     flex-shrink:0;
 
@@ -519,39 +623,33 @@
 
     justify-content:center;
 
-    border-radius:18px;
+    border-radius:10px;
 
-    background:
+    background:linear-gradient(
+        135deg,
+        #173F7A,
+        #2E5F9E
+    );
 
-        linear-gradient(
-            135deg,
-            #173F7A,
-            #2E5F9E
-        );
+    color:#FFFFFF;
 
-    color:#ffffff;
+    font-size:15px;
 
-    font-size:24px;
-
-    font-weight:800;
-
-    box-shadow:
-
-        0 18px 40px rgba(23,63,122,.20);
+    font-weight:700;
 
 }
 
-.verification-text{
+.credential-footer-content{
 
     flex:1;
 
 }
 
-.verification-text h4{
+.credential-footer-title{
 
-    margin:0 0 6px;
+    margin-bottom:4px;
 
-    font-size:20px;
+    font-size:14px;
 
     font-weight:700;
 
@@ -559,13 +657,11 @@
 
 }
 
-.verification-text p{
+.credential-footer-text{
 
-    margin:0;
+    font-size:12px;
 
-    font-size:15px;
-
-    line-height:1.7;
+    line-height:1.45;
 
     color:#6B7280;
 
@@ -636,11 +732,41 @@
 
 .credential-card:hover{
 
-    transform:translateY(-10px);
+    transform:translateY(-4px);
 
     box-shadow:
 
-        0 40px 120px rgba(17,24,39,.12);
+        0 20px 60px rgba(17,24,39,.09);
+
+}
+
+
+
+/* ==========================================================
+   DESKTOP HEIGHT BALANCING
+========================================================== */
+
+@media(min-width:1200px){
+
+    .credential-layout{
+
+        align-items:start;
+
+    }
+
+    .credential-left{
+
+        padding-top:20px;
+
+    }
+
+    .credential-card{
+
+        max-width:640px;
+
+        margin-left:auto;
+
+    }
 
 }
 
@@ -650,11 +776,11 @@
 
 @media (max-width:1200px){
 
-    .credential-layout{
+ .credential-layout{
 
-        grid-template-columns:1fr;
+    grid-template-columns:1fr;
 
-        gap:70px;
+    gap:40px;
 
         max-width:920px;
 
@@ -786,9 +912,9 @@
 
     .credential-card{
 
-        padding:24px;
+        padding:18px;
 
-        border-radius:28px;
+        border-radius:18px;
 
     }
 
