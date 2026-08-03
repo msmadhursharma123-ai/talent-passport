@@ -486,14 +486,14 @@ export const CONTENT: IdentityWorldContent = {
         section: {
 
             badge:
-                "ACADEMIC INTELLIGENCE",
+                "FOR SCHOOL LEADERS",
 
             title:
                 "Understand Learning. Every Single Day.",
 
             subtitle:
 
-                "Talent Passport brings classroom intelligence to students, parents, teachers and schools."
+                "Every Classroom. Every Teacher. Every Topic. Every Day.."
 
         },
 

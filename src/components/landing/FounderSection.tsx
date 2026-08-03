@@ -21,6 +21,8 @@ export default function FounderSection() {
 
                 {/* RIGHT */}
 
+
+
                 <div className="founder-content">
 
                     <div className="founder-tag">
