@@ -493,7 +493,7 @@ export const CONTENT: IdentityWorldContent = {
 
             subtitle:
 
-                "Talent Passport brings continuous classroom intelligence to students, parents, teachers and schools."
+                "Talent Passport brings classroom intelligence to students, parents, teachers and schools."
 
         },
 

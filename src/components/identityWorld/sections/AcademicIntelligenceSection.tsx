@@ -24,9 +24,9 @@ export default function AcademicIntelligenceSection() {
 
         overflow: "hidden",
 
-        paddingTop: 20,
+        paddingTop: 18,
 
-        paddingBottom: 40
+        paddingBottom: 38
 
     }}
 
@@ -210,7 +210,7 @@ width:"96%",
 
          style={{
 
-    padding:24,
+    padding:22,
 
     background:"#FFFFFF",
 
@@ -234,7 +234,7 @@ width:"96%",
 
                     textTransform:"uppercase",
 
-                    marginBottom:18
+                    marginBottom:16
 
                 }}
 
@@ -262,11 +262,11 @@ width:"96%",
 
             >
 
-                Every Classroom
+                Help Every Student 
 
                 <br/>
 
-                Creates Intelligence.
+                Learn With Confidence.
 
             </div>
 
@@ -284,10 +284,7 @@ width:"96%",
 
             >
 
-                Every lecture transforms into structured learning
-                intelligence. Teachers teach, students respond,
-                parents stay informed and schools receive continuous
-                academic visibility.
+                Academic excellence is built through thousands of classroom moments—not only final examinations. Understanding learning patterns across classrooms helps schools strengthen teaching support, student outcomes and long-term academic performance.
 
             </p>
 
@@ -313,33 +310,33 @@ width:"96%",
 
                     {
 
-                        value:"98%",
+                        value:"School–Parent Partnership",
 
-                        title:"Topic Visibility"
-
-                    },
-
-                    {
-
-                        value:"24×7",
-
-                        title:"Learning Timeline"
+                        title:"Keep teachers and parents connected through continuous visibility."
 
                     },
 
                     {
 
-                        value:"365",
+                        value:"Teacher Support",
 
-                        title:"Daily Academic Records"
+                        title:"Help teachers understand classroom learning trends."
 
                     },
 
                     {
 
-                        value:"AI",
+                        value:"Academic Continuity",
 
-                        title:"Academic Intelligence"
+                        title:"Learning records grow every teaching day."
+
+                    },
+
+                    {
+
+                        value:"School Improvement",
+
+                        title:"Enable data-informed academic planning."
 
                     }
 
@@ -353,7 +350,7 @@ width:"96%",
 
     style={{
 
-        padding:20,
+        padding:18,
 
         textAlign:"center",
 
@@ -373,7 +370,7 @@ width:"96%",
 
                                     color:"#173F7A",
 
-                                    fontSize:28,
+                                    fontSize:22,
 
                                     fontWeight:900
 
@@ -427,7 +424,7 @@ width:"96%",
 
      style={{
 
-    padding:24,
+    padding:22,
 
     background:"#FFFFFF",
 
@@ -457,27 +454,25 @@ width:"96%",
 
         >
 
-            Daily Intelligence Flow
+            From Daily Learning to Better Marks ⭐
 
         </div>
 
         {
 
-            [
+          [
+    "Prepare Students Before Every Unit Test",
 
-                "Teacher Records Today's Lecture",
+    "Resolve Learning Doubts Earlier",
 
-                "Students Share Understanding",
+    "Identify Hidden Academic Gaps",
 
-                "Weak Topics Identified",
+    "Support Every Student With Confidence",
 
-                "Parents Receive Updates",
+    "Keep Parents Connected to Progress",
 
-                "Teacher Gets Insights",
-
-                "School Intelligence Dashboard"
-
-            ].map(
+    "Build Better Academic Outcomes"
+].map(
 
                 (step,index)=>(
 
@@ -623,9 +618,9 @@ width:"96%",
 
       style={{
 
-    width:120,
+    width:100,
 
-    height:120,
+    height:100,
 
     borderRadius:"50%",
 
@@ -653,7 +648,7 @@ width:"96%",
 
             style={{
 
-                fontSize:42
+                fontSize:44
 
             }}
 
@@ -666,34 +661,19 @@ width:"96%",
     </div>
 
     <div
+    style={{
+        maxWidth:1400,
+        width:"100%",
+        margin:"0 auto",
+        fontSize:"clamp(1.9rem,3vw,3rem)",
+        fontWeight:900,
+        color:"#173F7A",
+        lineHeight:1.08,
+        letterSpacing:"-0.035em"
+    }}
+>
 
-        style={{
-
-            maxWidth:980,
-
-            fontSize:"clamp(2.3rem,4vw,3.6rem)",
-
-            fontWeight:900,
-
-            color:"#173F7A",
-
-            lineHeight:1.08,
-
-            letterSpacing:"-0.04em"
-
-        }}
-
-    >
-
-        Intelligence Doesn't
-
-        <br/>
-
-        Replace Teachers.
-
-        <br/>
-
-        It Empowers Them.
+        Intelligence Doesn't Replace Teachers. It Empowers Them.
 
     </div>
 
@@ -719,7 +699,7 @@ width:"96%",
 
     >
 
-        Turning everyday classroom interactions into actionable academic insights.
+        Every classroom deserves the same level of intelligence that businesses use to make decisions.
 
     </div>
 
@@ -727,7 +707,7 @@ width:"96%",
 
        style={{
 
-    maxWidth:920,
+    maxWidth:960,
 
     marginTop:36,
 
@@ -741,11 +721,7 @@ width:"96%",
 
     >
 
-        Teachers continue teaching the way they always have.
-        Talent Passport quietly transforms classroom activity,
-        student understanding and parent feedback into structured
-        academic intelligence that helps schools improve learning outcomes,
-        reduce learning gaps and make better academic decisions.
+
 
     </p>
 
@@ -771,7 +747,7 @@ width:"96%",
 
             gap:24,
 
-            marginTop:60
+            marginTop:30
 
         }}
 
@@ -825,7 +801,7 @@ width:"96%",
 
     style={{
 
-        padding:28,
+        padding:26,
 
         textAlign:"center",
 
@@ -893,75 +869,7 @@ width:"96%",
 
     {/* =============================================== */}
 
-    <div
 
-       style={{
-
-    marginTop:70,
-
-    maxWidth:1000,
-
-    padding:"30px 42px",
-
-    borderRadius:28,
-
-    background:"#FFFFFF",
-
-    border:"1px solid rgba(23,63,122,.08)",
-
-    boxShadow:"0 18px 42px rgba(17,24,39,.06)"
-
-}}
-
-    >
-
-        <div
-
-            style={{
-
-                fontSize:15,
-
-                color:"#B68432",
-
-                letterSpacing:2,
-
-                fontWeight:800,
-
-                textTransform:"uppercase",
-
-                marginBottom:22
-
-            }}
-
-        >
-
-            Our Vision
-
-        </div>
-
-        <div
-
-            style={{
-
-                fontSize:"clamp(1.8rem,3vw,2.7rem)",
-
-                color:"#173F7A",
-
-                fontWeight:900,
-
-                lineHeight:1.3
-
-            }}
-
-        >
-
-            Every classroom deserves the same level of intelligence
-
-            that businesses use to make decisions.
-
-        </div>
-
-    </div>
 
 </div>
 

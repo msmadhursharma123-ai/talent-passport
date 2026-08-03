@@ -7,10 +7,11 @@ import ProblemSection from "../components/landing/ProblemSection";
 
 import ImageSection from "../components/common/ImageSection";
 import JourneySection from "../components/common/JourneySection";
-
+import PartnerSection from "../components/identityWorld/sections/PartnerSection";
 import FounderSection from "../components/landing/FounderSection";
 import TestimonialsSection from "../components/landing/TestimonialsSection";
 import AcademicIntelligenceSection from "../components/identityWorld/sections/AcademicIntelligenceSection";
+import SchoolSection from "../components/identityWorld/sections/SchoolSection";
 import LandingCTA from "../components/common/LandingCTA";
 import LandingFooter from "../components/common/LandingFooter";
 
@@ -62,6 +63,17 @@ export default function IdentityWorld({
 
     </section>
 
+
+    {/* ===========================
+        SchoolSection
+    =========================== */}
+
+    <section id="schoolsection">
+
+        <SchoolSection />
+
+    </section>
+
     {/* ===========================
         IMAGINE
     =========================== */}
@@ -69,6 +81,16 @@ export default function IdentityWorld({
     <section id="imagine">
 
         <ImageSection />
+
+    </section>
+
+    {/* ===========================
+        JOURNEY
+    =========================== */}
+
+    <section id="journey">
+
+        <JourneySection />
 
     </section>
 
@@ -82,13 +104,14 @@ export default function IdentityWorld({
 
     </section>
 
-    {/* ===========================
-        JOURNEY
+
+       {/* ===========================
+        Partner
     =========================== */}
 
-    <section id="journey">
+    <section id="partnersection">
 
-        <JourneySection />
+        <PartnerSection />
 
     </section>
 

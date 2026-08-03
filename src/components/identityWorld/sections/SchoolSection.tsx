@@ -10,112 +10,127 @@ import COLORS from "../styles/colors";
 
 export default function SchoolSection() {
 
-    return (
+  return (
 
-        <SectionContainer
+<SectionContainer
 
-            id="schools"
+    id="schools"
 
-            background="linear-gradient(180deg,#071326 0%,#0A2342 45%,#040B16 100%)"
+    background="linear-gradient(180deg,#FCFBF8 0%,#F8F5EE 45%,#FBFAF7 100%)"
+
+    style={{
+
+        position:"relative",
+
+        overflow:"hidden",
+
+        paddingTop:52,
+
+        paddingBottom:70
+
+    }}
+
+>
+
+    <FloatingBackground
+
+        style={{
+
+            opacity:.55
+
+        }}
+
+    />
+
+    {/* ================================================= */}
+    {/* PREMIUM BACKGROUND */}
+    {/* ================================================= */}
+
+    <div
+
+        style={{
+
+            position:"absolute",
+
+            inset:0,
+
+            pointerEvents:"none",
+
+            background:`
+
+                radial-gradient(
+                    circle at 18% 18%,
+                    rgba(198,140,31,.07),
+                    transparent 38%
+                ),
+
+                radial-gradient(
+                    circle at 82% 18%,
+                    rgba(23,63,122,.05),
+                    transparent 34%
+                ),
+
+                radial-gradient(
+                    circle at 50% 100%,
+                    rgba(198,140,31,.04),
+                    transparent 42%
+                )
+
+            `
+
+        }}
+
+    />
+
+    <div
+
+        style={{
+
+            width:"100%",
+
+            maxWidth:1480,
+
+            margin:"0 auto",
+
+            paddingInline:"clamp(22px,4vw,60px)",
+
+            position:"relative",
+
+            zIndex:2
+
+        }}
+
+    >
+
+        <AnimatedHeading
+
+            badge="ACADEMIC INTELLIGENCE"
+
+            title="See What Every Classroom Is Learning."
+
+            subtitle="Daily classroom intelligence across students, teachers, parents and school leadership."
+
+            align="center"
+
+            maxWidth={760}
+
+        />
+
+        <div
 
             style={{
 
-                position:"relative",
-
-                overflow:"hidden",
-
-                paddingTop:140,
-
-                paddingBottom:180
+                height:10
 
             }}
 
-        >
+        />
 
-            <FloatingBackground />
+        {/* =====================================================
 
-            {/* ================================================= */}
+            PACKAGE 12 PART 2 STARTS HERE
 
-            {/* EXECUTIVE INTELLIGENCE GLOW */}
-
-            {/* ================================================= */}
-
-            <div
-
-                style={{
-
-                    position:"absolute",
-
-                    inset:0,
-
-                    background:
-
-                        "radial-gradient(circle at 28% 22%, rgba(59,130,246,.18), transparent 68%)",
-
-                    pointerEvents:"none"
-
-                }}
-
-            />
-
-            <div
-
-                style={{
-
-                    position:"absolute",
-
-                    inset:0,
-
-                    background:
-
-                        "radial-gradient(circle at 82% 75%, rgba(16,185,129,.16), transparent 64%)",
-
-                    pointerEvents:"none"
-
-                }}
-
-            />
-
-            <div
-
-                style={{
-
-                    maxWidth:1400,
-
-                    margin:"0 auto",
-
-                    position:"relative",
-
-                    zIndex:2
-
-                }}
-
-            >
-
-                <AnimatedHeading
-
-                    badge="Academic Intelligence Operating System"
-
-                    title="See What Every Classroom Is Learning."
-
-                    subtitle="Daily classroom intelligence, teacher visibility, student understanding, parent engagement and school-wide academic insights—brought together into one executive command center."
-
-                    align="center"
-
-                    maxWidth={960}
-
-                />
-
-                <div
-
-                    style={{
-
-                        height:90
-
-                    }}
-
-                />
-
+        ===================================================== */}
                 {/* =====================================================
 
                     PACKAGE 12 PART 2 STARTS HERE
@@ -128,8 +143,6 @@ export default function SchoolSection() {
 
         position:"relative",
 
-        minHeight:1100
-
     }}
 
 >
@@ -140,377 +153,104 @@ export default function SchoolSection() {
 
     {/* ===================================================== */}
 
-    <GlassCard
+<div
 
-        hover={false}
+    style={{
 
-        style={{
+        width:"100%",
 
-            width:"100%",
+        position:"relative",
 
-            padding:42,
+        padding:0,
 
-            background:
+        overflow:"visible"
 
-                "linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.05))",
+    }}
 
-            border:"1px solid rgba(59,130,246,.25)",
+>
 
-            overflow:"hidden"
 
-        }}
+<div
 
-    >
+    style={{
 
-        {/* HEADER */}
+        width:"100%"
+
+    }}
+
+>
+
+     {/* ===================================================== */}
+{/* PREMIUM HEADER */}
+{/* ===================================================== */}
+
+<div
+
+    style={{
+
+        display:"flex",
+
+        justifyContent:"space-between",
+
+        alignItems:"center",
+
+        gap:18,
+
+        flexWrap:"wrap",
+
+        marginBottom:18
+
+    }}
+
+>
+
+    <div>
 
         <div
 
             style={{
 
-                display:"flex",
-
-                justifyContent:"space-between",
+                display:"inline-flex",
 
                 alignItems:"center",
 
-                marginBottom:40,
+                padding:"7px 16px",
 
-                flexWrap:"wrap",
+                borderRadius:999,
 
-                gap:20
+                background:"#FFF5E7",
 
-            }}
+                border:"1px solid rgba(198,140,31,.14)",
 
-        >
+                color:"#B68432",
 
-            <div>
-
-                <div
-
-                    style={{
-
-                        color:"#38BDF8",
-
-                        fontWeight:800,
-
-                        letterSpacing:2,
-
-                        textTransform:"uppercase",
-
-                        fontSize:13
-
-                    }}
-
-                >
-
-                    LIVE ACADEMIC INTELLIGENCE
-
-                </div>
-
-                <div
-
-                    style={{
-
-                        color:"#FFFFFF",
-
-                        fontSize:34,
-
-                        fontWeight:900,
-
-                        marginTop:8
-
-                    }}
-
-                >
-
-                    School Intelligence Command Center
-
-                </div>
-
-            </div>
-
-            <GlassCard
-
-                hover={false}
-
-                style={{
-
-                    padding:"14px 22px",
-
-                    borderRadius:999,
-
-                    background:"rgba(16,185,129,.12)",
-
-                    border:"1px solid rgba(16,185,129,.25)"
-
-                }}
-
-            >
-
-                <div
-
-                    style={{
-
-                        color:"#34D399",
-
-                        fontWeight:800
-
-                    }}
-
-                >
-
-                    ● LIVE SCHOOL INSIGHTS
-
-                </div>
-
-            </GlassCard>
-
-        </div>
-
-        {/* ===================================================== */}
-
-        {/* DASHBOARD GRID */}
-
-        {/* ===================================================== */}
-
-        <div
-
-            style={{
-
-                display:"grid",
-
-                gridTemplateColumns:
-
-                    "repeat(auto-fit,minmax(260px,1fr))",
-
-                gap:24
-
-            }}
-
-        >
-
-            {
-
-                [
-
-                    {
-
-                        icon:"😊",
-
-                        title:"Student Understanding",
-
-                        color:"#38BDF8",
-
-                        text:"Track classroom understanding levels across every subject and every class."
-
-                    },
-
-                    {
-
-                        icon:"❓",
-
-                        title:"Daily Doubt Resolution",
-
-                        color:"#F97316",
-
-                        text:"Identify concepts where students struggled and monitor daily resolution."
-
-                    },
-
-                    {
-
-                        icon:"👨‍🏫",
-
-                        title:"Teacher Visibility",
-
-                        color:"#22C55E",
-
-                        text:"Understand teaching effectiveness through topic-wise classroom feedback."
-
-                    },
-
-                    {
-
-                        icon:"👨‍👩‍👧",
-
-                        title:"Parent Engagement",
-
-                        color:"#A855F7",
-
-                        text:"Capture parent feedback and strengthen school-home communication."
-
-                    },
-
-                    {
-
-                        icon:"📚",
-
-                        title:"Subject Intelligence",
-
-                        color:"#FBBF24",
-
-                        text:"Monitor understanding trends chapter-by-chapter across every subject."
-
-                    },
-
-                    {
-
-                        icon:"📈",
-
-                        title:"School Growth",
-
-                        color:"#06B6D4",
-
-                        text:"Use academic intelligence to improve learning outcomes and admissions."
-
-                    }
-
-                ].map(
-
-                    card=>(
-
-                        <GlassCard
-
-                            key={card.title}
-
-                            style={{
-
-                                padding:28,
-
-                                background:"rgba(255,255,255,.05)",
-
-                                border:`1px solid ${card.color}22`
-
-                            }}
-
-                        >
-
-                            <div
-
-                                style={{
-
-                                    fontSize:40,
-
-                                    marginBottom:18
-
-                                }}
-
-                            >
-
-                                {card.icon}
-
-                            </div>
-
-                            <div
-
-                                style={{
-
-                                    color:card.color,
-
-                                    fontWeight:800,
-
-                                    fontSize:22,
-
-                                    marginBottom:14
-
-                                }}
-
-                            >
-
-                                {card.title}
-
-                            </div>
-
-                            <div
-
-                                style={{
-
-                                    color:COLORS.textSecondary,
-
-                                    lineHeight:1.8,
-
-                                    fontSize:15
-
-                                }}
-
-                            >
-
-                                {card.text}
-
-                            </div>
-
-                        </GlassCard>
-
-                    )
-
-                )
-
-            }
-
-        </div>
-
-    </GlassCard>
-
-    {/* ===================================================== */}
-
-    {/* AI ENGINE */}
-
-    {/* ===================================================== */}
-
-    <GlassCard
-
-        hover={false}
-
-        style={{
-
-            marginTop:70,
-
-            padding:"40px 48px",
-
-            textAlign:"center",
-
-            background:
-
-                "linear-gradient(135deg,rgba(59,130,246,.10),rgba(16,185,129,.10))",
-
-            border:"1px solid rgba(59,130,246,.20)"
-
-        }}
-
-    >
-
-        <div
-
-            style={{
-
-                color:"#38BDF8",
+                fontSize:11,
 
                 fontWeight:800,
 
                 letterSpacing:2,
 
-                textTransform:"uppercase",
-
-                marginBottom:18
+                textTransform:"uppercase"
 
             }}
 
         >
 
-            AI ACADEMIC INTELLIGENCE ENGINE
+            LIVE ACADEMIC INTELLIGENCE
 
         </div>
 
-        <div
+        <h3
 
             style={{
 
-                fontSize:"clamp(2.2rem,4vw,3.6rem)",
+                margin:"12px 0 0",
 
-                color:"#FFFFFF",
+                color:"#173F7A",
 
-                fontWeight:900,
+                fontSize:22,
+
+                fontWeight:800,
 
                 lineHeight:1.2
 
@@ -518,230 +258,236 @@ export default function SchoolSection() {
 
         >
 
-            Thousands of Daily Learning Signals.
+            School Intelligence Command Center
 
-            <br/>
-
-            One Unified School Intelligence Layer.
-
-        </div>
+        </h3>
 
         <p
 
             style={{
 
-                marginTop:30,
+                margin:"6px 0 0",
 
-                color:COLORS.textSecondary,
+                color:"#667085",
 
-                maxWidth:900,
+                fontSize:15,
 
-                marginInline:"auto",
+                lineHeight:1.7,
 
-                lineHeight:1.9,
-
-                fontSize:18
+                maxWidth:620
 
             }}
 
         >
 
-            Every classroom interaction, daily log, student response,
-            parent feedback and learning pattern contributes to a continuously
-            evolving academic intelligence system that helps schools make
-            better educational decisions.
+            Real-time classroom intelligence helping school leaders understand learning trends, teacher effectiveness and academic growth.
 
         </p>
 
-    </GlassCard>
-
-</div>
-
-                {/* =====================================================
-
-                    PACKAGE 12 PART 3 STARTS HERE
-
-                ===================================================== */}
-
-<div
-
-    style={{
-
-        marginTop:120,
-
-        display:"flex",
-
-        flexDirection:"column",
-
-        alignItems:"center",
-
-        textAlign:"center"
-
-    }}
-
->
-
-    {/* ================================================= */}
-
-    {/* EXECUTIVE DECISION GRID */}
-
-    {/* ================================================= */}
+    </div>
 
     <div
 
         style={{
 
-            width:"100%",
+            display:"flex",
 
-            maxWidth:1320,
+            alignItems:"center",
 
-            display:"grid",
+            gap:10,
 
-            gridTemplateColumns:
+            padding:"10px 18px",
 
-                "repeat(auto-fit,minmax(260px,1fr))",
+            borderRadius:999,
 
-            gap:28
+            background:"#EEF8F2",
+
+            border:"1px solid rgba(16,185,129,.10)",
+
+            color:"#239B56",
+
+            fontWeight:700,
+
+            fontSize:14
 
         }}
 
     >
 
-        {
+        <span
 
-            [
+            style={{
 
-                {
+                width:8,
 
-                    icon:"🎯",
+                height:8,
 
-                    title:"Identify Learning Gaps",
+                borderRadius:"50%",
 
-                    color:"#38BDF8",
+                background:"#22C55E"
 
-                    text:"See exactly where students are struggling before small gaps become larger academic challenges."
+            }}
 
-                },
+        />
 
-                {
-
-                    icon:"📊",
-
-                    title:"Support Every Teacher",
-
-                    color:"#22C55E",
-
-                    text:"Provide timely academic support using classroom understanding trends instead of assumptions."
-
-                },
-
-                {
-
-                    icon:"📚",
-
-                    title:"Improve Academic Outcomes",
-
-                    color:"#FBBF24",
-
-                    text:"Use daily learning intelligence to strengthen revision, interventions and examination readiness."
-
-                },
-
-                {
-
-                    icon:"🏫",
-
-                    title:"Strengthen School Reputation",
-
-                    color:"#A855F7",
-
-                    text:"Deliver stronger academic experiences that improve parent confidence and future admissions."
-
-                }
-
-            ].map(
-
-                item=>(
-
-                    <GlassCard
-
-                        key={item.title}
-
-                        style={{
-
-                            padding:34,
-
-                            background:"rgba(255,255,255,.06)",
-
-                            border:`1px solid ${item.color}30`
-
-                        }}
-
-                    >
-
-                        <div
-
-                            style={{
-
-                                fontSize:42,
-
-                                marginBottom:18
-
-                            }}
-
-                        >
-
-                            {item.icon}
-
-                        </div>
-
-                        <div
-
-                            style={{
-
-                                color:item.color,
-
-                                fontWeight:800,
-
-                                fontSize:22,
-
-                                marginBottom:16
-
-                            }}
-
-                        >
-
-                            {item.title}
-
-                        </div>
-
-                        <div
-
-                            style={{
-
-                                color:COLORS.textSecondary,
-
-                                lineHeight:1.8,
-
-                                fontSize:15
-
-                            }}
-
-                        >
-
-                            {item.text}
-
-                        </div>
-
-                    </GlassCard>
-
-                )
-
-            )
-
-        }
+        LIVE SCHOOL INSIGHTS
 
     </div>
+
+</div>
+
+      {/* ===================================================== */}
+{/* DASHBOARD GRID */}
+{/* ===================================================== */}
+
+<div
+
+    style={{
+
+        display:"grid",
+
+        gridTemplateColumns:
+
+            "repeat(6,minmax(0,1fr))",
+
+        gap:16,
+
+        alignItems:"stretch"
+
+    }}
+
+>
+
+    {[
+        {
+            icon:"😊",
+            title:"Student Understanding",
+            text:"Track classroom understanding across every class."
+        },
+        {
+            icon:"❓",
+            title:"Daily Doubts",
+            text:"Identify concepts students struggle with."
+        },
+        {
+            icon:"👨‍🏫",
+            title:"Teacher Visibility",
+            text:"Understand classroom effectiveness daily."
+        },
+        {
+            icon:"👨‍👩‍👧",
+            title:"Parent Engagement",
+            text:"Strengthen school-home communication."
+        },
+        {
+            icon:"📚",
+            title:"Subject Intelligence",
+            text:"Monitor chapter-wise understanding."
+        },
+        {
+            icon:"📈",
+            title:"School Growth",
+            text:"Drive continuous academic improvement."
+        }
+
+    ].map(card=>(
+
+        <GlassCard
+
+            key={card.title}
+
+            style={{
+
+                padding:16,
+
+                minHeight:180,
+
+                display:"flex",
+
+                flexDirection:"column",
+
+                justifyContent:"flex-start",
+
+                borderRadius:18,
+
+                background:
+                    "linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
+
+                border:"1px solid rgba(190,145,42,.10)",
+
+                boxShadow:
+                    "0 10px 26px rgba(17,24,39,.05)"
+
+            }}
+
+        >
+
+            <div
+
+                style={{
+
+                    fontSize:28,
+
+                    marginBottom:10
+
+                }}
+
+            >
+
+                {card.icon}
+
+            </div>
+
+            <div
+
+                style={{
+
+                    color:"#173F7A",
+
+                    fontWeight:800,
+
+                    fontSize:15,
+
+                    marginBottom:8,
+
+                    lineHeight:1.3
+
+                }}
+
+            >
+
+                {card.title}
+
+            </div>
+
+            <div
+
+                style={{
+
+                    color:"#667085",
+
+                    fontSize:13,
+
+                    lineHeight:1.55
+
+                }}
+
+            >
+
+                {card.text}
+
+            </div>
+
+        </GlassCard>
+
+    ))}
+
+</div>        </div>
+
+    </div>
+
+    
+
 
     {/* ================================================= */}
 
@@ -753,33 +499,36 @@ export default function SchoolSection() {
 
         hover={false}
 
-        style={{
+style={{
 
-            marginTop:90,
+    marginTop:48,
 
-            maxWidth:980,
+    maxWidth:1400,
 
-            width:"100%",
+    width:"100%",
 
-            padding:"50px 60px",
+    padding:"26px 34px",
 
-            background:
+    textAlign:"center",
 
-                "linear-gradient(135deg,rgba(59,130,246,.12),rgba(16,185,129,.08))",
+    borderRadius:28,
 
-            border:"1px solid rgba(59,130,246,.22)",
+    background:
+        "linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
 
-            textAlign:"center"
+    border:"1px solid rgba(190,145,42,.10)",
 
-        }}
+    boxShadow:
+        "0 18px 46px rgba(17,24,39,.05)"
+
+}}
 
     >
 
         <div
 
             style={{
-
-                color:"#38BDF8",
+color:"#B68432",
 
                 fontWeight:800,
 
@@ -787,7 +536,7 @@ export default function SchoolSection() {
 
                 textTransform:"uppercase",
 
-                marginBottom:22
+                marginBottom:10
 
             }}
 
@@ -801,31 +550,19 @@ export default function SchoolSection() {
 
             style={{
 
-                fontSize:"clamp(2.3rem,4vw,3.8rem)",
+               fontSize:"clamp(1.55rem,2.4vw,2.2rem)",
 
-                color:"#FFFFFF",
+                color:"#173F7A",
 
                 fontWeight:900,
 
-                lineHeight:1.25
+                lineHeight:1.18
 
             }}
 
         >
 
-            Every Classroom.
-
-            <br/>
-
-            Every Teacher.
-
-            <br/>
-
-            Every Topic.
-
-            <br/>
-
-            Every Day.
+            Every Classroom. Every Teacher. Every Topic. Every Day.
 
         </div>
 
@@ -833,109 +570,33 @@ export default function SchoolSection() {
 
             style={{
 
-                maxWidth:860,
+                maxWidth:900,
 
-                margin:"34px auto 0",
+                margin:"16px auto 0",
 
-                color:COLORS.textSecondary,
+                color:"#667085",
 
-                fontSize:18,
+                fontSize:13,
 
-                lineHeight:1.9
+                lineHeight:1.65
 
             }}
 
         >
 
-            Talent Passport transforms daily classroom activity into actionable academic intelligence, helping school leaders understand learning trends, support teachers, strengthen student outcomes and build a culture of continuous improvement.
+            The Schools That Understand
+Learning Every Day
+Improve Every Year.
+Visibility creates better decisions. Better decisions create better learning.
 
         </p>
 
     </GlassCard>
 
-    {/* ================================================= */}
-
-    {/* FINAL MESSAGE */}
-
-    {/* ================================================= */}
-
-    <div
-
-        style={{
-
-            maxWidth:960,
-
-            marginTop:100
-
-        }}
-
-    >
-
-        <div
-
-            style={{
-
-                fontSize:"clamp(3rem,5vw,5rem)",
-
-                fontWeight:900,
-
-                color:"#FFFFFF",
-
-                lineHeight:1.08,
-
-                letterSpacing:"-0.04em"
-
-            }}
-
-        >
-
-            The Schools
-
-            <br/>
-
-            That Understand
-
-            <br/>
-
-            Learning Every Day
-
-            <br/>
-
-            Improve Every Year.
-
-        </div>
-
-        <div
-
-            style={{
-
-                marginTop:30,
-
-                fontSize:22,
-
-                fontWeight:700,
-
-                background:
-
-                    "linear-gradient(90deg,#38BDF8,#22C55E,#60A5FA)",
-
-                WebkitBackgroundClip:"text",
-
-                WebkitTextFillColor:"transparent"
-
-            }}
-
-        >
-
-            Visibility creates better decisions. Better decisions create better learning.
-
-        </div>
-
-    </div>
-
+   
 </div>
 
-<SectionTransition />
+{/* <SectionTransition /> */}
 
             </div>
 

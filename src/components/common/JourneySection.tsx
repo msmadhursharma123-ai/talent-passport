@@ -80,8 +80,9 @@ export default function JourneySection() {
       <div className="journey-container">
 
         <SectionHeader
-          eyebrow="YOUR JOURNEY"
-          title="Every Journey Begins With Small Steps."
+          eyebrow="BEYOND THE CLASSROOM, WHAT COMES NEXT?"
+          title="
+          Build Confidence. Compete. Grow."
           description=""
         />
 
@@ -206,7 +207,7 @@ export default function JourneySection() {
         <div className="journey-bottom">
 
   <p>
-Your journey grows with you and opens doors to future opportunities.
+Every Journey Begins With Small Steps.
 
   </p>
 
