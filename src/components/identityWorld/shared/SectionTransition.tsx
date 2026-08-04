@@ -1,5 +1,14 @@
 export default function SectionTransition() {
 
+    const isMobile =
+        typeof window !== "undefined" &&
+        window.innerWidth <= 768;
+
+    const isTablet =
+        typeof window !== "undefined" &&
+        window.innerWidth > 768 &&
+        window.innerWidth <= 1024;
+
     return (
 
         <div
@@ -8,11 +17,23 @@ export default function SectionTransition() {
 
                 position: "relative",
 
-                height: 150,
+                height: isMobile
+                    ? 80
+                    : isTablet
+                    ? 110
+                    : 150,
 
-                marginTop: -40,
+                marginTop: isMobile
+                    ? -18
+                    : isTablet
+                    ? -28
+                    : -40,
 
-                marginBottom: -40,
+                marginBottom: isMobile
+                    ? -18
+                    : isTablet
+                    ? -28
+                    : -40,
 
                 overflow: "hidden",
 
@@ -24,9 +45,7 @@ export default function SectionTransition() {
 
         >
 
-            {/* ============================================== */}
-            {/* SOFT GOLD GLOW */}
-            {/* ============================================== */}
+            {/* GOLD GLOW */}
 
             <div
 
@@ -36,29 +55,34 @@ export default function SectionTransition() {
 
                     left: "50%",
 
-                    top: -120,
+                    top: isMobile ? -60 : -120,
 
                     transform: "translateX(-50%)",
 
-                    width: 760,
+                    width: isMobile
+                        ? 360
+                        : isTablet
+                        ? 540
+                        : 760,
 
-                    height: 340,
+                    height: isMobile
+                        ? 180
+                        : isTablet
+                        ? 250
+                        : 340,
 
                     borderRadius: "50%",
 
                     background:
-
                         "radial-gradient(circle, rgba(197,137,26,.10) 0%, rgba(197,137,26,.05) 45%, transparent 100%)",
 
-                    filter: "blur(60px)"
+                    filter: `blur(${isMobile ? 35 : 60}px)`
 
                 }}
 
             />
 
-            {/* ============================================== */}
-            {/* SOFT NAVY GLOW */}
-            {/* ============================================== */}
+            {/* NAVY GLOW */}
 
             <div
 
@@ -68,29 +92,34 @@ export default function SectionTransition() {
 
                     left: "50%",
 
-                    top: -40,
+                    top: isMobile ? -10 : -40,
 
                     transform: "translateX(-50%)",
 
-                    width: 520,
+                    width: isMobile
+                        ? 250
+                        : isTablet
+                        ? 360
+                        : 520,
 
-                    height: 220,
+                    height: isMobile
+                        ? 110
+                        : isTablet
+                        ? 160
+                        : 220,
 
                     borderRadius: "50%",
 
                     background:
-
                         "radial-gradient(circle, rgba(23,63,122,.05) 0%, transparent 80%)",
 
-                    filter: "blur(55px)"
+                    filter: `blur(${isMobile ? 30 : 55}px)`
 
                 }}
 
             />
 
-            {/* ============================================== */}
-            {/* THIN GOLD DIVIDER */}
-            {/* ============================================== */}
+            {/* GOLD LINE */}
 
             <div
 
@@ -100,27 +129,24 @@ export default function SectionTransition() {
 
                     left: "50%",
 
-                    top: 10,
+                    top: isMobile ? 6 : 10,
 
                     transform: "translateX(-50%)",
 
                     width: 2,
 
-                    height: "70%",
+                    height: isMobile ? "55%" : "70%",
 
                     borderRadius: 999,
 
                     background:
-
                         "linear-gradient(180deg, transparent, rgba(197,137,26,.35), transparent)"
 
                 }}
 
             />
 
-            {/* ============================================== */}
-            {/* SUBTLE DIVIDER LINE */}
-            {/* ============================================== */}
+            {/* HORIZONTAL DIVIDER */}
 
             <div
 
@@ -128,18 +154,21 @@ export default function SectionTransition() {
 
                     position: "absolute",
 
-                    bottom: 16,
+                    bottom: isMobile ? 8 : 16,
 
                     left: "50%",
 
                     transform: "translateX(-50%)",
 
-                    width: "72%",
+                    width: isMobile
+                        ? "92%"
+                        : isTablet
+                        ? "84%"
+                        : "72%",
 
                     height: 1,
 
                     background:
-
                         "linear-gradient(90deg, transparent, rgba(23,63,122,.08), transparent)"
 
                 }}

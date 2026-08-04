@@ -12,146 +12,297 @@ export default function PartnerSection() {
 
     const section = CONTENT.partners.section;
 
-  return (
+    const partnerCards = [
+        {
+            title: "Dance Academy",
+            emoji: "💃",
+            offerings: [
+                "Classical Dance",
+                "Hip-Hop",
+                "Stage Shows",
+                "Competitions",
+                "Workshops",
+            ],
+        },
+        {
+            title: "Music School",
+            emoji: "🎵",
+            offerings: [
+                "Vocal Music",
+                "Instruments",
+                "Band Programs",
+                "Performances",
+                "Certifications",
+            ],
+        },
+        {
+            title: "Sports Academy",
+            emoji: "⚽",
+            offerings: [
+                "Football",
+                "Cricket",
+                "Athletics",
+                "Fitness Camps",
+                "Championships",
+            ],
+        },
+        {
+            title: "Robotics Lab",
+            emoji: "🤖",
+            offerings: [
+                "Robotics",
+                "STEM Labs",
+                "Coding",
+                "Artificial Intelligence",
+                "Innovation Projects",
+            ],
+        },
+        {
+            title: "Acting Studio",
+            emoji: "🎬",
+            offerings: [
+                "Theatre",
+                "Public Speaking",
+                "Drama",
+                "Expression",
+                "Confidence Building",
+            ],
+        },
+        {
+            title: "Coding Institute",
+            emoji: "💻",
+            offerings: [
+                "Programming",
+                "Web Development",
+                "App Development",
+                "AI & ML",
+                "Future Skills",
+            ],
+        },
+    ];
 
-    <SectionContainer
+    return (
 
-        id="partners"
-
-        background="linear-gradient(180deg,#FCFBF8 0%,#F8F5EE 45%,#FBFAF7 100%)"
-
-        style={{
-
-            position:"relative",
-
-            overflow:"hidden",
-
-            paddingTop:70,
-
-            paddingBottom:90
-
-        }}
-
-    >
-
-        <FloatingBackground
-
-            style={{
-
-                opacity:.55
-
-            }}
-
-        />
-
-        {/* ================================================= */}
-
-        {/* PREMIUM WARM BACKGROUND */}
-
-        {/* ================================================= */}
-
-        <div
-
-            style={{
-
-                position:"absolute",
-
-                inset:0,
-
-                pointerEvents:"none",
-
-                background:`
-
-                    radial-gradient(
-
-                        circle at 18% 20%,
-
-                        rgba(198,140,31,.08),
-
-                        transparent 42%
-
-                    ),
-
-                    radial-gradient(
-
-                        circle at 82% 22%,
-
-                        rgba(23,63,122,.05),
-
-                        transparent 38%
-
-                    ),
-
-                    radial-gradient(
-
-                        circle at 50% 100%,
-
-                        rgba(198,140,31,.04),
-
-                        transparent 45%
-
-                    )
-
-                `
-
-            }}
-
-        />
-
-        <div
-
-            style={{
-
-                width:"100%",
-
-                maxWidth:1480,
-
-                margin:"0 auto",
-
-                paddingInline:"clamp(24px,4vw,60px)",
-
-                position:"relative",
-
-                zIndex:2
-
-            }}
-
-        >
-
-          <div
+   <SectionContainer
+    id="partners"
+    background="linear-gradient(180deg,#FCFBF8 0%,#F8F5EE 45%,#FBFAF7 100%)"
     style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        transform: "scale(1.15)",
-        transformOrigin: "top center",
-        marginBottom: 40,
+        position: "relative",
+        overflow: "hidden",
+
+        paddingTop: "clamp(42px,6vw,70px)",
+        paddingBottom: "clamp(52px,7vw,90px)"
     }}
 >
+
+    <FloatingBackground
+        style={{
+            opacity: 0.55
+        }}
+    />
+
+    {/* ================================================= */}
+    {/* PREMIUM BACKGROUND */}
+    {/* ================================================= */}
+
+    <div
+        style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+
+            background: `
+                radial-gradient(
+                    circle at 18% 20%,
+                    rgba(198,140,31,.08),
+                    transparent 42%
+                ),
+
+                radial-gradient(
+                    circle at 82% 22%,
+                    rgba(23,63,122,.05),
+                    transparent 38%
+                ),
+
+                radial-gradient(
+                    circle at 50% 100%,
+                    rgba(198,140,31,.04),
+                    transparent 45%
+                )
+            `
+        }}
+    />
+
+    <div
+        style={{
+            width: "100%",
+            maxWidth: 1480,
+            margin: "0 auto",
+            paddingInline: "clamp(14px,3vw,60px)",
+            position: "relative",
+            zIndex: 2,
+            boxSizing: "border-box"
+        }}
+    >
+
+        {/* ================================================= */}
+        {/* HERO */}
+        {/* ================================================= */}
+
+        <div
+            className="partner-hero"
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                marginBottom: "clamp(24px,4vw,40px)"
+            }}
+        >
+
+       <div className="partner-heading">
+
     <AnimatedHeading
         badge="BECOME A PARTNER"
+
         title="Bring Great Learning Opportunities To Every Student."
-        subtitle="Talent Passport connects trusted academies, institutes and learning partners with schools and students to create meaningful opportunities beyond the classroom."
+
+        subtitle="Talent Passport connects trusted academies, institutes and learning partners with schools and students to create meaningful opportunities beyond the classroom. A marketplace where students and institutes find each other and reach out for workshops, auditions and scholarships."
+
         align="center"
-        maxWidth={820}
+
+        maxWidth={920}
     />
+
 </div>
+        </div>
 
-            <div
+        <style>{`
 
-                style={{
+#partners *{
+box-sizing:border-box;
+}
 
-                    height:10
+/* ========================================= */
+/* Tablet */
+/* ========================================= */
 
-                }}
+@media (max-width:1024px){
 
-            />
+#partners{
 
-            {/* =====================================================
+padding-top:48px;
 
-                PACKAGE 11 PART 2 STARTS HERE
+padding-bottom:60px;
 
-            ===================================================== */}
+}
+
+.partner-hero{
+
+transform:scale(.94);
+
+transform-origin:top center;
+
+margin-bottom:20px;
+
+}
+
+}
+
+/* ========================================= */
+/* Mobile */
+/* ========================================= */
+
+@media (max-width:768px){
+
+#partners{
+
+overflow-x:hidden;
+
+}
+
+.partner-hero{
+
+transform:scale(.82);
+
+transform-origin:top center;
+
+margin-bottom:-8px;
+
+}
+
+#partners h1{
+
+font-size:clamp(28px,7vw,40px)!important;
+
+line-height:1.12!important;
+
+}
+
+#partners h2{
+
+font-size:clamp(18px,5vw,24px)!important;
+
+}
+
+#partners h3{
+
+font-size:clamp(18px,5vw,22px)!important;
+
+}
+
+#partners p{
+
+font-size:14px!important;
+
+line-height:1.55!important;
+
+}
+
+}
+
+/* ================================================= */
+/* GOLDEN SHINING SUBTITLE */
+/* ================================================= */
+
+.partner-heading p{
+
+background:
+linear-gradient(
+90deg,
+#5F6B86 0%,
+#7B6A43 18%,
+#C5891A 34%,
+#F2D27A 50%,
+#C5891A 66%,
+#7B6A43 82%,
+#5F6B86 100%
+);
+
+background-size:220% auto;
+
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+background-clip:text;
+
+animation:partnerGoldenFlow 7s linear infinite;
+
+font-weight:500;
+
+}
+
+@keyframes partnerGoldenFlow{
+
+0%{
+background-position:0% center;
+}
+
+100%{
+background-position:220% center;
+}
+
+}
+
+`}</style>
 
                 {/* =====================================================
 
@@ -160,6 +311,7 @@ export default function PartnerSection() {
                 ===================================================== */}
 
           <div
+className="partner-network"
 
     style={{
 
@@ -371,86 +523,26 @@ export default function PartnerSection() {
 {/* PARTNER TYPES */}
 {/* ===================================================== */}
 
-{[
-    {
-        title: "Dance Academy",
-        emoji: "💃",
-        left: 40,
-        top: 0,
-        offerings: [
-            "Classical Dance",
-            "Hip-Hop",
-            "Stage Shows",
-            "Competitions",
-            "Workshops",
-        ],
-    },
-    {
-        title: "Music School",
-        emoji: "🎵",
-        right: 40,
-        top: 0,
-        offerings: [
-            "Vocal Music",
-            "Instruments",
-            "Band Programs",
-            "Performances",
-            "Certifications",
-        ],
-    },
-    {
-        title: "Sports Academy",
-        emoji: "⚽",
-        left: 20,
-        top: 230,
-        offerings: [
-            "Football",
-            "Cricket",
-            "Athletics",
-            "Fitness Camps",
-            "Championships",
-        ],
-    },
-    {
-        title: "Robotics Lab",
-        emoji: "🤖",
-        right: 20,
-        top: 230,
-        offerings: [
-            "Robotics",
-            "STEM Labs",
-            "Coding",
-            "Artificial Intelligence",
-            "Innovation Projects",
-        ],
-    },
-    {
-        title: "Acting Studio",
-        emoji: "🎬",
-        left: 40,
-        top: 480,
-        offerings: [
-            "Theatre",
-            "Public Speaking",
-            "Drama",
-            "Expression",
-            "Confidence Building",
-        ],
-    },
-    {
-        title: "Coding Institute",
-        emoji: "💻",
-        right: 40,
-        top: 480,
-        offerings: [
-            "Programming",
-            "Web Development",
-            "App Development",
-            "AI & ML",
-            "Future Skills",
-        ],
-    },
-].map((partner) => (
+{partnerCards.map((partner, index) => {
+
+const desktopPosition = [
+
+{ left:40, top:0 },
+
+{ right:40, top:0 },
+
+{ left:20, top:230 },
+
+{ right:20, top:230 },
+
+{ left:40, top:480 },
+
+{ right:40, top:480 }
+
+][index];
+
+return (
+
     <GlassCard
         key={partner.title}
         hover={false}
@@ -466,9 +558,11 @@ export default function PartnerSection() {
                 "1px solid rgba(214,162,60,.12)",
             boxShadow:
                 "0 12px 30px rgba(17,24,39,.06)",
-            left: partner.left,
-            right: partner.right,
-            top: partner.top,
+           left: desktopPosition.left,
+
+right: desktopPosition.right,
+
+top: desktopPosition.top,
         }}
     >
         <div
@@ -525,7 +619,116 @@ export default function PartnerSection() {
             ))}
         </div>
     </GlassCard>
+
+);
+
+})
+}
+</div>
+
+{/* ===================================================== */}
+{/* MOBILE / TABLET NETWORK */}
+{/* ===================================================== */}
+
+<div className="partner-network-mobile">
+
+    <GlassCard
+        hover={false}
+        style={{
+            padding:18,
+borderRadius:20,
+marginBottom:14,
+            textAlign:"center",
+            background:"linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
+            border:"1px solid rgba(214,162,60,.14)"
+        }}
+    >
+
+        <div
+            style={{
+                color:"#B7791F",
+                fontWeight:800,
+                letterSpacing:2,
+                marginBottom:12
+            }}
+        >
+            VERIFIED NETWORK
+        </div>
+
+        <div
+            style={{
+                fontSize:22,
+                fontWeight:900,
+                color:"#173F7A",
+                lineHeight:1.2
+            }}
+        >
+            Talent Passport
+            <br/>
+            Partner Platform
+        </div>
+
+        <p
+            style={{
+                marginTop:14,
+                color:"#667085",
+                lineHeight:1.6,
+                fontSize:14
+            }}
+        >
+            Trusted educational institutes connected
+            with schools, parents and students.
+        </p>
+
+    </GlassCard>
+
+    <div className="partner-mobile-grid">
+
+       {partnerCards.map((partner)=>(
+
+<GlassCard
+    key={partner.title}
+    hover={false}
+    style={{
+        padding:10,
+        borderRadius:16,
+        background:"linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
+        border:"1px solid rgba(214,162,60,.10)",
+        minHeight:92,
+        display:"flex",
+        flexDirection:"column",
+        justifyContent:"center",
+        alignItems:"center",
+        textAlign:"center"
+    }}
+>
+
+<div
+style={{
+fontSize:24,
+marginBottom:6
+}}
+>
+{partner.emoji}
+</div>
+
+<div
+style={{
+fontSize:15,
+fontWeight:800,
+lineHeight:1.15,
+color:"#173F7A"
+}}
+>
+{partner.title}
+</div>
+
+</GlassCard>
+
 ))}
+
+    </div>
+
 </div>
 
                 {/* =====================================================
@@ -535,6 +738,8 @@ export default function PartnerSection() {
                 ===================================================== */}
 
 <div
+
+    className="partner-content"
 
     style={{
 
@@ -559,6 +764,7 @@ export default function PartnerSection() {
     {/* ================================================= */}
 
     <div
+className="partner-journey"
 
         style={{
 
@@ -721,92 +927,7 @@ lineHeight:1.7
 
     </div>
 
-   {/* ================================================= */}
-{/* OPPORTUNITY SERVICES */}
-{/* ================================================= */}
-
-<div
-
-    style={{
-
-        width:"100%",
-
-        maxWidth:1320,
-
-        display:"flex",
-
-        justifyContent:"center",
-
-        flexWrap:"wrap",
-
-        gap:14,
-
-        marginTop:40
-
-    }}
-
->
-
-    {[
-        "🎭 Workshops",
-        "🏫 School Partnerships",
-        "🎓 Scholarships",
-        "📚 Skill Programs",
-        "🎤 Masterclasses",
-        "🏆 Competitions",
-        "🤝 Student Discovery",
-        "⭐ Verified Institute"
-    ].map((item)=>(
-
-        <GlassCard
-
-            key={item}
-
-            hover={false}
-
-            style={{
-
-                padding:"10px 18px",
-
-                borderRadius:999,
-
-                background:
-                    "linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
-
-                border:"1px solid rgba(214,162,60,.12)",
-
-                boxShadow:
-                    "0 6px 18px rgba(17,24,39,.05)"
-
-            }}
-
-        >
-
-            <div
-
-                style={{
-
-                    color:"#173F7A",
-
-                    fontWeight:700,
-
-                    fontSize:14,
-
-                    whiteSpace:"nowrap"
-
-                }}
-
-            >
-
-                {item}
-
-            </div>
-
-        </GlassCard>
-
-    ))}
-
-</div>
+ 
 
 {/* ================================================= */}
 {/* MAIN MESSAGE */}
@@ -820,6 +941,243 @@ lineHeight:1.7
 
 
 </div>
+
+
+<style>{`
+/* ========================================= */
+/* DESKTOP */
+/* ========================================= */
+
+.partner-network-mobile{
+display:none;
+}
+
+/* ========================================= */
+/* TABLET */
+/* ========================================= */
+
+@media (max-width:1024px){
+
+.partner-network{
+display:none;
+}
+
+.partner-network-mobile{
+display:block;
+max-width:620px;
+margin:0 auto 20px;
+}
+
+.partner-content{
+margin-top:30px !important;
+}
+
+/* Hero */
+
+/* Hero */
+
+.partner-hero{
+transform:none !important;
+padding:0;
+width:100%;
+margin-bottom:20px;
+}
+
+#partners .partner-hero h2{
+font-size:38px !important;
+line-height:1.18 !important;
+letter-spacing:-1px !important;
+max-width:650px !important;
+margin:0 auto 24px !important;
+}
+
+#partners .partner-hero p{
+font-size:16px !important;
+line-height:1.6 !important;
+max-width:600px !important;
+margin:0 auto !important;
+}
+
+/* Grid */
+
+.partner-mobile-grid{
+display:grid;
+grid-template-columns:repeat(2,minmax(0,1fr));
+gap:12px;
+align-items:stretch;
+}
+
+.partner-mobile-grid>*{
+min-height:170px;
+display:flex;
+flex-direction:column;
+justify-content:flex-start;
+}
+
+/* Journey */
+
+.partner-journey{
+grid-template-columns:repeat(2,1fr)!important;
+gap:14px!important;
+}
+
+/* Services */
+
+.partner-services{
+display:grid!important;
+grid-template-columns:repeat(2,minmax(0,1fr));
+column-gap:12px;
+row-gap:4px;
+margin-top:20px!important;
+}
+
+.partner-services>*{
+width:100%!important;
+min-width:0!important;
+padding:6px 8px!important;
+min-height:auto!important;
+}
+
+.partner-services>* div{
+font-size:13px!important;
+font-weight:700!important;
+line-height:1.25!important;
+}
+
+}
+
+/* ========================================= */
+/* MOBILE */
+/* ========================================= */
+
+@media (max-width:768px){
+
+#partners{
+overflow-x:hidden;
+}
+
+/* Hero */
+
+.partner-hero{
+transform:none !important;
+padding:0;
+width:100%;
+margin-bottom:16px;
+}
+
+#partners .partner-hero h2{
+font-size:44px !important;
+line-height:1.08 !important;
+letter-spacing:-2px !important;
+max-width:360px !important;
+margin:0 auto 30px !important;
+}
+
+#partners .partner-hero p{
+font-size:14px !important;
+line-height:1.55 !important;
+max-width:340px !important;
+margin:0 auto !important;
+}
+
+/* Verified Card */
+
+.partner-network{
+display:none;
+}
+
+.partner-network-mobile{
+display:block;
+max-width:560px;
+margin:auto;
+}
+
+.partner-network-mobile>div:first-child{
+padding:18px!important;
+margin-bottom:18px!important;
+}
+
+/* Partner Cards */
+
+.partner-mobile-grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:8px;
+margin-top:10px;
+}
+
+.partner-mobile-grid>*{
+padding:10px!important;
+min-height:92px!important;
+border-radius:16px!important;
+display:flex;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+}
+
+.partner-mobile-grid div{
+text-align:center;
+}
+
+.partner-mobile-grid p{
+display:none!important;
+}
+
+/* Journey */
+
+.partner-journey{
+grid-template-columns:repeat(2,1fr)!important;
+gap:10px!important;
+}
+
+.partner-journey>*{
+padding:12px!important;
+min-height:135px!important;
+}
+
+.partner-journey>* div:nth-child(1){
+font-size:26px!important;
+}
+
+.partner-journey>* div:nth-child(2){
+font-size:16px!important;
+}
+
+.partner-journey>* div:nth-child(3){
+font-size:13px!important;
+line-height:1.45!important;
+}
+
+/* Services */
+
+.partner-services{
+display:grid!important;
+grid-template-columns:repeat(2,minmax(0,1fr));
+column-gap:12px;
+row-gap:2px;
+margin-top:18px!important;
+}
+
+.partner-services>*{
+width:100%!important;
+min-width:0!important;
+padding:4px 6px!important;
+min-height:auto!important;
+height:auto!important;
+}
+
+.partner-services>* div{
+font-size:12px!important;
+font-weight:700!important;
+line-height:1.2!important;
+}
+
+}
+
+}
+`}</style>
+
 
 <SectionTransition />
 

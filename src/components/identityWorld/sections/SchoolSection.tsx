@@ -13,33 +13,21 @@ export default function SchoolSection() {
   return (
 
 <SectionContainer
-
     id="schools"
-
     background="linear-gradient(180deg,#FCFBF8 0%,#F8F5EE 45%,#FBFAF7 100%)"
-
     style={{
+        position: "relative",
+        overflow: "hidden",
 
-        position:"relative",
-
-        overflow:"hidden",
-
-        paddingTop:52,
-
-        paddingBottom:70
-
+        paddingTop: "clamp(40px,6vw,52px)",
+        paddingBottom: "clamp(52px,7vw,70px)"
     }}
-
 >
 
     <FloatingBackground
-
         style={{
-
-            opacity:.55
-
+            opacity: .55
         }}
-
     />
 
     {/* ================================================= */}
@@ -47,17 +35,12 @@ export default function SchoolSection() {
     {/* ================================================= */}
 
     <div
-
         style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
 
-            position:"absolute",
-
-            inset:0,
-
-            pointerEvents:"none",
-
-            background:`
-
+            background: `
                 radial-gradient(
                     circle at 18% 18%,
                     rgba(198,140,31,.07),
@@ -75,45 +58,40 @@ export default function SchoolSection() {
                     rgba(198,140,31,.04),
                     transparent 42%
                 )
-
             `
-
         }}
-
     />
 
-    <div
+  <div
+    style={{
+        width: "100%",
 
-        style={{
+        maxWidth: 1480,
 
-            width:"100%",
+        margin: "0 auto",
 
-            maxWidth:1480,
+        paddingInline: "clamp(14px,3vw,60px)",
 
-            margin:"0 auto",
+        position: "relative",
 
-            paddingInline:"clamp(22px,4vw,60px)",
+        zIndex: 2,
 
-            position:"relative",
+        boxSizing: "border-box"
+    }}
+>
 
-            zIndex:2
+    <AnimatedHeading
+    badge="CLASSROOM INTELLIGENCE"
+    title="See What Every Classroom Is Learning."
+    subtitle="Daily classroom intelligence across students, teachers, parents and school leadership."
+    align="center"
+    maxWidth={1280}
+/>
 
-        }}
-
-    >
-
-        <AnimatedHeading
-
-            badge="ACADEMIC INTELLIGENCE"
-
-            title="See What Every Classroom Is Learning."
-
-            subtitle="Daily classroom intelligence across students, teachers, parents and school leadership."
-
-            align="center"
-
-            maxWidth={760}
-
+        <div
+            style={{
+                height: "clamp(8px,1vw,10px)"
+            }}
         />
 
         <div
@@ -137,14 +115,18 @@ export default function SchoolSection() {
 
                 ===================================================== */}
 
-           <div
-
+     <div
     style={{
+        position: "relative",
 
-        position:"relative",
+        width: "100%",
 
+        display: "flex",
+
+        flexDirection: "column",
+
+        gap: "clamp(22px,2vw,30px)"
     }}
-
 >
 
     {/* ===================================================== */}
@@ -154,30 +136,25 @@ export default function SchoolSection() {
     {/* ===================================================== */}
 
 <div
-
     style={{
+        width: "100%",
+        position: "relative",
+        padding: 0,
+        overflow: "visible",
 
-        width:"100%",
+        display: "flex",
+        flexDirection: "column",
 
-        position:"relative",
-
-        padding:0,
-
-        overflow:"visible"
-
+        gap: "clamp(18px,2vw,26px)"
     }}
-
 >
 
-
 <div
-
     style={{
-
-        width:"100%"
-
+        width: "100%",
+        maxWidth: "100%",
+        margin: "0 auto"
     }}
-
 >
 
      {/* ===================================================== */}
@@ -185,55 +162,50 @@ export default function SchoolSection() {
 {/* ===================================================== */}
 
 <div
-
     style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
 
-        display:"flex",
+        gap: "clamp(14px,2vw,18px)",
 
-        justifyContent:"space-between",
+        flexWrap: "wrap",
 
-        alignItems:"center",
-
-        gap:18,
-
-        flexWrap:"wrap",
-
-        marginBottom:18
-
+        marginBottom: "clamp(18px,3vw,26px)"
     }}
-
 >
 
-    <div>
+    <div
+        style={{
+            flex: "1 1 520px",
+            minWidth: 0
+        }}
+    >
 
         <div
-
             style={{
+                display: "inline-flex",
+                alignItems: "center",
 
-                display:"inline-flex",
+                padding:
+                    "clamp(6px,1vw,7px) clamp(14px,2vw,16px)",
 
-                alignItems:"center",
+                borderRadius: 999,
 
-                padding:"7px 16px",
+                background: "#FFF5E7",
 
-                borderRadius:999,
+                border: "1px solid rgba(198,140,31,.14)",
 
-                background:"#FFF5E7",
+                color: "#B68432",
 
-                border:"1px solid rgba(198,140,31,.14)",
+                fontSize: "clamp(10px,1vw,11px)",
 
-                color:"#B68432",
+                fontWeight: 800,
 
-                fontSize:11,
+                letterSpacing: "clamp(1.2px,.18vw,2px)",
 
-                fontWeight:800,
-
-                letterSpacing:2,
-
-                textTransform:"uppercase"
-
+                textTransform: "uppercase"
             }}
-
         >
 
             LIVE ACADEMIC INTELLIGENCE
@@ -241,21 +213,17 @@ export default function SchoolSection() {
         </div>
 
         <h3
-
             style={{
+                margin: "clamp(10px,2vw,12px) 0 0",
 
-                margin:"12px 0 0",
+                color: "#173F7A",
 
-                color:"#173F7A",
+                fontSize: "clamp(22px,3vw,32px)",
 
-                fontSize:22,
+                fontWeight: 800,
 
-                fontWeight:800,
-
-                lineHeight:1.2
-
+                lineHeight: 1.18
             }}
-
         >
 
             School Intelligence Command Center
@@ -263,21 +231,17 @@ export default function SchoolSection() {
         </h3>
 
         <p
-
             style={{
+                margin: "clamp(8px,1.5vw,10px) 0 0",
 
-                margin:"6px 0 0",
+                color: "#667085",
 
-                color:"#667085",
+                fontSize: "clamp(14px,1.4vw,15px)",
 
-                fontSize:15,
+                lineHeight: 1.75,
 
-                lineHeight:1.7,
-
-                maxWidth:620
-
+                maxWidth: 620
             }}
-
         >
 
             Real-time classroom intelligence helping school leaders understand learning trends, teacher effectiveness and academic growth.
@@ -287,47 +251,47 @@ export default function SchoolSection() {
     </div>
 
     <div
-
         style={{
+            display: "flex",
 
-            display:"flex",
+            alignItems: "center",
 
-            alignItems:"center",
+            justifyContent: "center",
 
-            gap:10,
+            gap: 10,
 
-            padding:"10px 18px",
+            padding:
+                "clamp(9px,1.5vw,10px) clamp(16px,2vw,18px)",
 
-            borderRadius:999,
+            borderRadius: 999,
 
-            background:"#EEF8F2",
+            background: "#EEF8F2",
 
-            border:"1px solid rgba(16,185,129,.10)",
+            border: "1px solid rgba(16,185,129,.10)",
 
-            color:"#239B56",
+            color: "#239B56",
 
-            fontWeight:700,
+            fontWeight: 700,
 
-            fontSize:14
+            fontSize: "clamp(12px,1.2vw,14px)",
 
+            whiteSpace: "nowrap",
+
+            flexShrink: 0
         }}
-
     >
 
         <span
-
             style={{
+                width: 8,
+                height: 8,
 
-                width:8,
+                borderRadius: "50%",
 
-                height:8,
+                background: "#22C55E",
 
-                borderRadius:"50%",
-
-                background:"#22C55E"
-
+                flexShrink: 0
             }}
-
         />
 
         LIVE SCHOOL INSIGHTS
@@ -341,21 +305,14 @@ export default function SchoolSection() {
 {/* ===================================================== */}
 
 <div
-
+    className="school-grid"
     style={{
-
-        display:"grid",
-
-        gridTemplateColumns:
-
-            "repeat(6,minmax(0,1fr))",
-
-        gap:16,
-
-        alignItems:"stretch"
-
+        display: "grid",
+        gridTemplateColumns: "repeat(3,minmax(0,1fr))",
+        gap: "clamp(12px,1.5vw,18px)",
+        alignItems: "stretch",
+        width: "100%"
     }}
-
 >
 
     {[
@@ -390,99 +347,111 @@ export default function SchoolSection() {
             text:"Drive continuous academic improvement."
         }
 
-    ].map(card=>(
+    ].map(card => (
 
         <GlassCard
-
             key={card.title}
-
             style={{
-
-                padding:16,
-
-                minHeight:180,
-
+                padding:"clamp(14px,1.5vw,22px)",
+                minHeight:"clamp(150px,18vw,190px)",
                 display:"flex",
-
                 flexDirection:"column",
-
                 justifyContent:"flex-start",
-
-                borderRadius:18,
-
-                background:
-                    "linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
-
+                borderRadius:"clamp(16px,2vw,22px)",
+                background:"linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
                 border:"1px solid rgba(190,145,42,.10)",
-
-                boxShadow:
-                    "0 10px 26px rgba(17,24,39,.05)"
-
+                boxShadow:"0 10px 26px rgba(17,24,39,.05)"
             }}
-
         >
 
             <div
-
                 style={{
-
-                    fontSize:28,
-
-                    marginBottom:10
-
+                    fontSize:"clamp(22px,2.5vw,32px)",
+                    marginBottom:"clamp(8px,1vw,12px)",
+                    lineHeight:1
                 }}
-
             >
-
                 {card.icon}
-
             </div>
 
             <div
-
                 style={{
-
                     color:"#173F7A",
-
                     fontWeight:800,
-
-                    fontSize:15,
-
+                    fontSize:"clamp(15px,1.5vw,18px)",
                     marginBottom:8,
-
                     lineHeight:1.3
-
                 }}
-
             >
-
                 {card.title}
-
             </div>
 
             <div
-
                 style={{
-
                     color:"#667085",
-
-                    fontSize:13,
-
-                    lineHeight:1.55
-
+                    fontSize:"clamp(12px,1vw,14px)",
+                    lineHeight:1.6,
+                    flex:1
                 }}
-
             >
-
                 {card.text}
-
             </div>
 
         </GlassCard>
 
     ))}
 
-</div>        </div>
+</div>
+
+
+<style>{`
+@media (max-width:1024px){
+.school-grid{
+grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+gap:12px !important;
+}
+}
+
+@media (max-width:768px){
+
+#schools{
+overflow-x:hidden !important;
+}
+
+#schools h1,
+#schools h2{
+font-size:clamp(28px,7vw,42px) !important;
+line-height:1.12 !important;
+word-break:normal !important;
+}
+
+#schools h3{
+font-size:clamp(18px,5vw,28px) !important;
+line-height:1.18 !important;
+word-break:normal !important;
+}
+
+#schools p{
+font-size:14px !important;
+line-height:1.55 !important;
+max-width:100% !important;
+}
+
+.school-grid{
+grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+gap:10px !important;
+}
+
+.school-grid > *{
+min-height:130px !important;
+padding:12px !important;
+border-radius:16px !important;
+}
+
+}
+`}</style>
+
+       </div>
 
     </div>
 

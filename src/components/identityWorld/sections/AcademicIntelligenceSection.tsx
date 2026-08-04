@@ -9,7 +9,16 @@ import GlassCard from "../shared/GlassCard";
 export default function AcademicIntelligenceSection() {
 
     const section = CONTENT.academicIntelligence.section;
+const isMobile =
+    typeof window !== "undefined" &&
+    window.innerWidth <= 768;
 
+const isTablet =
+    typeof window !== "undefined" &&
+    window.innerWidth > 768 &&
+    window.innerWidth <= 1024;
+
+    
     return (
 
    <SectionContainer
@@ -143,17 +152,36 @@ width:"96%",
         {section.title}
     </h2>
 
-    <p
-        style={{
-            maxWidth: 760,
-            margin: "18px auto 0",
-            color: "#667085",
-            fontSize: 17,
-            lineHeight: 1.9
-        }}
-    >
-        {section.subtitle}
-    </p>
+<p
+    style={{
+        maxWidth: isMobile ? 340 : isTablet ? 560 : 760,
+
+        margin: isMobile ? "14px auto 0" : "18px auto 0",
+
+        color:
+            isMobile || isTablet
+                ? "#111111"
+                : "#667085",
+
+        fontSize:
+            isMobile
+                ? 15
+                : isTablet
+                ? 16
+                : 17,
+
+        lineHeight:
+            isMobile
+                ? 1.55
+                : isTablet
+                ? 1.7
+                : 1.9,
+
+        textAlign: "center"
+    }}
+>
+    {section.subtitle}
+</p>
 </div>
 
                 <div
@@ -172,20 +200,21 @@ width:"96%",
 
                 ===================================================== */}
 
-             <div
-
+<div
+    className="academic-grid"
     style={{
+        display: "grid",
 
-        display:"grid",
+        gridTemplateColumns: isMobile
+            ? "1fr"
+            : isTablet
+            ? "1fr"
+            : "1.3fr .9fr",
 
-        gridTemplateColumns:"1.3fr .9fr",
+        gap: isMobile ? 14 : isTablet ? 18 : 24,
 
-        gap:24,
-
-        alignItems:"stretch"
-
+        alignItems: "stretch",
     }}
-
 >
 
     {/* =====================================================
@@ -195,22 +224,18 @@ width:"96%",
     ===================================================== */}
 
     <div
+style={{
+    display: "grid",
+    gap: isMobile ? 14 : isTablet ? 18 : 26,
+}}
+>
 
-        style={{
-
-            display:"grid",
-
-            gap:26
-
-        }}
-
-    >
 
         <GlassCard
 
-         style={{
+      style={{
 
-    padding:22,
+    padding: isMobile ? 16 : isTablet ? 18 : 22,
 
     background:"#FFFFFF",
 
@@ -219,6 +244,7 @@ width:"96%",
     boxShadow:"0 18px 42px rgba(17,24,39,.06)"
 
 }}
+
 >
             <div
 
@@ -248,13 +274,13 @@ width:"96%",
 
                 style={{
 
-                    fontSize:30,
+                    fontSize: isMobile ? 18 : isTablet ? 24 : 30,
 
                     color:"#173F7A",
 
                     fontWeight:900,
 
-                    lineHeight:1.15,
+                    lineHeight: isMobile ? 1.25 : 1.18,
 
                     marginBottom:18
 
@@ -278,7 +304,7 @@ width:"96%",
 
     lineHeight:1.9,
 
-    fontSize:15
+    fontSize: isMobile ? 13 : isTablet ? 14 : 15
 
 }}
 
@@ -296,9 +322,9 @@ width:"96%",
 
                 display:"grid",
 
-                gridTemplateColumns:"repeat(2,1fr)",
+               gridTemplateColumns: "repeat(2,1fr)",
 
-                gap:22
+gap: isMobile ? 10 : isTablet ? 14 : 22,
 
             }}
 
@@ -350,7 +376,7 @@ width:"96%",
 
     style={{
 
-        padding:18,
+        padding: isMobile ? 12 : isTablet ? 14 : 18,
 
         textAlign:"center",
 
@@ -370,7 +396,7 @@ width:"96%",
 
                                     color:"#173F7A",
 
-                                    fontSize:22,
+                                    fontSize: isMobile ? 15 : isTablet ? 18 : 22,
 
                                     fontWeight:900
 
@@ -389,8 +415,7 @@ width:"96%",
                                     marginTop:8,
 
                                     color:"#667085",
-
-                                    fontSize:15,
+fontSize: isMobile ? 12 : isTablet ? 13 : 15,
 
                                     lineHeight:1.7
 
@@ -424,7 +449,7 @@ width:"96%",
 
      style={{
 
-    padding:22,
+    padding: isMobile ? 16 : isTablet ? 18 : 22,
 
     background:"#FFFFFF",
 
@@ -446,7 +471,7 @@ width:"96%",
 
                 marginBottom:28,
 
-                fontSize:18,
+                fontSize: isMobile ? 15 : isTablet ? 16 : 18,
 
                 letterSpacing:.3,
 
@@ -498,9 +523,9 @@ width:"96%",
 
                             style={{
 
-                                width:36,
+                                width: isMobile ? 28 : 36,
 
-                                height:36,
+height: isMobile ? 28 : 36,
 
                                 borderRadius:"50%",
 
@@ -537,7 +562,7 @@ width:"96%",
                                     color:"#173F7A",
 
                                     fontWeight:700,
-
+fontSize: isMobile ? 13 : isTablet ? 14 : 16,
                                     marginBottom:8
 
                                 }}
@@ -618,9 +643,9 @@ width:"96%",
 
       style={{
 
-    width:100,
+    width:60,
 
-    height:100,
+    height:60,
 
     borderRadius:"50%",
 
@@ -724,144 +749,92 @@ width:"96%",
 
 
     </p>
+{/* =============================================== */}
+{/* EXECUTIVE METRICS */}
+{/* =============================================== */}
 
-    {/* =============================================== */}
-
-    {/* EXECUTIVE METRICS */}
-
-    {/* =============================================== */}
-
-    <div
-
-        style={{
-
-            width:"100%",
-
-            maxWidth:1280,
-
-            display:"grid",
-
-            gridTemplateColumns:
-
-                "repeat(auto-fit,minmax(220px,1fr))",
-
-            gap:24,
-
-            marginTop:30
-
-        }}
-
-    >
-
-        {
-
-            [
-
-                {
-
-                    value:"100%",
-
-                    label:"Topic Visibility"
-
-                },
-
-                {
-
-                    value:"Daily",
-
-                    label:"Understanding Tracking"
-
-                },
-
-                {
-
-                    value:"AI",
-
-                    label:"Learning Intelligence"
-
-                },
-
-                {
-
-                    value:"24×7",
-
-                    label:"Parent Visibility"
-
-                }
-
-            ].map(
-
-                metric=>(
-
-                   <GlassCard
-
-    key={metric.label}
-
-    hover={false}
-
+<div
     style={{
+        width: "100%",
+        maxWidth: 1280,
+        display: "grid",
 
-        padding:26,
+        gridTemplateColumns:
+            isMobile || isTablet
+                ? "repeat(2, minmax(0, 1fr))"
+                : "repeat(auto-fit,minmax(220px,1fr))",
 
-        textAlign:"center",
+        gap: isMobile ? 10 : isTablet ? 14 : 24,
 
-        background:"#FFFFFF",
-
-        border:"1px solid rgba(23,63,122,.08)",
-
-        boxShadow:"0 12px 28px rgba(17,24,39,.05)"
-
+        marginTop: isMobile ? 18 : 30,
     }}
-
 >
+    {[
+        {
+            value: "100%",
+            label: "Topic Visibility",
+        },
+        {
+            value: "Daily",
+            label: "Understanding Tracking",
+        },
+        {
+            value: "AI",
+            label: "Learning Intelligence",
+        },
+        {
+            value: "24×7",
+            label: "Parent Visibility",
+        },
+    ].map((metric) => (
+        <GlassCard
+            key={metric.label}
+            hover={false}
+       style={{
+    padding: isMobile ? 14 : isTablet ? 18 : 26,
 
-                        <div
+    minHeight: isMobile ? 110 : isTablet ? 135 : 170,
 
-                            style={{
+    textAlign: "center",
 
-                                fontSize:36,
+    background: "#FFFFFF",
 
-                                fontWeight:900,
+    border: "1px solid rgba(23,63,122,.08)",
 
-                                color:"#173F7A"
+    boxShadow: "0 12px 28px rgba(17,24,39,.05)",
 
-                            }}
+    display: "flex",
 
-                        >
+    flexDirection: "column",
 
-                            {metric.value}
+    justifyContent: "center",
 
-                        </div>
+    alignItems: "center",
+}}
+        >
+            <div
+                style={{
+                    fontSize: isMobile ? 20 : isTablet ? 24 : 36,
+                    fontWeight: 900,
+                    color: "#173F7A",
+                }}
+            >
+                {metric.value}
+            </div>
 
-                        <div
-
-                            style={{
-
-                                marginTop:12,
-
-                                color:"#667085",
-
-                                fontSize:14,
-
-                                lineHeight:1.7
-
-                            }}
-
-                        >
-
-                            {metric.label}
-
-                        </div>
-
-                    </GlassCard>
-
-                )
-
-            )
-
-        }
-
-    </div>
+            <div
+                style={{
+                    marginTop: 12,
+                    color: "#667085",
+                    fontSize: isMobile ? 11 : isTablet ? 12 : 14,
+                    lineHeight: 1.7,
+                }}
+            >
+                {metric.label}
+            </div>
+        </GlassCard>
+    ))}
+</div>
 
     {/* =============================================== */}
 
@@ -872,6 +845,8 @@ width:"96%",
 
 
 </div>
+
+
 
 <SectionTransition />
 

@@ -10,34 +10,47 @@ type GlassCardProps = {
 export default function GlassCard({
     children,
     style,
-    hover = true
+    hover = true,
 }: GlassCardProps) {
 
+    const isMobile =
+        typeof window !== "undefined" &&
+        window.innerWidth <= 768;
+
+    const isTablet =
+        typeof window !== "undefined" &&
+        window.innerWidth > 768 &&
+        window.innerWidth <= 1024;
+
     return (
-
         <motion.div
-
             whileHover={
-                hover
+                hover && !isMobile
                     ? {
-                        y: -6,
-                        scale: 1.012,
-                        transition: {
-                            duration: 0.22
-                        }
-                    }
+                          y: -6,
+                          scale: 1.012,
+                          transition: {
+                              duration: 0.22,
+                          },
+                      }
                     : {}
             }
-
             style={{
-
                 position: "relative",
 
                 overflow: "hidden",
 
-                borderRadius: 24,
+                borderRadius: isMobile
+                    ? 18
+                    : isTablet
+                    ? 20
+                    : 24,
 
-                padding: 20,
+                padding: isMobile
+                    ? 16
+                    : isTablet
+                    ? 18
+                    : 20,
 
                 background:
                     "linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
@@ -49,119 +62,76 @@ export default function GlassCard({
                 border:
                     "1px solid rgba(198,140,31,.10)",
 
-                boxShadow:
-                    `
+                boxShadow: `
                     0 8px 18px rgba(17,24,39,.04),
                     0 22px 54px rgba(17,24,39,.05)
-                    `,
+                `,
 
                 transition:
                     "all .28s cubic-bezier(.22,1,.36,1)",
 
-                ...style
+                boxSizing: "border-box",
 
+                width: "100%",
+
+                minWidth: 0,
+
+                ...style,
             }}
-
         >
-
-            {/* ===================================== */}
-            {/* Warm Gold Highlight */}
-            {/* ===================================== */}
-
             <div
-
                 style={{
-
                     position: "absolute",
-
                     top: 0,
-
                     left: 0,
-
                     right: 0,
-
                     height: 2,
-
                     background:
                         "linear-gradient(90deg,transparent,#D6A23C,transparent)",
-
-                    opacity: .35
-
+                    opacity: 0.35,
                 }}
-
             />
 
-            {/* ===================================== */}
-            {/* Premium Glow */}
-            {/* ===================================== */}
-
             <div
-
                 style={{
-
                     position: "absolute",
-
                     inset: 0,
-
                     pointerEvents: "none",
-
                     background: `
                         radial-gradient(
                             circle at top left,
                             rgba(198,140,31,.05),
                             transparent 38%
                         ),
-
                         radial-gradient(
                             circle at bottom right,
                             rgba(23,63,122,.03),
                             transparent 42%
                         )
-                    `
-
+                    `,
                 }}
-
             />
 
-            {/* ===================================== */}
-            {/* Soft Reflection */}
-            {/* ===================================== */}
-
             <div
-
                 style={{
-
                     position: "absolute",
-
                     inset: 0,
-
                     pointerEvents: "none",
-
                     background:
-                        "linear-gradient(135deg,rgba(255,255,255,.20),transparent 45%)"
-
+                        "linear-gradient(135deg,rgba(255,255,255,.20),transparent 45%)",
                 }}
-
             />
 
             <div
-
                 style={{
-
                     position: "relative",
-
-                    zIndex: 2
-
+                    zIndex: 2,
+                    width: "100%",
+                    minWidth: 0,
                 }}
-
             >
-
                 {children}
-
             </div>
-
         </motion.div>
-
     );
-
 }

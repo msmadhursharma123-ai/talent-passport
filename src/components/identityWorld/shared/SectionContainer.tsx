@@ -1,9 +1,7 @@
 import type {
     CSSProperties,
-    PropsWithChildren
+    PropsWithChildren,
 } from "react";
-
-import COLORS from "../styles/colors";
 
 export interface SectionContainerProps
     extends PropsWithChildren {
@@ -19,7 +17,6 @@ export interface SectionContainerProps
     maxWidth?: number;
 
     paddingY?: number;
-
 }
 
 export default function SectionContainer({
@@ -36,9 +33,32 @@ export default function SectionContainer({
 
     maxWidth = 1280,
 
-    paddingY = 120
+    paddingY = 120,
 
 }: SectionContainerProps) {
+
+    const isMobile =
+        typeof window !== "undefined" &&
+        window.innerWidth <= 768;
+
+    const isTablet =
+        typeof window !== "undefined" &&
+        window.innerWidth > 768 &&
+        window.innerWidth <= 1024;
+
+    const horizontalPadding =
+        isMobile
+            ? 14
+            : isTablet
+            ? 20
+            : 24;
+
+    const verticalPadding =
+        isMobile
+            ? Math.max(56, paddingY * 0.55)
+            : isTablet
+            ? Math.max(80, paddingY * 0.72)
+            : paddingY;
 
     return (
 
@@ -55,14 +75,12 @@ export default function SectionContainer({
                 overflow: "hidden",
 
                 background:
-
                     background ??
-
                     "transparent",
 
-                padding:
+                padding: `${verticalPadding}px ${horizontalPadding}px`,
 
-                    `${paddingY}px 24px`,
+                boxSizing: "border-box",
 
                 ...style
 
@@ -77,18 +95,19 @@ export default function SectionContainer({
                     width: "100%",
 
                     maxWidth:
-
                         fullWidth
-
                             ? undefined
-
                             : maxWidth,
 
                     margin: "0 auto",
 
                     position: "relative",
 
-                    zIndex: 2
+                    zIndex: 2,
+
+                    boxSizing: "border-box",
+
+                    minWidth: 0,
 
                 }}
 
