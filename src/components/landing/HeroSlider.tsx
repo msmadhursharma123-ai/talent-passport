@@ -200,8 +200,8 @@ export default function HeroSlider({
         ====================================================== */}
 
         <div className="hero-right">
-          <HeroFloatingCards />
-        </div>
+    <HeroFloatingCards />
+</div>
       </section>
 
             {/* =====================================================

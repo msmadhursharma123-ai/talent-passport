@@ -1,91 +1,54 @@
-/* ===================================================
+/* ==========================================================
    FOUNDER SECTION
-=================================================== */
+========================================================== */
 
 .founder-section{
 
+    background:#faf8f4;
+
+    padding:36px 0;
+
     position:relative;
 
-    padding:110px 24px;
-
-    background:
-        radial-gradient(
-            circle at top right,
-            rgba(244,168,37,.08),
-            transparent 40%
-        ),
-        linear-gradient(
-            180deg,
-            #ffffff 0%,
-            #f8fafc 100%
-        );
+    overflow:hidden;
 
 }
 
 .founder-container{
 
-    max-width:1320px;
+    width:min(1180px,92%);
 
-    margin:auto;
+    margin:0 auto;
 
-    display:grid;
-
-    grid-template-columns:390px 1fr;
-
-    gap:70px;
-
-    align-items:center;
+    padding-top:0;
 
 }
 
-/* =======================
-   IMAGE
-======================= */
+/* ==========================================================
+   HEADING
+========================================================== */
 
-.founder-image{
+.founder-heading{
 
-    display:flex;
+    text-align:center;
 
-    justify-content:center;
+    margin:0 0 18px;
 
-    align-items:center;
-
-}
-
-.founder-photo{
-
-    display:block;
-
-    width:330px;
-
-    max-width:100%;
-
-    height:auto;
-
-    object-fit:contain;
-
-    border-radius:24px;
-
-    box-shadow:
-        0 28px 70px rgba(23,63,122,.18);
+    padding-top:0;
 
 }
-
-/* =======================
-   CONTENT
-======================= */
 
 .founder-tag{
 
-    display:inline-block;
+    display:inline-flex;
 
-    padding:10px 18px;
+    padding:8px 18px;
 
     border-radius:999px;
 
-    background:rgba(23,63,122,.08);
+    background:#eef2ff;
 
-    color:#F4A825;
+    color:#b7791f;
 
     font-size:12px;
 
@@ -93,166 +56,461 @@
 
     letter-spacing:2px;
 
+    text-transform:uppercase;
+
+    margin:0 0 12px;
+
+}
+
+.founder-heading h2{
+
+    margin:0 0 8px;
+
+    color:#163d79;
+
+    font-size:clamp(2rem,3vw,3.3rem);
+
+    font-weight:800;
+
+    line-height:1.08;
+
+    letter-spacing:-1px;
+
+}
+
+.founder-heading h3{
+
+    margin: 0;
+
+    color:#64748b;
+
+    font-size:clamp(1.05rem,1.6vw,1.45rem);
+
+    font-weight:600;
+
+}
+
+/* ==========================================================
+   INTRO
+========================================================== */
+
+.founder-intro{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:18px;
+
+    justify-content:center;
+
     margin-bottom:20px;
 
 }
 
-.founder-content h2{
+.founder-photo{
 
-    font-size:46px;
+    flex-shrink:0;
 
-    line-height:1.15;
+}
 
-    color:#173F7A;
+.founder-photo img{
 
-    margin-bottom:24px;
+    width:180px;
 
-    max-width:760px;
+    aspect-ratio:1;
+
+    object-fit:cover;
+
+    border-radius:50%;
+
+    border:5px solid white;
+
+    box-shadow:
+
+        0 18px 40px rgba(15,23,42,.12);
+
+}
+
+.founder-name-block h4{
+
+    margin:0;
+
+    color:#163d79;
+
+    font-size:1.7rem;
 
     font-weight:800;
 
 }
 
-.founder-content p{
+.founder-name-block p{
 
-    font-size:17px;
-
-    line-height:1.75;
+    margin:8px 0 4px;
 
     color:#475569;
 
-    max-width:840px;
+    font-size:1rem;
 
-    margin-bottom:14px;
-
-    text-align:justify;
+    font-weight:600;
 
 }
 
-.founder-content strong{
+.founder-name-block span{
 
-    color:#173F7A;
-
-}
-
-.founder-content blockquote{
-
-    margin-top:26px;
-
-    padding-left:22px;
-
-    border-left:4px solid #F4A825;
-
-    font-size:24px;
-
-    line-height:1.45;
-
-    color:#173F7A;
+    color:#f4a825;
 
     font-weight:700;
 
-    max-width:760px;
+    font-size:.95rem;
+
+    letter-spacing:.5px;
 
 }
 
-.founder-sign{
+/* ==========================================================
+   MESSAGE
+========================================================== */
 
-    margin-top:22px;
+.founder-message{
+
+    max-width:1000px;
+
+    margin:auto;
+
+}
+
+.founder-message p{
+
+    color:#475569;
+
+    font-size:1.02rem;
+
+    line-height:1.75;
+
+    margin:0 0 16px;
+
+}
+
+.founder-message p:last-of-type{
+
+    margin-bottom:0px;
+
+}
+
+/* ==========================================================
+   QUOTE
+========================================================== */
+
+.founder-quote{
+
+    margin:8px 0 10px;
+
+    padding:0;
+
+    background:none;
+
+    border:none;
+
+    border-radius:0;
+
+    color:#163D79;
+
+    font-size:clamp(1.2rem,1.8vw,1.6rem);
+
+    font-weight:700;
+
+    font-style:italic;
+
+    text-align:left;
+
+}
+
+/* ==========================================================
+   SIGNATURE
+========================================================== */
+
+.founder-signature{
 
     display:flex;
 
-    flex-direction:column;
+    justify-content:flex-start;
 
-    gap:6px;
+    align-items:flex-start;
+
+    padding-top:8px;
+
+    padding-bottom:0;
+
+    border-top:1px solid rgba(15,23,42,.08);
+
+}
+
+.founder-signature h5{
+
+    margin:0;
+
+    font-size:2rem;
+
+    color:#163D79;
+
+    font-weight:800;
+
+}
+.founder-signature span{
+
+    display:block;
+
+    margin-top:8px;
 
     color:#64748B;
 
-    font-size:16px;
+    font-size:1rem;
 
 }
 
-.founder-sign strong{
 
-    color:#173F7A;
 
-    font-size:20px;
+/* ==========================================================
+   TABLET
+========================================================== */
 
-    font-style:normal;
+@media (max-width:992px){
+
+.founder-section{
+
+    padding:28px 0;
 
 }
 
-/* =======================
+.founder-heading{
+
+    margin-bottom:36px;
+
+}
+
+.founder-intro{
+
+    gap:22px;
+
+    margin-bottom:34px;
+
+}
+
+.founder-photo img{
+
+    width:145px;
+
+}
+
+.founder-name-block h4{
+
+    font-size:1.45rem;
+
+}
+
+.founder-message{
+
+    max-width:100%;
+
+}
+
+.founder-message p{
+
+    font-size:1rem;
+
+    line-height:1.85;
+
+}
+
+.founder-quote{
+
+    padding:26px 30px;
+
+    font-size:1.4rem;
+
+    margin:36px 0;
+
+}
+
+}
+
+/* ==========================================================
    MOBILE
-======================= */
+========================================================== */
 
-@media (max-width:980px){
+@media (max-width:768px){
 
-    .founder-section{
+.founder-section{
 
-        padding:90px 24px;
+    padding:24px 0;
 
-    }
+}
 
-    .founder-container{
+.founder-heading{
 
-        grid-template-columns:1fr;
+    margin-bottom:26px;
 
-        gap:50px;
+}
 
-        text-align:center;
+.founder-heading h2{
 
-    }
+    line-height:1.15;
 
-    .founder-image{
+}
 
-        justify-content:center;
+.founder-heading h3{
 
-    }
+    margin-top:12px;
 
-    .founder-photo{
+}
 
-        width:280px;
+.founder-intro{
 
-    }
+    flex-direction:column;
 
-    .founder-content h2{
+    text-align:center;
 
-        font-size:38px;
+    gap:18px;
 
-        margin:0 auto 24px;
+    margin-bottom:28px;
 
-    }
+}
 
-    .founder-content p{
+.founder-photo img{
 
-        margin-left:auto;
+    width:120px;
 
-        margin-right:auto;
+}
 
-        font-size:16px;
+.founder-name-block h4{
 
-        text-align:left;
+    font-size:1.25rem;
 
-    }
+}
 
-    .founder-content blockquote{
+.founder-name-block p{
 
-        border:none;
+    font-size:.95rem;
 
-        padding:0;
+}
 
-        margin:28px auto 0;
+.founder-name-block span{
 
-        font-size:22px;
+    font-size:.85rem;
 
-        max-width:100%;
+}
 
-    }
+.founder-message{
 
-    .founder-sign{
+    max-width:100%;
 
-        align-items:center;
+}
 
-    }
+.founder-message p{
+
+    font-size:.97rem;
+
+    line-height:1.75;
+
+    margin-bottom:18px;
+
+}
+
+.founder-quote{
+
+    margin:28px 0;
+
+    padding:20px 22px;
+
+    font-size:1.18rem;
+
+    border-radius:14px;
+
+}
+
+.founder-signature{
+
+    flex-direction:column;
+
+    text-align:center;
+
+    gap:18px;
+
+}
+
+.founder-logo{
+
+    width:58px;
+
+    height:58px;
+
+    font-size:1.05rem;
+
+}
+
+}
+
+/* ==========================================================
+   SMALL MOBILE
+========================================================== */
+
+@media (max-width:480px){
+
+.founder-section{
+
+    padding:18px 0;
+
+}
+
+.founder-heading h2{
+
+    font-size:1.75rem;
+
+}
+
+.founder-heading h3{
+
+    font-size:1rem;
+
+}
+
+.founder-photo img{
+
+    width:100px;
+
+}
+
+.founder-message p{
+
+    font-size:.92rem;
+
+}
+
+.founder-quote{
+
+    font-size:1.05rem;
+
+    padding:18px;
+
+}
+
+.founder-signature h5{
+
+    font-size:1.2rem;
+
+}
+
+.founder-signature span{
+
+    font-size:.82rem;
+
+}
+
+}
+
+.founder-section{
+
+    margin-bottom:0 !important;
 
 }

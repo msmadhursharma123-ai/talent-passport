@@ -1365,23 +1365,13 @@ min-height:unset;
 
 .hero-passport-stack{
 
-    transform:scale(.82);
-
-    margin-top:60px;
+    display:none !important;
 
 }
 
 .floating-card{
 
-    min-width:190px;
-
-    padding:16px;
-
-}
-
-.floating-content strong{
-
-    font-size:15px;
+    display:none !important;
 
 }
 
@@ -1389,29 +1379,286 @@ min-height:unset;
 
 @media (max-width:768px){
 
-.hero-passport-stack{
+.hero-background{
 
-    transform:scale(.72);
-
-    height:560px;
+    min-height:760px;
 
 }
 
-.achievement-card,
-.leaderboard-card,
-.portfolio-card,
-.credits-card,
+.hero-content{
+
+    min-height:760px;
+
+    align-items:flex-start;
+
+}
+
+.hero-slider{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:flex-start;
+
+    gap:28px;
+
+    padding-top:90px;
+
+    padding-bottom:30px;
+
+    min-height:auto;
+
+}
+
+/* ---------------- TEXT ---------------- */
+
+.hero-left{
+
+    width:100%;
+
+    max-width:100%;
+
+    text-align:center;
+
+}
+
+.hero-title{
+
+    font-size:38px;
+
+    line-height:1.08;
+
+}
+
+.hero-description{
+
+    font-size:15px;
+
+    line-height:1.65;
+
+}
+
+.hero-buttons{
+
+    width:100%;
+
+    justify-content:center;
+
+    gap:12px;
+
+}
+
+.hero-buttons>*{
+
+    width:100%;
+
+}
+
+.hero-stats{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:8px;
+
+    flex-wrap:nowrap;
+
+    width:100%;
+
+}
+
+.hero-stat{
+
+    min-width:0;
+
+    flex:1;
+
+    padding:10px 6px;
+
+}
+
+.hero-stat span{
+
+    font-size:18px;
+
+}
+
+.hero-stat p{
+
+    font-size:10px;
+
+    line-height:1.2;
+
+}
+
+/* ---------------- PASSPORT ---------------- */
+
+.hero-right{
+
+    width:100%;
+
+    display:flex;
+
+    justify-content:center;
+
+}
+
+.hero-passport-stack{
+
+    display:none !important;
+
+}
+
+/* Passport Card */
+
+.passport-card{
+
+    width:235px;
+
+    min-height:355px;
+
+    padding:18px;
+
+    border-radius:24px;
+
+}
+
+/* ---------------- FLOATING CARDS ---------------- */
+
+/* Hide floating cards on mobile */
+
+.floating-card{
+
+    display:none !important;
+
+}
+
+/* Daily Learning */
+
+.leaderboard-card{
+
+    width:170px;
+
+    height:126px;
+
+}
+
+.daily-progress{
+
+    height:3px;
+
+}
+
+.daily-subject-grid{
+
+    gap:3px;
+
+    margin-top:5px;
+
+}
+
+.subject-chip{
+
+    padding:2px;
+
+    font-size:6px;
+
+}
+
+.subject-check{
+
+    width:10px;
+
+    height:10px;
+
+    font-size:6px;
+
+}
+
+.daily-footer{
+
+    padding:4px 8px;
+
+    font-size:6px;
+
+}
+
+/* Teacher Feedback */
+
 .timeline-card{
+
+    width:128px;
+
+    min-height:56px;
+
+}
+
+.feedback-grid{
+
+    gap:2px;
+
+    margin-top:4px;
+
+}
+
+.feedback-chip{
+
+    padding:2px;
+
+}
+
+.feedback-chip label{
+
+    font-size:5px;
+
+}
+
+.feedback-chip strong{
+
+    font-size:7px;
+
+}
+
+/* Marketplace */
+
+.portfolio-card{
+
+    width:145px;
+
+}
+
+/* Credits */
+
+.credits-card{
+
+    width:145px;
+
+}
+
+/* Achievement */
+
+.achievement-card{
+
+    width:150px;
+
+}
+
+
+/* Navigation */
+
+.hero-navigation{
 
     display:none;
 
 }
 
-.passport-card{
+.hero-scroll{
 
-    width:100%;
-
-    max-width:360px;
+    display:none;
 
 }
 

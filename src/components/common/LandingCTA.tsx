@@ -26,19 +26,17 @@ export default function LandingCTA({
                     Endless Possibilities.
                 </h2>
 
-                <p className="landing-cta-description">
-                    Every competition.
-                    Every achievement.
-                    Every project.
-                    Every milestone.
-                    Every opportunity.
+  <p className="landing-cta-description">
 
-                    <br />
-                    <br />
+    <span className="landing-cta-line">
+        
+    </span>
 
-                    Bring your entire learning journey together
-                    in one place and continue building your future.
-                </p>
+    <span className="landing-cta-line-secondary">
+        Bring your entire learning journey together in one place and continue building your future.
+    </span>
+
+</p>
 
                 <div className="landing-cta-actions">
 

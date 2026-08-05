@@ -12,7 +12,32 @@
 
     color:white;
 
-    padding:90px 0 30px;
+    padding:48px 0 18px;
+
+}
+
+/* =====================================
+   BACKGROUND
+===================================== */
+
+.landing-footer::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+        radial-gradient(circle at left top,
+        rgba(244,168,37,.08),
+        transparent 45%),
+
+        radial-gradient(circle at right bottom,
+        rgba(255,255,255,.05),
+        transparent 55%);
+
+    pointer-events:none;
 
 }
 
@@ -26,13 +51,17 @@
 
     margin:auto;
 
+    position:relative;
+
+    z-index:2;
+
     display:grid;
 
-    grid-template-columns:2fr 1fr 1fr 1.3fr;
+    grid-template-columns:2fr 1fr 1fr 1.2fr;
 
-    gap:60px;
+    gap:32px;
 
-    padding-bottom:60px;
+    padding-bottom:26px;
 
     border-bottom:1px solid rgba(255,255,255,.08);
 
@@ -44,27 +73,27 @@
 
 .landing-footer-logo{
 
-    font-size:34px;
+    font-size:28px;
 
     font-weight:800;
 
-    letter-spacing:2px;
+    letter-spacing:1px;
 
     color:#F4A825;
 
-    margin-bottom:24px;
+    margin-bottom:12px;
 
 }
 
 .landing-footer-description{
 
-    max-width:420px;
+    max-width:360px;
 
     color:rgba(255,255,255,.75);
 
-    line-height:1.9;
+    font-size:14px;
 
-    font-size:16px;
+    line-height:1.55;
 
 }
 
@@ -84,11 +113,11 @@
 
     color:white;
 
-    font-size:22px;
-
-    margin-bottom:24px;
+    font-size:18px;
 
     font-weight:700;
+
+    margin-bottom:14px;
 
 }
 
@@ -100,7 +129,9 @@
 
     text-decoration:none;
 
-    margin-bottom:16px;
+    font-size:14px;
+
+    margin-bottom:10px;
 
     transition:.3s;
 
@@ -120,9 +151,11 @@
 
     color:rgba(255,255,255,.72);
 
-    line-height:1.8;
+    font-size:14px;
 
-    margin-bottom:24px;
+    line-height:1.5;
+
+    margin-bottom:14px;
 
 }
 
@@ -142,27 +175,23 @@
 
     color:white;
 
-    padding:16px 28px;
+    padding:12px 22px;
 
-    font-size:15px;
+    font-size:14px;
 
     font-weight:700;
 
-    transition:.35s;
+    transition:.3s;
 
-    box-shadow:
-
-        0 18px 45px rgba(244,168,37,.28);
+    box-shadow:0 12px 30px rgba(244,168,37,.28);
 
 }
 
 .landing-footer-button:hover{
 
-    transform:translateY(-4px);
+    transform:translateY(-3px);
 
-    box-shadow:
-
-        0 24px 60px rgba(244,168,37,.38);
+    box-shadow:0 18px 38px rgba(244,168,37,.35);
 
 }
 
@@ -174,7 +203,7 @@
 
     width:min(1400px,92%);
 
-    margin:30px auto 0;
+    margin:18px auto 0;
 
     display:flex;
 
@@ -182,7 +211,7 @@
 
     align-items:center;
 
-    gap:20px;
+    gap:16px;
 
 }
 
@@ -190,7 +219,7 @@
 
     color:rgba(255,255,255,.60);
 
-    font-size:14px;
+    font-size:13px;
 
 }
 
@@ -198,13 +227,15 @@
 
     display:flex;
 
-    gap:30px;
+    gap:22px;
 
 }
 
 .landing-footer-links span{
 
     color:rgba(255,255,255,.65);
+
+    font-size:13px;
 
     cursor:pointer;
 
@@ -219,34 +250,147 @@
 }
 
 /* =====================================
-   RESPONSIVE
+   TABLET
 ===================================== */
 
 @media(max-width:1100px){
+
+.landing-footer{
+
+    padding:40px 0 16px;
+
+}
 
 .landing-footer-container{
 
     grid-template-columns:1fr 1fr;
 
-}
+    gap:26px;
+
+    padding-bottom:20px;
 
 }
 
+.landing-footer-logo{
+
+    font-size:24px;
+
+}
+
+.landing-footer-description{
+
+    max-width:100%;
+
+}
+
+}
+
+/* =====================================
+   MOBILE
+===================================== */
 @media(max-width:768px){
 
 .landing-footer{
 
-    padding:70px 0 30px;
+    padding:30px 0 14px;
 
 }
 
 .landing-footer-container{
 
-    grid-template-columns:1fr;
+    display:grid;
 
-    gap:40px;
+    grid-template-columns:1fr 1fr;
+
+    gap:24px;
+
+    padding-bottom:18px;
+
+    align-items:start;
 
 }
+
+/* Brand spans full width */
+
+.landing-footer-brand{
+
+    grid-column:1 / -1;
+
+}
+
+/* Get Started spans full width */
+
+.landing-footer-column:last-child{
+
+    grid-column:1 / -1;
+
+}
+
+/* Brand */
+
+.landing-footer-logo{
+
+    font-size:22px;
+
+    margin-bottom:10px;
+
+}
+
+.landing-footer-description{
+
+    max-width:100%;
+
+    font-size:13px;
+
+    line-height:1.5;
+
+}
+
+/* Column headings */
+
+.landing-footer-column h3{
+
+    font-size:17px;
+
+    margin-bottom:10px;
+
+}
+
+/* Links */
+
+.landing-footer-column a,
+
+.landing-footer-column span{
+
+    font-size:13px;
+
+    margin-bottom:8px;
+
+}
+
+/* CTA text */
+
+.landing-footer-small{
+
+    font-size:13px;
+
+    margin-bottom:12px;
+
+}
+
+/* Button */
+
+.landing-footer-button{
+
+    width:100%;
+
+    padding:12px 18px;
+
+    font-size:14px;
+
+}
+
+/* Bottom */
 
 .landing-footer-bottom{
 
@@ -254,19 +398,19 @@
 
     text-align:center;
 
+    gap:10px;
+
+    margin-top:14px;
+
 }
 
 .landing-footer-links{
 
     justify-content:center;
 
+    gap:16px;
+
     flex-wrap:wrap;
-
-}
-
-.landing-footer-button{
-
-    width:100%;
 
 }
 

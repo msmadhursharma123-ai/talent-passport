@@ -1,138 +1,141 @@
-import "../../styles/founder.css";
 import founderImage from "../../assets/founder.jpg";
+import "../../styles/founder.css";
 
 export default function FounderSection() {
-    return (
-        <section className="founder-section">
 
-            <div className="founder-container">
+return (
 
-                {/* LEFT */}
+<section className="founder-section">
 
-                <div className="founder-image">
+<div className="founder-container">
 
-                    <img
-                        src={founderImage}
-                        alt="Madhur Sharma"
-                        className="founder-photo"
-                    />
+<div className="founder-heading">
 
-                </div>
+<div className="founder-tag">
 
-                {/* RIGHT */}
+A MESSAGE FROM OUR FOUNDER
+
+</div>
+
+<h2>
+
+We're Not Building Another Education Platform.
+
+</h2>
+
+<h3>
+
+We're Building The Identity Layer For Every Student.
+
+</h3>
+
+</div>
+
+<div className="founder-intro">
+
+<div className="founder-photo">
+
+<img
+
+src={founderImage}
+
+alt="Founder"
+
+/>
+
+</div>
+
+<div className="founder-name-block">
+
+<h4>
+
+Madhur Sharma
+
+</h4>
+
+<p>
+
+Founder & Creator
+
+</p>
+
+<span>
+
+Talent Passport
+
+</span>
+
+</div>
+
+</div>
+
+<div className="founder-message">
+
+    <p>
+
+Every day, teachers introduce new concepts, students develop questions, parents wonder whether their child has truly understood what was taught, and schools struggle to identify learning gaps before they become exam-time problems. These small moments shape a student's future, yet they often remain invisible until it's too late.
 
 
 
-                <div className="founder-content">
 
-                    <div className="founder-tag">
 
-                        A MESSAGE FROM OUR FOUNDER
 
-                    </div>
 
-                    <h2>
 
-                        Every Student Deserves
-                        A Story Worth Remembering.
+</p>
 
-                    </h2>
+<p>
 
-                    <p>
+Talent Passport brings these moments together into one connected ecosystem. By capturing daily classroom progress, teacher feedback and student understanding, it gives parents complete visibility into the topics their child is learning, helps teachers identify and resolve doubts long before examinations, and enables schools to make data-driven academic decisions. Alongside this, competitions, portfolios, scholarships, workshops and career opportunities ensure that every meaningful experience contributes to a student's continuous growth journey.
 
-                        Every year, millions of students participate in
-                        competitions, projects, cultural events, sports and
-                        countless learning experiences. They invest time,
-                        effort and passion, yet most achievements end as
-                        medals and certificates—celebrated for a while,
-                        stored away, misplaced or eventually forgotten.
+</p>
 
-                    </p>
+<p>
 
-                    <p>
+Our goal is not simply to build another education platform.
 
-                        I believe every student's journey deserves more
-                        than temporary recognition. It deserves a lasting
-                        identity.
 
-                    </p>
+We are building the operating system for student growth—one that helps schools teach better, students learn with confidence, teachers make informed decisions, parents stay meaningfully connected to their child's learning every day, and every learner build a verified identity that opens doors to future opportunities.
 
-                    <p>
 
-                        That's why we built <strong>Talent Passport</strong>.
 
-                        Talent Passport is a talent and identity
-                        infrastructure that enables students to build a
-                        verified identity by documenting everything they
-                        do—not just what they win, but what they learn,
-                        create, contribute and achieve. As students grow
-                        their profile, they earn credits that unlock
-                        opportunities including competitions,
-                        scholarships, expert masterclasses and access to
-                        our growing partner ecosystem.
+</p>
 
-                    </p>
+<p>
 
-                    <p>
+Because every student deserves more than good grades.
 
-                        But we also wanted to solve another important gap.
+Parents gain visibility.
 
-                        Traditional competitions mostly provide rankings
-                        and performance feedback. They rarely assess the
-                        skills that truly shape a student's future—
-                        communication, confidence, creativity,
-                        collaboration, leadership, critical thinking and
-                        credibility.
+Teachers gain meaningful insights.
 
-                    </p>
+Schools understand holistic growth.
 
-                    <p>
+Partners discover talent.
 
-                        These are the qualities that matter in higher
-                        education, entrepreneurship and the workplace, yet
-                        they are rarely measured during a student's
-                        formative years. That's why every Talent Passport
-                        experience is intentionally designed to evaluate
-                        real-world skills while providing every
-                        participant with a comprehensive Talent Passport
-                        Report that highlights strengths, growth areas and
-                        future potential.
+Most importantly—
 
-                    </p>
+students finally receive recognition for everything they become,
+not just what they score.
 
-                    <p>
+</p>
 
-                        Our vision is not to build another platform.
+<div className="founder-quote">
 
-                        It is to create the infrastructure that helps every
-                        student transform their experiences into a
-                        lifelong identity and meaningful opportunities.
+“One Passport. One Identity. Endless Possibilities.”
 
-                    </p>
+</div>
 
-                    <blockquote>
 
-                        "One Passport. One Identity.
-                        Endless Possibilities."
 
-                    </blockquote>
 
-                    <div className="founder-sign">
 
-                        <strong>Madhur Sharma</strong>
+</div>
 
-                        <span>
+</div>
 
-                            Founder, Talent Passport
+</section>
 
-                        </span>
+);
 
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
-    );
 }

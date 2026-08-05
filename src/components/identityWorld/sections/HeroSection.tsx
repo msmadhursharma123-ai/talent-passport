@@ -75,35 +75,35 @@ backgroundAttachment: "fixed"
 
             <div
 
-                style={{
+   style={{
 
-                    width: "100%",
+    width: "100%",
 
-                    maxWidth: 1380,
+    maxWidth: 1440,
 
-                    margin: "0 auto",
+    margin: "0 auto",
 
-                    display: "grid",
+    display: "grid",
 
-                    rowGap: 80,
+    gridTemplateColumns:
 
-                    gridTemplateColumns:
+        "minmax(520px,1.05fr) minmax(520px,.95fr)",
 
-                        "1.05fr .95fr",
+    gap: "clamp(40px,4vw,72px)",
 
-                    gap: 70,
+    alignItems: "center",
 
-                    alignItems: "center",
+    padding:
 
-                    padding:
+        "110px clamp(24px,4vw,56px)",
 
-    "120px clamp(24px,4vw,56px)",
+    position: "relative",
 
-                    position: "relative",
+    zIndex: 2
 
-                    zIndex: 2
+}}
 
-                }}
+    
 
             >
 
@@ -143,7 +143,7 @@ justifyContent: "center",
 <h1
     style={{
         margin: 0,
-        fontSize: "clamp(3.8rem,7vw,6.6rem)",
+        fontSize:"clamp(3rem,5vw,5.7rem)",
         lineHeight: 1.02,
         fontWeight: 900,
         color: COLORS.textPrimary,
@@ -155,7 +155,7 @@ justifyContent: "center",
 
 <div
     style={{
-        fontSize: "clamp(3.9rem,7vw,6.8rem)",
+        fontSize:"clamp(3rem,5vw,5.8rem)",
         fontWeight: 900,
         lineHeight: 1,
         letterSpacing: "-0.05em",
@@ -174,7 +174,7 @@ justifyContent: "center",
         marginTop: 34,
         marginBottom: 0,
         maxWidth: 720,
-        fontSize: 21,
+        fontSize:"clamp(16px,1.25vw,20px)",
         lineHeight: 1.9,
         color: COLORS.textSecondary
     }}
@@ -241,7 +241,7 @@ justifyContent: "center",
 
                     <div
                         style={{
-                            fontSize: 44,
+                            fontSize:"clamp(26px,2.8vw,40px)",
                             fontWeight: 800,
                             color: "#7DD3FC"
                         }}
@@ -279,27 +279,46 @@ justifyContent: "center",
 
                 <div
 
-                    style={{
+    style={{
 
-                        position: "relative",
+        position: "relative",
 
-                        minHeight: 760,
+        width: "100%",
 
-                        display: "flex",
+        maxWidth: 720,
 
-                        justifyContent: "center",
+        minHeight: 720,
 
-                        alignItems: "center"
+        height: 720,
 
-                    }}
+        margin: "0 auto",
 
-                >
+        display: "flex",
 
-                    <div
+        justifyContent: "center",
+
+        alignItems: "center",
+
+        overflow: "visible"
+
+    }}
+
+>
+
+ <div
     style={{
         position: "relative",
+
         width: "100%",
-        height: 700
+
+        maxWidth: 720,
+
+        height: "100%",
+
+        minHeight: 720,
+
+        margin: "0 auto"
+
     }}
 >
 
@@ -408,37 +427,25 @@ justifyContent: "center",
 
                         position:"absolute",
 
-                        width:220,
+                        width:"min(220px,30vw)",
 
                         padding:24,
 
-                        left:
+                      left:
+[
+"4%",
+"58%",
+"7%",
+"55%"
+][index],
 
-                            [
-
-                                20,
-
-                                390,
-
-                                40,
-
-                                370
-
-                            ][index],
-
-                        top:
-
-                            [
-
-                                40,
-
-                                90,
-
-                                470,
-
-                                500
-
-                            ][index],
+top:
+[
+"6%",
+"12%",
+"66%",
+"70%"
+][index],
 
                         background:
 

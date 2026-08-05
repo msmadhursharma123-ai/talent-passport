@@ -26,19 +26,19 @@ export default function CTASection({
 
             background="linear-gradient(180deg,#030712 0%,#071326 40%,#000000 100%)"
 
-            style={{
+       style={{
 
-                position:"relative",
+    position:"relative",
 
-                overflow:"hidden",
+    overflow:"hidden",
 
-                paddingTop:180,
+    paddingTop:100,
 
-                paddingBottom:220,
+    paddingBottom:120,
 
-                minHeight:"100vh"
+    minHeight:"auto"
 
-            }}
+}}
 
         >
 
@@ -118,15 +118,15 @@ export default function CTASection({
 
                 />
 
-                <div
+          <div
 
-                    style={{
+style={{
 
-                        height:100
+height:40
 
-                    }}
+}}
 
-                />
+ />
 
                 {/* =====================================================
 
@@ -407,7 +407,7 @@ export default function CTASection({
 
         style={{
 
-            height:60
+            height:25
 
         }}
 
