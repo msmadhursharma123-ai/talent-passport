@@ -181,19 +181,29 @@ bullet:"#2D9BC3"
 <img
     src="/partner-watermark-desktop.png"
     alt=""
-    style={{
-        position: "absolute",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: "96%",
-        maxWidth: "2000px",
-        height: "auto",
-        opacity:0.35,
-        mixBlendMode: "multiply",
-        pointerEvents: "none",
-        userSelect: "none"
-    }}
+style={{
+
+    position:"absolute",
+
+    inset:0,
+
+    width:"100%",
+
+    height:"100%",
+
+    objectFit:"cover",
+
+    objectPosition:"center",
+
+    opacity:.20,
+
+    mixBlendMode:"multiply",
+
+    pointerEvents:"none",
+
+    userSelect:"none"
+
+}}
 />
 
 </div>
@@ -699,18 +709,23 @@ top: desktopPosition.top,
 
 <div className="partner-network-mobile">
 
-    <GlassCard
-        hover={false}
-        style={{
-            padding:18,
-borderRadius:20,
-marginBottom:14,
-            textAlign:"center",
-            background:
-"linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
-            border:"1px solid rgba(214,162,60,.14)"
-        }}
-    >
+<GlassCard
+    hover={false}
+    style={{
+        padding:18,
+        borderRadius:20,
+        marginBottom:14,
+        textAlign:"center",
+
+        background:
+            "linear-gradient(180deg,#FFFDFC 0%,#FFF6EC 100%)",
+
+        border:"1px solid rgba(214,162,60,.22)",
+
+        boxShadow:
+            "0 18px 45px rgba(23,63,122,.08)"
+    }}
+>
 
         <div
             style={{
@@ -752,23 +767,33 @@ marginBottom:14,
 
     <div className="partner-mobile-grid">
 
-       {partnerCards.map((partner)=>(
+       {partnerCards.map((partner,index)=>(
 
 <GlassCard
     key={partner.title}
     hover={false}
     style={{
+
         padding:10,
+
         borderRadius:16,
-background:
-"linear-gradient(180deg,#FFFFFF 0%,#FFFDFC 100%)",
-        border:"1px solid rgba(214,162,60,.10)",
+
+        background:partnerCardThemes[index].background,
+
+        border:`1px solid ${partnerCardThemes[index].border}`,
+
         minHeight:92,
+
         display:"flex",
+
         flexDirection:"column",
+
         justifyContent:"center",
+
         alignItems:"center",
+
         textAlign:"center"
+
     }}
 >
 
@@ -786,7 +811,7 @@ style={{
 fontSize:15,
 fontWeight:800,
 lineHeight:1.15,
-color:"#173F7A"
+color:partnerCardThemes[index].title
 }}
 >
 {partner.title}
@@ -1025,13 +1050,29 @@ display:none;
 
 display:block;
 
+opacity:1;
+
 }
 
 @media (max-width:1024px){
 
 .partner-desktop-background{
 
-display:none;
+display:block;
+
+opacity:.22;
+
+}
+
+}
+
+@media (max-width:768px){
+
+.partner-desktop-background{
+
+display:block;
+
+opacity:.12;
 
 }
 
@@ -1217,8 +1258,23 @@ gap:10px!important;
 }
 
 .partner-journey>*{
-padding:12px!important;
-min-height:135px!important;
+
+padding:18px!important;
+
+min-height:180px!important;
+
+background:
+linear-gradient(
+180deg,
+#FFFDFC 0%,
+#FFF6EC 100%
+)!important;
+
+border:1px solid rgba(214,162,60,.22)!important;
+
+box-shadow:
+0 18px 45px rgba(23,63,122,.08)!important;
+
 }
 
 .partner-journey>* div:nth-child(1){
