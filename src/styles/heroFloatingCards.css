@@ -500,46 +500,429 @@
    FLOATING CARDS
 ================================= */
 
-.floating-card {
+.floating-card{
 
-    position: absolute;
+    position:absolute;
 
-    display: flex;
+    display:flex;
 
-    align-items: center;
+    align-items:center;
 
-    gap: 14px;
+    gap:14px;
 
-    padding: 18px;
+    padding:18px;
 
-    min-width: 220px;
+    min-width:240px;
 
-    border-radius: 22px;
+    border-radius:22px;
 
-    background: rgba(255,255,255,.94);
+    background:rgba(255,255,255,.95);
 
-    backdrop-filter: blur(20px);
+    backdrop-filter:blur(24px);
+
+    border:1px solid rgba(255,255,255,.65);
 
     box-shadow:
-        0 25px 60px rgba(0,0,0,.14);
+        0 22px 55px rgba(15,23,42,.12);
 
-    animation: floatingCard 6s ease-in-out infinite;
+    overflow:hidden;
+
+    animation:floatingCard 6s ease-in-out infinite;
+
+    transition:
+        transform .35s ease,
+        box-shadow .35s ease;
 
 }
 
-.floating-icon {
+/* Premium shine */
 
-    width: 48px;
+.floating-card::before{
 
-    height: 48px;
+    content:"";
 
-    border-radius: 16px;
+    position:absolute;
 
-    display: flex;
+    inset:0;
 
-    justify-content: center;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,255,255,.55),
+            transparent 45%
+        );
 
-    align-items: center;
+    pointer-events:none;
+
+}
+
+/* Bottom accent */
+
+.floating-card::after{
+
+    content:"";
+
+    position:absolute;
+
+    left:0;
+
+    right:0;
+
+    bottom:0;
+
+    height:4px;
+
+    border-radius:0 0 22px 22px;
+
+    background:#F4A825;
+
+}
+
+/* Hover */
+
+.floating-card:hover{
+
+    transform:translateY(-6px);
+
+    box-shadow:
+        0 32px 70px rgba(15,23,42,.18);
+
+}
+
+/* ==========================================
+   ICON
+========================================== */
+
+.floating-icon{
+
+    width:52px;
+
+    height:52px;
+
+    border-radius:16px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    flex-shrink:0;
+
+    font-size:24px;
+
+    color:white;
+
+    box-shadow:
+        0 12px 28px rgba(0,0,0,.12);
+
+}
+
+/* ==========================================
+   CONTENT
+========================================== */
+
+.floating-content{
+
+    display:flex;
+
+    flex-direction:column;
+
+    flex:1;
+
+}
+
+.floating-content span{
+
+    color:#7C8798;
+
+    font-size:11px;
+
+    font-weight:700;
+
+    letter-spacing:.06em;
+
+    text-transform:uppercase;
+
+}
+
+.floating-content strong{
+
+    margin-top:5px;
+
+    color:#173F7A;
+
+    font-size:16px;
+
+    font-weight:800;
+
+    line-height:1.2;
+
+}
+
+.floating-content small{
+
+    margin-top:6px;
+
+    color:#6B7280;
+
+    font-size:12px;
+
+    line-height:1.45;
+
+}
+
+/* ===============================
+   DAILY LEARNING SUBJECTS
+================================= */
+
+.daily-summary{
+
+    margin-top:10px;
+
+    font-size:11px;
+
+    font-weight:600;
+
+    color:#2563EB;
+
+    line-height:1.4;
+
+}
+
+/* ==========================================
+   DAILY LEARNING DASHBOARD
+========================================== */
+
+.daily-progress{
+
+    margin-top:12px;
+
+    height:7px;
+
+    border-radius:999px;
+
+    background:#DDE8FF;
+
+    border:1px solid #C7D8FF;
+
+    overflow:hidden;
+
+}
+
+.daily-progress-fill{
+
+    height:100%;
+
+    border-radius:999px;
+
+    background:
+
+        repeating-linear-gradient(
+
+            90deg,
+
+            #2563EB 0 34px,
+
+            #5B8DFF 34px 38px
+
+        );
+
+}
+
+.daily-subject-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:8px;
+
+    margin-top:14px;
+
+}
+
+.subject-chip{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:6px;
+
+    padding:4px 6px;
+
+    border-radius:8px;
+
+    background:#FFFFFF;
+
+    border:1px solid #D8E7FF;
+
+    box-shadow:
+
+        0 4px 10px rgba(37,99,235,.08);
+
+    font-size:10px;
+
+    font-weight:700;
+
+    color:#334155;
+
+}
+
+.subject-chip.complete{
+
+    background:#F8FCFF;
+
+    border:1px solid #BFD7FF;
+
+    color:#1D4ED8;
+
+}
+
+.subject-check{
+
+    margin-left:auto;
+
+    width:16px;
+
+    height:16px;
+
+    border-radius:50%;
+
+    background:#22C55E;
+
+    color:#FFFFFF;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:10px;
+
+    font-weight:700;
+
+}
+
+.daily-footer{
+
+    margin-top:10px;
+
+    margin-left:-16px;
+
+    margin-right:-16px;
+
+    margin-bottom:-16px;
+
+    padding:8px 14px;
+
+    background:
+
+        linear-gradient(
+
+            180deg,
+
+            #F5F9FF,
+
+            #EAF2FF
+
+        );
+
+    border-top:1px solid #D8E7FF;
+
+    color:#1D4ED8;
+
+    font-size:11px;
+
+    font-weight:700;
+
+}
+
+.floating-card-watermark{
+
+    position:absolute;
+
+    right:10px;
+top:12px;
+font-size:48px;
+
+    font-size:54px;
+
+    opacity:.12;
+
+    pointer-events:none;
+
+}
+
+/* ===============================
+   CARD POSITIONS
+================================= */
+
+.achievement-card{
+
+    top:40px;
+
+    right:-20px;
+
+    animation-delay:0s;
+
+}
+
+.leaderboard-card{
+
+    top:255px;
+
+    left:-180px;
+
+    animation-delay:1.2s;
+
+}
+
+.portfolio-card{
+
+    bottom:120px;
+
+    right:-40px;
+
+    animation-delay:2.4s;
+
+}
+
+.credits-card{
+
+    bottom:20px;
+
+    left:-60px;
+
+    animation-delay:3.6s;
+
+}
+
+.timeline-card{
+
+    top:355px;
+
+    right:-70px;
+
+    animation-delay:4.8s;
+
+}
+
+/* ======================================
+   INDIVIDUAL CARD THEMES
+====================================== */
+
+/* Achievement */
+
+.achievement-card::after{
+
+    background:#F4A825;
+
+}
+
+.achievement-card .floating-icon{
 
     background:
         linear-gradient(
@@ -548,101 +931,139 @@
             #F6C04B
         );
 
-    font-size: 22px;
+}
 
-    flex-shrink: 0;
+.achievement-card .floating-content strong{
+
+    color:#B7791F;
 
 }
 
-.floating-content {
+/* ==========================================
+   DAILY LEARNING PREMIUM CARD
+========================================== */
 
-    display: flex;
+.leaderboard-card{
 
-    flex-direction: column;
+    width:340px;
+height:265px;
+min-height:unset;
 
-}
+    padding:14px;
 
-.floating-content span {
+    background:
+        linear-gradient(
+            180deg,
+            #FFFFFF 0%,
+            #F8FBFF 60%,
+            #EEF5FF 100%
+        );
 
-    color: #64748B;
+    border:1px solid rgba(82,130,255,.18);
 
-    font-size: 12px;
-
-    font-weight: 600;
-
-}
-
-.floating-content strong {
-
-    margin-top: 4px;
-
-    color: #173F7A;
-
-    font-size: 15px;
-
-    font-weight: 700;
+    box-shadow:
+        0 18px 45px rgba(59,130,246,.16),
+        inset 0 1px 0 rgba(255,255,255,.95);
 
 }
 
-.floating-content small {
+.leaderboard-card::after{
 
-    margin-top: 6px;
-
-    color: #94A3B8;
-
-    font-size: 12px;
+    background:#3B82F6;
 
 }
 
-/* ===============================
-   CARD POSITIONS
-================================= */
+.leaderboard-card .floating-icon{
 
-.achievement-card {
-
-    top: 40px;
-
-    right: -20px;
-
-}
-
-.leaderboard-card {
-
-    top: 190px;
-
-    left: -80px;
-
-    animation-delay: 1.2s;
+    background:
+        linear-gradient(
+            135deg,
+            #3B82F6,
+            #60A5FA
+        );
 
 }
 
-.portfolio-card {
+.leaderboard-card .floating-content strong{
 
-    bottom: 120px;
+    color:#1D4ED8;
 
-    right: -40px;
-
-    animation-delay: 2.4s;
+    font-size:18px;
 
 }
 
-.credits-card {
+/* Marketplace */
 
-    bottom: 20px;
+.portfolio-card::after{
 
-    left: -60px;
-
-    animation-delay: 3.6s;
+    background:#8B5CF6;
 
 }
 
-.timeline-card {
+.portfolio-card .floating-icon{
 
-    top: 330px;
+    background:
+        linear-gradient(
+            135deg,
+            #8B5CF6,
+            #A78BFA
+        );
 
-    right: -70px;
+}
 
-    animation-delay: 4.8s;
+.portfolio-card .floating-content strong{
+
+    color:#6D28D9;
+
+}
+
+/* Talent Credits */
+
+.credits-card::after{
+
+    background:#D97706;
+
+}
+
+.credits-card .floating-icon{
+
+    background:
+        linear-gradient(
+            135deg,
+            #D97706,
+            #F59E0B
+        );
+
+}
+
+.credits-card .floating-content strong{
+
+    color:#B45309;
+
+}
+
+/* Teacher Feedback */
+
+.timeline-card::after{
+
+    background:#22C55E;
+
+}
+
+.timeline-card .floating-icon{
+
+    background:
+        linear-gradient(
+            135deg,
+            #22C55E,
+            #4ADE80
+        );
+
+}
+
+.timeline-card .floating-content strong{
+
+    color:#15803D;
 
 }
 
@@ -650,53 +1071,283 @@
    ANIMATIONS
 ================================= */
 
-@keyframes passportFloat {
+@keyframes passportFloat{
 
-    0% {
+    0%{
 
-        transform: translateY(0);
-
-    }
-
-    50% {
-
-        transform: translateY(-14px);
+        transform:translateY(0);
 
     }
 
-    100% {
+    50%{
 
-        transform: translateY(0);
-
-    }
-
-}
-
-@keyframes floatingCard {
-
-    0% {
-
-        transform: translateY(0);
+        transform:translateY(-14px);
 
     }
 
-    50% {
+    100%{
 
-        transform: translateY(-10px);
-
-    }
-
-    100% {
-
-        transform: translateY(0);
+        transform:translateY(0);
 
     }
 
 }
 
-/* ===============================
+@keyframes floatingCard{
+
+    0%{
+
+        transform:translateY(0);
+
+    }
+
+    50%{
+
+        transform:translateY(-10px);
+
+    }
+
+    100%{
+
+        transform:translateY(0);
+
+    }
+
+}
+
+/* ==========================================
+   PREMIUM MICRO INTERACTIONS
+========================================== */
+
+.floating-card:hover .floating-icon{
+
+    transform:scale(1.08) rotate(-4deg);
+
+    transition:all .35s ease;
+
+}
+
+.floating-card:hover strong{
+
+    letter-spacing:.02em;
+
+}
+
+.floating-card:hover small{
+
+    color:#475569;
+
+}
+
+.floating-card:hover::before{
+
+    opacity:.9;
+
+}
+
+/* ==========================================
+   SOFT GLOW PER CARD
+========================================== */
+
+.achievement-card{
+
+    filter:
+        drop-shadow(0 8px 18px rgba(244,168,37,.18));
+
+}
+
+.leaderboard-card{
+
+    filter:
+        drop-shadow(0 8px 18px rgba(59,130,246,.16));
+
+}
+
+.portfolio-card{
+
+    filter:
+        drop-shadow(0 8px 18px rgba(139,92,246,.16));
+
+}
+
+.credits-card{
+
+    filter:
+        drop-shadow(0 8px 18px rgba(217,119,6,.18));
+
+}
+
+.timeline-card{
+
+    filter:
+        drop-shadow(0 8px 18px rgba(34,197,94,.16));
+
+}
+
+/* ==========================================
+   TEACHER FEEDBACK PREMIUM
+========================================== */
+
+.timeline-card{
+
+    top:235px;
+
+    right:-55px;
+
+    width:185px;
+
+    min-height:52px;      /* was 72px */
+
+    padding:2px 6px;      /* was 8px */
+
+    gap:3px;              /* was 6px */
+
+    animation-delay:4.8s;
+
+    background:
+        linear-gradient(
+            180deg,
+            #FFFFFF 0%,
+            #F8FFF9 65%,
+            #F2FFF5 100%
+        );
+
+    border:1px solid rgba(34,197,94,.12);
+
+    border-radius:16px;
+
+}
+
+.timeline-card .floating-content{
+
+    width:100%;
+
+}
+
+/* Heading */
+
+.timeline-card .floating-content span{
+
+    font-size:12px;
+
+    font-weight:700;
+
+    letter-spacing:.04em;
+
+    line-height:1;
+
+    margin-bottom:5px;
+
+}
+
+.timeline-card .floating-content strong{
+
+    font-size:13px;
+
+    line-height:1;
+
+    margin-top:1px;
+
+}
+
+.timeline-card .floating-content small{
+
+    font-size:11px;
+
+    line-height:1;
+
+    margin-top:6px;
+
+}
+
+/* Grades */
+
+.feedback-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:3px;
+
+    margin-top:8px;       /* was 8px */
+
+}
+
+.feedback-chip{
+
+    padding:3px;          /* was 5px */
+
+    border-radius:6px;
+
+    background:#FFFFFF;
+
+    border:1px solid #DDF6E5;
+
+    box-shadow:none;
+
+}
+
+.feedback-chip label{
+
+    display:block;
+
+    font-size:6px;
+
+    line-height:1;
+
+    color:#64748B;
+
+    margin-bottom:0;
+
+}
+
+.feedback-chip strong{
+
+    display:block;
+
+    font-size:10px;
+
+    line-height:1;
+
+    color:#15803D;
+
+    font-weight:800;
+
+}
+
+/* Watermark */
+
+.timeline-card .floating-card-watermark{
+
+    font-size:20px;
+
+    top:8px;
+
+    right:8px;
+
+    opacity:.05;
+
+}
+
+/* Green Icon */
+
+.timeline-card .floating-icon{
+
+    width:30px;
+
+    height:30px;
+
+    font-size:14px;
+
+    border-radius:9px;
+
+    flex-shrink:0;
+
+}
+/* ==========================================
    RESPONSIVE
-================================= */
+========================================== */
 
 @media (max-width:1200px){
 
@@ -722,7 +1373,15 @@
 
 .floating-card{
 
-    min-width:180px;
+    min-width:190px;
+
+    padding:16px;
+
+}
+
+.floating-content strong{
+
+    font-size:15px;
 
 }
 

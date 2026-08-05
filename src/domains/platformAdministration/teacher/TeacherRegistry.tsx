@@ -286,48 +286,37 @@ function calculateEndDate(
     plan: string,
     start: string
 ) {
+    if (!start?.trim()) {
+        return "";
+    }
 
-    const date =
-        new Date(start);
+    const date = new Date(start);
+
+    if (isNaN(date.getTime())) {
+        return "";
+    }
 
     switch (plan) {
 
         case "TWO_WEEKS":
-
-            date.setDate(
-                date.getDate() + 14
-            );
-
+            date.setDate(date.getDate() + 14);
             break;
 
         case "ONE_MONTH":
-
-            date.setMonth(
-                date.getMonth() + 1
-            );
-
+            date.setMonth(date.getMonth() + 1);
             break;
 
         case "THREE_MONTHS":
-
-            date.setMonth(
-                date.getMonth() + 3
-            );
-
+            date.setMonth(date.getMonth() + 3);
             break;
 
         default:
-
             break;
-
     }
 
     return date
-
         .toISOString()
-
         .slice(0,10);
-
 }
 
     async function save() {
@@ -357,6 +346,28 @@ function calculateEndDate(
             return;
 
         }
+
+if (!subscriptionStartDate.trim()) {
+
+    alert("Subscription Start Date is required.");
+
+    return;
+
+}
+
+if (
+
+    subscriptionPlan === "CUSTOM" &&
+
+    !subscriptionEndDate.trim()
+
+) {
+
+    alert("Subscription End Date is required.");
+
+    return;
+
+}
 
         const limits = {
 
@@ -392,19 +403,20 @@ function calculateEndDate(
 
     subscriptionStartDate,
 
-    subscriptionEndDate:
+  subscriptionEndDate:
 
-        subscriptionPlan === "CUSTOM"
+    subscriptionPlan === "CUSTOM"
 
-            ? subscriptionEndDate
+        ? (
+            subscriptionEndDate.trim()
+                ? subscriptionEndDate
+                : null
+          )
 
-            : calculateEndDate(
-
-                subscriptionPlan,
-
-                subscriptionStartDate
-
-            ),
+        : calculateEndDate(
+            subscriptionPlan,
+            subscriptionStartDate
+        ),
 
     subscriptionStatus:
 
@@ -423,6 +435,16 @@ function calculateEndDate(
         ""
 
 };
+
+console.log("===== SAVE PAYLOAD =====");
+
+console.log({
+    schoolName,
+    board,
+    city,
+    limits,
+    subscription
+});
 
                 const ok = editing
 
@@ -517,14 +539,25 @@ function calculateEndDate(
 );
 
 setSubscriptionStartDate(
-    s.subscriptionStartDate ??
-    new Date()
-        .toISOString()
-        .slice(0, 10)
+
+    s.subscriptionStartDate
+
+        ? s.subscriptionStartDate.slice(0,10)
+
+        : new Date()
+            .toISOString()
+            .slice(0,10)
+
 );
 
 setSubscriptionEndDate(
-    s.subscriptionEndDate ?? ""
+
+    s.subscriptionEndDate
+
+        ? s.subscriptionEndDate.slice(0,10)
+
+        : ""
+
 );
 
 setGracePeriodDays(

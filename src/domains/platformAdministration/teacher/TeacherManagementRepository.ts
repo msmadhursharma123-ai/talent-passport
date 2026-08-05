@@ -41,7 +41,7 @@ export interface SchoolSubscriptionDetails {
 
     subscriptionStartDate: string;
 
-    subscriptionEndDate: string;
+    subscriptionEndDate: string | null;
 
     subscriptionStatus: string;
 
@@ -133,10 +133,14 @@ export async function createSchool(
                 subscription.subscriptionPlan,
 
             subscription_start_date:
-                subscription.subscriptionStartDate,
+    subscription.subscriptionStartDate?.trim()
+        ? subscription.subscriptionStartDate
+        : null,
 
             subscription_end_date:
-                subscription.subscriptionEndDate,
+    subscription.subscriptionEndDate?.trim()
+        ? subscription.subscriptionEndDate
+        : null,
 
             subscription_status:
                 subscription.subscriptionStatus,
@@ -189,6 +193,26 @@ export async function updateSchool(
 
     }
 
+    console.log("Subscription payload", subscription);
+
+console.log("Repository Update Payload");
+
+console.log({
+
+    schoolUuid,
+
+    schoolName,
+
+    board,
+
+    city,
+
+    limits,
+
+    subscription
+
+});
+
     const { error } =
         await (supabase as any)
 
@@ -218,10 +242,14 @@ export async function updateSchool(
                     subscription.subscriptionPlan,
 
                 subscription_start_date:
-                    subscription.subscriptionStartDate,
+    subscription.subscriptionStartDate?.trim()
+        ? subscription.subscriptionStartDate
+        : null,
 
                 subscription_end_date:
-                    subscription.subscriptionEndDate,
+    subscription.subscriptionEndDate?.trim()
+        ? subscription.subscriptionEndDate
+        : null,
 
                 subscription_status:
                     subscription.subscriptionStatus,
@@ -242,13 +270,17 @@ export async function updateSchool(
 
             );
 
-    if (error) {
+if (error) {
 
-        console.error(error);
+    console.error("UPDATE SCHOOL FAILED");
 
-        return false;
+    console.error(error);
 
-    }
+    alert(JSON.stringify(error, null, 2));
+
+    return false;
+
+}
 
     return true;
 

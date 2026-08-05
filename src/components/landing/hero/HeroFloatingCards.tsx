@@ -53,7 +53,7 @@ export default function HeroFloatingCards({
             </h3>
 
             <p>
-              AI Powered Student Profile
+              Academic & Talent Growth Profile
             </p>
 
           </div>
@@ -108,11 +108,19 @@ export default function HeroFloatingCards({
 
         <div className="passport-section-title">
 
-          Talent Ecosystem
+          Student Growth Ecosystem
 
         </div>
 
         <div className="passport-features">
+
+          <div className="passport-feature">
+
+            <span>📚</span>
+
+            Daily Learning
+
+          </div>
 
           <div className="passport-feature">
 
@@ -124,17 +132,9 @@ export default function HeroFloatingCards({
 
           <div className="passport-feature">
 
-            <span>📂</span>
+            <span>💬</span>
 
-            Portfolio
-
-          </div>
-
-          <div className="passport-feature">
-
-            <span>📅</span>
-
-            Timeline
+            Teacher Feedback
 
           </div>
 
@@ -142,13 +142,13 @@ export default function HeroFloatingCards({
 
             <span>🎯</span>
 
-            Credits
+            Talent Credits
 
           </div>
 
           <div className="passport-feature">
 
-            <span>⭐</span>
+            <span>🛍️</span>
 
             Marketplace
 
@@ -195,90 +195,194 @@ export default function HeroFloatingCards({
       =========================================== */}
 
       <div className="floating-card achievement-card">
+
         <div className="floating-icon">
+
           🏆
+
         </div>
 
         <div className="floating-content">
+
           <span>Latest Achievement</span>
 
           <strong>National Debate Finalist</strong>
 
-          <small>+120 Credits Earned</small>
+          <small>Recognized This Week</small>
+
         </div>
+
       </div>
 
-      {/* ===========================================
-          LEADERBOARD CARD
-      =========================================== */}
+   {/* ===========================================
+    DAILY LEARNING CARD
+=========================================== */}
 
-      <div className="floating-card leaderboard-card">
-        <div className="floating-icon">
-          ⭐
+<div className="floating-card leaderboard-card">
+
+    <div className="floating-card-watermark">
+        🎓
+    </div>
+
+    <div className="floating-icon">
+        📚
+    </div>
+
+    <div className="floating-content">
+
+        <span>Daily Learning</span>
+
+        <strong>5 / 6 Classes</strong>
+
+        <small>Today's Progress</small>
+
+        <div className="daily-progress">
+
+            <div
+                className="daily-progress-fill"
+                style={{ width: "83%" }}
+            />
+
         </div>
 
-        <div className="floating-content">
-          <span>Leaderboard</span>
+        <div className="daily-subject-grid">
 
-          <strong>Top 5%</strong>
+            <div className="subject-chip complete">
+                📖 English ✓
+                <span className="subject-check">✓</span>
+            </div>
 
-          <small>National Ranking</small>
+            <div className="subject-chip complete">
+                ➗ Maths ✓
+                <span className="subject-check">✓</span>
+            </div>
+
+            <div className="subject-chip complete">
+                🧪 Science ✓
+                <span className="subject-check">✓</span>
+            </div>
+
+            <div className="subject-chip">
+                🌍 Social
+                <span className="subject-check">✓</span>
+            </div>
+
+            <div className="subject-chip">
+                🎨 Art
+                <span className="subject-check">✓</span>
+            </div>
+
+            <div className="subject-chip">
+                🇮🇳 Hindi
+                <span className="subject-check">✓</span>
+            </div>
+
         </div>
-      </div>
+
+        <div className="daily-footer">
+
+            <span>
+                ⏱ 1 Class Remaining
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
 
       {/* ===========================================
-          PORTFOLIO CARD
+          MARKETPLACE CARD
       =========================================== */}
 
       <div className="floating-card portfolio-card">
+
         <div className="floating-icon">
-          📂
+
+          🛍️
+
         </div>
 
         <div className="floating-content">
-          <span>Portfolio</span>
 
-          <strong>24 Projects</strong>
+          <span>Marketplace</span>
 
-          <small>Continuously Growing</small>
+          <strong>18 Opportunities</strong>
+
+          <small>Scholarships & Workshops</small>
+
         </div>
+
       </div>
 
       {/* ===========================================
-          CREDITS CARD
+          TALENT CREDITS CARD
       =========================================== */}
 
       <div className="floating-card credits-card">
+
         <div className="floating-icon">
+
           🎯
+
         </div>
 
         <div className="floating-content">
-          <span>Credits Wallet</span>
+
+          <span>Talent Credits</span>
 
           <strong>{credits} Credits</strong>
 
-          <small>Redeem for Workshops</small>
+          <small>Unlock New Opportunities</small>
+
         </div>
+
       </div>
 
-      {/* ===========================================
-          TIMELINE CARD
-      =========================================== */}
+{/* ===========================================
+    TEACHER FEEDBACK CARD
+=========================================== */}
 
-      <div className="floating-card timeline-card">
-        <div className="floating-icon">
-          📅
+<div className="floating-card timeline-card">
+
+    <div className="floating-card-watermark">
+        ✨
+    </div>
+
+    <div className="floating-icon">
+        💬
+    </div>
+
+    <div className="floating-content">
+
+        <span>Teacher Feedback</span>
+
+        <strong>Excellent Progress</strong>
+
+        <small>Updated This Week</small>
+
+        <div className="feedback-grid">
+
+            <div className="feedback-chip">
+                <label>Communication</label>
+                <strong>A+</strong>
+            </div>
+
+            <div className="feedback-chip">
+                <label>Critical Thinking</label>
+                <strong>A</strong>
+            </div>
+
+            <div className="feedback-chip">
+                <label>Participation</label>
+                <strong>A+</strong>
+            </div>
+
         </div>
 
-        <div className="floating-content">
-          <span>Timeline</span>
+    </div>
 
-          <strong>Always Updated</strong>
-
-          <small>Every Achievement Recorded</small>
-        </div>
-      </div>
+</div>
 
     </div>
   );
