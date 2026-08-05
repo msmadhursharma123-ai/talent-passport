@@ -13,126 +13,51 @@ export default function PartnerSection() {
     const section = CONTENT.partners.section;
 
 
-const partnerCardThemes = [
+
+
+const scrollingJourney = [
 
 {
-background:"linear-gradient(180deg,#FFF9F4,#FFF3EC)",
-border:"#F4D7C7",
-title:"#B13220",
-bullet:"#E85A47"
+icon:"✅",
+title:"Verified Institute",
+text:"Build trust with schools through a verified institutional profile."
 },
 
 {
-background:"linear-gradient(180deg,#FAF7FF,#F4EEFF)",
-border:"#DDD2FF",
-title:"#5A2E98",
-bullet:"#7C4DFF"
+icon:"🤝",
+title:"School Partnerships",
+text:"Connect with schools seeking workshops, enrichment and academic programs."
 },
 
 {
-background:"linear-gradient(180deg,#F8FFF5,#EEFBEA)",
-border:"#D4F1C6",
-title:"#15703A",
-bullet:"#21A551"
+icon:"🎯",
+title:"Student Discovery",
+text:"Help interested students discover your programs through Talent Passport."
 },
 
 {
-background:"linear-gradient(180deg,#F6FAFF,#EDF5FF)",
-border:"#D3E5FF",
-title:"#2456A7",
-bullet:"#4B7DFF"
-},
-
-{
-background:"linear-gradient(180deg,#FFFDF5,#FFF7E6)",
-border:"#F4E0A4",
-title:"#B26B00",
-bullet:"#D99A00"
-},
-
-{
-background:"linear-gradient(180deg,#F5FDFF,#EAFBFF)",
-border:"#CDEEF8",
-title:"#12637C",
-bullet:"#2D9BC3"
+icon:"📈",
+title:"Sustainable Growth",
+text:"Expand your reach through long-term educational partnerships."
 }
 
 ];
 
-    const partnerCards = [
-        {
-            title: "Dance Academy",
-            emoji: "💃",
-            offerings: [
-                "Classical Dance",
-                "Hip-Hop",
-                "Stage Shows",
-                "Competitions",
-                "Workshops",
-            ],
-        },
-        {
-            title: "Music School",
-            emoji: "🎵",
-            offerings: [
-                "Vocal Music",
-                "Instruments",
-                "Band Programs",
-                "Performances",
-                "Certifications",
-            ],
-        },
-        {
-            title: "Sports Academy",
-            emoji: "⚽",
-            offerings: [
-                "Football",
-                "Cricket",
-                "Athletics",
-                "Fitness Camps",
-                "Championships",
-            ],
-        },
-        {
-            title: "Robotics Lab",
-            emoji: "🤖",
-            offerings: [
-                "Robotics",
-                "STEM Labs",
-                "Coding",
-                "Artificial Intelligence",
-                "Innovation Projects",
-            ],
-        },
-        {
-            title: "Acting Studio",
-            emoji: "🎬",
-            offerings: [
-                "Theatre",
-                "Public Speaking",
-                "Drama",
-                "Expression",
-                "Confidence Building",
-            ],
-        },
-        {
-            title: "Coding Institute",
-            emoji: "💻",
-            offerings: [
-                "Programming",
-                "Web Development",
-                "App Development",
-                "AI & ML",
-                "Future Skills",
-            ],
-        },
-    ];
+const scrollingCards=[
+
+...scrollingJourney,
+
+...scrollingJourney,
+
+...scrollingJourney
+
+];
 
     return (
 
-   <SectionContainer
+  <SectionContainer
     id="partners"
-    background="linear-gradient(180deg,#FCFBF8 0%,#F8F5EE 45%,#FBFAF7 100%)"
+    background="#FFFFFF"
     style={{
         position: "relative",
         overflow: "hidden",
@@ -149,64 +74,12 @@ bullet:"#2D9BC3"
 <div
     className="partner-desktop-background"
     style={{
-        position: "absolute",
-        inset: 0,
-        pointerEvents: "none",
-        zIndex: 0,
-        overflow: "hidden"
-    }}
->
-<FloatingBackground
-    style={{
-        opacity:0.18
+        position:"absolute",
+        inset:0,
+        background:"#FFFFFF",
+        zIndex:0
     }}
 />
-
-    {/* soft blue glow */}
-
-    <div
-        style={{
-            position: "absolute",
-            inset: 0,
-            background: `
-                radial-gradient(circle at 18% 20%,rgba(23,63,122,.05),transparent 34%),
-                radial-gradient(circle at 82% 22%,rgba(197,137,26,.05),transparent 34%),
-                radial-gradient(circle at 50% 100%,rgba(23,63,122,.03),transparent 45%)
-            `
-        }}
-    />
-
-    {/* watermark image */}
-
-<img
-    src="/partner-watermark-desktop.png"
-    alt=""
-style={{
-
-    position:"absolute",
-
-    inset:0,
-
-    width:"100%",
-
-    height:"100%",
-
-    objectFit:"cover",
-
-    objectPosition:"center",
-
-    opacity:.20,
-
-    mixBlendMode:"multiply",
-
-    pointerEvents:"none",
-
-    userSelect:"none"
-
-}}
-/>
-
-</div>
 
     <div
         style={{
@@ -257,79 +130,469 @@ style={{
 box-sizing:border-box;
 }
 
+/* =====================================================
+   MOBILE PARTNER GRID
+===================================================== */
+
+.partner-network-mobile{
+display:none;
+}
+
+.partner-mobile-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+}
+
+.partner-mobile-card{
+    width:100%;
+}
+
+.partner-mobile-icon{
+    width:52px;
+    height:52px;
+    border-radius:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:0 auto 10px;
+    font-size:24px;
+}
+
+.partner-mobile-title{
+    text-align:center;
+    font-weight:800;
+    line-height:1.12;
+}
+
 /* ========================================= */
-/* Tablet */
+/* TABLET */
 /* ========================================= */
+
+
 
 @media (max-width:1024px){
 
-#partners{
+.partner-content{
+margin-top:26px!important;
+}
 
-padding-top:48px;
+/* ---------------- Hero ---------------- */
 
-padding-bottom:60px;
+.partner-hero{
+transform:none!important;
+margin-bottom:18px!important;
+}
+
+#partners .partner-hero h2{
+font-size:34px!important;
+line-height:1.12!important;
+max-width:720px!important;
+margin:0 auto 18px!important;
+}
+
+#partners .partner-hero p{
+font-size:15px!important;
+line-height:1.6!important;
+max-width:700px!important;
+margin:0 auto!important;
+}
+
+/* ---------------- Ecosystem ---------------- */
+
+.partner-ecosystem{
+
+display:grid;
+
+grid-template-columns:repeat(2,minmax(0,1fr));
+
+grid-template-areas:
+
+"hub hub"
+
+"left right";
+
+gap:18px;
+
+max-width:760px;
+
+margin:22px auto;
 
 }
 
-.partner-hero{
+.partner-left{
+grid-area:left;
+}
 
-transform:scale(.94);
+.partner-right{
+grid-area:right;
+}
 
-transform-origin:top center;
+.partner-hub{
 
-margin-bottom:20px;
+grid-area:hub;
+
+display:flex;
+
+justify-content:center;
+
+margin-bottom:6px;
+
+}
+
+.partner-hub>div{
+
+width:220px!important;
+
+height:220px!important;
+
+padding:22px!important;
+
+}
+
+.partner-hub>div div:nth-child(2){
+
+font-size:22px!important;
+
+}
+
+.partner-hub>div div:nth-child(3){
+
+font-size:15px!important;
+
+}
+
+.partner-hub-text{
+
+font-size:12px!important;
+
+line-height:1.5!important;
+
+max-width:150px!important;
+
+}
+
+.partner-network-mobile{
+display:block;
+margin:18px auto 24px;
+max-width:560px;
+}
+
+.partner-ecosystem{
+display:none !important;
+}
+
+/* ---------------- Label ---------------- */
+
+.partner-ecosystem-label{
+
+margin:18px auto 12px!important;
+
+}
+
+.partner-ecosystem-label>div:nth-child(2){
+
+font-size:12px!important;
+
+padding:8px 18px!important;
+
+}
+
+/* ---------------- Services ---------------- */
+
+.partner-services{
+
+grid-template-columns:repeat(2,1fr)!important;
+
+gap:10px!important;
+
+margin-bottom:18px!important;
+
+}
+
+.partner-services>*{
+
+padding:12px!important;
+
+font-size:13px!important;
+
+}
+
+/* ---------------- Marquee ---------------- */
+
+.partner-journey-track{
+
+gap:14px!important;
+
+animation-duration:22s!important;
+
+}
+
+.partner-journey-track>div{
+
+width:170px!important;
+
+min-height:112px!important;
+
+padding:12px!important;
+
+border-radius:16px!important;
+
+}
+
+.partner-journey-track>div div:first-child{
+
+width:42px!important;
+
+height:42px!important;
+
+font-size:20px!important;
+
+margin-bottom:8px!important;
+
+}
+
+.partner-journey-track>div div:nth-child(2){
+
+font-size:14px!important;
+
+margin-bottom:6px!important;
+
+}
+
+.partner-journey-track>div div:nth-child(3){
+
+font-size:11px!important;
+
+line-height:1.4!important;
 
 }
 
 }
 
 /* ========================================= */
-/* Mobile */
+/* MOBILE */
 /* ========================================= */
 
 @media (max-width:768px){
 
-#partners{
-
-overflow-x:hidden;
-
+.partner-network-mobile{
+max-width:360px;
+margin:18px auto;
 }
+
+#partners{
+overflow-x:hidden;
+padding-top:36px!important;
+padding-bottom:44px!important;
+}
+
+/* ---------------- Hero ---------------- */
 
 .partner-hero{
-
-transform:scale(.82);
-
-transform-origin:top center;
-
-margin-bottom:-8px;
-
+transform:none!important;
+margin-bottom:14px!important;
+padding:0!important;
 }
 
-#partners h1{
+#partners .partner-hero h2{
 
-font-size:clamp(28px,7vw,40px)!important;
+font-size:28px!important;
 
 line-height:1.12!important;
 
-}
+letter-spacing:-1px!important;
 
-#partners h2{
+max-width:330px!important;
 
-font-size:clamp(18px,5vw,24px)!important;
-
-}
-
-#partners h3{
-
-font-size:clamp(18px,5vw,22px)!important;
+margin:0 auto 14px!important;
 
 }
 
-#partners p{
+#partners .partner-hero p{
 
-font-size:14px!important;
+font-size:13px!important;
 
 line-height:1.55!important;
+
+max-width:320px!important;
+
+margin:0 auto!important;
+
+}
+
+/* ---------------- Ecosystem ---------------- */
+
+
+
+.partner-left{
+grid-area:left;
+}
+
+.partner-right{
+grid-area:right;
+}
+
+.partner-hub{
+
+grid-area:hub;
+
+display:flex;
+
+justify-content:center;
+
+margin-bottom:4px;
+
+}
+
+.partner-hub>div{
+
+width:170px!important;
+
+height:170px!important;
+
+padding:16px!important;
+
+}
+
+.partner-hub>div div:nth-child(2){
+
+font-size:17px!important;
+
+}
+
+.partner-hub>div div:nth-child(3){
+
+font-size:12px!important;
+
+margin-top:4px!important;
+
+}
+
+.partner-hub-text{
+
+font-size:10px!important;
+
+line-height:1.4!important;
+
+max-width:120px!important;
+
+margin-top:10px!important;
+
+}
+
+
+
+/* ---------------- Label ---------------- */
+
+.partner-ecosystem-label{
+
+margin:14px auto 10px!important;
+
+gap:8px!important;
+
+}
+
+.partner-ecosystem-label>div:first-child,
+.partner-ecosystem-label>div:last-child{
+
+width:38px!important;
+
+}
+
+.partner-ecosystem-label>div:nth-child(2){
+
+padding:7px 14px!important;
+
+font-size:10px!important;
+
+letter-spacing:1px!important;
+
+}
+
+/* ---------------- Services ---------------- */
+
+.partner-services{
+
+display:grid!important;
+
+grid-template-columns:repeat(2,1fr);
+
+gap:8px!important;
+
+margin-bottom:14px!important;
+
+}
+
+.partner-services>*{
+
+padding:9px!important;
+
+font-size:11px!important;
+
+border-radius:12px!important;
+
+}
+
+.partner-services>* span{
+
+font-size:13px!important;
+
+}
+
+/* ---------------- Journey ---------------- */
+
+.partner-journey-marquee{
+
+margin-top:12px!important;
+
+}
+
+.partner-journey-track{
+
+gap:10px!important;
+
+animation-duration:18s!important;
+
+}
+
+.partner-journey-track>div{
+
+width:145px!important;
+
+min-height:96px!important;
+
+padding:9px!important;
+
+border-radius:12px!important;
+
+}
+
+.partner-journey-track>div div:first-child{
+
+width:34px!important;
+
+height:34px!important;
+
+font-size:16px!important;
+
+margin-bottom:7px!important;
+
+}
+
+.partner-journey-track>div div:nth-child(2){
+
+font-size:12px!important;
+
+margin-bottom:4px!important;
+
+}
+
+.partner-journey-track>div div:nth-child(3){
+
+font-size:10px!important;
+
+line-height:1.35!important;
 
 }
 
@@ -341,25 +604,17 @@ line-height:1.55!important;
 
 .partner-heading p{
 
-background:
-linear-gradient(
-90deg,
-#5F6B86 0%,
-#7B6A43 18%,
-#C5891A 34%,
-#F2D27A 50%,
-#C5891A 66%,
-#7B6A43 82%,
-#5F6B86 100%
-);
+color:#444B5D !important;
 
-background-size:220% auto;
+background:none !important;
 
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
-background-clip:text;
+-webkit-text-fill-color:unset !important;
 
-animation:partnerGoldenFlow 7s linear infinite;
+-webkit-background-clip:border-box !important;
+
+background-clip:border-box !important;
+
+animation:none !important;
 
 font-weight:500;
 
@@ -385,445 +640,689 @@ background-position:220% center;
 
                 ===================================================== */}
 
-          <div
-className="partner-network"
+     {/* =======================================================
+    PARTNER ECOSYSTEM V2
+======================================================= */}
 
-    style={{
+<div
+className="partner-ecosystem"
+style={{
 
-        position: "relative",
+width:"100%",
 
-        width: "100%",
+maxWidth:1320,
 
-        maxWidth: 1220,
+margin:"0 auto",
 
-        height: 620,
+display:"grid",
 
-        margin: "0 auto"
+gridTemplateColumns:"1fr 300px 1fr",
 
-    }}
+gap:34,
 
+alignItems:"center"
+
+}}
 >
 
-    {/* ===================================================== */}
-
-    {/* CENTRAL VERIFIED NETWORK */}
-
-    {/* ===================================================== */}
-
-    <GlassCard
-
-        hover={false}
-
-        style={{
-
-            position: "absolute",
-
-            left: "50%",
-
-            top: 200,
-
-            transform: "translateX(-50%)",
-
-            width: 310,
-
-            padding: 30,
-
-            textAlign: "center",
-
-            background:
-                "linear-gradient(180deg,#FFFDFC 0%,#FFF6EC 100%)",
-
-            border:
-"1px solid rgba(214,162,60,.22)",
-
-            boxShadow:
-                "0 18px 45px rgba(23,63,122,.08)",
-
-            zIndex: 3
-
-        }}
-
-    >
-
-        <div
-
-            style={{
-
-                color: "#B7791F",
-
-                fontWeight: 800,
-
-                letterSpacing: 2,
-
-                textTransform: "uppercase",
-
-                marginBottom: 18
-
-            }}
-
-        >
-
-            VERIFIED NETWORK
-
-        </div>
-
-        <div
-
-            style={{
-
-                fontSize: 24,
-
-                color: "#173F7A",
-
-                fontWeight: 900,
-
-                lineHeight: 1.15
-
-            }}
-
-        >
-
-            Talent Passport
-
-            <br />
-
-            Partner Platform
-
-        </div>
-
-        <div
-
-            style={{
-
-                marginTop: 24,
-
-                color: "#667085",
-
-                lineHeight: 1.8,
-
-                fontSize: 15
-
-            }}
-
-        >
-
-            A trusted network where verified learning
-
-            institutes connect with schools, students
-
-            and parents through meaningful educational
-
-            opportunities.
-
-        </div>
-
-    </GlassCard>
-
-    {/* ===================================================== */}
-    {/* CONNECTION LINES */}
-    {/* ===================================================== */}
-
-    <svg
-        width="100%"
-        height="620"
-        style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            zIndex: 0,
-        }}
-    >
-        {/* Top Left */}
-        <line
-            x1="610"
-            y1="300"
-            x2="240"
-            y2="110"
-            stroke="rgba(214,162,60,.22)"
-            strokeWidth="2"
-        />
-
-        {/* Top Right */}
-        <line
-            x1="610"
-            y1="300"
-            x2="980"
-            y2="110"
-            stroke="rgba(214,162,60,.22)"
-            strokeWidth="2"
-        />
-
-        {/* Middle Left */}
-        <line
-            x1="610"
-            y1="300"
-            x2="200"
-            y2="300"
-            stroke="rgba(214,162,60,.22)"
-            strokeWidth="2"
-        />
-
-        {/* Middle Right */}
-        <line
-            x1="610"
-            y1="300"
-            x2="1020"
-            y2="300"
-            stroke="rgba(214,162,60,.22)"
-            strokeWidth="2"
-        />
-
-        {/* Bottom Left */}
-        <line
-            x1="610"
-            y1="300"
-            x2="250"
-            y2="520"
-            stroke="rgba(214,162,60,.22)"
-            strokeWidth="2"
-        />
-
-        {/* Bottom Right */}
-        <line
-            x1="610"
-            y1="300"
-            x2="970"
-            y2="520"
-            stroke="rgba(214,162,60,.22)"
-            strokeWidth="2"
-        />
-    </svg>
-
-
-   {/* ===================================================== */}
-{/* PARTNER TYPES */}
-{/* ===================================================== */}
-
-
-
-{partnerCards.map((partner, index) => {
-
-const desktopPosition = [
-
-{ left:110, top: -60 },
-
-{ right:110, top:-60 },
-
-{ left:60, top:220 },
-
-{ right:60, top:220 },
-
-{ left:110, top:500 },
-
-{ right:110, top:500 }
-
-][index];
-
-
-return (
-
-    <GlassCard
-        key={partner.title}
-        hover={false}
-        style={{
-            position: "absolute",
-            zIndex: 2,
-            width: 250,
-            padding: 22,
-            borderRadius: 24,
-            background:partnerCardThemes[index].background,
-            border:`1px solid ${partnerCardThemes[index].border}`,
-            boxShadow:
-                "0 12px 30px rgba(17,24,39,.06)",
-           left: desktopPosition.left,
-
-right: desktopPosition.right,
-
-top: desktopPosition.top,
-        }}
-    >
-        <div
-            style={{
-                fontSize: 28,
-                marginBottom: 14,
-            }}
-        >
-            {partner.emoji}
-        </div>
-
-        <div
-            style={{
-                color:partnerCardThemes[index].title,
-                fontWeight: 800,
-                fontSize: 18,
-                marginBottom: 14,
-            }}
-        >
-            {partner.title}
-        </div>
-
-        <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-            }}
-        >
-            {partner.offerings.map((item) => (
-                <div
-                    key={item}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        color: "#667085",
-                        fontSize: 14,
-                        lineHeight: 1.4,
-                    }}
-                >
-                    <span
-                        style={{
-                            width: 5,
-                            height: 5,
-                            borderRadius: "50%",
-                            background:partnerCardThemes[index].bullet,
-                            flexShrink: 0,
-                        }}
-                    />
-
-                    <span>{item}</span>
-                </div>
-            ))}
-        </div>
-    </GlassCard>
-
-);
-
-})
+{/* ========================================= */}
+{/* LEFT COLUMN */}
+{/* ========================================= */}
+
+<div
+className="partner-side partner-left"
+>
+
+{[
+{
+emoji:"💃",
+title:"Dance Academies",
+text:"Classical • Hip-Hop • Stage Shows • Workshops"
+},
+{
+emoji:"🎵",
+title:"Music Schools",
+text:"Vocals • Instruments • Performances • Certifications"
+},
+{
+emoji:"⚽",
+title:"Sports Academies",
+text:"Football • Cricket • Athletics • Championships"
 }
-</div>
-
-{/* ===================================================== */}
-{/* MOBILE / TABLET NETWORK */}
-{/* ===================================================== */}
-
-<div className="partner-network-mobile">
+].map(item=>(
 
 <GlassCard
-    hover={false}
-    style={{
-        padding:18,
-        borderRadius:20,
-        marginBottom:14,
-        textAlign:"center",
-
-        background:
-            "linear-gradient(180deg,#FFFDFC 0%,#FFF6EC 100%)",
-
-        border:"1px solid rgba(214,162,60,.22)",
-
-        boxShadow:
-            "0 18px 45px rgba(23,63,122,.08)"
-    }}
->
-
-        <div
-            style={{
-                color:"#B7791F",
-                fontWeight:800,
-                letterSpacing:2,
-                marginBottom:12
-            }}
-        >
-            VERIFIED NETWORK
-        </div>
-
-        <div
-            style={{
-                fontSize:22,
-                fontWeight:900,
-                color:"#173F7A",
-                lineHeight:1.2
-            }}
-        >
-            Talent Passport
-            <br/>
-            Partner Platform
-        </div>
-
-        <p
-            style={{
-                marginTop:14,
-                color:"#667085",
-                lineHeight:1.6,
-                fontSize:14
-            }}
-        >
-            Trusted educational institutes connected
-            with schools, parents and students.
-        </p>
-
-    </GlassCard>
-
-    <div className="partner-mobile-grid">
-
-       {partnerCards.map((partner,index)=>(
-
-<GlassCard
-    key={partner.title}
-    hover={false}
-    style={{
-
-        padding:10,
-
-        borderRadius:16,
-
-        background:partnerCardThemes[index].background,
-
-        border:`1px solid ${partnerCardThemes[index].border}`,
-
-        minHeight:92,
-
-        display:"flex",
-
-        flexDirection:"column",
-
-        justifyContent:"center",
-
-        alignItems:"center",
-
-        textAlign:"center"
-
-    }}
->
-
-<div
+key={item.title}
+hover={false}
 style={{
-fontSize:24,
-marginBottom:6
+
+padding:20,
+
+display:"flex",
+
+alignItems:"center",
+
+gap:18,
+
+borderRadius:22,
+
+background:"#FFFFFF",
+
+border:"1px solid rgba(23,63,122,.08)",
+
+boxShadow:"0 10px 24px rgba(17,24,39,.05)"
+
 }}
 >
-{partner.emoji}
+
+<div
+className="partner-node-icon"
+style={{
+
+width:62,
+
+height:62,
+
+borderRadius:18,
+
+background:"linear-gradient(180deg,#FFF8EA,#FFF2D7)",
+
+display:"flex",
+
+justifyContent:"center",
+
+alignItems:"center",
+
+fontSize:28,
+
+flexShrink:0
+
+}}
+>
+
+{item.emoji}
+
 </div>
 
 <div
 style={{
-fontSize:15,
+flex:1
+}}
+>
+
+<div
+style={{
+
 fontWeight:800,
-lineHeight:1.15,
-color:partnerCardThemes[index].title
+
+fontSize:18,
+
+color:"#173F7A",
+
+marginBottom:6
+
 }}
 >
-{partner.title}
+
+{item.title}
+
+</div>
+
+<div
+style={{
+
+fontSize:14,
+
+lineHeight:1.55,
+
+color:"#667085"
+
+}}
+>
+
+{item.text}
+
+</div>
+
 </div>
 
 </GlassCard>
 
 ))}
 
+</div>
+
+{/* ========================================= */}
+{/* CENTER HUB */}
+{/* ========================================= */}
+
+<div
+className="partner-hub"
+>
+
+<div
+className="partner-hub-circle"
+style={{
+
+width:280,
+
+height:280,
+
+borderRadius:"50%",
+
+background:"linear-gradient(180deg,#FFFFFF,#FFF9EF)",
+
+border:"2px solid rgba(214,162,60,.22)",
+
+display:"flex",
+
+flexDirection:"column",
+
+justifyContent:"center",
+
+alignItems:"center",
+
+textAlign:"center",
+
+padding:30,
+
+position:"relative",
+
+boxShadow:"0 18px 40px rgba(17,24,39,.08)"
+
+}}
+>
+
+<div
+style={{
+
+position:"absolute",
+
+inset:-14,
+
+borderRadius:"50%",
+
+border:"1px dashed rgba(214,162,60,.28)"
+
+}}
+/>
+
+<div
+style={{
+
+fontSize:46,
+
+marginBottom:10
+
+}}
+>
+
+🎓
+
+</div>
+
+<div
+style={{
+
+fontWeight:900,
+
+fontSize:25,
+
+lineHeight:1.1,
+
+color:"#173F7A"
+
+}}
+>
+
+Talent Passport
+
+</div>
+
+<div
+style={{
+
+fontWeight:700,
+
+fontSize:17,
+
+color:"#B7791F",
+
+marginTop:6
+
+}}
+>
+
+Partner Network
+
+</div>
+
+<div
+className="partner-hub-text"
+style={{
+
+marginTop:16,
+
+fontSize:13,
+
+lineHeight:1.55,
+
+color:"#667085",
+
+maxWidth:170
+
+}}
+>
+
+Connecting institutes,
+schools,
+students and parents
+through one verified
+ecosystem.
+
+</div>
+
+</div>
+
+</div>
+
+{/* ========================================= */}
+{/* RIGHT COLUMN */}
+{/* ========================================= */}
+
+<div
+className="partner-side partner-right"
+>
+
+{[
+{
+emoji:"🤖",
+title:"Robotics Labs",
+text:"STEM • Coding • AI • Innovation Projects"
+},
+{
+emoji:"🎭",
+title:"Acting Studios",
+text:"Theatre • Drama • Public Speaking • Expression"
+},
+{
+emoji:"💻",
+title:"Coding Institutes",
+text:"Programming • Web • App • AI • Future Skills"
+}
+].map(item=>(
+
+<GlassCard
+key={item.title}
+hover={false}
+style={{
+
+padding:20,
+
+display:"flex",
+
+alignItems:"center",
+
+gap:18,
+
+borderRadius:22,
+
+background:"#FFFFFF",
+
+border:"1px solid rgba(23,63,122,.08)",
+
+boxShadow:"0 10px 24px rgba(17,24,39,.05)"
+
+}}
+>
+
+<div
+className="partner-node-icon"
+style={{
+
+width:62,
+
+height:62,
+
+borderRadius:18,
+
+background:"linear-gradient(180deg,#EEF6FF,#F8FBFF)",
+
+display:"flex",
+
+justifyContent:"center",
+
+alignItems:"center",
+
+fontSize:28,
+
+flexShrink:0
+
+}}
+>
+
+{item.emoji}
+
+</div>
+
+<div
+style={{
+flex:1
+}}
+>
+
+<div
+style={{
+
+fontWeight:800,
+
+fontSize:18,
+
+color:"#173F7A",
+
+marginBottom:6
+
+}}
+>
+
+{item.title}
+
+</div>
+
+<div
+style={{
+
+fontSize:14,
+
+lineHeight:1.55,
+
+color:"#667085"
+
+}}
+>
+
+{item.text}
+
+</div>
+
+</div>
+
+</GlassCard>
+
+))}
+
+</div>
+
+</div>
+
+{/* ================================================= */}
+{/* MOBILE / TABLET NETWORK */}
+{/* ================================================= */}
+
+<div className="partner-network-mobile">
+
+    <div className="partner-mobile-hub">
+
+        <div className="partner-mobile-badge">
+            VERIFIED NETWORK
+        </div>
+
+        <h3>
+            Talent Passport
+            <br />
+            Partner Platform
+        </h3>
+
+        <p>
+            Trusted educational institutes
+            connected with schools,
+            parents and students.
+        </p>
+
+    </div>
+
+    <div className="partner-mobile-grid">
+
+        {[
+            {
+                emoji:"💃",
+                title:"Dance\nAcademy",
+                color:"#FFEFE8",
+                text:"#B53320"
+            },
+            {
+                emoji:"🎵",
+                title:"Music\nSchool",
+                color:"#F2ECFF",
+                text:"#5C36B8"
+            },
+            {
+                emoji:"⚽",
+                title:"Sports\nAcademy",
+                color:"#EEFFE8",
+                text:"#1E7A3C"
+            },
+            {
+                emoji:"🤖",
+                title:"Robotics\nLab",
+                color:"#EEF5FF",
+                text:"#2957A6"
+            },
+            {
+                emoji:"🎬",
+                title:"Acting\nStudio",
+                color:"#FFF6E3",
+                text:"#B36B00"
+            },
+            {
+                emoji:"💻",
+                title:"Coding\nInstitute",
+                color:"#ECFAFF",
+                text:"#17607D"
+            }
+
+        ].map(item=>(
+
+            <div
+                key={item.title}
+                className="partner-mobile-card"
+                style={{
+                    border:`1px solid ${item.color}`,
+                    background:"#fff"
+                }}
+            >
+
+                <div
+                    className="partner-mobile-icon"
+                    style={{
+                        background:item.color
+                    }}
+                >
+                    {item.emoji}
+                </div>
+
+                <div
+                    className="partner-mobile-title"
+                    style={{
+                        color:item.text
+                    }}
+                >
+                    {item.title.split("\n").map(line=>(
+
+                        <div key={line}>
+                            {line}
+                        </div>
+
+                    ))}
+                </div>
+
+            </div>
+
+        ))}
+
     </div>
 
 </div>
+
+{/* ========================================= */}
+{/* VERIFIED ECOSYSTEM LABEL */}
+{/* ========================================= */}
+
+<div
+className="partner-ecosystem-label"
+style={{
+
+display:"flex",
+
+justifyContent:"center",
+
+alignItems:"center",
+
+gap:18,
+
+margin:"28px auto 16px",
+
+flexWrap:"wrap"
+
+}}
+>
+
+<div
+style={{
+
+width:80,
+
+height:2,
+
+background:"linear-gradient(90deg,transparent,#D6A23C)"
+
+}}
+/>
+
+<div
+style={{
+
+padding:"10px 22px",
+
+borderRadius:999,
+
+background:"#FFF8EC",
+
+border:"1px solid rgba(214,162,60,.22)",
+
+fontWeight:800,
+
+fontSize:13,
+
+letterSpacing:1.3,
+
+textTransform:"uppercase",
+
+color:"#B7791F"
+
+}}
+>
+
+Verified Educational Ecosystem
+
+</div>
+
+<div
+style={{
+
+width:80,
+
+height:2,
+
+background:"linear-gradient(90deg,#D6A23C,transparent)"
+
+}}
+/>
+
+</div>
+
+{/* ========================================= */}
+{/* VALUE CHIPS */}
+{/* ========================================= */}
+
+<div
+className="partner-services"
+style={{
+
+display:"grid",
+
+gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",
+
+gap:18,
+
+marginBottom:28
+
+}}
+>
+
+{[
+"Verified Partner Identity",
+"Trusted School Network",
+"Student Discovery Engine",
+"Scholarships & Workshops"
+].map(item=>(
+
+<div
+key={item}
+style={{
+
+padding:"16px 20px",
+
+borderRadius:18,
+
+background:"#FFFFFF",
+
+border:"1px solid rgba(23,63,122,.08)",
+
+boxShadow:"0 8px 20px rgba(17,24,39,.04)",
+
+display:"flex",
+
+alignItems:"center",
+
+justifyContent:"center",
+
+gap:10,
+
+fontWeight:700,
+
+fontSize:15,
+
+color:"#173F7A"
+
+}}
+>
+
+<span
+style={{
+fontSize:17
+}}
+>
+
+✓
+
+</span>
+
+{item}
+
+</div>
+
+))}
+
+</div>
+
+{/* ===================================================== */
+/* PACKAGE 11 PART 3 STARTS HERE */
+/* ===================================================== */}
+
+{/* =======================================================
+END OF NEW PARTNER ECOSYSTEM
+======================================================= */}
 
                 {/* =====================================================
 
@@ -837,7 +1336,7 @@ color:partnerCardThemes[index].title
 
     style={{
 
-        marginTop:180,
+        marginTop:60,
 
         display:"flex",
 
@@ -857,169 +1356,131 @@ color:partnerCardThemes[index].title
 
     {/* ================================================= */}
 
-    <div
-className="partner-journey"
+  <div className="partner-journey-marquee">
 
-        style={{
+<div className="partner-journey-track">
 
-            width:"100%",
-
-            maxWidth:1280,
-
-            display:"grid",
-
-           gridTemplateColumns:
-
-    "repeat(4,minmax(0,1fr))",
-
-gap:20
-
-        }}
-
-    >
-
-        {
-
-            [
-
-              {
-
-    icon:"✅",
-
-    title:"Verified Institute",
-
-    text:"Build trust with schools through a verified institutional profile."
-
-},
 {
 
-    icon:"🤝",
+scrollingCards.map((item,index)=>(
 
-    title:"School Partnerships",
+<GlassCard
 
-    text:"Connect with schools seeking workshops, enrichment and academic programs."
+key={index}
 
-},
-{
+style={{
 
-    icon:"🎯",
+position:"relative",
 
-    title:"Student Discovery",
+width:230,
 
-    text:"Help interested students discover your programs through Talent Passport."
+flexShrink:0,
 
-},
-{
+padding:16,
 
-    icon:"📈",
+borderRadius:18,
 
-    title:"Sustainable Growth",
+background:
+"linear-gradient(180deg,#173F7A 0%,#224E93 100%)",
 
-    text:"Expand your reach through long-term educational partnerships."
+border:"1px solid rgba(255,255,255,.10)",
 
-}
+boxShadow:
+`
+0 12px 28px rgba(23,63,122,.16),
+0 5px 16px rgba(0,0,0,.08)
+`,
 
-            ].map(
+minHeight:145,
 
-                item=>(
+display:"flex",
 
-                    <GlassCard
+flexDirection:"column",
 
-                        key={item.title}
+alignItems:"center",
 
-                        style={{
-
-    padding:24,
-
-    borderRadius:22,
-
-    background:
-        "linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
-
-    border:"1px solid rgba(214,162,60,.10)",
-
-    boxShadow:
-        "0 12px 30px rgba(17,24,39,.05)",
-
-    minHeight:180,
-
-    display:"flex",
-
-    flexDirection:"column",
-
-    justifyContent:"flex-start",
-
-    alignItems:"center",
-
-    textAlign:"center"
+textAlign:"center"
 
 }}
+>
 
-                    >
+    
 
-                        <div
+<div
+style={{
 
-                            style={{
+fontSize:24,
 
-                                fontSize:28,
+width:48,
 
-                                marginBottom:14
+height:48,
 
-                            }}
+borderRadius:"50%",
 
-                        >
+background:"rgba(255,255,255,.08)",
 
-                            {item.icon}
+display:"flex",
 
-                        </div>
+alignItems:"center",
 
-                        <div
+justifyContent:"center",
 
-                            style={{
+margin:"0 auto 12px",
 
-                                color:"#173F7A",
+backdropFilter:"blur(12px)"
+
+}}
+>
+
+{item.icon}
+
+</div>
+
+<div
+style={{
+
+color:"#FFFFFF",
 
 fontWeight:800,
 
-fontSize:18,
+fontSize:16,
 
-marginBottom:12
+letterSpacing:"-.02em",
 
-                            }}
+marginBottom:8
 
-                        >
+}}
+>
 
-                            {item.title}
+{item.title}
 
-                        </div>
+</div>
 
-                        <div
+<div
+style={{
 
-                            style={{
+fontSize:12,
 
-                                color:"#667085",
+lineHeight:1.45,
 
-fontSize:14,
+color:"rgba(255,255,255,.82)"
 
-lineHeight:1.7
+}}
+>
 
-                            }}
+{item.text}
 
-                        >
+</div>
 
-                            {item.text}
+</GlassCard>
 
-                        </div>
+))
 
-                    </GlassCard>
+}
 
-                )
+</div>
 
-            )
-
-        }
-
-    </div>
+</div>
 
  
 
@@ -1046,277 +1507,630 @@ lineHeight:1.7
 display:none;
 }
 
-.partner-desktop-background{
 
-display:block;
 
-opacity:1;
+.partner-journey-marquee{
 
-}
+overflow:hidden;
 
-@media (max-width:1024px){
-
-.partner-desktop-background{
-
-display:block;
-
-opacity:.22;
-
-}
-
-}
-
-@media (max-width:768px){
-
-.partner-desktop-background{
-
-display:block;
-
-opacity:.12;
-
-}
-
-}
-
-/* ========================================= */
-/* TABLET */
-/* ========================================= */
-
-@media (max-width:1024px){
-
-.partner-network{
-display:none;
-}
-
-.partner-network-mobile{
-display:block;
-max-width:620px;
-margin:0 auto 20px;
-}
-
-.partner-content{
-margin-top:30px !important;
-}
-
-/* Hero */
-
-/* Hero */
-
-.partner-hero{
-transform:none !important;
-padding:0;
 width:100%;
-margin-bottom:20px;
+
+margin-top:20px;
+
 }
 
-#partners .partner-hero h2{
-font-size:38px !important;
-line-height:1.18 !important;
-letter-spacing:-1px !important;
-max-width:650px !important;
-margin:0 auto 24px !important;
-}
+.partner-journey-track{
 
-#partners .partner-hero p{
-font-size:16px !important;
-line-height:1.6 !important;
-max-width:600px !important;
-margin:0 auto !important;
-}
-
-/* Grid */
-
-.partner-mobile-grid{
-display:grid;
-grid-template-columns:repeat(2,minmax(0,1fr));
-gap:12px;
-align-items:stretch;
-}
-
-.partner-mobile-grid>*{
-min-height:170px;
 display:flex;
-flex-direction:column;
-justify-content:flex-start;
+
+gap:22px;
+
+width:max-content;
+
+animation:partnerJourneyScroll 28s linear infinite;
+
 }
 
-/* Journey */
+.partner-journey-marquee:hover .partner-journey-track{
 
-.partner-journey{
-grid-template-columns:repeat(2,1fr)!important;
-gap:14px!important;
+animation-play-state:paused;
+
 }
 
-/* Services */
+@keyframes partnerJourneyScroll{
 
-.partner-services{
-display:grid!important;
-grid-template-columns:repeat(2,minmax(0,1fr));
-column-gap:12px;
-row-gap:4px;
-margin-top:20px!important;
+0%{
+
+transform:translateX(0);
+
 }
 
-.partner-services>*{
-width:100%!important;
-min-width:0!important;
-padding:6px 8px!important;
-min-height:auto!important;
-}
+100%{
 
-.partner-services>* div{
-font-size:13px!important;
-font-weight:700!important;
-line-height:1.25!important;
+transform:translateX(-33.333%);
+
 }
 
 }
 
-/* ========================================= */
-/* MOBILE */
-/* ========================================= */
+/* =========================================================
+   PARTNER ECOSYSTEM V2
+========================================================= */
 
-@media (max-width:768px){
+.partner-ecosystem{
 
-#partners{
-overflow-x:hidden;
-}
-
-/* Hero */
-
-.partner-hero{
-transform:none !important;
-padding:0;
-width:100%;
-margin-bottom:16px;
-}
-
-#partners .partner-hero h2{
-font-size:44px !important;
-line-height:1.08 !important;
-letter-spacing:-2px !important;
-max-width:360px !important;
-margin:0 auto 30px !important;
-}
-
-#partners .partner-hero p{
-font-size:14px !important;
-line-height:1.55 !important;
-max-width:340px !important;
-margin:0 auto !important;
-}
-
-/* Verified Card */
-
-.partner-network{
-display:none;
-}
-
-.partner-network-mobile{
-display:block;
-max-width:560px;
-margin:auto;
-}
-
-.partner-network-mobile>div:first-child{
-padding:18px!important;
-margin-bottom:18px!important;
-}
-
-/* Partner Cards */
-
-.partner-mobile-grid{
 display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:8px;
-margin-top:10px;
-}
 
-.partner-mobile-grid>*{
-padding:10px!important;
-min-height:92px!important;
-border-radius:16px!important;
-display:flex;
-justify-content:center;
+grid-template-columns:1fr 300px 1fr;
+
+gap:34px;
+
 align-items:center;
+
+margin:20px auto 36px;
+
+max-width:1320px;
+
+}
+
+.partner-side{
+
+display:flex;
+
 flex-direction:column;
+
+gap:18px;
+
 }
 
-.partner-mobile-grid div{
-text-align:center;
+.partner-side > div{
+
+transition:.35s ease;
+
 }
 
-.partner-mobile-grid p{
-display:none!important;
-}
+.partner-side > div:hover{
 
-/* Journey */
-
-.partner-journey{
-grid-template-columns:repeat(2,1fr)!important;
-gap:10px!important;
-}
-
-.partner-journey>*{
-
-padding:18px!important;
-
-min-height:180px!important;
-
-background:
-linear-gradient(
-180deg,
-#FFFDFC 0%,
-#FFF6EC 100%
-)!important;
-
-border:1px solid rgba(214,162,60,.22)!important;
+transform:translateY(-4px);
 
 box-shadow:
-0 18px 45px rgba(23,63,122,.08)!important;
+0 18px 40px rgba(17,24,39,.08)!important;
 
 }
 
-.partner-journey>* div:nth-child(1){
-font-size:26px!important;
+.partner-hub{
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
 }
 
-.partner-journey>* div:nth-child(2){
-font-size:16px!important;
+.partner-hub>div{
+
+transition:.35s ease;
+
 }
 
-.partner-journey>* div:nth-child(3){
+.partner-hub>div:hover{
+
+transform:scale(1.03);
+
+}
+
+.partner-ecosystem svg{
+
+overflow:visible;
+
+}
+
+@media (max-width:1024px){
+
+.partner-ecosystem{
+
+grid-template-columns:1fr;
+
+gap:22px;
+
+max-width:760px;
+
+}
+
+.partner-side{
+
+gap:14px;
+
+}
+
+.partner-side>div{
+
+padding:16px!important;
+
+}
+
+.partner-side>div>div:first-child{
+
+width:54px!important;
+
+height:54px!important;
+
+font-size:24px!important;
+
+}
+
+.partner-side>div>div:last-child div:first-child{
+
+font-size:17px!important;
+
+}
+
+.partner-side>div>div:last-child div:last-child{
+
 font-size:13px!important;
-line-height:1.45!important;
+
+line-height:1.55!important;
+
 }
 
-/* Services */
+.partner-hub{
 
-.partner-services{
-display:grid!important;
-grid-template-columns:repeat(2,minmax(0,1fr));
-column-gap:12px;
-row-gap:2px;
-margin-top:18px!important;
+order:-1;
+
+margin-bottom:6px;
+
 }
 
-.partner-services>*{
-width:100%!important;
-min-width:0!important;
-padding:4px 6px!important;
-min-height:auto!important;
-height:auto!important;
+.partner-hub>div{
+
+width:220px!important;
+
+height:220px!important;
+
+padding:24px!important;
+
 }
 
-.partner-services>* div{
+.partner-hub>div div:nth-child(2){
+
+font-size:22px!important;
+
+}
+
+.partner-hub>div div:nth-child(3){
+
+font-size:16px!important;
+
+}
+
+.partner-hub>div div:nth-child(4){
+
+font-size:13px!important;
+
+line-height:1.55!important;
+
+}
+
+}
+
+@media (max-width:768px){
+
+.partner-ecosystem{
+
+grid-template-columns:1fr;
+
+gap:16px;
+
+margin-bottom:22px;
+
+}
+
+.partner-side{
+
+gap:10px;
+
+}
+
+.partner-side>div{
+
+padding:12px!important;
+
+border-radius:16px!important;
+
+}
+
+.partner-side>div>div:first-child{
+
+width:42px!important;
+
+height:42px!important;
+
+font-size:20px!important;
+
+border-radius:12px!important;
+
+}
+
+.partner-side>div>div:last-child div:first-child{
+
+font-size:15px!important;
+
+margin-bottom:4px!important;
+
+}
+
+.partner-side>div>div:last-child div:last-child{
+
 font-size:12px!important;
-font-weight:700!important;
-line-height:1.2!important;
+
+line-height:1.45!important;
+
 }
+
+.partner-hub{
+
+margin:10px 0;
+
+}
+
+.partner-hub>div{
+
+width:180px!important;
+
+height:180px!important;
+
+padding:18px!important;
+
+}
+
+.partner-hub>div div:nth-child(2){
+
+font-size:18px!important;
+
+}
+
+.partner-hub>div div:nth-child(3){
+
+font-size:13px!important;
+
+}
+
+.partner-hub>div div:nth-child(4){
+
+font-size:11px!important;
+
+line-height:1.4!important;
+
+}
+}
+
+/* =========================================================
+   PACKAGE 4
+   PREMIUM POLISH
+========================================================= */
+
+/* ---------- Center Hub ---------- */
+
+.partner-hub>div{
+
+position:relative;
+
+overflow:visible;
+
+}
+
+.partner-hub>div::before{
+
+content:"";
+
+position:absolute;
+
+inset:-20px;
+
+border-radius:50%;
+
+border:1px dashed rgba(214,162,60,.22);
+
+animation:hubRotate 28s linear infinite;
+
+}
+
+.partner-hub>div::after{
+
+content:"";
+
+position:absolute;
+
+inset:-38px;
+
+border-radius:50%;
+
+border:1px dashed rgba(23,63,122,.08);
+
+animation:hubRotateReverse 40s linear infinite;
+
+}
+
+@keyframes hubRotate{
+
+from{
+
+transform:rotate(0deg);
+
+}
+
+to{
+
+transform:rotate(360deg);
 
 }
 
 }
+
+@keyframes hubRotateReverse{
+
+from{
+
+transform:rotate(360deg);
+
+}
+
+to{
+
+transform:rotate(0deg);
+
+}
+
+}
+
+/* ---------- Floating ---------- */
+
+.partner-side>div:nth-child(1){
+
+animation:float1 5s ease-in-out infinite;
+
+}
+
+.partner-side>div:nth-child(2){
+
+animation:float2 6s ease-in-out infinite;
+
+}
+
+.partner-side>div:nth-child(3){
+
+animation:float3 7s ease-in-out infinite;
+
+}
+
+@keyframes float1{
+
+0%,100%{
+
+transform:translateY(0);
+
+}
+
+50%{
+
+transform:translateY(-6px);
+
+}
+
+}
+
+@keyframes float2{
+
+0%,100%{
+
+transform:translateY(0);
+
+}
+
+50%{
+
+transform:translateY(6px);
+
+}
+
+}
+
+@keyframes float3{
+
+0%,100%{
+
+transform:translateY(0);
+
+}
+
+50%{
+
+transform:translateY(-4px);
+
+}
+
+}
+
+/* ---------- Value Chips ---------- */
+
+.partner-ecosystem + div{
+
+max-width:980px;
+
+margin-left:auto;
+
+margin-right:auto;
+
+}
+
+/* ---------- Desktop ---------- */
+
+@media(min-width:1200px){
+
+.partner-ecosystem{
+
+column-gap:46px;
+
+}
+
+.partner-side{
+
+gap:22px;
+
+}
+
+.partner-side>div{
+
+min-height:118px;
+
+}
+
+}
+
+/* ---------- Tablet ---------- */
+
+@media(max-width:1024px){
+
+.partner-side>div{
+
+min-height:92px;
+
+}
+
+.partner-hub>div::before,
+
+.partner-hub>div::after{
+
+display:none;
+
+}
+
+}
+
+/* ---------- Mobile ---------- */
+
+@media(max-width:768px){
+
+.partner-side>div{
+
+min-height:78px;
+
+}
+
+.partner-side>div:hover{
+
+transform:none;
+
+}
+
+.partner-side>div{
+
+animation:none;
+
+}
+
+.partner-hub{
+
+margin-bottom:18px;
+
+}
+
+.partner-hub>div{
+
+box-shadow:
+0 14px 30px rgba(23,63,122,.10)!important;
+
+}
+
+.partner-hub>div::before,
+
+.partner-hub>div::after{
+
+display:none;
+
+}
+
+}
+
+@media (max-width:1024px){
+
+.partner-journey-track{
+
+animation-duration:22s;
+
+}
+
+.partner-journey-track>div{
+
+width:210px!important;
+
+min-height:140px!important;
+
+padding:14px!important;
+
+}
+
+
+
+}
+
+@media (max-width:768px){
+
+.partner-journey-track{
+
+animation-duration:18s;
+
+gap:12px;
+
+}
+
+.partner-journey-track>div{
+
+width:145px!important;
+
+min-height:100px!important;
+
+padding:10px!important;
+
+border-radius:14px!important;
+
+}
+
+.partner-journey-track>div div:first-child{
+
+font-size:24px!important;
+
+width:46px!important;
+
+height:46px!important;
+
+margin-bottom:10px!important;
+
+}
+
+.partner-journey-track>div div:nth-child(3){
+
+font-size:15px!important;
+
+margin-bottom:8px!important;
+
+}
+
+.partner-journey-track>div div:nth-child(4){
+
+font-size:12px!important;
+
+line-height:1.45!important;
+
+}
+
+
+
+}
+
+
+
 `}</style>
 
 
