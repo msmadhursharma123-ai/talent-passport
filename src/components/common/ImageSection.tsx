@@ -6,29 +6,7 @@ const benefits = [
   "Students build one lifelong Talent Passport recognised everywhere.",
 ];
 
-const credentialHighlights = [
 
-  {
-    title: "Journey",
-    value: "Projects • Competitions • Portfolio",
-  },
-
-  {
-    title: "Recognition",
-    value: "Achievements & Milestones",
-  },
-
-  {
-    title: "Growth",
-    value: "Improves Daily Academic Learning",
-  },
-
-  {
-    title: "Identity",
-    value: "One Lifelong Student Passport",
-  },
-
-];
 
 export default function ImagineSection() {
 
@@ -179,41 +157,7 @@ export default function ImagineSection() {
 
         </div>
 
-        {/* =====================================================
-            PASSPORT SPECIFICATIONS
-        ===================================================== */}
-
-        <div className="credential-specifications">
-
-          <div className="credential-spec-grid">
-
-            {credentialHighlights.map((item) => (
-
-              <div
-                key={item.title}
-                className="credential-grid-item"
-              >
-
-                <div className="credential-grid-label">
-
-                  {item.title}
-
-                </div>
-
-                <div className="credential-grid-value">
-
-                  {item.value}
-
-                </div>
-
-              </div>
-
-            ))}
-
-          </div>
-
-        </div>
-
+       
       </div>
 
     </section>

@@ -135,9 +135,9 @@ export default function JourneySection() {
 
             <h3>
 
-              The Road To Talent Passport Nationals
+     The Road To Talent Passport Nationals 🏆
 
-            </h3>
+</h3>
 
             <p>
 
