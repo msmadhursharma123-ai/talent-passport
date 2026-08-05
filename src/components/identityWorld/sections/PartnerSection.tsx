@@ -12,6 +12,53 @@ export default function PartnerSection() {
 
     const section = CONTENT.partners.section;
 
+
+const partnerCardThemes = [
+
+{
+background:"linear-gradient(180deg,#FFF9F4,#FFF3EC)",
+border:"#F4D7C7",
+title:"#B13220",
+bullet:"#E85A47"
+},
+
+{
+background:"linear-gradient(180deg,#FAF7FF,#F4EEFF)",
+border:"#DDD2FF",
+title:"#5A2E98",
+bullet:"#7C4DFF"
+},
+
+{
+background:"linear-gradient(180deg,#F8FFF5,#EEFBEA)",
+border:"#D4F1C6",
+title:"#15703A",
+bullet:"#21A551"
+},
+
+{
+background:"linear-gradient(180deg,#F6FAFF,#EDF5FF)",
+border:"#D3E5FF",
+title:"#2456A7",
+bullet:"#4B7DFF"
+},
+
+{
+background:"linear-gradient(180deg,#FFFDF5,#FFF7E6)",
+border:"#F4E0A4",
+title:"#B26B00",
+bullet:"#D99A00"
+},
+
+{
+background:"linear-gradient(180deg,#F5FDFF,#EAFBFF)",
+border:"#CDEEF8",
+title:"#12637C",
+bullet:"#2D9BC3"
+}
+
+];
+
     const partnerCards = [
         {
             title: "Dance Academy",
@@ -95,43 +142,61 @@ export default function PartnerSection() {
     }}
 >
 
-    <FloatingBackground
-        style={{
-            opacity: 0.55
-        }}
-    />
 
-    {/* ================================================= */}
-    {/* PREMIUM BACKGROUND */}
-    {/* ================================================= */}
+
+{/* PREMIUM DESKTOP BACKGROUND */}
+
+<div
+    className="partner-desktop-background"
+    style={{
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        zIndex: 0,
+        overflow: "hidden"
+    }}
+>
+<FloatingBackground
+    style={{
+        opacity:0.18
+    }}
+/>
+
+    {/* soft blue glow */}
 
     <div
         style={{
             position: "absolute",
             inset: 0,
-            pointerEvents: "none",
-
             background: `
-                radial-gradient(
-                    circle at 18% 20%,
-                    rgba(198,140,31,.08),
-                    transparent 42%
-                ),
-
-                radial-gradient(
-                    circle at 82% 22%,
-                    rgba(23,63,122,.05),
-                    transparent 38%
-                ),
-
-                radial-gradient(
-                    circle at 50% 100%,
-                    rgba(198,140,31,.04),
-                    transparent 45%
-                )
+                radial-gradient(circle at 18% 20%,rgba(23,63,122,.05),transparent 34%),
+                radial-gradient(circle at 82% 22%,rgba(197,137,26,.05),transparent 34%),
+                radial-gradient(circle at 50% 100%,rgba(23,63,122,.03),transparent 45%)
             `
         }}
     />
+
+    {/* watermark image */}
+
+<img
+    src="/partner-watermark-desktop.png"
+    alt=""
+    style={{
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "96%",
+        maxWidth: "2000px",
+        height: "auto",
+        opacity:0.35,
+        mixBlendMode: "multiply",
+        pointerEvents: "none",
+        userSelect: "none"
+    }}
+/>
+
+</div>
 
     <div
         style={{
@@ -349,20 +414,20 @@ className="partner-network"
 
             transform: "translateX(-50%)",
 
-            width: 280,
+            width: 310,
 
-            padding: 24,
+            padding: 30,
 
             textAlign: "center",
 
             background:
-                "linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
+                "linear-gradient(180deg,#FFFDFC 0%,#FFF6EC 100%)",
 
             border:
-                "1px solid rgba(214,162,60,.14)",
+"1px solid rgba(214,162,60,.22)",
 
             boxShadow:
-                "0 16px 42px rgba(17,24,39,.08)",
+                "0 18px 45px rgba(23,63,122,.08)",
 
             zIndex: 3
 
@@ -519,27 +584,31 @@ className="partner-network"
         />
     </svg>
 
+
    {/* ===================================================== */}
 {/* PARTNER TYPES */}
 {/* ===================================================== */}
+
+
 
 {partnerCards.map((partner, index) => {
 
 const desktopPosition = [
 
-{ left:40, top:0 },
+{ left:110, top: -60 },
 
-{ right:40, top:0 },
+{ right:110, top:-60 },
 
-{ left:20, top:230 },
+{ left:60, top:220 },
 
-{ right:20, top:230 },
+{ right:60, top:220 },
 
-{ left:40, top:480 },
+{ left:110, top:500 },
 
-{ right:40, top:480 }
+{ right:110, top:500 }
 
 ][index];
+
 
 return (
 
@@ -549,13 +618,11 @@ return (
         style={{
             position: "absolute",
             zIndex: 2,
-            width: 220,
-            padding: 18,
+            width: 250,
+            padding: 22,
             borderRadius: 24,
-            background:
-                "linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
-            border:
-                "1px solid rgba(214,162,60,.12)",
+            background:partnerCardThemes[index].background,
+            border:`1px solid ${partnerCardThemes[index].border}`,
             boxShadow:
                 "0 12px 30px rgba(17,24,39,.06)",
            left: desktopPosition.left,
@@ -576,9 +643,9 @@ top: desktopPosition.top,
 
         <div
             style={{
-                color: "#173F7A",
+                color:partnerCardThemes[index].title,
                 fontWeight: 800,
-                fontSize: 16,
+                fontSize: 18,
                 marginBottom: 14,
             }}
         >
@@ -600,7 +667,7 @@ top: desktopPosition.top,
                         alignItems: "center",
                         gap: 8,
                         color: "#667085",
-                        fontSize: 13,
+                        fontSize: 14,
                         lineHeight: 1.4,
                     }}
                 >
@@ -609,7 +676,7 @@ top: desktopPosition.top,
                             width: 5,
                             height: 5,
                             borderRadius: "50%",
-                            background: "#D6A23C",
+                            background:partnerCardThemes[index].bullet,
                             flexShrink: 0,
                         }}
                     />
@@ -639,7 +706,8 @@ top: desktopPosition.top,
 borderRadius:20,
 marginBottom:14,
             textAlign:"center",
-            background:"linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
+            background:
+"linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
             border:"1px solid rgba(214,162,60,.14)"
         }}
     >
@@ -692,7 +760,8 @@ marginBottom:14,
     style={{
         padding:10,
         borderRadius:16,
-        background:"linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
+background:
+"linear-gradient(180deg,#FFFFFF 0%,#FFFDFC 100%)",
         border:"1px solid rgba(214,162,60,.10)",
         minHeight:92,
         display:"flex",
@@ -950,6 +1019,22 @@ lineHeight:1.7
 
 .partner-network-mobile{
 display:none;
+}
+
+.partner-desktop-background{
+
+display:block;
+
+}
+
+@media (max-width:1024px){
+
+.partner-desktop-background{
+
+display:none;
+
+}
+
 }
 
 /* ========================================= */

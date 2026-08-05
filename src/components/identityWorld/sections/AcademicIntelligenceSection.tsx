@@ -237,7 +237,7 @@ style={{
 
     padding: isMobile ? 16 : isTablet ? 18 : 22,
 
-    background:"#FFFFFF",
+    background:"linear-gradient(180deg,#FFFDFC 0%,#FFF6EC 100%)",
 
     border:"1px solid rgba(23,63,122,.08)",
 
@@ -380,7 +380,7 @@ gap: isMobile ? 10 : isTablet ? 14 : 22,
 
         textAlign:"center",
 
-        background:"#FFFFFF",
+        background:"linear-gradient(180deg,#FFFDFC 0%,#FFF6EC 100%)",
 
         border:"1px solid rgba(23,63,122,.08)",
 

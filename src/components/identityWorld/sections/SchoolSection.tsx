@@ -358,7 +358,7 @@ export default function SchoolSection() {
                 flexDirection:"column",
                 justifyContent:"flex-start",
                 borderRadius:"clamp(16px,2vw,22px)",
-                background:"linear-gradient(180deg,#FFFFFF 0%,#FCFBF8 100%)",
+                background:"linear-gradient(180deg,#FFFDFC 0%,#FFF6EC 100%)",
                 border:"1px solid rgba(190,145,42,.10)",
                 boxShadow:"0 10px 26px rgba(17,24,39,.05)"
             }}
