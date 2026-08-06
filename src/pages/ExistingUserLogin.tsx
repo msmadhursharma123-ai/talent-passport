@@ -6,16 +6,26 @@ import {
 } from "../services/authenticationService";
 
 interface Props {
+
     onSuccess: () => void;
+
     onRegister: () => void;
+
     onBack: () => void;
+
+onForgotPasswordVerified: (email: string) => void;
+
 }
 
 export default function ExistingUserLogin({
 
     onSuccess,
+
     onRegister,
-    onBack
+
+    onBack,
+
+    onForgotPasswordVerified
 
 }: Props) {
 
@@ -341,10 +351,22 @@ export default function ExistingUserLogin({
 
             </div>
 
-        <ForgotPasswordDialog
+<ForgotPasswordDialog
     open={forgotPasswordOpen}
     role="student"
     onClose={() => setForgotPasswordOpen(false)}
+    onVerified={(email) => {
+
+        sessionStorage.setItem(
+            "recoveryEmail",
+            email
+        );
+
+        setForgotPasswordOpen(false);
+
+        onForgotPasswordVerified(email);
+
+    }}
 />
 
 <style>{`

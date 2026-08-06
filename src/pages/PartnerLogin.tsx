@@ -9,14 +9,22 @@ import ForgotPasswordDialog
 from "../services/auth/ForgotPasswordDialog";
 
 interface Props {
+
     onSuccess: () => void;
+
     onBack: () => void;
+
+    onForgotPasswordVerified: (email: string) => void;
+
 }
 
 export default function PartnerLogin({
 
     onSuccess,
-    onBack
+
+    onBack,
+
+    onForgotPasswordVerified
 
 }: Props) {
 
@@ -391,17 +399,16 @@ Forgot Password?
             </div>
 
 <ForgotPasswordDialog
+    open={forgotPasswordOpen}
+    role="partner"
+    onClose={() => setForgotPasswordOpen(false)}
+    onVerified={(email) => {
 
-open={forgotPasswordOpen}
+        setForgotPasswordOpen(false);
 
-role="partner"
+        onForgotPasswordVerified(email);
 
-onClose={()=>
-
-setForgotPasswordOpen(false)
-
-}
-
+    }}
 />
         
 <style>{`

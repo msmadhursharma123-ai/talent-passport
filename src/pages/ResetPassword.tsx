@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getSupabaseClient } from "../supabaseClient";
+import { updateRecoveredPassword } from "../services/authenticationService";
 
 export default function ResetPasswordPage() {
 
@@ -9,126 +9,104 @@ export default function ResetPasswordPage() {
 const [error,setError]=
 useState("");
     const [loading, setLoading] = useState(false);
-    const [validRecovery, setValidRecovery] = useState(false);
+const [validRecovery] = useState(true);
 
-    useEffect(() => {
+   
 
-        async function initialize() {
+  async function updatePassword() {
 
-            const supabase = getSupabaseClient();
+    setError("");
 
-            if (!supabase) return;
+    if (!password.trim()) {
 
-            const { data } =
-                await supabase.auth.getSession();
+        setError("Please enter a password.");
 
-            if (data.session?.user) {
+        return;
 
-                setValidRecovery(true);
+    }
 
-            }
+    if (password.length < 8) {
 
-        }
+        setError("Password must contain at least 8 characters.");
 
-        initialize();
+        return;
 
-    }, []);
+    }
 
-    async function updatePassword() {
+    const hasUpper = /[A-Z]/.test(password);
 
-     setError("");
+    const hasLower = /[a-z]/.test(password);
 
-if (!password.trim()) {
+    const hasNumber = /[0-9]/.test(password);
 
-    setError("Please enter a password.");
+    if (
 
-    return;
+        !hasUpper ||
 
-}
+        !hasLower ||
 
-if (password.length < 8) {
+        !hasNumber
 
-    setError("Password must contain at least 8 characters.");
+    ) {
 
-    return;
+        setError(
 
-}
+            "Password must contain an uppercase letter, lowercase letter and a number."
 
-const hasUpper = /[A-Z]/.test(password);
+        );
 
-const hasLower = /[a-z]/.test(password);
+        return;
 
-const hasNumber = /[0-9]/.test(password);
+    }
 
-if (
+    if (password !== confirmPassword) {
 
-    !hasUpper ||
+        setError("Passwords do not match.");
 
-    !hasLower ||
+        return;
 
-    !hasNumber
+    }
 
-) {
+    setLoading(true);
 
-    setError(
+    try {
 
-        "Password must contain an uppercase letter, lowercase letter and a number."
+        const email =
+            sessionStorage.getItem(
+                "recoveryEmail"
+            );
 
-    );
+        const role =
+            sessionStorage.getItem(
+                "recoveryRole"
+            ) as
+                | "student"
+                | "teacher"
+                | "partner"
+                | "school"
+                | "admin"
+                | null;
 
-    return;
+        if (!email || !role) {
 
-}
-
-if (password !== confirmPassword) {
-
-    setError("Passwords do not match.");
-
-    return;
-
-}
-
-        setLoading(true);
-
-        try {
-
-            const supabase =
-                getSupabaseClient();
-
-            if (!supabase) {
-
-                throw new Error("Supabase unavailable.");
-
-            }
-
-            const { error } =
-                await supabase.auth.updateUser({
-
-                    password
-
-                });
-
-            if (error) {
-
-                throw error;
-
-            }
-
-           alert(
-
-"Password updated successfully.\n\nPlease login using your new password."
-
-);
-
-window.location.reload();
+            throw new Error(
+                "Recovery session expired."
+            );
 
         }
 
-        catch (error: any) {
+        const result =
+            await updateRecoveredPassword(
+                role,
+                email,
+                password
+            );
 
-            alert(
+        if (!result.success) {
 
-                error?.message ??
+            throw new Error(
+
+                result.error ??
 
                 "Unable to update password."
 
@@ -136,13 +114,41 @@ window.location.reload();
 
         }
 
-        finally {
+        sessionStorage.removeItem(
+            "recoveryEmail"
+        );
 
-            setLoading(false);
+        sessionStorage.removeItem(
+            "recoveryRole"
+        );
 
-        }
+        alert(
+            "Password updated successfully.\n\nPlease login using your new password."
+        );
+
+        window.location.href = "/";
 
     }
+
+    catch (error: any) {
+
+        alert(
+
+            error?.message ??
+
+            "Unable to update password."
+
+        );
+
+    }
+
+    finally {
+
+        setLoading(false);
+
+    }
+
+}
 
     if (!validRecovery) {
 

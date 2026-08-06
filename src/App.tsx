@@ -877,40 +877,74 @@ if (selectedRole === "teacher") {
 
 {activeTab === "existing-login" && (
   <ExistingUserLogin
+
     onBack={() =>
       setActiveTab("user-type")
     }
 
     onSuccess={async () => {
+
       await routeStudentAfterLogin();
+
     }}
 
     onRegister={() => {
+
       setUserType("new");
+
       setSelectedRole("student");
+
       setActiveTab("student-register-auth");
+
     }}
+
+      onForgotPasswordVerified={(email: string) => {
+
+        sessionStorage.setItem(
+            "resetEmail",
+            email
+        );
+
+        setActiveTab(
+            "reset-password"
+        );
+
+    }}
+
   />
 )}
 
 {activeTab ===
   "partner-login" && (
 
-  <PartnerLogin
+<PartnerLogin
 
-    onBack={() =>
-      setActiveTab(
-        "user-type"
-      )
-    }
+onBack={()=>
 
-    onSuccess={() =>
-      setActiveTab(
-        "partner-portal"
-      )
-    }
+    setActiveTab("user-type")
 
-  />
+}
+
+onSuccess={()=>
+
+    setActiveTab("partner-portal")
+
+}
+
+onForgotPasswordVerified={(email: string) => {
+
+    sessionStorage.setItem(
+        "resetEmail",
+        email
+    );
+
+    setActiveTab(
+        "reset-password"
+    );
+
+}}
+
+/>
 
 )}
 
@@ -1236,22 +1270,40 @@ alert(
 
     return (
 
-        <TeacherExistingLogin
+<TeacherExistingLogin
 
-           onSuccess={async () => {
+onSuccess={async () => {
 
-await routeTeacherAfterLogin();
+    await routeTeacherAfterLogin();
 
 }}
-            onRegister={() =>
-                setTeacherStage("register")
-            }
 
-            onBack={() =>
-                setActiveTab("user-type")
-            }
+onRegister={() =>
 
-        />
+    setTeacherStage("register")
+
+}
+
+onBack={() =>
+
+    setActiveTab("user-type")
+
+}
+
+onForgotPasswordVerified={(email: string) => {
+
+    sessionStorage.setItem(
+        "resetEmail",
+        email
+    );
+
+    setActiveTab(
+        "reset-password"
+    );
+
+}}
+
+/>
 
     );
        case "portal":

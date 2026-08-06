@@ -71,6 +71,8 @@ export interface AuthResult {
 
     error?: string;
 
+    authUserId?: string;
+
 }
 
 export interface SignInResult
@@ -2466,101 +2468,132 @@ const RECOVERY_TABLES = {
 
 } as const;
 
-export async function verifyRecoveryIdentity(
-
-    role:
-        | "student"
-        | "teacher"
-        | "partner"
-        | "school"
-        | "admin",
-
+export async function updateRecoveredPassword(
+    role: AuthRole,
     email: string,
-
-    mobile: string
-
+    newPassword: string
 ): Promise<AuthResult> {
 
-    const supabase =
-        getSupabaseClient();
+    try {
 
-    if (!supabase) {
+        const supabase = getClient();
+
+        const {
+
+            data,
+
+            error
+
+        } = await supabase.functions.invoke(
+
+            "update-password",
+
+            {
+
+             body: {
+    role,
+    email,
+    password: newPassword
+}
+
+            }
+
+        );
+
+        if (error) {
+
+            return {
+
+                success: false,
+
+                error: error.message
+
+            };
+
+        }
+
+        if (!data?.success) {
+
+            return {
+
+                success: false,
+
+                error:
+
+                    data?.error ??
+
+                    "Unable to update password."
+
+            };
+
+        }
 
         return {
 
-            success: false,
-
-            error: "Supabase is not initialized."
+            success: true
 
         };
 
     }
 
+    catch (error: any) {
 
-    
-const {
+        return {
 
-    data,
+            success: false,
 
-    error
+            error:
 
-} = await (supabase as any).rpc(
+                error?.message ??
 
-    "verify_recovery_identity",
+                "Unable to update password."
 
-    {
-
-        p_role: role,
-
-        p_email: email.trim(),
-
-        p_mobile: mobile.trim()
+        };
 
     }
 
-);
+}
 
-if (error) {
+export async function verifyRecoveryIdentity(
+    role: AuthRole,
+    email: string
+): Promise<AuthResult> {
 
-    console.error(
+    const supabase = getClient();
 
-        "Recovery RPC Error",
+    const { data, error } =
+        await supabase.functions.invoke(
+            "verify-recovery",
+            {
+                body: {
+                    role,
+                    email: email.trim()
+                }
+            }
+        );
 
-        error
+    if (error) {
 
-    );
+        return {
+
+            success: false,
+
+            error:
+                error.message
+
+        };
+
+    }
 
     return {
 
-        success: false,
+        success:
+            data?.success === true,
 
         error:
-
-            "Unable to verify your identity."
-
-    };
-
-}
-
-if (data !== true) {
-
-    return {
-
-        success: false,
-
-        error:
-
-            "Email and Mobile Number do not match our records."
+            data?.error
 
     };
-
-}
-
-return {
-
-    success: true
-
-};
 
 }
 

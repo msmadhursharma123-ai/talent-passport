@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 import {
-    verifyRecoveryIdentity,
-    sendPasswordResetEmail
+    verifyRecoveryIdentity
 } from "../../services/authenticationService";
 
 interface Props {
@@ -18,6 +17,8 @@ interface Props {
 
     onClose: () => void;
 
+onVerified: (email: string) => void;
+
 }
 
 export default function ForgotPasswordDialog({
@@ -26,15 +27,16 @@ export default function ForgotPasswordDialog({
 
     role,
 
-    onClose
+    onClose,
+
+    onVerified
 
 }: Props) {
 
     const [email, setEmail] =
         useState("");
 
-    const [mobile, setMobile] =
-        useState("");
+
 
     const [loading, setLoading] =
         useState(false);
@@ -105,7 +107,7 @@ useEffect(() => {
 
     setEmail("");
 
-    setMobile("");
+    
 
     setLoading(false);
 
@@ -147,13 +149,6 @@ Please wait ${remainingSeconds} seconds before trying again.`
 
     }
 
-    if (!mobile.trim()) {
-
-        alert("Please enter your registered mobile number.");
-
-        return;
-
-    }
 
     setLoading(true);
 
@@ -161,15 +156,14 @@ Please wait ${remainingSeconds} seconds before trying again.`
 
     try {
 
-        const verification = await verifyRecoveryIdentity(
+   const verification =
+    await verifyRecoveryIdentity(
 
-            role,
+        role,
 
-            email.trim(),
+        email.trim()
 
-            mobile.trim()
-
-        );
+    );
 
         if (!verification.success) {
 
@@ -211,53 +205,32 @@ ${3 - attempts}`
 
         }
 
-        setStatus("sending");
+     setStatus("success");
+setTimeout(() => {
 
-        const reset = await sendPasswordResetEmail(
+const verifiedEmail =
+    email.trim();
 
-            email.trim()
+sessionStorage.setItem(
+    "recoveryEmail",
+    verifiedEmail
+);
 
-        );
+sessionStorage.setItem(
+    "recoveryRole",
+    role
+);
 
-        if (!reset.success) {
-
-            alert(
-
-                reset.error ??
-
-                "Unable to send reset email."
-
-            );
-
-            setStatus("idle");
-
-            return;
-
-        }
-
-        setStatus("success");
-
-        setTimeout(() => {
-
-            alert(
-
-                `Identity verified successfully.
-
-A secure password reset email has been sent.
-
-Please check your Inbox or Spam folder.`
-
-            );
-
-            setEmail("");
-
-setMobile("");
+setEmail("");
 
 setStatus("idle");
 
-onClose();
+onVerified(verifiedEmail);
 
-        }, 800);
+},300);
+
+return;
+
 
     }
 
@@ -424,23 +397,7 @@ style={inputStyle}
 
                 />
 
-                <input
-
-                    placeholder="Registered Mobile Number"
-
-                    value={mobile}
-
-                    onChange={(e)=>
-                        setMobile(
-                            e.target.value
-                        )
-                    }
-
-                    className="forgot-password-input"
-
-style={inputStyle}
-
-                />
+         
 
                 <button
 

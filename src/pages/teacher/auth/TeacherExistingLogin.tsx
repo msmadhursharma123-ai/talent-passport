@@ -9,16 +9,26 @@ import ForgotPasswordDialog
 from "../../../services/auth/ForgotPasswordDialog";
 
 interface Props {
+
     onSuccess: () => void;
+
     onRegister: () => void;
+
     onBack: () => void;
+
+    onForgotPasswordVerified: (email: string) => void;
+
 }
 
 export default function TeacherExistingLogin({
 
     onSuccess,
+
     onRegister,
-    onBack
+
+    onBack,
+
+    onForgotPasswordVerified
 
 }: Props) {
 
@@ -368,17 +378,16 @@ Forgot Password?
             </div>
 
 <ForgotPasswordDialog
+    open={forgotPasswordOpen}
+    role="teacher"
+    onClose={() => setForgotPasswordOpen(false)}
+    onVerified={(email) => {
 
-open={forgotPasswordOpen}
+        setForgotPasswordOpen(false);
 
-role="teacher"
+        onForgotPasswordVerified(email);
 
-onClose={()=>
-
-setForgotPasswordOpen(false)
-
-}
-
+    }}
 />
         
 <style>{`

@@ -13,7 +13,11 @@ import { Submission } from './types';
 import { requestCompetitionEvaluation } from "./services/competitionEvaluationEngine";
 
 const supabaseUrl = ((import.meta as any).env?.VITE_SUPABASE_URL as string) || '';
+
 const supabaseAnonKey = ((import.meta as any).env?.VITE_SUPABASE_ANON_KEY as string) || '';
+
+console.log("SUPABASE URL =", supabaseUrl);
+console.log("ANON KEY =", supabaseAnonKey.substring(0,30));
 /**
  * Checks if the user has configured custom Supabase credentials.
  */
@@ -29,6 +33,16 @@ export const isSupabaseConfigured = (): boolean => {
 };
 
 let supabaseInstance: ReturnType<typeof createClient> | null = null;
+
+console.log(
+  "SUPABASE URL =",
+  import.meta.env.VITE_SUPABASE_URL
+);
+
+console.log(
+  "SUPABASE KEY =",
+  import.meta.env.VITE_SUPABASE_ANON_KEY?.substring(0,25)
+);
 
 export const getSupabaseClient = () => {
   if (!isSupabaseConfigured()) {
