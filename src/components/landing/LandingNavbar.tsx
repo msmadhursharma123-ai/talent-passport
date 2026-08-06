@@ -7,11 +7,13 @@ interface LandingNavbarProps {
 
 const navItems = [
   { label: "Home", href: "#hero" },
-  { label: "Journey", href: "#journey" },
-  { label: "Recognition", href: "#recognition" },
-  { label: "Opportunities", href: "#opportunities" },
-  { label: "Community", href: "#community" },
-  { label: "Vision", href: "#impact" },
+    { label: "Schools", href: "#school" },
+    { label: "Partners", href: "#partnersection" },
+     { label: "HPC", href: "#hpc" },
+  { label: "Recognition", href: "#journey" },
+  { label: "Growth", href: "#growth" },
+  { label: "Founder", href: "#founder" },
+  { label: "Testimonials", href: "#testimonials" },
 ];
 
 export default function LandingNavbar({

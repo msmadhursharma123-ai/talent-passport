@@ -92,25 +92,17 @@
 
     margin:0;
 
-    font-family:
+    font-family:Inter,sans-serif !important;
 
-        Georgia,
+    font-size:clamp(2.4rem,3vw,3.3rem) !important;
 
-        "Times New Roman",
+    font-weight:800 !important;
 
-        serif;
+    line-height:1.08;
 
-    font-size:
+    letter-spacing:-0.03em;
 
-        clamp(2.1rem,3vw,3rem);
-
-    font-weight:500;
-
-    line-height:1.16;
-
-    letter-spacing:-.02em;
-
-    color:#111827;
+    color:#173F7A !important;
 
 }
 

@@ -13,7 +13,7 @@ export default function SchoolSection() {
   return (
 
 <SectionContainer
-    id="schools"
+    id="school"
     background="linear-gradient(180deg,#FCFBF8 0%,#F8F5EE 45%,#FBFAF7 100%)"
     style={{
         position: "relative",

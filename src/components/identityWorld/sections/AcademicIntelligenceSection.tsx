@@ -23,7 +23,7 @@ const isTablet =
 
    <SectionContainer
 
-    id="academic-intelligence"
+    id="growth"
 
     background="linear-gradient(180deg,#FCFBF8 0%,#F8F5EE 45%,#FBFAF7 100%)"
 
@@ -471,7 +471,7 @@ fontSize: isMobile ? 12 : isTablet ? 13 : 15,
 
                 marginBottom:28,
 
-                fontSize: isMobile ? 15 : isTablet ? 16 : 18,
+                fontSize: isMobile ? 14 : isTablet ? 16 : 18,
 
                 letterSpacing:.3,
 
@@ -753,87 +753,121 @@ fontSize: isMobile ? 13 : isTablet ? 14 : 16,
 {/* EXECUTIVE METRICS */}
 {/* =============================================== */}
 
+{/* =============================================== */}
+{/* EXECUTIVE METRICS */}
+{/* =============================================== */}
+
 <div
+    className="academic-metrics-marquee"
     style={{
-        width: "100%",
-        maxWidth: 1280,
-        display: "grid",
-
-        gridTemplateColumns:
-            isMobile || isTablet
-                ? "repeat(2, minmax(0, 1fr))"
-                : "repeat(auto-fit,minmax(220px,1fr))",
-
-        gap: isMobile ? 10 : isTablet ? 14 : 24,
-
         marginTop: isMobile ? 18 : 30,
+        padding: "0 20px",
     }}
 >
-    {[
-        {
-            value: "100%",
-            label: "Topic Visibility",
-        },
-        {
-            value: "Daily",
-            label: "Understanding Tracking",
-        },
-        {
-            value: "AI",
-            label: "Learning Intelligence",
-        },
-        {
-            value: "24×7",
-            label: "Parent Visibility",
-        },
-    ].map((metric) => (
-        <GlassCard
-            key={metric.label}
-            hover={false}
-       style={{
-    padding: isMobile ? 14 : isTablet ? 18 : 26,
+    <div
+        style={{
+            display: "flex",
+            width: "max-content",
+            gap: isMobile ? 12 : isTablet ? 18 : 24,
+        }}
+    >
+        {[
+            {
+                value: "100%",
+                label: "Topic Visibility",
+            },
+            {
+                value: "Daily",
+                label: "Learning Tracking",
+            },
+            {
+                value: "360°",
+                label: "Holistic Learning Visibility",
+            },
+            {
+                value: "24×7",
+                label: "Parent Engagement",
+            },
 
-    minHeight: isMobile ? 110 : isTablet ? 135 : 170,
+            // Duplicate cards for seamless infinite scrolling
 
-    textAlign: "center",
-
-    background: "#FFFFFF",
-
-    border: "1px solid rgba(23,63,122,.08)",
-
-    boxShadow: "0 12px 28px rgba(17,24,39,.05)",
-
-    display: "flex",
-
-    flexDirection: "column",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-}}
-        >
-            <div
+            {
+                value: "100%",
+                label: "Topic Visibility",
+            },
+            {
+                value: "Daily",
+                label: "Learning Tracking",
+            },
+            {
+                value: "360°",
+                label: "Holistic Learning Visibility",
+            },
+            {
+                value: "24×7",
+                label: "Parent Engagement",
+            },
+        ].map((metric, index) => (
+            <GlassCard
+                key={index}
+                hover={false}
                 style={{
-                    fontSize: isMobile ? 20 : isTablet ? 24 : 36,
-                    fontWeight: 900,
-                    color: "#173F7A",
+                    width: isMobile
+                        ? 150
+                        : isTablet
+                        ? 210
+                        : 260,
+
+                    minHeight: isMobile
+                        ? 120
+                        : isTablet
+                        ? 150
+                        : 180,
+
+                    flexShrink: 0,
+
+                    padding: isMobile ? 14 : isTablet ? 18 : 26,
+
+                    textAlign: "center",
+
+                    background: "#FFFFFF",
+
+                    border: "1px solid rgba(23,63,122,.08)",
+
+                    boxShadow: "0 12px 28px rgba(17,24,39,.05)",
+
+                    display: "flex",
+
+                    flexDirection: "column",
+
+                    justifyContent: "center",
+
+                    alignItems: "center",
                 }}
             >
-                {metric.value}
-            </div>
+                <div
+                    style={{
+                        fontSize: isMobile ? 22 : isTablet ? 28 : 40,
+                        fontWeight: 900,
+                        color: "#173F7A",
+                    }}
+                >
+                    {metric.value}
+                </div>
 
-            <div
-                style={{
-                    marginTop: 12,
-                    color: "#667085",
-                    fontSize: isMobile ? 11 : isTablet ? 12 : 14,
-                    lineHeight: 1.7,
-                }}
-            >
-                {metric.label}
-            </div>
-        </GlassCard>
-    ))}
+                <div
+                    style={{
+                        marginTop: 12,
+                        color: "#667085",
+                        fontSize: isMobile ? 11 : isTablet ? 13 : 15,
+                        lineHeight: 1.6,
+                    }}
+                >
+                    {metric.label}
+                </div>
+            </GlassCard>
+        ))}
+    </div>
 </div>
 
     {/* =============================================== */}
@@ -846,7 +880,68 @@ fontSize: isMobile ? 13 : isTablet ? 14 : 16,
 
 </div>
 
+<style>{`
 
+.academic-metrics-marquee{
+    width:100%;
+    overflow:hidden;
+    position:relative;
+    margin-top:28px;
+}
+
+.academic-metrics-marquee > div{
+    display:flex;
+    width:max-content;
+    align-items:stretch;
+    animation:academicMetricsScroll 22s linear infinite;
+    will-change:transform;
+}
+
+.academic-metrics-marquee:hover > div{
+    animation-play-state:paused;
+}
+
+@keyframes academicMetricsScroll{
+
+    0%{
+        transform:translateX(0);
+    }
+
+    100%{
+        transform:translateX(-50%);
+    }
+
+}
+
+@media (max-width:1024px){
+
+    .academic-metrics-marquee > div{
+
+        animation-duration:18s;
+
+    }
+
+}
+
+@media (max-width:768px){
+
+    .academic-metrics-marquee{
+
+        margin-top:18px;
+
+    }
+
+    .academic-metrics-marquee > div{
+
+        gap:12px;
+
+        animation-duration:15s;
+
+    }
+
+}
+
+`}</style>
 
 <SectionTransition />
 

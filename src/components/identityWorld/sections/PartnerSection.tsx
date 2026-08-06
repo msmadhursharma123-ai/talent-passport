@@ -56,7 +56,7 @@ const scrollingCards=[
     return (
 
   <SectionContainer
-    id="partners"
+    id="partnersection"
     background="#FFFFFF"
     style={{
         position: "relative",

@@ -5,7 +5,10 @@ export default function FounderSection() {
 
 return (
 
-<section className="founder-section">
+<section
+    id="founder"
+    className="founder-section"
+>
 
 <div className="founder-container">
 

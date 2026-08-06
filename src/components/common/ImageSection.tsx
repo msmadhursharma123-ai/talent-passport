@@ -12,7 +12,10 @@ export default function ImagineSection() {
 
   return (
 
-    <section className="imagine-section">
+    <section
+    id="hpc"
+    className="imagine-section"
+>
 
       <div className="imagine-container">
 
