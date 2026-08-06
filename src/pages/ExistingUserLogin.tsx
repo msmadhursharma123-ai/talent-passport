@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-
+import ForgotPasswordDialog from "../services/auth/ForgotPasswordDialog";
 import {
     signIn,
     signOut
@@ -27,6 +27,10 @@ export default function ExistingUserLogin({
 
     const [loading, setLoading] =
         useState(false);
+
+
+        
+        const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
 
     async function handleLogin() {
 
@@ -295,6 +299,31 @@ export default function ExistingUserLogin({
                     }
                 </button>
 
+<div
+    style={{
+        marginTop: 18,
+        textAlign: "center"
+    }}
+>
+
+    <button
+        type="button"
+        onClick={() => setForgotPasswordOpen(true)}
+        style={{
+            background: "transparent",
+            border: "none",
+            color: "#143B73",
+            fontWeight: 700,
+            fontSize: 14,
+            cursor: "pointer",
+            textDecoration: "underline"
+        }}
+    >
+        Forgot Password?
+    </button>
+
+</div>
+
                 <button
                     onClick={onRegister}
                     style={{
@@ -312,7 +341,12 @@ export default function ExistingUserLogin({
 
             </div>
 
-        
+        <ForgotPasswordDialog
+    open={forgotPasswordOpen}
+    role="student"
+    onClose={() => setForgotPasswordOpen(false)}
+/>
+
 <style>{`
 @media (max-width: 1024px) {
   .onboarding-page { padding: 28px !important; box-sizing: border-box; }

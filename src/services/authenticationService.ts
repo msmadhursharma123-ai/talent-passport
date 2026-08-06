@@ -2412,3 +2412,209 @@ export async function updatePassword(
     
 }
 
+const RECOVERY_TABLES = {
+
+    student: {
+
+        table: "students_master",
+
+        email: "email",
+
+        mobile: "phone"
+
+    },
+
+    teacher: {
+
+        table: "teachers_master",
+
+        email: "email",
+
+        mobile: "phone"
+
+    },
+
+    partner: {
+
+        table: "partners_master",
+
+        email: "email",
+
+        mobile: "phone"
+
+    },
+
+    school: {
+
+        table: "school_admins",
+
+        email: "email",
+
+        mobile: "phone"
+
+    },
+
+    admin: {
+
+        table: "platform_admins",
+
+        email: "email",
+
+        mobile: "phone"
+
+    }
+
+} as const;
+
+export async function verifyRecoveryIdentity(
+
+    role:
+        | "student"
+        | "teacher"
+        | "partner"
+        | "school"
+        | "admin",
+
+    email: string,
+
+    mobile: string
+
+): Promise<AuthResult> {
+
+    const supabase =
+        getSupabaseClient();
+
+    if (!supabase) {
+
+        return {
+
+            success: false,
+
+            error: "Supabase is not initialized."
+
+        };
+
+    }
+
+
+    
+const {
+
+    data,
+
+    error
+
+} = await (supabase as any).rpc(
+
+    "verify_recovery_identity",
+
+    {
+
+        p_role: role,
+
+        p_email: email.trim(),
+
+        p_mobile: mobile.trim()
+
+    }
+
+);
+
+if (error) {
+
+    console.error(
+
+        "Recovery RPC Error",
+
+        error
+
+    );
+
+    return {
+
+        success: false,
+
+        error:
+
+            "Unable to verify your identity."
+
+    };
+
+}
+
+if (data !== true) {
+
+    return {
+
+        success: false,
+
+        error:
+
+            "Email and Mobile Number do not match our records."
+
+    };
+
+}
+
+return {
+
+    success: true
+
+};
+
+}
+
+export async function sendPasswordResetEmail(
+    email: string
+): Promise<AuthResult> {
+
+    try {
+
+        const supabase = getClient();
+
+        const redirectTo =
+            `${window.location.origin}/reset-password`;
+
+        const { error } =
+            await supabase.auth.resetPasswordForEmail(
+                email,
+                {
+                    redirectTo
+                }
+            );
+
+        if (error) {
+
+            return {
+
+                success: false,
+
+                error: error.message
+
+            };
+
+        }
+
+        return {
+
+            success: true
+
+        };
+
+    }
+
+    catch (error: any) {
+
+        return {
+
+            success: false,
+
+            error:
+                error?.message ??
+                "Unable to send reset email."
+
+        };
+
+    }
+
+}

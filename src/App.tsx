@@ -52,11 +52,14 @@ import {
 } from "./services/identityService";
 
 import {
-  initializeAuth,
-  getCurrentUser,
-  getCurrentIdentity,
-  signOut
+    initializeAuth,
+    getCurrentUser,
+    getCurrentIdentity,
+    signOut
 } from "./services/authenticationService";
+
+import { getSupabaseClient }
+from "./supabaseClient";
 
 import {
     getCurrentTeacher,
@@ -99,6 +102,9 @@ from "./domains/school/pages/SchoolDashboard";
 
 import SchoolResetPassword
 from "./domains/school/pages/SchoolResetPassword";
+
+import ResetPasswordPage
+from "./pages/ResetPassword";
 
 import {
 doesTeacherProfileExist
@@ -486,6 +492,53 @@ break;
   }
 
   initializeApplication();
+
+const supabase =
+    getSupabaseClient();
+
+if (supabase) {
+
+    const {
+
+        data: authListener
+
+    } = supabase.auth.onAuthStateChange(
+
+        async (
+
+            event,
+
+            session
+
+        ) => {
+
+            if (
+
+                event ===
+
+                "PASSWORD_RECOVERY"
+
+            ) {
+
+                setActiveTab(
+
+                    "reset-password"
+
+                );
+
+            }
+
+        }
+
+    );
+
+    return () => {
+
+        authListener.subscription.unsubscribe();
+
+    };
+
+}
 
 }, []);
 
@@ -1032,6 +1085,12 @@ setActiveTab("identity");
         }
 
     />
+
+)}
+
+{activeTab === "reset-password" && (
+
+    <ResetPasswordPage />
 
 )}
 

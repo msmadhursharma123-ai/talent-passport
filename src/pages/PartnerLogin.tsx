@@ -5,6 +5,9 @@ import {
     signOut
 } from "../services/authenticationService";
 
+import ForgotPasswordDialog
+from "../services/auth/ForgotPasswordDialog";
+
 interface Props {
     onSuccess: () => void;
     onBack: () => void;
@@ -25,6 +28,14 @@ export default function PartnerLogin({
 
     const [loading, setLoading] =
         useState(false);
+
+const [
+
+forgotPasswordOpen,
+
+setForgotPasswordOpen
+
+] = useState(false);
 
     async function handleLogin() {
 
@@ -329,8 +340,69 @@ export default function PartnerLogin({
                     }
                 </button>
 
+<div
+
+style={{
+
+marginTop:20,
+
+textAlign:"center"
+
+}}
+
+>
+
+<button
+
+type="button"
+
+onClick={()=>
+
+setForgotPasswordOpen(true)
+
+}
+
+style={{
+
+background:"transparent",
+
+border:"none",
+
+color:"#173F7A",
+
+fontWeight:700,
+
+fontSize:15,
+
+cursor:"pointer",
+
+textDecoration:"underline"
+
+}}
+
+>
+
+Forgot Password?
+
+</button>
+
+</div>
+
             </div>
 
+<ForgotPasswordDialog
+
+open={forgotPasswordOpen}
+
+role="partner"
+
+onClose={()=>
+
+setForgotPasswordOpen(false)
+
+}
+
+/>
         
 <style>{`
 @media (max-width: 1024px) {

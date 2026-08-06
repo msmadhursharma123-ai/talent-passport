@@ -5,6 +5,9 @@ import {
     signOut
 } from "../../../services/authenticationService";
 
+import ForgotPasswordDialog
+from "../../../services/auth/ForgotPasswordDialog";
+
 interface Props {
     onSuccess: () => void;
     onRegister: () => void;
@@ -27,6 +30,14 @@ export default function TeacherExistingLogin({
 
     const [loading, setLoading] =
         useState(false);
+
+const [
+
+forgotPasswordOpen,
+
+setForgotPasswordOpen
+
+] = useState(false);
 
     async function handleLogin() {
 
@@ -296,6 +307,49 @@ export default function TeacherExistingLogin({
                     }
                 </button>
 
+<div
+    style={{
+        marginTop: 18,
+        textAlign: "center"
+    }}
+>
+
+<button
+
+type="button"
+
+onClick={()=>
+
+setForgotPasswordOpen(true)
+
+}
+
+style={{
+
+background:"transparent",
+
+border:"none",
+
+color:"#173F7A",
+
+fontWeight:700,
+
+fontSize:14,
+
+cursor:"pointer",
+
+textDecoration:"underline"
+
+}}
+
+>
+
+Forgot Password?
+
+</button>
+
+</div>
+
                 <button
                     onClick={onRegister}
                     style={{
@@ -313,6 +367,19 @@ export default function TeacherExistingLogin({
 
             </div>
 
+<ForgotPasswordDialog
+
+open={forgotPasswordOpen}
+
+role="teacher"
+
+onClose={()=>
+
+setForgotPasswordOpen(false)
+
+}
+
+/>
         
 <style>{`
 @media (max-width: 1024px) {
