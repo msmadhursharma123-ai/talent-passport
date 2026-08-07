@@ -70,14 +70,15 @@ export default function AppHeader({
            APP HEADER — DESKTOP
         ===================================================== */
 
-        .tp-app-header {
-          width: 100%;
-          background: #ffffff;
-          border-bottom: 1px solid #e5e7eb;
-          box-sizing: border-box;
-          position: relative;
-          z-index: 20;
-        }
+      .tp-app-header {
+  width: 100%;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 20;
+  overflow: hidden;
+}
 
         .tp-app-header__inner {
           width: 100%;
@@ -178,13 +179,13 @@ export default function AppHeader({
             gap: 12px;
           }
 
-          .tp-app-header__brand {
-            width: 220px;
-            height: 64px;
+       .tp-app-header__brand {
+    width: 220px;
+    height: 64px;
 
-            overflow: visible;
-            flex-shrink: 0;
-          }
+    overflow: hidden;
+    flex-shrink: 0;
+}
 
       .tp-app-header__logo {
   width: 250px;
@@ -240,18 +241,18 @@ export default function AppHeader({
             gap: 6px;
           }
 
-          .tp-app-header__brand {
-            width: 195px;
-            height: 72px;
+      .tp-app-header__brand {
+    width: 195px;
+    height: 72px;
 
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
 
-            overflow: visible;
+    overflow: hidden;
 
-            flex-shrink: 0;
-          }
+    flex-shrink: 0;
+}
 
      .tp-app-header__logo {
   width: 275px;

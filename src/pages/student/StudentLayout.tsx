@@ -1,5 +1,15 @@
 import React from "react";
 export type StudentTab="dna-radar"|"homeboard"|"timeline"|"portfolio"|"competitions"|"opportunities"|"mauke-pe-chauka"|"my-analysis"|"growth-plan";
 interface Props{activeTab:StudentTab;setActiveTab:(tab:StudentTab)=>void;onLogout:()=>void;children:React.ReactNode;enabledTabs?:string[];}
-const tabs=[{key:"dna-radar",label:"🏅 User DNA Radar"},{key:"homeboard",label:"Home Board"},{key:"timeline",label:"Timeline"},{key:"portfolio",label:"Portfolio"},{key:"competitions",label:"Competitions"},{key:"opportunities",label:"Opportunities"},{key:"mauke-pe-chauka",label:"🎯 Mauke Pe Chauka"},{key:"my-analysis",label:"My Analysis"},{key:"growth-plan",label:"Growth Plan"}] as {key:StudentTab;label:string}[];
+const tabs=[
+{key:"dna-radar",label:"Talent DNA"},
+{key:"growth-plan",label:"Academics"},
+{key:"mauke-pe-chauka",label:"Talent Marketplace"},
+{key:"timeline",label:"Achievements"},
+{key:"portfolio",label:"Portfolio"},
+{key:"competitions",label:"Events"},
+{key:"opportunities",label:"Consultations"},
+{key:"homeboard",label:"My Results"},
+{key:"my-analysis",label:"My Rankings"}
+] as {key:StudentTab;label:string}[];
 export default function StudentLayout({activeTab,setActiveTab,onLogout,children,enabledTabs}:Props){const visible=enabledTabs?tabs.filter(t=>enabledTabs.includes(t.key)):tabs;return <div className="portal-shell student-portal-shell"><div className="portal-shell-inner"><div className="portal-nav-card student-portal-nav"><div className="portal-nav-row"><div className="portal-nav-tabs" role="navigation" aria-label="Student portal navigation">{visible.map(tab=>{const active=activeTab===tab.key;return <button key={tab.key} type="button" onClick={()=>setActiveTab(tab.key)} className={`portal-nav-tab ${active?"portal-nav-tab-active":""}`} aria-current={active?"page":undefined}>{tab.label}</button>;})}</div><div className="portal-nav-actions"><button type="button" onClick={onLogout} className="portal-logout-button">Logout</button></div></div></div><main className="portal-page-content">{children}</main></div></div>;}
