@@ -17,15 +17,9 @@ export default function ImagineSection() {
     className="imagine-section"
 >
 
-      <div className="imagine-container">
+     <div className="imagine-container">
 
-        <SectionHeader
-          eyebrow=""
-          title=""
-          description=""
-        />
-
-        <div className="credential-layout">
+    <div className="credential-layout">
 
           {/* =====================================================
               LEFT COLUMN

@@ -8,7 +8,7 @@
 
     overflow:hidden;
 
-    padding:42px 0 36px;
+    padding:12px 0 36px;
 
     background:#fbfaf7;
 
@@ -824,17 +824,18 @@ font-size:11px;
 
     .imagine-section{
 
-        padding:110px 0;
+        padding:24px 0 60px;
 
     }
 
     .credential-layout{
 
-        gap:56px;
+        gap:40px;
 
-        margin-top:70px;
+        margin-top:0;
 
     }
+
 
     .credential-left h2{
 
@@ -860,15 +861,15 @@ font-size:11px;
 
     .imagine-section{
 
-        padding:80px 0;
+        padding:20px 0 50px;
 
     }
 
     .credential-layout{
 
-        gap:42px;
+        gap:32px;
 
-        margin-top:60px;
+        margin-top:0;
 
     }
 
