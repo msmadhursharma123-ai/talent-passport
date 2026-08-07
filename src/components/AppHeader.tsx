@@ -103,17 +103,17 @@ export default function AppHeader({
           flex-shrink: 0;
         }
 
-        .tp-app-header__logo {
-          display: block;
+     .tp-app-header__logo {
+  display: block;
 
-          width: 400px;
-          height: 130px;
+  width: 500px;
+  height: 150px;
 
-          object-fit: contain;
-          object-position: left center;
+  object-fit: contain;
+  object-position: left center;
 
-          flex-shrink: 0;
-        }
+  flex-shrink: 0;
+}
 
         /* =====================================================
            SCHOOL / PORTAL IDENTITY
@@ -186,16 +186,16 @@ export default function AppHeader({
             flex-shrink: 0;
           }
 
-          .tp-app-header__logo {
-            width: 220px;
-            height: 100px;
+      .tp-app-header__logo {
+  width: 250px;
+  height: 115px;
 
-            max-width: none;
-            max-height: none;
+  max-width: none;
+  max-height: none;
 
-            object-fit: contain;
-            object-position: left center;
-          }
+  object-fit: contain;
+  object-position: left center;
+}
 
           .tp-app-header__school {
             flex: 1 1 auto;
@@ -253,20 +253,20 @@ export default function AppHeader({
             flex-shrink: 0;
           }
 
-          .tp-app-header__logo {
-            width: 195px;
-            height: 110px;
+     .tp-app-header__logo {
+  width: 275px;
+  height: 185px;
 
-            max-width: none;
-            max-height: none;
+  max-width: none;
+  max-height: none;
 
-            display: block;
+  display: block;
 
-            object-fit: contain;
-            object-position: left center;
+  object-fit: contain;
+  object-position: left center;
 
-            flex-shrink: 0;
-          }
+  flex-shrink: 0;
+}
 
           .tp-app-header__school {
             flex: 1 1 auto;
@@ -329,13 +329,13 @@ export default function AppHeader({
             flex-shrink: 0;
           }
 
-          .tp-app-header__logo {
-            width: 170px;
-            height: 100px;
+        .tp-app-header__logo {
+  width: 195px;
+  height: 115px;
 
-            max-width: none;
-            max-height: none;
-          }
+  max-width: none;
+  max-height: none;
+}
 
           .tp-app-header__school {
             flex: 1 1 auto;
