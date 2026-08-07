@@ -182,15 +182,19 @@ display:none;
 
 .landing-logo img{
 
-width:220px;
+width:215px;
 
 }
 
 .portal-button{
 
-padding:12px 22px;
+    padding:10px 16px;
 
-font-size:14px;
+    font-size:13px;
+
+    min-width:110px;
+
+    white-space:nowrap;
 
 }
 
