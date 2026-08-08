@@ -195,23 +195,33 @@ export async function deductConsultationCredits(
      Calculate New Balance
   ============================================ */
 
-  const newAvailableBalance =
+const newAvailableBalance =
 
     wallet.available_credits -
 
     credits;
 
-  /* ============================================
-     Persist Balance
-  ============================================ */
+const newSpentCredits =
 
-  await updateWalletBalance(
+    wallet.spent_credits +
 
-    wallet.id,
+    credits;
 
-    newAvailableBalance
+/* ============================================
+Persist Wallet
+============================================ */
 
-  );
+await updateStudentWallet(
+
+    resolvedStudentId,
+
+    newAvailableBalance,
+
+    newSpentCredits,
+
+    wallet.lifetime_earned
+
+);
 
   /* ============================================
      Return Transaction

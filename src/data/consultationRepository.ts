@@ -1,7 +1,8 @@
 import { getSupabaseClient } from "../supabaseClient";
 
 import {
-  getTableIdentity
+  getTableIdentity,
+  requireIdentity
 } from "../services/identityService";
 
 /* ============================================================
@@ -50,9 +51,15 @@ export async function createConsultationRequest(
     );
   }
 
-  const resolvedStudentId =
-    input.studentId ??
-    currentStudentId();
+const identity =
+  requireIdentity();
+
+const resolvedStudentId =
+  input.studentId ??
+  currentStudentId();
+
+const resolvedStudentUuid =
+  identity.studentUuid;
 
   const {
     data,
@@ -61,33 +68,36 @@ export async function createConsultationRequest(
 
     .from("consultation_requests")
 
-    .insert({
+ .insert({
 
-      student_id:
-        resolvedStudentId,
+  student_id:
+    resolvedStudentId,
 
-      partner_id:
-        input.partnerId,
+  student_uuid:
+    resolvedStudentUuid,
 
-      category:
-        input.category,
+  partner_id:
+    input.partnerId,
 
-      skill:
-        input.skill,
+  category:
+    input.category,
 
-      topic:
-        input.topic,
+  skill:
+    input.skill,
 
-      description:
-        input.description,
+  topic:
+    input.topic,
 
-      consultation_credits:
-        input.consultationCredits,
+  description:
+    input.description,
 
-      status:
-        "Pending"
+  consultation_credits:
+    input.consultationCredits,
 
-    })
+  status:
+    "Pending"
+
+})
 
     .select()
 

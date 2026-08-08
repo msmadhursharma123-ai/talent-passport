@@ -626,6 +626,9 @@ function createStudentIdentity(
     row: StudentRow
 ): StudentIdentity {
 
+  console.log("STUDENT ROW FROM DB");
+    console.table(row);
+
     return buildIdentity({
 
         authUserId:
@@ -1095,7 +1098,39 @@ const admin = schoolAdmin as any;
                 clearPartnerIdentity();
                 clearAdminIdentity();
                 saveStudentIdentity(resolved.identity);
+
+                console.log("========== AUTH SAVE ==========");
+console.table(resolved.identity);
+
+console.log("========== CACHE ==========");
+console.table(getCurrentStudent());
+
+console.log("========== LOCAL STORAGE ==========");
+console.log(
+    localStorage.getItem("studentProfile")
+);
+
+try {
+    console.table(
+        JSON.parse(
+            localStorage.getItem("studentProfile") || "{}"
+        )
+    );
+} catch (e) {
+    console.error(e);
+}
+
+console.log(
+    "AFTER SAVE",
+    getCurrentStudent()
+);
+
                 break;
+
+console.log(
+    "AFTER SAVE",
+    getCurrentStudent()
+);
 
             case "teacher":
                 clearStudentIdentity();
@@ -1930,7 +1965,36 @@ clearAdminIdentity();
                 clearPartnerIdentity();
                 clearAdminIdentity();
                 saveStudentIdentity(resolved.identity);
+
+                console.log("========== AUTH SAVE ==========");
+console.table(resolved.identity);
+
+console.log("========== CACHE ==========");
+console.table(getCurrentStudent());
+
+console.log("========== LOCAL STORAGE ==========");
+console.log(
+    localStorage.getItem("studentProfile")
+);
+
+try {
+    console.table(
+        JSON.parse(
+            localStorage.getItem("studentProfile") || "{}"
+        )
+    );
+} catch (e) {
+    console.error(e);
+}
+
+console.log(
+    "AFTER SAVE",
+    getCurrentStudent()
+);
+
                 break;
+
+
 
             case "teacher":
                 clearStudentIdentity();

@@ -4,16 +4,27 @@ import {
 } from "../data/consultationRepository";
 
 import {
+  createConsultationBooking
+} from "../data/consultationBookingRepository";
+
+import {
   createCreditTransaction
 } from "../data/creditTransactionRepository";
+
+import {
+  createIncomingRequest
+} from "../data/partnerMarketplaceRepository";
 
 import {
   deductConsultationCredits
 } from "./walletService";
 
 import {
-  getTableIdentity
+  requireIdentity
 } from "./identityService";
+
+
+
 
 /* ============================================================
    CONSULTATION SERVICE
@@ -23,6 +34,7 @@ import {
    • Business orchestration
    • Wallet deduction
    • Consultation booking
+   • Partner Incoming Request
    • Credit ledger
 
    Never talks directly to Supabase.
@@ -33,16 +45,23 @@ import {
    IDENTITY HELPER
 ============================================================ */
 
-function resolveStudentId(
+function resolveIdentity(
   input: CreateConsultationRequestInput
-): string {
+) {
 
-  return (
-    input.studentId ??
-    getTableIdentity(
-      "consultation_requests"
-    )
-  );
+  const identity =
+    requireIdentity();
+
+  return {
+
+    masterStudentId:
+      input.studentId ??
+      identity.masterStudentId,
+
+    studentUuid:
+      identity.studentUuid
+
+  };
 
 }
 
@@ -58,8 +77,13 @@ export async function bookConsultation(
      Resolve Identity
   ============================================ */
 
-  const studentId =
-    resolveStudentId(input);
+const {
+
+  masterStudentId,
+
+  studentUuid
+
+} = resolveIdentity(input);
 
   /*
     Future Auth
@@ -71,70 +95,146 @@ export async function bookConsultation(
     come from the Identity Kernel.
   */
 
-  /* ============================================
-     STEP 1
-     Deduct Wallet Credits
-  ============================================ */
-
-  const walletTransaction =
-
-    await deductConsultationCredits(
-
-      studentId,
-
-      input.consultationCredits
-
-    );
 
   /* ============================================
      STEP 2
      Create Consultation Request
   ============================================ */
 
-  const consultation =
+console.log("========== CONSULTATION SERVICE ==========");
+console.log("INPUT RECEIVED");
+console.log(input);
+console.log("partnerId =", input.partnerId);
+console.log("masterStudentId =", masterStudentId);
+console.log("studentUuid =", studentUuid);
+console.log("==========================================");
 
-    await createConsultationRequest({
+const consultation =
 
-      ...input,
+await createConsultationRequest({
 
-      studentId
+  ...input,
 
-    });
+  studentId:
+    masterStudentId
+
+});
+
+/* ============================================
+   STEP 3
+   Create Consultation Booking
+============================================ */
+
+const booking =
+
+await createConsultationBooking({
+
+  requestId:
+    consultation.id,
+
+  studentId:
+    masterStudentId,
+
+  partnerId:
+    input.partnerId,
+
+  creditsDeducted:
+    input.consultationCredits
+
+});
+
+/* ============================================
+   STEP 4
+   Create Partner Incoming Request
+============================================ */
+
+console.log("========== INCOMING REQUEST ==========");
+console.log({
+  partner_id: input.partnerId,
+  partner_uuid: input.partnerUuid,
+  consultation_request_id: consultation.id
+});
+console.log("======================================");
+
+const incomingRequest = await createIncomingRequest({
+
+    partner_id: input.partnerId,
+    partner_uuid: input.partnerUuid,
+
+    student_id: studentUuid,
+
+    partner_name: input.partnerName ?? "",
+    requester_name: input.studentName ?? "",
+    email: input.studentEmail ?? "",
+    phone: input.studentPhone ?? "",
+    school_name: input.schoolName ?? "",
+    class_name: input.className ?? "",
+    request_type: "Consultation",
+    request_from: "Student",
+    consultation_request_id: consultation.id,
+    message: input.description
+
+});
+
+console.log("================================");
+console.log("INCOMING REQUEST RESULT");
+console.dir(incomingRequest, { depth: null });
+console.log("================================");
+
+if (!incomingRequest) {
+    throw new Error("Incoming request was not created.");
+}
+  /* ============================================
+     STEP 4.5
+     Deduct Wallet Credits
+  ============================================ */
+
+const walletTransaction =
+
+await deductConsultationCredits(
+
+  masterStudentId,
+
+  input.consultationCredits
+
+);
+
 
   /* ============================================
-     STEP 3
+     STEP 5
      Store Credit Ledger Entry
   ============================================ */
 
-  await createCreditTransaction({
+await createCreditTransaction({
 
-    studentId,
+studentId:
+    masterStudentId,
 
     consultationRequestId:
-      consultation.id,
+    booking.id,
 
     transactionType:
-      "Debit",
+        "Debit",
 
     transactionCategory:
-      "Consultation",
+        "Consultation",
 
     credits:
-      input.consultationCredits,
+        input.consultationCredits,
 
     balanceBefore:
-      walletTransaction.previousBalance,
+        walletTransaction.previousBalance,
 
     balanceAfter:
-      walletTransaction.currentBalance,
+        walletTransaction.currentBalance,
 
     remarks:
-      `Consultation booked with ${input.partnerId}`
+        `Consultation booked with ${input.partnerId}`
 
-  });
+});
 
   /* ============================================
-     STEP 4
+     STEP 6
      Return Complete Result
   ============================================ */
 

@@ -74,33 +74,33 @@ export async function createCreditTransaction(
 
     .from("credit_transactions")
 
-    .insert({
+ .insert({
 
       student_id:
         resolvedStudentId,
 
-      consultation_request_id:
+      booking_id:
         input.consultationRequestId,
 
       transaction_type:
         input.transactionType,
 
-      transaction_category:
+      source:
         input.transactionCategory,
 
       credits:
         input.credits,
 
-      balance_before:
-        input.balanceBefore,
+      description:
+        input.remarks ?? null,
 
-      balance_after:
-        input.balanceAfter,
+      reference_id:
+        input.consultationRequestId,
 
-      remarks:
-        input.remarks ?? null
+      created_by:
+        "student"
 
-    })
+})
 
     .select()
 

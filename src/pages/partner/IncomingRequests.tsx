@@ -471,12 +471,24 @@ async function handleAccept(
 
     setLoading(true);
 
-    await updateRequestStatus(
-      request.id,
-      "accepted"
-    );
+await updateRequestStatus(
+  request.id,
+  "accepted"
+);
 
-    console.log("======================================");
+// Immediately update the UI
+setRequests(prev =>
+  prev.map(item =>
+    item.id === request.id
+      ? {
+          ...item,
+          status: "accepted",
+        }
+      : item
+  )
+);
+
+console.log("======================================");
     console.log("INCOMING REQUEST ACCEPT");
     console.log("FULL REQUEST OBJECT");
     console.dir(request, { depth: null });
@@ -497,40 +509,55 @@ async function handleAccept(
 
     try {
 
-      lead = await createLead({
+lead = await createLead({
 
-        partner_id: request.partner_id,
+    partner_id: request.partner_id,
 
-        partner_uuid:
-  request.partner_uuid ??
-  partnerIdentity.partnerUuid,
+    partner_uuid:
+        request.partner_uuid ??
+        partnerIdentity.partnerUuid,
 
-        partner_name: request.partner_name,
+    partner_name: request.partner_name,
 
-        student_id: request.student_id,
+    student_id: request.student_id,
 
-        student_name: request.requester_name,
+    student_name: request.requester_name,
 
-        school_name: request.school_name,
+    school_name: request.school_name,
 
-        email: request.email,
+    email: request.email,
 
-        phone: request.phone,
+    phone: request.phone,
 
-        class_name: request.class_name,
+    class_name: request.class_name,
 
-        request_type: request.request_type,
+    request_type: request.request_type,
 
-        lead_source: "incoming",
+    lead_source: "incoming",
 
-        status: "new_lead",
+    status: "new_lead",
 
-        notes: ""
+    notes: "",
 
-      });
+    incoming_request_id: request.id
+
+});
 
       console.log("CREATE LEAD RETURNED");
       console.dir(lead, { depth: null });
+
+if (!lead) {
+
+  throw new Error(
+    "Lead creation failed."
+  );
+
+}
+
+await updateRequestStatus(
+  request.id,
+  "accepted"
+);
 
     } catch (e) {
 
@@ -539,11 +566,12 @@ async function handleAccept(
 
     }
 
-    alert(
-      "Lead successfully created."
-    );
+alert(
+  "Lead successfully created."
+);
 
-    await loadRequests();
+// Refresh from database
+await loadRequests();
 
   } catch (error) {
 

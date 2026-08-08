@@ -160,19 +160,104 @@ partner_uuid: partnerUuid,
 
       });
 
-  if (masterError) {
+if (masterError) {
 
-    console.error(
+  console.error(
 
-      "PARTNERS MASTER ERROR",
+    "PARTNERS MASTER ERROR",
 
-      masterError
+    masterError
 
-    );
+  );
 
-  }
+}
 
-  return data;
+/* =====================================
+   SAVE TO marketplace_partners
+===================================== */
+
+const {
+  error: marketplaceError
+} =
+  await (supabase as any)
+
+    .from("marketplace_partners")
+
+    .insert({
+
+      id:
+        crypto.randomUUID(),
+
+      partner_uuid:
+        partnerUuid,
+
+      name:
+        partner.partner_name,
+
+      slug:
+        partner.partner_name
+          .toLowerCase()
+          .replace(/\s+/g, "-"),
+
+      description:
+        partner.description ??
+        "",
+
+      city:
+        partner.city ?? "",
+
+      state:
+        partner.state ?? "",
+
+      country:
+        "India",
+
+      website:
+        partner.website ?? null,
+
+      email:
+        partner.email,
+
+      phone:
+        partner.phone,
+
+      category:
+        partner.category ??
+        "Activity Coaching",
+
+      skills:
+        partner.specialization ?? [],
+
+      consultation_duration:
+        45,
+
+      consultation_credits:
+        60,
+
+      verified:
+        true,
+
+      featured:
+        false,
+
+      active:
+        true
+
+    });
+
+if (marketplaceError) {
+
+  console.error(
+
+    "MARKETPLACE PARTNER ERROR",
+
+    marketplaceError
+
+  );
+
+}
+
+return data;
 
 }
 

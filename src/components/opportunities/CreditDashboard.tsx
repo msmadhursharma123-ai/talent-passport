@@ -280,13 +280,19 @@ consultationDescription,
 setConsultationDescription
 ] = useState("");
 
-  const consultationCost = 60;
+const consultationCost = 60;
 
-const availableCredits =
-  walletBalance;
+const availableCredits = walletBalance;
 
-const remainingCredits =
-  availableCredits - consultationCost;
+/*
+  Credits should only reduce AFTER
+  a successful booking.
+
+  Until booking succeeds, remaining
+  balance is equal to the current
+  wallet balance.
+*/
+const remainingCredits = walletBalance;
 
   useEffect(() => {
   loadCredits();
@@ -464,49 +470,42 @@ const filteredPartners =
 
 });
 
-    const mappedPartners =
-      filteredPartners.map((partner: any) => ({
+const mappedPartners =
+filteredPartners.map((partner:any)=>({
 
-        id:
-          partner.partner_uuid,
+    id:
+        partner.id,
 
-        partner_id:
-          partner.partner_id,
+    partner_id:
+        partner.partner_id,
 
-        partner_uuid:
-          partner.partner_uuid,
+    partner_uuid:
+        partner.partner_uuid,
 
-        name:
-          partner.institute_name,
+    name:
+        partner.institute_name,
 
-        city:
-          partner.institute_city,
+    city:
+        partner.institute_city,
 
-        credits:
-          60,
+    credits:60,
 
-        rating:
-          5,
+    rating:5,
 
-        verified:
-          true,
+    verified:true,
 
-        experience:
-          0,
+    experience:0,
 
-        studentsMentored:
-          0,
+    studentsMentored:0,
 
-        consultationDuration:
-          45,
+    consultationDuration:45,
 
-        specializations:
-          partner.skill_focus ?? [],
+    specializations:
+        partner.skill_focus ?? [],
 
-        languages:
-          ["English"]
+    languages:["English"]
 
-      }));
+}));
 
     setRecommendedPartners(
       mappedPartners
@@ -4061,7 +4060,7 @@ color:"#15803D"
 }}
 >
 
-{availableCredits-selectedPartner.credits}
+{availableCredits}
 
 </div>
 
@@ -4128,6 +4127,20 @@ setBookingLoading(true);
 
 try{
 
+  console.log("BOOKING PARTNER", {
+    id: selectedPartner.id,
+    partner_uuid: selectedPartner.partner_uuid,
+    partner_id: selectedPartner.partner_id,
+    name: selectedPartner.name
+  });
+
+console.log("========== CREDIT DASHBOARD ==========");
+console.log("selectedPartner =", selectedPartner);
+console.log("selectedPartner.id =", selectedPartner?.id);
+console.log("selectedPartner.partner_uuid =", selectedPartner?.partner_uuid);
+console.log("selectedPartner.partner_id =", selectedPartner?.partner_id);
+console.log("======================================");
+
 const result =
 
 await bookConsultation({
@@ -4137,7 +4150,7 @@ studentId:
 getMasterStudentId(),
 
 partnerId:
-selectedPartner.partner_uuid,
+selectedPartner.id,
 
 category:
 selectedCategory!,

@@ -90,14 +90,26 @@ const payload = {
      Create Scholarship Offer
   ============================================================ */
 
-  const {
+console.log("FINAL student_id =", payload.student_id);
 
-    data,
+const { data: authData, error: authError } =
+  await supabase.auth.getUser();
 
-    error
+console.log("AUTH USER =", authData.user);
+console.log("AUTH USER ID =", authData.user?.id);
 
-  } =
-    await supabase
+if (authError) {
+  console.error("AUTH ERROR", authError);
+}
+
+const {
+
+  data,
+
+  error
+
+} =
+await supabase
 
       .from(
         "partner_scholarship_offers"
@@ -306,9 +318,9 @@ fetchStudentScholarshipOffers(
     return [];
   }
 
-  const resolvedStudentId =
-    studentId ??
-    currentStudentId();
+const resolvedStudentId =
+  studentId ??
+  currentStudentId();
 
     console.log(
     "SCHOLARSHIP STUDENT ID",
@@ -921,42 +933,66 @@ createIncomingRequest(
      Resolve Student Identity
   ============================================================ */
 
-  const resolvedStudentId =
+const resolvedStudentId =
     request.student_id ??
     currentStudentId();
 
-  /* ============================================================
-     Build Payload
-  ============================================================ */
+/* ============================================================
+   Remove student_uuid (table doesn't have this column)
+============================================================ */
 
-  const payload = {
+const {
+    student_uuid,
+    ...requestWithoutStudentUuid
+} = request;
 
-    ...request,
+/* ============================================================
+   Build Payload
+============================================================ */
 
+const payload = {
+
+    ...requestWithoutStudentUuid,
+
+    // Marketplace stores UUID in student_id
     student_id:
-      resolvedStudentId,
+        resolvedStudentId,
 
     status:
-      "pending",
+        "pending",
 
     updated_at:
-      new Date()
-        .toISOString()
+        new Date().toISOString()
 
-  };
+};
+
+console.log("INCOMING REQUEST PAYLOAD");
+console.log(payload);
 
   /* ============================================================
      Create Incoming Request
   ============================================================ */
 
-  const {
+console.log("FINAL student_id =", payload.student_id);
 
-    data,
+const { data: authData, error: authError } =
+  await supabase.auth.getUser();
 
-    error
+console.log("AUTH USER =", authData.user);
+console.log("AUTH USER ID =", authData.user?.id);
 
-  } =
-    await supabase
+if (authError) {
+  console.error("AUTH ERROR", authError);
+}
+
+const {
+
+  data,
+
+  error
+
+} =
+await supabase
 
       .from(
         "partner_incoming_requests"
@@ -1002,29 +1038,27 @@ fetchStudentRequests(
     return [];
   }
 
-  const resolvedStudentId =
-    studentId ??
-    currentStudentId();
+const resolvedStudentId =
+  studentId ??
+  currentStudentId();
 
-  const {
-    data,
-    error
-  } =
-    await supabase
-      .from(
-        "partner_incoming_requests"
-      )
-      .select("*")
-      .eq(
-        "student_id",
-        resolvedStudentId
-      )
-      .order(
-        "created_at",
-        {
-          ascending: false
-        }
-      );
+const {
+  data,
+  error
+} =
+await supabase
+  .from("partner_incoming_requests")
+  .select("*")
+  .eq(
+    "student_id",
+    resolvedStudentId
+  )
+  .order(
+    "created_at",
+    {
+      ascending: false
+    }
+  );
 
   if (error) {
     console.error(error);
@@ -1469,31 +1503,8 @@ createLead(
      Resolve Identity
   ============================================================ */
 
-  const resolvedStudentId =
-    lead.student_id ??
-    currentStudentId();
-
-  const resolvedPartnerId =
-    lead.partner_id ??
-    currentPartnerId();
-
-  const resolvedPartnerUuid =
-    lead.partner_uuid;
-
-  /* ============================================================
-     Build Payload
-  ============================================================ */
-
-  const payload = {
-
-    ...lead,
-
-    student_id: resolvedStudentId,
-
-    partner_id: resolvedPartnerId,
-
-    partner_uuid: resolvedPartnerUuid
-
+const payload = {
+    ...lead
 };
 
  
@@ -1502,14 +1513,7 @@ createLead(
      Create Lead
   ============================================================ */
 
-console.log(
-    "CREATE LEAD PAYLOAD",
-    payload
-);
 
-console.log("================================");
-console.log("INSERTING INTO partner_student_leads");
-console.log(payload);
 
 
 const {
@@ -1527,8 +1531,8 @@ console.log(authData.user?.id);
 console.log("PAYLOAD PARTNER UUID");
 console.log(payload.partner_uuid);
 
-console.log("PAYLOAD STUDENT ID");
-console.log(payload.student_id);
+console.log("PAYLOAD STUDENT UUID");
+console.log(payload.student_uuid);
 
 console.log("================================");
 
@@ -2085,6 +2089,7 @@ export async function fetchAllocatedStudents(
 
 /* ============================================================
    CONSULTATION PARTNERS
+   SOURCE OF TRUTH = marketplace_partners
 ============================================================ */
 
 export async function
@@ -2102,27 +2107,37 @@ fetchConsultationPartners() {
     error
   } = await supabase
 
-    .from("partner_profiles")
+    .from("marketplace_partners")
 
     .select(`
+      id,
       partner_uuid,
-      partner_id,
-      institute_name,
-      institute_city,
-      skill_focus,
-      email,
-      mobile_number
+      name,
+      city,
+      state,
+      category,
+      skills,
+      consultation_duration,
+      consultation_credits,
+      rating,
+      total_reviews,
+      verified,
+      featured
     `)
 
-    .eq(
-      "account_status",
-      "active"
+    .eq("active", true)
+
+    .order(
+      "featured",
+      {
+        ascending: false
+      }
     )
 
     .order(
-      "institute_name",
+      "rating",
       {
-        ascending: true
+        ascending: false
       }
     );
 
@@ -2134,9 +2149,41 @@ fetchConsultationPartners() {
     );
 
     return [];
-
   }
 
-  return data ?? [];
+  return (data ?? []).map((partner: any) => ({
+
+    // THIS IS THE IMPORTANT FK
+    id: partner.id,
+
+    // Identity
+    partner_uuid: partner.partner_uuid,
+    partner_id: partner.partner_uuid,
+
+    // UI
+    institute_name: partner.name,
+    institute_city: partner.city,
+    category: partner.category,
+    skill_focus: partner.skills ?? [],
+
+    consultation_duration:
+      partner.consultation_duration,
+
+    consultation_credits:
+      partner.consultation_credits,
+
+    rating:
+      partner.rating,
+
+    total_reviews:
+      partner.total_reviews,
+
+    verified:
+      partner.verified,
+
+    featured:
+      partner.featured
+
+  }));
 
 }
