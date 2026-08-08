@@ -8,8 +8,7 @@ from "react";
 import {
   fetchIncomingRequests,
   createLead
-}
-from "../../data/partnerMarketplaceRepository";
+} from "../../data/partnerMarketplaceRepository";
 
 import {
   getSupabaseClient
@@ -394,8 +393,17 @@ export default function IncomingRequests() {
 const partnerIdentity =
   requirePartnerIdentity();
 
-const partnerId =
-  partnerIdentity.partnerId;
+console.log("PARTNER IDENTITY");
+console.log(partnerIdentity);
+console.log("FULL PARTNER IDENTITY");
+console.dir(partnerIdentity, { depth: null });
+
+console.log("partnerUuid =", partnerIdentity.partnerUuid);
+console.log("partnerId   =", partnerIdentity.partnerId);
+console.log("email       =", partnerIdentity.email);
+
+const partnerUuid =
+  partnerIdentity.partnerUuid;
 
 const partnerName =
   partnerIdentity.partnerName ?? "";
@@ -418,21 +426,25 @@ const partnerName =
   ] =
     useState(false);
 
-  useEffect(() => {
-    loadRequests();
-  }, []);
+useEffect(() => {
+    if (partnerUuid) {
+        loadRequests();
+    }
+}, [partnerUuid]);
 
- async function
-loadRequests() {
+async function loadRequests() {
 
-  const data =
-    await fetchIncomingRequests(
-      partnerId
-    );
 
-  setRequests(
-    data || []
-  );
+const requests =
+  await fetchIncomingRequests(partnerUuid);
+
+console.log(
+  "Unified Incoming Requests",
+  requests.length,
+  requests
+);
+
+setRequests(requests);
 }
 
   async function

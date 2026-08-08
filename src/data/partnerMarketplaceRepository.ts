@@ -25,36 +25,40 @@ function currentStudentId(): string {
 }
 
 function currentPartnerId(): string {
+  const identity = requirePartnerIdentity();
 
-  const identity =
-    requireIdentity();
+  if (!identity.partnerUuid) {
+    throw new Error("Partner identity not available.");
+  }
 
-  const partnerId =
-    identity.partnerId;
+  return identity.partnerUuid;
+}
 
-if (!partnerId) {
+function currentPartnerProfileId(): string {
+  const identity = requirePartnerIdentity();
 
+  if (!identity.partnerId) {
     throw new Error(
-        "Partner identity not available."
+      "Partner profile ID not available."
     );
+  }
 
+  return identity.partnerId;
 }
 
-return partnerId;
-
-}
-
-export async function
-createScholarshipOffer(
+export async function createScholarshipOffer(
   offer: any
 ) {
-
-  const supabase =
-    getSupabaseClient() as any;
+  const supabase = getSupabaseClient() as any;
 
   if (!supabase) {
     return null;
   }
+
+  console.log("====================================");
+  console.log("CREATE SCHOLARSHIP OFFER");
+  console.log("RAW OFFER");
+  console.dir(offer, { depth: null });
 
   /* ============================================================
      Resolve Partner Identity
@@ -64,246 +68,191 @@ createScholarshipOffer(
     offer.partner_id ??
     currentPartnerId();
 
-  /* ============================================================
-     Build Payload
-  ============================================================ */
-
-const payload = {
-
-  ...offer,
-
-  partner_id:
-    resolvedPartnerId,
-
-  email:
-    offer.email,
-
-  phone:
-    offer.phone,
-
-  class_name:
-    offer.class_name
-
-};
-
-  /* ============================================================
-     Create Scholarship Offer
-  ============================================================ */
-
-console.log("FINAL student_id =", payload.student_id);
-
-const { data: authData, error: authError } =
-  await supabase.auth.getUser();
-
-console.log("AUTH USER =", authData.user);
-console.log("AUTH USER ID =", authData.user?.id);
-
-if (authError) {
-  console.error("AUTH ERROR", authError);
-}
-
-const {
-
-  data,
-
-  error
-
-} =
-await supabase
-
-      .from(
-        "partner_scholarship_offers"
-      )
-
-      .insert([payload])
-
-      .select()
-
-      .single();
-
-  if (error) {
-
-    console.error(
-
-      "SCHOLARSHIP INSERT ERROR",
-
-      error
-
-    );
-
-    throw error;
-
-
-  }
-
-  return data;
-
-}
-
-export async function
-createWorkshopOffer(
-  offer: any
-) {
-
-  const supabase =
-    getSupabaseClient() as any;
-
-  if (!supabase) {
-    return null;
-  }
-
-  /* ============================================================
-     Resolve Partner Identity
-  ============================================================ */
-
-  const resolvedPartnerId =
-    offer.partner_id ??
-    currentPartnerId();
+  console.log("RESOLVED PARTNER ID");
+  console.log(resolvedPartnerId);
 
   /* ============================================================
      Build Payload
   ============================================================ */
 
-const payload = {
+  const payload = {
+    ...offer,
 
-  ...offer,
+    partner_id: resolvedPartnerId,
 
-  partner_id:
-    resolvedPartnerId,
+    email: offer.email,
 
-  email:
-    offer.email,
+    phone: offer.phone,
 
-  phone:
-    offer.phone,
+    class_name: offer.class_name,
+  };
 
-  class_name:
-    offer.class_name
+  console.log("FINAL PAYLOAD");
+  console.dir(payload, { depth: null });
 
-};
+  console.log("FINAL student_id =", payload.student_id);
 
   /* ============================================================
-     Create Workshop Offer
+     Auth User
   ============================================================ */
 
   const {
+    data: authData,
+    error: authError,
+  } = await supabase.auth.getUser();
 
-    data,
+  console.log("AUTH USER");
+  console.dir(authData.user, { depth: null });
 
-    error
+  console.log("AUTH USER ID");
+  console.log(authData.user?.id);
 
-  } =
+  if (authError) {
+    console.error("AUTH ERROR");
+    console.error(authError);
+  }
+
+  /* ============================================================
+     Insert
+  ============================================================ */
+
+  const { data, error } =
     await supabase
-
-      .from(
-        "partner_workshop_offers"
-      )
-
+      .from("partner_scholarship_offers")
       .insert([payload])
-
       .select()
-
       .single();
 
   if (error) {
+    console.error("SCHOLARSHIP INSERT ERROR");
+    console.error(error);
 
-    console.error(
+    console.log("FAILED PAYLOAD");
+    console.dir(payload, { depth: null });
 
-      "WORKSHOP INSERT ERROR",
-
-      error
-
-    );
-
-    return null;
-
+    throw error;
   }
 
-  return data;
+  console.log("INSERT SUCCESS");
+  console.dir(data, { depth: null });
 
+  return data;
 }
 
-export async function
-createContactRequest(
-  request: any
+export async function createWorkshopOffer(
+  offer: any
 ) {
-
-  const supabase =
-    getSupabaseClient() as any;
+  const supabase = getSupabaseClient() as any;
 
   if (!supabase) {
     return null;
   }
 
-  /* ============================================================
-     Resolve Partner Identity
-  ============================================================ */
+  console.log("====================================");
+  console.log("CREATE WORKSHOP OFFER");
+  console.dir(offer, { depth: null });
+
+  const resolvedPartnerId =
+    offer.partner_id ??
+    currentPartnerId();
+
+  console.log("RESOLVED PARTNER ID");
+  console.log(resolvedPartnerId);
+
+  const payload = {
+    ...offer,
+
+    partner_id: resolvedPartnerId,
+
+    email: offer.email,
+
+    phone: offer.phone,
+
+    class_name: offer.class_name,
+  };
+
+  console.log("FINAL PAYLOAD");
+  console.dir(payload, { depth: null });
+
+  const { data, error } =
+    await supabase
+      .from("partner_workshop_offers")
+      .insert([payload])
+      .select()
+      .single();
+
+  if (error) {
+    console.error("WORKSHOP INSERT ERROR");
+    console.error(error);
+
+    console.log("FAILED PAYLOAD");
+    console.dir(payload, { depth: null });
+
+    return null;
+  }
+
+  console.log("WORKSHOP INSERT SUCCESS");
+  console.dir(data, { depth: null });
+
+  return data;
+}
+
+export async function createContactRequest(
+  request: any
+) {
+  const supabase = getSupabaseClient() as any;
+
+  if (!supabase) {
+    return null;
+  }
+
+  console.log("====================================");
+  console.log("CREATE CONTACT REQUEST");
+  console.dir(request, { depth: null });
 
   const resolvedPartnerId =
     request.partner_id ??
     currentPartnerId();
 
-  /* ============================================================
-     Build Payload
-  ============================================================ */
+  console.log("RESOLVED PARTNER ID");
+  console.log(resolvedPartnerId);
 
- const payload = {
+  const payload = {
+    ...request,
 
-  ...request,
+    partner_id: resolvedPartnerId,
 
-  partner_id:
-    resolvedPartnerId,
+    email: request.email,
 
-  email:
-    request.email,
+    phone: request.phone,
 
-  phone:
-    request.phone,
+    class_name: request.class_name,
+  };
 
-  class_name:
-    request.class_name
+  console.log("FINAL PAYLOAD");
+  console.dir(payload, { depth: null });
 
-};
-
-  /* ============================================================
-     Create Contact Request
-  ============================================================ */
-
-  const {
-
-    data,
-
-    error
-
-  } =
+  const { data, error } =
     await supabase
-
-      .from(
-        "partner_contact_requests"
-      )
-
+      .from("partner_contact_requests")
       .insert([payload])
-
       .select()
-
       .single();
 
   if (error) {
+    console.error("CONTACT INSERT ERROR");
+    console.error(error);
 
-    console.error(
-
-      "CONTACT REQUEST INSERT ERROR",
-
-      error
-
-    );
+    console.log("FAILED PAYLOAD");
+    console.dir(payload, { depth: null });
 
     return null;
-
   }
 
-  return data;
+  console.log("CONTACT INSERT SUCCESS");
+  console.dir(data, { depth: null });
 
+  return data;
 }
 
 export async function
@@ -471,6 +420,42 @@ console.log(
 export async function fetchPartnerScholarshipOffers(
   partnerId?: string
 ) {
+  const supabase = getSupabaseClient() as any;
+
+  if (!supabase) {
+    return [];
+  }
+
+  const resolvedPartnerId =
+    partnerId ?? currentPartnerProfileId();
+
+  console.log("===== SCHOLARSHIP QUERY =====");
+  console.log("resolvedPartnerId =", resolvedPartnerId);
+
+  const { data, error } = await supabase
+    .from("partner_incoming_requests")
+    .select("*")
+    .eq("partner_id", resolvedPartnerId)
+    .eq("request_type", "Scholarship")
+    .order("created_at", {
+      ascending: false,
+    });
+
+  console.log("Rows:", data?.length);
+  console.log("Error:", error);
+  console.table(data);
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data ?? [];
+}
+
+export async function fetchPartnerWorkshopOffers(
+  partnerId?: string
+) {
 
   const supabase =
     getSupabaseClient() as any;
@@ -483,68 +468,26 @@ export async function fetchPartnerScholarshipOffers(
     partnerId ??
     currentPartnerId();
 
-  const {
-    data,
-    error
-  } =
-    await supabase
-
-      .from("partner_scholarship_offers")
-
-      .select("*")
-
-      .eq(
-        "partner_id",
-        resolvedPartnerId
-      )
-
-      .order(
-        "created_at",
-        {
-          ascending: false
-        }
-      );
-
-  if (error) {
-
-    console.error(error);
-
-    return [];
-
-  }
-
-  return data ?? [];
-
-}
-
-export async function fetchPartnerWorkshopOffers(
-  partnerId?: string
-) {
-
-  const supabase =
-    getSupabaseClient() as any;
-
-  if (!supabase) return [];
-
-  const resolvedPartnerId =
-    partnerId ??
-    currentPartnerId();
+  console.log(
+    "WORKSHOP -> Resolved Partner ID:",
+    resolvedPartnerId
+  );
 
   const {
     data,
     error
   } =
     await supabase
-
-      .from("partner_workshop_offers")
-
+      .from("partner_incoming_requests")
       .select("*")
-
       .eq(
         "partner_id",
         resolvedPartnerId
       )
-
+      .eq(
+        "request_type",
+        "Workshop"
+      )
       .order(
         "created_at",
         {
@@ -571,27 +514,34 @@ export async function fetchPartnerContactRequests(
   const supabase =
     getSupabaseClient() as any;
 
-  if (!supabase) return [];
+  if (!supabase) {
+    return [];
+  }
 
   const resolvedPartnerId =
     partnerId ??
     currentPartnerId();
+
+  console.log(
+    "CONTACT -> Resolved Partner ID:",
+    resolvedPartnerId
+  );
 
   const {
     data,
     error
   } =
     await supabase
-
-      .from("partner_contact_requests")
-
+      .from("partner_incoming_requests")
       .select("*")
-
       .eq(
         "partner_id",
         resolvedPartnerId
       )
-
+      .eq(
+        "request_type",
+        "Contact"
+      )
       .order(
         "created_at",
         {
@@ -611,33 +561,158 @@ export async function fetchPartnerContactRequests(
 
 }
 
-export async function
-fetchIncomingRequests(
-  partnerId: string
+export async function resolveMarketplacePartnerId(
+  partnerUuid: string
 ) {
+  const supabase = getSupabaseClient() as any;
+
+  const { data, error } = await supabase
+    .from("marketplace_partners")
+    .select("id")
+    .eq("partner_uuid", partnerUuid)
+    .single();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data?.id ?? null;
+}
+export async function fetchIncomingRequests(
+  partnerUuid: string
+) {
+
+  console.log(
+    "🔥🔥🔥 NEW FETCH INCOMING REQUESTS FUNCTION 🔥🔥🔥"
+  );
 
   const supabase =
     getSupabaseClient() as any;
+
+  if (!supabase) {
+    return [];
+  }
+
+  /* ============================================================
+     Resolve Both Partner Identities
+  ============================================================ */
+
+  const identity =
+    requirePartnerIdentity();
+
+  const partnerTextId =
+    identity.partnerId;
+
+  const marketplacePartnerId =
+    await resolveMarketplacePartnerId(
+      partnerUuid
+    );
+
+  console.log("================================");
+  console.log("PIPELINE");
+  console.log("Partner UUID:", partnerUuid);
+  console.log("Partner Text ID:", partnerTextId);
+  console.log("Marketplace Partner ID:", marketplacePartnerId);
+  console.log("================================");
+
+  console.log(
+    "QUERY IDS",
+    {
+      partnerTextId,
+      marketplacePartnerId
+    }
+  );
+
+  /* ============================================================
+     Build Query
+  ============================================================ */
+
+  let query =
+    supabase
+      .from(
+        "partner_incoming_requests"
+      )
+      .select("*");
+
+  if (
+    partnerTextId &&
+    marketplacePartnerId
+  ) {
+
+    console.log(
+      "Using OR query for BOTH partner IDs"
+    );
+
+    query =
+      query.or(
+        `partner_id.eq.${partnerTextId},partner_id.eq.${marketplacePartnerId}`
+      );
+
+  } else if (partnerTextId) {
+
+    console.log(
+      "Using TEXT Partner ID only:",
+      partnerTextId
+    );
+
+    query =
+      query.eq(
+        "partner_id",
+        partnerTextId
+      );
+
+  } else if (marketplacePartnerId) {
+
+    console.log(
+      "Using MARKETPLACE Partner ID only:",
+      marketplacePartnerId
+    );
+
+    query =
+      query.eq(
+        "partner_id",
+        marketplacePartnerId
+      );
+
+  } else {
+
+    console.error(
+      "Unable to resolve any partner identity."
+    );
+
+    return [];
+  }
 
   const {
     data,
     error
   } =
-    await supabase
-      .from(
-        "partner_incoming_requests"
-      )
-      .select("*")
-      .eq(
-        "partner_id",
-        partnerId
-      )
-      .order(
-        "created_at",
-        {
-          ascending:false
-        }
-      );
+    await query.order(
+      "created_at",
+      {
+        ascending: false
+      }
+    );
+
+  console.log("================================");
+  console.log("RAW QUERY RESULT");
+  console.log("Returned Rows:", data?.length);
+  console.log("Query Error:", error);
+
+  console.table(
+    (data || []).map(
+      (r: any) => ({
+        id: r.id,
+        partner_id: r.partner_id,
+        request_type: r.request_type,
+        status: r.status,
+        requester_name: r.requester_name,
+      })
+    )
+  );
+
+  console.log("================================");
 
   if (error) {
     console.error(error);
@@ -651,10 +726,22 @@ fetchIncomingRequests(
 // PARTNER PIPELINE
 // ======================================
 
-export async function
-fetchPartnerPipeline(
-  partnerId: string
+export async function fetchPartnerPipeline(
+  partnerUuid: string
 ) {
+const partnerTextId =
+    currentPartnerProfileId();
+
+  if (!partnerTextId) {
+    console.error(
+      "Partner profile ID not found."
+    );
+    return [];
+  }
+
+  console.log("===== PARTNER PIPELINE =====");
+  console.log("Partner UUID:", partnerUuid);
+  console.log("Partner Text ID:", partnerTextId);
 
   const [
     scholarships,
@@ -663,18 +750,29 @@ fetchPartnerPipeline(
   ] = await Promise.all([
 
     fetchPartnerScholarshipOffers(
-      partnerId
+      partnerTextId
     ),
 
     fetchPartnerWorkshopOffers(
-      partnerId
+      partnerTextId
     ),
 
     fetchPartnerContactRequests(
-      partnerId
+      partnerTextId
     )
 
   ]);
+
+  console.log("Scholarships:", scholarships);
+  console.log("Workshops:", workshops);
+  console.log("Contacts:", contacts);
+
+  console.log(
+    "Total:",
+    (scholarships?.length ?? 0) +
+    (workshops?.length ?? 0) +
+    (contacts?.length ?? 0)
+  );
 
   return [
 
@@ -1004,19 +1102,26 @@ await supabase
 
       .single();
 
-  if (error) {
+if (error) {
 
     console.error(
+        "INCOMING REQUEST INSERT ERROR"
+    );
 
-      "INCOMING REQUEST INSERT ERROR",
+    console.error(error);
 
-      error
+    console.log(
+        "FAILED PAYLOAD"
+    );
 
+    console.dir(
+        payload,
+        { depth: null }
     );
 
     return null;
 
-  }
+}
 
   return data;
 
@@ -1042,23 +1147,17 @@ const resolvedStudentId =
   studentId ??
   currentStudentId();
 
-const {
-  data,
-  error
-} =
-await supabase
+const query = await supabase
   .from("partner_incoming_requests")
   .select("*")
-  .eq(
-    "student_id",
-    resolvedStudentId
-  )
-  .order(
-    "created_at",
-    {
-      ascending: false
-    }
-  );
+  .eq("student_id", resolvedStudentId)
+  .order("created_at", { ascending: false });
+
+console.log("RAW DATA");
+console.table(query.data);
+console.log(query.error);
+
+const { data, error } = query;
 
   if (error) {
     console.error(error);
@@ -1583,13 +1682,10 @@ console.dir(error, { depth: null });
   return data;
 
 }
-
 export async function fetchPartnerLeads(
   partnerId?: string
 ) {
-
-  const supabase =
-    getSupabaseClient() as any;
+  const supabase = getSupabaseClient() as any;
 
   if (!supabase) return [];
 
@@ -1597,38 +1693,53 @@ export async function fetchPartnerLeads(
     partnerId ??
     currentPartnerId();
 
+  /* ==========================================
+     Resolve Marketplace Partner ID
+  ========================================== */
+
+const { data: partnerRow, error: partnerError } =
+  await supabase
+    .from("marketplace_partners")
+    .select("id")
+    .eq("partner_uuid", resolvedPartnerId)
+    .single();
+
+  if (partnerError || !partnerRow) {
+    console.error(
+      "Unable to resolve marketplace partner",
+      partnerError
+    );
+    return [];
+  }
+
+  console.log(
+    "Marketplace Partner ID:",
+    partnerRow.id
+  );
+
+  /* ==========================================
+     Fetch Leads
+  ========================================== */
+
   const {
     data,
     error
-  } =
-    await supabase
+  } = await supabase
+    .from("partner_student_leads")
+    .select("*")
+    .eq("partner_id", partnerRow.id)
+    .order("created_at", {
+      ascending: false,
+    });
 
-      .from("partner_student_leads")
-
-      .select("*")
-
-      .eq(
-        "partner_id",
-        resolvedPartnerId
-      )
-
-      .order(
-        "created_at",
-        {
-          ascending: false
-        }
-      );
+  console.log("LEADS RETURNED", data);
 
   if (error) {
-
     console.error(error);
-
     return [];
-
   }
 
   return data ?? [];
-
 }
 
 export async function

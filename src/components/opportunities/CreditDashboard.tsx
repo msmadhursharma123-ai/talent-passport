@@ -4141,31 +4141,33 @@ console.log("selectedPartner.partner_uuid =", selectedPartner?.partner_uuid);
 console.log("selectedPartner.partner_id =", selectedPartner?.partner_id);
 console.log("======================================");
 
-const result =
+const result = await bookConsultation({
 
-await bookConsultation({
+    studentId: getMasterStudentId(),
 
-studentId:
+    partnerId:
+        selectedPartner.partner_id,
 
-getMasterStudentId(),
+    partnerUuid:
+        selectedPartner.partner_uuid,
 
-partnerId:
-selectedPartner.id,
+    partnerName:
+        selectedPartner.name,
 
-category:
-selectedCategory!,
+    category:
+        selectedCategory!,
 
-skill:
-selectedSkill,
+    skill:
+        selectedSkill,
 
-topic:
-consultationTopic,
+    topic:
+        consultationTopic,
 
-description:
-consultationDescription,
+    description:
+        consultationDescription,
 
-consultationCredits:
-selectedPartner.credits
+    consultationCredits:
+        selectedPartner.credits
 
 });
 

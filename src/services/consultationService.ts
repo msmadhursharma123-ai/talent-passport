@@ -179,6 +179,33 @@ const incomingRequest = await createIncomingRequest({
 console.log("================================");
 console.log("INCOMING REQUEST RESULT");
 console.dir(incomingRequest, { depth: null });
+
+if (!incomingRequest) {
+
+    console.error(
+        "CONSULTATION -> Incoming Request INSERT FAILED"
+    );
+
+    console.error({
+
+        consultationId:
+            consultation.id,
+
+        partnerId:
+            input.partnerId,
+
+        studentUuid,
+
+        studentName:
+            input.studentName,
+
+        partnerName:
+            input.partnerName
+
+    });
+
+}
+
 console.log("================================");
 
 if (!incomingRequest) {

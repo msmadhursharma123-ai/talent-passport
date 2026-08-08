@@ -60,19 +60,19 @@ export default function LeadPipeline() {
   const partnerIdentity =
     requirePartnerIdentity();
 
-  const rawPartnerId =
-    partnerIdentity.partnerId;
+console.log("===== PARTNER IDENTITY =====");
+console.log(partnerIdentity);
+console.log("partnerId =", partnerIdentity.partnerId);
+console.log("partnerUuid =", partnerIdentity.partnerUuid);
 
-  if (!rawPartnerId) {
+const partnerUuid =
+  partnerIdentity.partnerUuid;
 
-    throw new Error(
-      "Partner identity is missing."
-    );
-
-  }
-
-  const partnerId: string =
-    rawPartnerId;
+if (!partnerUuid) {
+  throw new Error(
+    "Partner UUID is missing."
+  );
+}
 
   const partnerName =
     partnerIdentity.partnerName ?? "";
@@ -151,9 +151,9 @@ const [
 
   
 
-    const leadData =
+const leadData =
   await fetchPartnerLeads(
-    partnerId
+    partnerUuid
   );
 
 console.log(
@@ -163,10 +163,10 @@ console.log(
 
 
 
-      const metricData =
-        await fetchLeadMetrics(
-          partnerId
-        );
+    const metricData =
+  await fetchLeadMetrics(
+    partnerUuid
+  );
 
       setLeads(
         leadData || []
