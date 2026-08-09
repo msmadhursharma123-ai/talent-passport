@@ -50,6 +50,31 @@ export default function ClassroomIntelligencePage(){
 
   return <main className="school-page">
     <style>{`
+/* =========================================================
+   CONTENT ABOVE DECORATIVE CARD BACKGROUNDS
+   Keep headings/body text above decorative circles/gradients.
+   ========================================================= */
+.school-hero,
+.school-section,
+.school-card {
+  isolation: isolate;
+}
+.school-hero > *,
+.school-section-head > *,
+.school-card > * {
+  position: relative;
+  z-index: 2;
+}
+.school-hero::before,
+.school-hero::after,
+.school-section::before,
+.school-section::after,
+.school-card::before,
+.school-card::after {
+  pointer-events: none;
+  z-index: 0 !important;
+}
+
       .ci-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#fff 0%,#fffcf8 72%,#fff7ed 100%)}
       .ci-hero:after{content:"";position:absolute;width:230px;height:230px;border-radius:50%;right:-70px;top:-120px;background:rgba(249,115,22,.06)}
       .ci-filter{margin-top:18px;padding:16px;border:1px solid #e2e8f0;border-radius:18px;background:linear-gradient(135deg,#fff,#f8fafc);box-shadow:0 8px 24px rgba(15,23,42,.04)}

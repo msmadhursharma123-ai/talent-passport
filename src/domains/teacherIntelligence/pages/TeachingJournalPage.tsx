@@ -30,6 +30,7 @@ from "../repository/TeachingJournalRepository";
 
 import {
 getOverallClassroomComparison,
+getCurrentMonthClassroomMetrics,
 }
 from "../repository/TeachingJournalRepository";
 
@@ -64,6 +65,22 @@ monthlyFeedback,
 setMonthlyFeedback
 
 ] = useState<any[]>([]);
+
+const [
+
+voucherClassrooms,
+
+setVoucherClassrooms
+
+] = useState<any[]>([]);
+
+const [
+
+voucherLoading,
+
+setVoucherLoading
+
+] = useState(false);
 
 const loadOverallClassroomComparison =
 async ()=>{
@@ -197,6 +214,193 @@ teacher.teacherUuid
 setAssignments(data);
 
 }
+
+async function loadVoucherProgress(){
+
+if(assignments.length === 0){
+return;
+}
+
+setVoucherLoading(true);
+
+try{
+
+const data =
+await getCurrentMonthClassroomMetrics(
+assignments
+);
+
+setVoucherClassrooms(data);
+
+}catch(error){
+
+console.error(
+"TEACHER REWARD DATA LOAD FAILED",
+error
+);
+
+setVoucherClassrooms([]);
+
+}finally{
+
+setVoucherLoading(false);
+
+}
+
+}
+
+useEffect(()=>{
+
+if(assignments.length === 0){
+return;
+}
+
+loadVoucherProgress();
+
+const refreshTimer =
+setInterval(
+loadVoucherProgress,
+30000
+);
+
+const handleFocus = ()=>
+loadVoucherProgress();
+
+window.addEventListener(
+"focus",
+handleFocus
+);
+
+return ()=>{
+
+clearInterval(refreshTimer);
+
+window.removeEventListener(
+"focus",
+handleFocus
+);
+
+};
+
+},[assignments]);
+
+const currentRewardMonth =
+new Date().toLocaleString(
+"default",
+{
+month:"long",
+year:"numeric",
+}
+);
+
+const totalRewardClasses =
+voucherClassrooms.length;
+
+const reward80ClassTarget =
+ totalRewardClasses > 0
+ ? Math.ceil(totalRewardClasses * 0.8)
+ : 0;
+
+function getRewardProgress(
+threshold:number,
+requiredClasses:number
+){
+
+const qualifiedClasses =
+ voucherClassrooms.filter(
+(item:any)=>
+item.hasData &&
+item.averageUnderstanding >= threshold
+).length;
+
+const target =
+Math.min(
+requiredClasses,
+totalRewardClasses
+);
+
+const remaining =
+Math.max(0,target - qualifiedClasses);
+
+return{
+qualifiedClasses,
+target,
+remaining,
+unlocked:
+ target > 0 &&
+ qualifiedClasses >= target,
+};
+
+}
+
+function getRewardScoreColor(
+score:number
+){
+
+if(score >= 90) return "#16A34A";
+if(score >= 80) return "#2563EB";
+if(score >= 75) return "#CA8A04";
+return "#DC2626";
+
+}
+
+function getRewardScoreBackground(
+score:number
+){
+
+if(score >= 90) return "#F0FDF4";
+if(score >= 80) return "#EFF6FF";
+if(score >= 75) return "#FFFBEB";
+return "#FEF2F2";
+
+}
+
+function getRewardStatusText(
+progress:any
+){
+
+if(progress.unlocked){
+return "UNLOCKED";
+}
+
+if(totalRewardClasses === 0){
+return "NO CLASSROOMS";
+}
+
+if(progress.remaining === 1){
+return "1 CLASS TO GO";
+}
+
+return `${progress.remaining} CLASSES TO GO`;
+
+}
+
+function getMonthlyAverageLabel(
+item:any
+){
+
+if(!item.hasData){
+return "No feedback yet";
+}
+
+return `${item.averageUnderstanding}% monthly average`;
+
+}
+
+function getVoucherRequirementText(
+threshold:number,
+requiredClasses:number,
+allClasses:boolean
+){
+
+if(allClasses){
+return `${threshold}% in every classroom`;
+}
+
+return `${threshold}% in ${requiredClasses} of ${totalRewardClasses} classrooms`;
+
+}
+
 
 function getDayColor(
 
@@ -1026,6 +1230,604 @@ return (
   }
 }
 
+
+
+/* =========================================================
+   TEACHER REWARD LAYER
+   Desktop is intentionally spacious; tablet/mobile stay compact.
+   ========================================================= */
+.tp-reward-monthly-section,
+.tp-reward-voucher-section {
+  position: relative;
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 20px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  box-shadow: 0 7px 24px rgba(15,23,42,0.035);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.tp-reward-monthly-section::after,
+.tp-reward-voucher-section::after {
+  content: "";
+  position: absolute;
+  width: 170px;
+  height: 170px;
+  right: -80px;
+  top: -90px;
+  border-radius: 50%;
+  background: rgba(249,115,22,0.055);
+  pointer-events: none;
+}
+
+.tp-reward-section-heading {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.tp-reward-eyebrow {
+  color: #F97316;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+.tp-reward-section-heading h2 {
+  margin: 6px 0 0;
+  color: #0F172A;
+  font-size: 21px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.tp-reward-section-heading p {
+  margin: 6px 0 0;
+  max-width: 760px;
+  color: #64748B;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.tp-reward-live-pill,
+.tp-reward-month-pill {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  color: #475569;
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: .8px;
+}
+
+.tp-reward-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22C55E;
+  box-shadow: 0 0 0 3px rgba(34,197,94,.12);
+}
+
+.tp-reward-class-table {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.tp-reward-class-table-head,
+.tp-reward-class-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.1fr) 110px minmax(240px, 1.5fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.tp-reward-class-table-head {
+  padding: 0 12px 7px;
+  color: #94A3B8;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.tp-reward-class-row {
+  min-height: 54px;
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.tp-reward-class-name {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tp-reward-class-name strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #0F172A;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tp-reward-class-name span,
+.tp-reward-row-progress span {
+  color: #64748B;
+  font-size: 9px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.tp-reward-score-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 900;
+  box-sizing: border-box;
+}
+
+.tp-reward-row-progress {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.tp-reward-row-track {
+  flex: 1;
+  min-width: 70px;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #E2E8F0;
+}
+
+.tp-reward-row-fill {
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  transition: width .35s ease;
+}
+
+.tp-reward-loading,
+.tp-reward-empty {
+  position: relative;
+  z-index: 1;
+  padding: 18px;
+  border: 1px dashed #CBD5E1;
+  border-radius: 12px;
+  background: #F8FAFC;
+  color: #64748B;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tp-reward-voucher-heading {
+  margin-bottom: 14px;
+}
+
+.tp-reward-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tp-reward-card {
+  position: relative;
+  min-width: 0;
+  min-height: 190px;
+  padding: 13px;
+  overflow: hidden;
+  border: 1px solid;
+  border-radius: 15px;
+  box-sizing: border-box;
+}
+
+.tp-reward-card-orb {
+  position: absolute;
+  width: 86px;
+  height: 86px;
+  right: -34px;
+  top: -36px;
+  border-radius: 50%;
+  opacity: .07;
+  pointer-events: none;
+}
+
+.tp-reward-card-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tp-reward-card-eyebrow {
+  font-size: 8px;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: .9px;
+}
+
+.tp-reward-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.tp-reward-card-title {
+  position: relative;
+  margin-top: 9px;
+  min-height: 32px;
+  color: #0F172A;
+  font-size: 13px;
+  line-height: 1.18;
+  font-weight: 900;
+}
+
+.tp-reward-card-rule {
+  margin-top: 4px;
+  color: #64748B;
+  font-size: 9px;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.tp-reward-card-progress-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.tp-reward-card-progress-row strong {
+  color: #0F172A;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.tp-reward-card-progress-row span {
+  color: #64748B;
+  font-size: 7px;
+  line-height: 1.15;
+  font-weight: 900;
+  letter-spacing: .45px;
+  text-align: right;
+}
+
+.tp-reward-card-track {
+  width: 100%;
+  height: 6px;
+  margin-top: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148,163,184,.18);
+}
+
+.tp-reward-card-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width .35s ease;
+}
+
+.tp-reward-card-footer {
+  margin-top: 8px;
+  color: #64748B;
+  font-size: 8px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+@media (max-width: 1024px) {
+  .tp-reward-monthly-section,
+  .tp-reward-voucher-section {
+    margin-bottom: 12px;
+    padding: 15px;
+    border-radius: 17px;
+  }
+
+  .tp-reward-section-heading {
+    gap: 10px;
+    margin-bottom: 11px;
+  }
+
+  .tp-reward-section-heading h2 {
+    font-size: 19px;
+    line-height: 1.08;
+  }
+
+  .tp-reward-section-heading p {
+    margin-top: 4px;
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .tp-reward-class-table-head,
+  .tp-reward-class-row {
+    grid-template-columns: minmax(150px, 1fr) 80px minmax(160px, 1.1fr);
+    gap: 7px;
+  }
+
+  .tp-reward-class-table-head {
+    padding: 0 9px 5px;
+    font-size: 7px;
+  }
+
+  .tp-reward-class-row {
+    min-height: 47px;
+    padding: 7px 8px;
+    margin-top: 5px;
+    border-radius: 10px;
+  }
+
+  .tp-reward-class-name strong {
+    font-size: 10px;
+  }
+
+  .tp-reward-class-name span,
+  .tp-reward-row-progress span {
+    font-size: 7px;
+  }
+
+  .tp-reward-score-pill {
+    min-width: 50px;
+    min-height: 26px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  .tp-reward-row-track {
+    height: 5px;
+  }
+
+  .tp-reward-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .tp-reward-card {
+    min-height: 160px;
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .tp-reward-card-icon {
+    width: 23px;
+    height: 23px;
+    border-radius: 7px;
+    font-size: 10px;
+  }
+
+  .tp-reward-card-title {
+    margin-top: 7px;
+    min-height: 28px;
+    font-size: 11px;
+  }
+
+  .tp-reward-card-rule {
+    font-size: 7.5px;
+  }
+
+  .tp-reward-card-progress-row {
+    margin-top: 8px;
+  }
+
+  .tp-reward-card-progress-row strong {
+    font-size: 16px;
+  }
+
+  .tp-reward-card-progress-row span {
+    font-size: 6.5px;
+  }
+
+  .tp-reward-card-footer {
+    font-size: 7px;
+    margin-top: 6px;
+  }
+
+  .tp-reward-live-pill,
+  .tp-reward-month-pill {
+    padding: 6px 8px;
+    font-size: 7px;
+  }
+}
+
+@media (max-width: 767px) {
+  .tp-reward-monthly-section,
+  .tp-reward-voucher-section {
+    margin-bottom: 8px;
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .tp-reward-section-heading {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .tp-reward-section-heading h2 {
+    font-size: 15px;
+    line-height: 1.06;
+  }
+
+  .tp-reward-section-heading p {
+    font-size: 8.5px;
+    line-height: 1.3;
+  }
+
+  .tp-reward-eyebrow {
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+
+  .tp-reward-live-pill,
+  .tp-reward-month-pill {
+    padding: 5px 6px;
+    font-size: 6px;
+    letter-spacing: .5px;
+  }
+
+  .tp-reward-live-dot {
+    width: 5px;
+    height: 5px;
+  }
+
+  .tp-reward-class-table-head,
+  .tp-reward-class-row {
+    grid-template-columns: minmax(110px, 1fr) 50px minmax(80px, 1fr);
+    gap: 5px;
+  }
+
+  .tp-reward-class-table-head {
+    padding: 0 6px 4px;
+    font-size: 5.5px;
+    letter-spacing: .65px;
+  }
+
+  .tp-reward-class-row {
+    min-height: 40px;
+    padding: 6px;
+    margin-top: 4px;
+    border-radius: 9px;
+  }
+
+  .tp-reward-class-name {
+    gap: 2px;
+  }
+
+  .tp-reward-class-name strong {
+    font-size: 8px;
+  }
+
+  .tp-reward-class-name span,
+  .tp-reward-row-progress span {
+    font-size: 5.5px;
+  }
+
+  .tp-reward-score-pill {
+    min-width: 38px;
+    min-height: 22px;
+    padding: 2px 4px;
+    font-size: 10px;
+    border-radius: 7px;
+  }
+
+  .tp-reward-row-progress {
+    gap: 5px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tp-reward-row-track {
+    width: 100%;
+    min-width: 0;
+    height: 4px;
+  }
+
+  .tp-reward-grid {
+    gap: 5px;
+  }
+
+  .tp-reward-card {
+    min-height: 137px;
+    padding: 8px;
+    border-radius: 10px;
+  }
+
+  .tp-reward-card-orb {
+    width: 64px;
+    height: 64px;
+    right: -27px;
+    top: -27px;
+  }
+
+  .tp-reward-card-eyebrow {
+    font-size: 5.5px;
+    letter-spacing: .55px;
+  }
+
+  .tp-reward-card-icon {
+    width: 19px;
+    height: 19px;
+    border-radius: 6px;
+    font-size: 8px;
+  }
+
+  .tp-reward-card-title {
+    margin-top: 5px;
+    min-height: 25px;
+    font-size: 9px;
+  }
+
+  .tp-reward-card-rule {
+    margin-top: 3px;
+    font-size: 6px;
+    line-height: 1.25;
+  }
+
+  .tp-reward-card-progress-row {
+    margin-top: 6px;
+  }
+
+  .tp-reward-card-progress-row strong {
+    font-size: 13px;
+  }
+
+  .tp-reward-card-progress-row span {
+    font-size: 5px;
+    letter-spacing: .25px;
+  }
+
+  .tp-reward-card-track {
+    height: 4px;
+    margin-top: 5px;
+  }
+
+  .tp-reward-card-footer {
+    margin-top: 5px;
+    font-size: 5.5px;
+    line-height: 1.3;
+  }
+}
 `}</style>
 
     {/* =====================================================
@@ -1120,6 +1922,97 @@ return (
           </div>
         </div>
       </div>
+    </div>
+
+    {/* =====================================================
+        CURRENT MONTH CLASSROOM AVERAGES
+       ===================================================== */}
+
+    <div className="tp-reward-monthly-section">
+      <div className="tp-reward-section-heading">
+        <div>
+          <div className="tp-reward-eyebrow">
+            MONTHLY CLASSROOM PULSE
+          </div>
+          <h2>
+            {currentRewardMonth} Classroom Averages
+          </h2>
+          <p>
+            Live monthly understanding across every classroom you currently teach.
+          </p>
+        </div>
+
+        <div className="tp-reward-live-pill">
+          <span className="tp-reward-live-dot" />
+          LIVE
+        </div>
+      </div>
+
+      {voucherLoading && voucherClassrooms.length === 0 ? (
+        <div className="tp-reward-loading">
+          Updating classroom averages…
+        </div>
+      ) : voucherClassrooms.length > 0 ? (
+        <div className="tp-reward-class-table">
+          <div className="tp-reward-class-table-head">
+            <span>CLASSROOM</span>
+            <span>MONTHLY AVG.</span>
+            <span>PROGRESS</span>
+          </div>
+
+          {voucherClassrooms.map((item:any) => (
+            <div
+              className="tp-reward-class-row"
+              key={item.assignmentId}
+            >
+              <div className="tp-reward-class-name">
+                <strong>{item.classroom}</strong>
+                <span>
+                  {item.feedbackDays} feedback {item.feedbackDays === 1 ? "day" : "days"}
+                </span>
+              </div>
+
+              <div
+                className="tp-reward-score-pill"
+                style={{
+                  color: item.hasData
+                    ? getRewardScoreColor(item.averageUnderstanding)
+                    : "#64748B",
+                  background: item.hasData
+                    ? getRewardScoreBackground(item.averageUnderstanding)
+                    : "#F8FAFC",
+                  borderColor: item.hasData
+                    ? `${getRewardScoreColor(item.averageUnderstanding)}35`
+                    : "#E2E8F0",
+                }}
+              >
+                {item.hasData ? `${item.averageUnderstanding}%` : "—"}
+              </div>
+
+              <div className="tp-reward-row-progress">
+                <div className="tp-reward-row-track">
+                  <div
+                    className="tp-reward-row-fill"
+                    style={{
+                      width: `${Math.min(item.averageUnderstanding,100)}%`,
+                      background: item.hasData
+                        ? getRewardScoreColor(item.averageUnderstanding)
+                        : "#CBD5E1",
+                    }}
+                  />
+                </div>
+                <span>
+                  {getMonthlyAverageLabel(item)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="tp-reward-empty">
+          No active classrooms found for the current teacher.
+        </div>
+      )}
     </div>
 
     {/* =====================================================
@@ -1239,6 +2132,176 @@ return (
         </div>
       </div>
     </div>
+
+   {/* =====================================================
+       TEACHER REWARD VOUCHERS
+      ===================================================== */}
+
+   <div className="tp-reward-voucher-section">
+     <div className="tp-reward-section-heading tp-reward-voucher-heading">
+       <div>
+         <div className="tp-reward-eyebrow">
+           TEACHER REWARDS
+         </div>
+         <h2>
+           Earn Rewards From Classroom Understanding
+         </h2>
+         <p>
+           Your progress updates automatically as students submit feedback this month.
+         </p>
+       </div>
+
+       <div className="tp-reward-month-pill">
+         {currentRewardMonth.toUpperCase()}
+       </div>
+     </div>
+
+     <div className="tp-reward-grid">
+       {(() => {
+         const rewards = [
+           {
+             key: "amazon90",
+             eyebrow: "TOP REWARD",
+             title: "Amazon Voucher-₹3000",
+             threshold: 90,
+             required: totalRewardClasses,
+             allClasses: true,
+             color: "#F97316",
+             soft: "#FFF7ED",
+             border: "#FED7AA",
+             icon: "◇",
+           },
+           {
+             key: "dinner90",
+             eyebrow: "FAMILY REWARD",
+             title: "Dinner Voucher · ₹1,500",
+             threshold: 90,
+             required: reward80ClassTarget,
+             allClasses: false,
+             color: "#16A34A",
+             soft: "#F0FDF4",
+             border: "#BBF7D0",
+             icon: "◈",
+           },
+           {
+             key: "movie80",
+             eyebrow: "FAMILY REWARD",
+             title: "2 Movie Tickets",
+             threshold: 80,
+             required: reward80ClassTarget,
+             allClasses: false,
+             color: "#2563EB",
+             soft: "#EFF6FF",
+             border: "#BFDBFE",
+             icon: "▶",
+           },
+           {
+             key: "amazon75",
+             eyebrow: "EVERYDAY REWARD",
+             title: "Amazon Voucher · ₹500",
+             threshold: 75,
+             required: reward80ClassTarget,
+             allClasses: false,
+             color: "#CA8A04",
+             soft: "#FFFBEB",
+             border: "#FDE68A",
+             icon: "◆",
+           },
+         ];
+
+         return rewards.map((reward) => {
+           const progress = getRewardProgress(
+             reward.threshold,
+             reward.required
+           );
+
+           const percent =
+             progress.target === 0
+               ? 0
+               : Math.min(
+                   100,
+                   Math.round(
+                     (progress.qualifiedClasses / progress.target) * 100
+                   )
+                 );
+
+           return (
+             <div
+               key={reward.key}
+               className="tp-reward-card"
+               style={{
+                 background: `linear-gradient(145deg, ${reward.soft} 0%, #FFFFFF 78%)`,
+                 borderColor: reward.border,
+               }}
+             >
+               <div
+                 className="tp-reward-card-orb"
+                 style={{ background: reward.color }}
+               />
+
+               <div className="tp-reward-card-top">
+                 <span
+                   className="tp-reward-card-eyebrow"
+                   style={{ color: reward.color }}
+                 >
+                   {reward.eyebrow}
+                 </span>
+                 <span
+                   className="tp-reward-card-icon"
+                   style={{
+                     color: reward.color,
+                     background: reward.soft,
+                     borderColor: reward.border,
+                   }}
+                 >
+                   {reward.icon}
+                 </span>
+               </div>
+
+               <div className="tp-reward-card-title">
+                 {reward.title}
+               </div>
+
+               <div className="tp-reward-card-rule">
+                 {getVoucherRequirementText(
+                   reward.threshold,
+                   reward.required,
+                   reward.allClasses
+                 )}
+               </div>
+
+               <div className="tp-reward-card-progress-row">
+                 <strong>
+                   {progress.qualifiedClasses}/{progress.target || totalRewardClasses}
+                 </strong>
+                 <span>
+                   {getRewardStatusText(progress)}
+                 </span>
+               </div>
+
+               <div className="tp-reward-card-track">
+                 <div
+                   className="tp-reward-card-fill"
+                   style={{
+                     width: `${percent}%`,
+                     background: reward.color,
+                   }}
+                 />
+               </div>
+
+               <div className="tp-reward-card-footer">
+                 {progress.unlocked
+                   ? "Reward unlocked for this month"
+                   : progress.remaining > 0
+                   ? `${progress.remaining} more classroom${progress.remaining === 1 ? "" : "s"} needed at ${reward.threshold}%`
+                   : "Start collecting student feedback"}
+               </div>
+             </div>
+           );
+         });
+       })()}
+     </div>
+   </div>
 
    {/* =====================================================
     MONTHLY CLASSROOM INTELLIGENCE

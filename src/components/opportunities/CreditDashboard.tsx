@@ -17,6 +17,14 @@ import {
 } from "../../data/studentRepository";
 
 import {
+  getStudentDailyLectureLogs
+} from "../../data/studentGrowthPlanRepository";
+
+import {
+  getStudentFeedbackHistory
+} from "../../data/studentDailyFeedbackRepository";
+
+import {
   fetchConsultationPartners
 } from "../../data/consultationRepository";
 
@@ -35,7 +43,8 @@ import {
 import {
   calculateCompetitionCredits,
   calculateAchievementCredits,
-  calculatePortfolioCredits
+  calculatePortfolioCredits,
+  calculateDailyFeedbackCreditSummary
 } from "../../data/creditEngine";
 
 import {
@@ -228,6 +237,18 @@ const [portfolioCredits,
   setPortfolioCredits] =
   useState(0);
 
+const [dailyFeedbackEarnedCredits,
+  setDailyFeedbackEarnedCredits] =
+  useState(0);
+
+const [dailyFeedbackLostCredits,
+  setDailyFeedbackLostCredits] =
+  useState(0);
+
+const [dailyFeedbackTotalCredits,
+  setDailyFeedbackTotalCredits] =
+  useState(0);
+
   const [walletBalance,
   setWalletBalance] =
   useState(0);
@@ -328,6 +349,44 @@ const submissionCount =
   const skills =
     await getStudentSkills();
 
+  const [dailyLectureLogs, feedbackHistory] =
+    await Promise.all([
+      getStudentDailyLectureLogs(),
+      getStudentFeedbackHistory()
+    ]);
+
+  const now = new Date();
+
+  const today = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0")
+  ].join("-");
+
+  const completedLectureLogs =
+    (dailyLectureLogs ?? []).filter(
+      (log: any) =>
+        typeof log.log_date === "string" &&
+        log.log_date < today
+    );
+
+  const submittedLogIds = new Set(
+    (feedbackHistory ?? []).map(
+      (feedback: any) => feedback.daily_log_uuid
+    )
+  );
+
+  const missedFeedbackCount =
+    completedLectureLogs.filter(
+      (log: any) => !submittedLogIds.has(log.id)
+    ).length;
+
+  const dailyFeedback =
+    calculateDailyFeedbackCreditSummary(
+      (feedbackHistory ?? []).length,
+      missedFeedbackCount
+    );
+
   const verifiedCount =
     achievements.filter(
       (a: any) =>
@@ -356,7 +415,8 @@ const competition =
   const totalEarnedCredits =
     competition +
     timeline +
-    portfolio;
+    portfolio +
+    dailyFeedback.totalCredits;
 
   setCompetitionCredits(
     competition
@@ -368,6 +428,18 @@ const competition =
 
   setPortfolioCredits(
     portfolio
+  );
+
+  setDailyFeedbackEarnedCredits(
+    dailyFeedback.earnedCredits
+  );
+
+  setDailyFeedbackLostCredits(
+    dailyFeedback.lostCredits
+  );
+
+  setDailyFeedbackTotalCredits(
+    dailyFeedback.totalCredits
   );
 
   setTotalCredits(
@@ -388,7 +460,9 @@ const competition =
 
       timeline,
 
-      portfolio
+      portfolio,
+
+      dailyFeedback.totalCredits
 
     );
 
@@ -1127,8 +1201,8 @@ const demoPartners: MarketplacePartner[] = [
     style={{
       display: "grid",
       gridTemplateColumns: isCompact
-        ? "repeat(3, minmax(0, 1fr))"
-        : responsive.threeColumns.gridTemplateColumns,
+        ? "repeat(2, minmax(0, 1fr))"
+        : "repeat(4, minmax(0, 1fr))",
       gap: isMobile ? 5 : isTablet ? 8 : 14
     }}
   >
@@ -1335,6 +1409,76 @@ const demoPartners: MarketplacePartner[] = [
           }}
         >
           Earned through portfolio activity
+        </div>
+      </div>
+    </div>
+
+    {/* DAILY FEEDBACK */}
+
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        minHeight: isCompact ? 64 : 102,
+        background:
+          "linear-gradient(135deg, #F0FDF4 0%, #FBFFFC 100%)",
+        border: "1px solid #BBF7D0",
+        borderRadius: 18,
+        padding: isMobile ? "7px 7px" : isTablet ? "9px 9px" : "17px 20px",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          width: isCompact ? 58 : 82,
+          height: isCompact ? 58 : 82,
+          borderRadius: "50%",
+          right: -26,
+          top: -34,
+          background: "rgba(22,163,74,.07)",
+          pointerEvents: "none"
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1
+        }}
+      >
+        <div
+          style={{
+            color: "#166534",
+            fontSize: isMobile ? 6.5 : isTablet ? 7.5 : 10,
+            fontWeight: 800,
+            letterSpacing: 0.7
+          }}
+        >
+          DAILY FEEDBACK CREDITS
+        </div>
+
+        <div
+          style={{
+            marginTop: isCompact ? 5 : 11,
+            color: dailyFeedbackTotalCredits >= 0 ? "#16A34A" : "#DC2626",
+            fontSize: isMobile ? 17 : isTablet ? 20 : 27,
+            fontWeight: 900,
+            lineHeight: 1
+          }}
+        >
+          {dailyFeedbackTotalCredits}
+        </div>
+
+        <div
+          style={{
+            marginTop: isCompact ? 5 : 9,
+            color: "#64748B",
+            fontSize: isMobile ? 7 : isTablet ? 8.5 : 11,
+            fontWeight: 600,
+            lineHeight: 1.4
+          }}
+        >
+          +{dailyFeedbackEarnedCredits} earned · -{dailyFeedbackLostCredits} lost
         </div>
       </div>
     </div>
@@ -1612,6 +1756,14 @@ const demoPartners: MarketplacePartner[] = [
               [
                 "Portfolio Upload",
                 "+10"
+              ],
+              [
+                "Daily Feedback Submission",
+                "+1"
+              ],
+              [
+                "Missed Daily Feedback",
+                "-10"
               ]
             ].map((item, index) => (
 

@@ -1,6 +1,10 @@
 import "./schoolIntelligence.css";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
+import {
+  getSchoolClassroomSupplementalMetrics,
+  type SchoolClassroomSupplementalMetric,
+} from "../repository/SchoolIntelligenceRepository";
 import type {
   SchoolClassroomHealthRow,
   SchoolIntelligenceSnapshot,
@@ -31,6 +35,9 @@ function classroomLabel(row: SchoolClassroomHealthRow) {
 
 export default function SchoolOverviewPage() {
   const [data, setData] = useState<SchoolIntelligenceSnapshot | null>(null);
+  const [classroomMetrics, setClassroomMetrics] = useState<
+    SchoolClassroomSupplementalMetric[]
+  >([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -73,15 +80,66 @@ export default function SchoolOverviewPage() {
       setError("");
 
       try {
-        const snapshot =
-          range === "custom"
-            ? await loadSchoolIntelligence(undefined, customStart, customEnd)
-            : await loadSchoolIntelligence(Number(range) as 30 | 60 | 90);
+        let snapshot: SchoolIntelligenceSnapshot;
 
-        if (!cancelled) setData(snapshot);
+        if (range === "custom") {
+          snapshot = await loadSchoolIntelligence(
+            undefined,
+            customStart,
+            customEnd
+          );
+        } else {
+          snapshot = await loadSchoolIntelligence(
+            Number(range) as 30 | 60 | 90
+          );
+        }
+
+        if (!cancelled) {
+          setData(snapshot);
+        }
+
+        try {
+          let supplemental: SchoolClassroomSupplementalMetric[];
+
+          if (range === "custom") {
+            supplemental =
+              await getSchoolClassroomSupplementalMetrics(
+                customStart,
+                customEnd
+              );
+          } else {
+            const end = new Date();
+            const start = new Date();
+            start.setDate(
+              end.getDate() - (Number(range) - 1)
+            );
+
+            supplemental =
+              await getSchoolClassroomSupplementalMetrics(
+                start.toISOString().slice(0, 10),
+                end.toISOString().slice(0, 10)
+              );
+          }
+
+          if (!cancelled) {
+            setClassroomMetrics(supplemental);
+          }
+        } catch (supplementalError) {
+          console.error(
+            "SCHOOL CLASSROOM VERIFICATION METRICS LOAD FAILED",
+            supplementalError
+          );
+
+          if (!cancelled) {
+            setClassroomMetrics([]);
+          }
+        }
       } catch (e: any) {
         if (!cancelled) {
-          setError(e?.message ?? "Unable to load school intelligence.");
+          setError(
+            e?.message ??
+              "Unable to load school intelligence."
+          );
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -136,22 +194,56 @@ export default function SchoolOverviewPage() {
     [data]
   );
 
-  const visibleRows = useMemo(() => {
-    const rows = (data?.classrooms ?? []).filter(row => {
-      const classMatch =
-        selectedClasses.length === 0 ||
-        selectedClasses.includes(classroomKey(row));
-      const subjectMatch = subject === "ALL" || row.subjectName === subject;
-      const teacherMatch = teacher === "ALL" || row.teacherUuid === teacher;
+  const classroomMetricsMap = useMemo(
+    () =>
+      new Map(
+        classroomMetrics.map(metric => [
+          `${metric.className}|||${metric.sectionName}`,
+          metric,
+        ])
+      ),
+    [classroomMetrics]
+  );
 
-      return classMatch && subjectMatch && teacherMatch;
-    });
+  const visibleRows = useMemo(() => {
+    const rows = (data?.classrooms ?? [])
+      .filter(row => {
+        const classMatch =
+          selectedClasses.length === 0 ||
+          selectedClasses.includes(classroomKey(row));
+        const subjectMatch =
+          subject === "ALL" || row.subjectName === subject;
+        const teacherMatch =
+          teacher === "ALL" || row.teacherUuid === teacher;
+
+        return classMatch && subjectMatch && teacherMatch;
+      })
+      .map(row => {
+        const metric = classroomMetricsMap.get(
+          classroomKey(row)
+        );
+
+        return {
+          ...row,
+          totalStudents: metric?.totalStudents ?? 0,
+          classHealthPercentage:
+            metric?.classHealthPercentage ?? 0,
+        };
+      });
 
     return [...rows].sort((a, b) => {
       const difference = a[sortKey] - b[sortKey];
       return sortDirection === "asc" ? difference : -difference;
     });
-  }, [data, selectedClasses, subject, teacher, sortKey, sortDirection]);
+  }, [
+    data,
+    classroomMetricsMap,
+    selectedClasses,
+    subject,
+    teacher,
+    sortKey,
+    sortDirection,
+  ]);
 
   const showClassAverages =
     selectedClasses.length > 0 &&
@@ -175,6 +267,9 @@ export default function SchoolOverviewPage() {
         averageTopics: Math.round(
           rows.reduce((sum, row) => sum + row.topicsTaught, 0) / rows.length
         ),
+        totalStudents: rows[0].totalStudents,
+        averageClassHealthPercentage:
+          rows[0].classHealthPercentage,
         averageResponseRate: average("responseRate"),
         averageUnderstandingRate: average("understandingRate"),
         averagePartialUnderstandingRate: average("partialUnderstandingRate"),
@@ -263,6 +358,31 @@ export default function SchoolOverviewPage() {
   return (
     <main className="school-page">
       <style>{`
+/* =========================================================
+   CONTENT ABOVE DECORATIVE CARD BACKGROUNDS
+   Keep headings/body text above decorative circles/gradients.
+   ========================================================= */
+.school-hero,
+.school-section,
+.school-card {
+  isolation: isolate;
+}
+.school-hero > *,
+.school-section-head > *,
+.school-card > * {
+  position: relative;
+  z-index: 2;
+}
+.school-hero::before,
+.school-hero::after,
+.school-section::before,
+.school-section::after,
+.school-card::before,
+.school-card::after {
+  pointer-events: none;
+  z-index: 0 !important;
+}
+
         .so-filter-shell {
           margin: 18px 0 16px;
           padding: 16px;
@@ -434,6 +554,155 @@ export default function SchoolOverviewPage() {
           color: #64748B;
           font-size: 11px;
           font-weight: 700;
+        }
+
+        /* =========================================================
+           RESPONSIVE SAFETY LAYER
+           Keep the page itself inside the viewport. The data table
+           is the only intentional horizontal-scroll surface.
+           ========================================================= */
+        .school-page,
+        .school-page * {
+          box-sizing: border-box;
+        }
+        .school-page {
+          width: 100% !important;
+          max-width: 100vw !important;
+          min-width: 0 !important;
+          overflow-x: hidden !important;
+        }
+        .school-stack,
+        .school-hero,
+        .school-section,
+        .school-section-head,
+        .school-section-head > div,
+        .school-metric-grid,
+        .school-card,
+        .so-filter-shell {
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+        }
+        .school-hero,
+        .school-section {
+          overflow: hidden !important;
+        }
+        .school-title,
+        .school-copy,
+        .school-section-title,
+        .school-section-copy,
+        .school-card-label,
+        .school-card-value,
+        .school-card-note {
+          max-width: 100% !important;
+          min-width: 0 !important;
+          overflow-wrap: anywhere !important;
+          word-break: normal !important;
+        }
+        .school-section-head {
+          min-width: 0 !important;
+        }
+        .school-section-head > div {
+          min-width: 0 !important;
+        }
+        .school-section-head .school-pill {
+          flex-shrink: 1 !important;
+          max-width: 100% !important;
+          white-space: normal !important;
+        }
+        .school-table-scroll-hint {
+          display: none;
+          margin: 0 0 7px;
+          color: #64748B;
+          font-size: 9px;
+          line-height: 1.35;
+          font-weight: 750;
+          letter-spacing: .01em;
+        }
+        .school-table-wrap {
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          overflow-x: auto !important;
+          overflow-y: hidden !important;
+          -webkit-overflow-scrolling: touch !important;
+          overscroll-behavior-x: contain;
+          touch-action: pan-x pan-y;
+          scrollbar-width: thin;
+        }
+        .school-table-wrap .school-table {
+          margin: 0 !important;
+        }
+
+        @media (max-width: 1024px) {
+          .school-page {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+          }
+          .school-stack {
+            overflow-x: hidden !important;
+          }
+          .school-hero,
+          .school-section {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+          }
+          .school-section-head {
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+          }
+          .school-section-head > div {
+            flex: 1 1 100% !important;
+          }
+          .school-section-head .school-pill {
+            flex: 0 1 auto !important;
+          }
+          .school-table-scroll-hint {
+            display: block !important;
+          }
+        }
+
+        @media (max-width: 620px) {
+          .school-page {
+            padding: 0 !important;
+          }
+          .school-stack {
+            gap: 0 !important;
+          }
+          .school-hero,
+          .school-section {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            overflow: hidden !important;
+          }
+          .school-title,
+          .school-section-title {
+            white-space: normal !important;
+            line-height: 1.12 !important;
+          }
+          .school-copy,
+          .school-section-copy {
+            white-space: normal !important;
+            line-height: 1.45 !important;
+          }
+          .school-card {
+            min-width: 0 !important;
+            width: 100% !important;
+          }
+          .so-filter-shell {
+            overflow: visible !important;
+          }
+          .school-table-wrap {
+            border-radius: 12px;
+            max-width: 100% !important;
+          }
+          .school-table-wrap .school-table {
+            width: max-content !important;
+            min-width: 1120px !important;
+            max-width: none !important;
+          }
         }
         @media (max-width: 1050px) {
           .so-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -641,6 +910,10 @@ export default function SchoolOverviewPage() {
             </div>
           </div>
 
+          <div className="school-table-scroll-hint" aria-hidden="true">
+            Swipe left or right to see the data.
+          </div>
+
           <div className="school-table-wrap">
             <table className="school-table">
               <thead>
@@ -649,6 +922,7 @@ export default function SchoolOverviewPage() {
                   <th>Subject</th>
                   <th>Teacher</th>
                   <th>Total Topics Taught</th>
+                  <th>Total Students</th>
                   <th>
                     <button
                       className="so-sort-button"
@@ -693,6 +967,11 @@ export default function SchoolOverviewPage() {
                       </span>
                     </button>
                   </th>
+                  <th>
+                    <span className="so-sort-button">
+                      Class Health %
+                    </span>
+                  </th>
                 </tr>
               </thead>
 
@@ -706,10 +985,12 @@ export default function SchoolOverviewPage() {
                             <td>{row.subjectName}</td>
                             <td>{row.teacherName}</td>
                             <td>{row.topicsTaught}</td>
+                                                        <td>{row.totalStudents}</td>
                             <td><span className="so-metric so-response">{row.responseRate}%</span></td>
-                            <td><span className="so-metric so-understanding">{row.understandingRate}%</span></td>
-                            <td><span className="so-metric so-partial">{row.partialUnderstandingRate}%</span></td>
-                            <td><span className="so-metric so-doubt">{row.doubtRate}%</span></td>
+                                                        <td><span className="so-metric so-understanding">{row.understandingRate}%</span></td>
+                                                        <td><span className="so-metric so-partial">{row.partialUnderstandingRate}%</span></td>
+                                                        <td><span className="so-metric so-doubt">{row.doubtRate}%</span></td>
+                            <td><span className="so-metric so-understanding">{row.classHealthPercentage}%</span></td>
                           </tr>
                         ))}
 
@@ -723,15 +1004,17 @@ export default function SchoolOverviewPage() {
                           <td>All Subjects</td>
                           <td>—</td>
                           <td>{group.averageTopics}</td>
+                          <td>{group.totalStudents}</td>
                           <td><span className="so-metric so-response">{group.averageResponseRate}%</span></td>
                           <td><span className="so-metric so-understanding">{group.averageUnderstandingRate}%</span></td>
                           <td><span className="so-metric so-partial">{group.averagePartialUnderstandingRate}%</span></td>
                           <td><span className="so-metric so-doubt">{group.averageDoubtRate}%</span></td>
+                          <td><span className="so-metric so-understanding">{group.averageClassHealthPercentage}%</span></td>
                         </tr>
 
                         {groupIndex < groupedVisibleRows.length - 1 && (
                           <tr className="so-class-spacer-row" aria-hidden="true">
-                            <td colSpan={8} />
+                            <td colSpan={10} />
                           </tr>
                         )}
                       </Fragment>
@@ -742,10 +1025,12 @@ export default function SchoolOverviewPage() {
                         <td>{row.subjectName}</td>
                         <td>{row.teacherName}</td>
                         <td>{row.topicsTaught}</td>
-                        <td><span className="so-metric so-response">{row.responseRate}%</span></td>
-                        <td><span className="so-metric so-understanding">{row.understandingRate}%</span></td>
-                        <td><span className="so-metric so-partial">{row.partialUnderstandingRate}%</span></td>
-                        <td><span className="so-metric so-doubt">{row.doubtRate}%</span></td>
+                                                    <td>{row.totalStudents}</td>
+                            <td><span className="so-metric so-response">{row.responseRate}%</span></td>
+                                                    <td><span className="so-metric so-understanding">{row.understandingRate}%</span></td>
+                                                    <td><span className="so-metric so-partial">{row.partialUnderstandingRate}%</span></td>
+                                                    <td><span className="so-metric so-doubt">{row.doubtRate}%</span></td>
+                            <td><span className="so-metric so-understanding">{row.classHealthPercentage}%</span></td>
                       </tr>
                     ))}
               </tbody>
@@ -760,9 +1045,11 @@ export default function SchoolOverviewPage() {
 
           <div className="so-table-status">
             Response % is the average daily participation rate for the
-            class/section in the selected period. A resolved pending doubt moves
-            its earlier Partial / Didn't Understand signal into Understanding;
-            an unresolved or Not Discussed signal keeps its original category.
+            class/section in the selected period. Class Health % is the average
+            classroom understanding score across feedback-bearing lectures in
+            the selected period. A resolved pending doubt moves its earlier
+            Partial / Didn't Understand signal into Understanding; an unresolved
+            or Not Discussed signal keeps its original category.
           </div>
         </section>
       </div>

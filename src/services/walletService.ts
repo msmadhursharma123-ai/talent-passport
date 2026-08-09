@@ -50,7 +50,9 @@ export async function syncStudentWallet(
 
   achievementCredits: number,
 
-  portfolioCredits: number
+  portfolioCredits: number,
+
+  dailyFeedbackCredits: number = 0
 
 ) {
 
@@ -76,7 +78,9 @@ export async function syncStudentWallet(
 
     achievementCredits +
 
-    portfolioCredits;
+    portfolioCredits +
+
+    dailyFeedbackCredits;
 
   const availableCredits =
 
@@ -108,6 +112,11 @@ export async function syncStudentWallet(
   console.log(
     "Portfolio:",
     portfolioCredits
+  );
+
+  console.log(
+    "Daily Feedback:",
+    dailyFeedbackCredits
   );
 
   console.log(

@@ -111,3 +111,214 @@ export async function getSchoolIntelligenceRawData(
     students,
   };
 }
+
+/* =========================================================
+   CLASSROOM VERIFICATION METRICS
+   ---------------------------------------------------------
+   Used by School Overview to verify teacher reward / voucher
+   performance for the selected timeline without changing the
+   existing school-intelligence snapshot contract.
+   ========================================================= */
+
+export interface SchoolClassroomSupplementalMetric {
+  className: string;
+  sectionName: string;
+  totalStudents: number;
+  classHealthPercentage: number;
+}
+
+function sameClassValue(a: unknown, b: unknown) {
+  return String(a ?? "").trim().toLowerCase() ===
+    String(b ?? "").trim().toLowerCase();
+}
+
+function getEffectiveUnderstandingLevel(
+  feedback: any,
+  doubts: any[]
+) {
+  const COMPLETE = "I completely understood.";
+  const PARTIAL = "I partially understood.";
+  const NONE = "I didn't understand.";
+
+  const original = feedback?.understanding_level;
+
+  if (original !== PARTIAL && original !== NONE) {
+    return original;
+  }
+
+  const matches = doubts.filter(
+    doubt =>
+      String(doubt.daily_log_uuid ?? "") ===
+        String(feedback?.daily_log_uuid ?? "") &&
+      String(doubt.student_uuid ?? "") ===
+        String(feedback?.student_uuid ?? "")
+  );
+
+  if (matches.length === 0) return original;
+
+  const latest = [...matches].sort((a, b) => {
+    const aTime = new Date(
+      a.revision_checked_at ?? a.created_at ?? 0
+    ).getTime();
+
+    const bTime = new Date(
+      b.revision_checked_at ?? b.created_at ?? 0
+    ).getTime();
+
+    return bTime - aTime;
+  })[0];
+
+  const response = String(
+    latest?.student_response ?? ""
+  ).trim().toUpperCase();
+
+  if (
+    response === "DISCUSSED" ||
+    latest?.doubt_resolved === true ||
+    String(latest?.status ?? "").trim().toUpperCase() ===
+      "RESOLVED"
+  ) {
+    return COMPLETE;
+  }
+
+  return original;
+}
+
+export async function getSchoolClassroomSupplementalMetrics(
+  startDate?: string,
+  endDate?: string
+): Promise<SchoolClassroomSupplementalMetric[]> {
+  const raw = await getSchoolIntelligenceRawData(
+    startDate,
+    endDate
+  );
+
+  const classroomKeys = new Map<
+    string,
+    { className: string; sectionName: string }
+  >();
+
+  raw.assignments
+    .filter((assignment: any) => assignment.is_active !== false)
+    .forEach((assignment: any) => {
+      const className = String(
+        assignment.class_name ?? ""
+      );
+
+      const sectionName = String(
+        assignment.section_name ?? ""
+      );
+
+      const key = `${className}|||${sectionName}`;
+
+      if (!classroomKeys.has(key)) {
+        classroomKeys.set(key, {
+          className,
+          sectionName,
+        });
+      }
+    });
+
+  return Array.from(classroomKeys.values()).map(
+    ({ className, sectionName }) => {
+      const classroomAssignments = raw.assignments.filter(
+        (assignment: any) =>
+          assignment.is_active !== false &&
+          sameClassValue(
+            assignment.class_name,
+            className
+          ) &&
+          sameClassValue(
+            assignment.section_name,
+            sectionName
+          )
+      );
+
+      const assignmentIds = new Set(
+        classroomAssignments.map((assignment: any) =>
+          String(assignment.id ?? "")
+        )
+      );
+
+      const classroomLogs = raw.logs.filter(
+        (log: any) =>
+          assignmentIds.has(
+            String(log.teacher_assignment_uuid ?? "")
+          )
+      );
+
+      const classroomStudents = raw.students.filter(
+        (student: any) =>
+          sameClassValue(
+            student.class_name,
+            className
+          ) &&
+          sameClassValue(
+            student.section_name,
+            sectionName
+          )
+      );
+
+      const totalStudents = new Set(
+        classroomStudents
+          .map((student: any) => student.student_uuid)
+          .filter(Boolean)
+      ).size;
+
+      let totalHealth = 0;
+      let healthLectureCount = 0;
+
+      for (const log of classroomLogs) {
+        const logFeedback = raw.feedback.filter(
+          (feedback: any) =>
+            String(feedback.daily_log_uuid ?? "") ===
+            String(log.id ?? "")
+        );
+
+        if (logFeedback.length === 0) {
+          continue;
+        }
+
+        const completely = logFeedback.filter(
+          (feedback: any) =>
+            getEffectiveUnderstandingLevel(
+              feedback,
+              raw.doubts
+            ) === "I completely understood."
+        ).length;
+
+        const partial = logFeedback.filter(
+          (feedback: any) =>
+            getEffectiveUnderstandingLevel(
+              feedback,
+              raw.doubts
+            ) === "I partially understood."
+        ).length;
+
+        const dailyHealth = Math.round(
+          (
+            (completely + partial * 0.5) /
+            logFeedback.length
+          ) * 100
+        );
+
+        totalHealth += dailyHealth;
+        healthLectureCount += 1;
+      }
+
+      const classHealthPercentage =
+        healthLectureCount === 0
+          ? 0
+          : Math.round(
+              totalHealth / healthLectureCount
+            );
+
+      return {
+        className,
+        sectionName,
+        totalStudents,
+        classHealthPercentage,
+      };
+    }
+  );
+}

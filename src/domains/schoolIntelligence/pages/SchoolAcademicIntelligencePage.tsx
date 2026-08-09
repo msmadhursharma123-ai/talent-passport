@@ -40,7 +40,9 @@ export default function SchoolAcademicIntelligencePage(){
 }
 function F({label,children}:{label:string;children:ReactNode}){return <div className="sa-filter"><label>{label}</label>{children}</div>}
 function Board({c}:{c:SchoolExamPreparationClassroom}){
- const METRIC_WIDTH=220,MIN_SUBJECT_WIDTH=570;
+ const METRIC_WIDTH =
+    typeof window !== "undefined" && window.innerWidth <= 1024 ? 110 : 220,
+   MIN_SUBJECT_WIDTH=570;
  const subjectLayouts=c.subjects.map(s=>{
    const count=Math.max(1,s.students.length);
    const subjectWidth=Math.max(MIN_SUBJECT_WIDTH,count*190);
@@ -61,6 +63,31 @@ function R({c,layouts,m}:{c:SchoolExamPreparationClassroom;layouts:{subject:any;
 function value(s:SchoolExamPreparationStudent,m:"TOTAL"|"TOPICS"|"RISK"|"ATTENTION"){return m==="TOTAL"?s.totalUnresolvedDoubts:m==="TOPICS"?(s.topics.join(", ")||"-"):m==="RISK"?s.highestRiskTopic:s.attentionLevel}
 function S({l,v}:{l:string;v:string}){return <div className="sa-summary-card"><span>{l}</span><b>{v}</b></div>}
 const css=`
+/* =========================================================
+   CONTENT ABOVE DECORATIVE CARD BACKGROUNDS
+   Keep headings/body text above decorative circles/gradients.
+   ========================================================= */
+.school-hero,
+.school-section,
+.school-card {
+  isolation: isolate;
+}
+.school-hero > *,
+.school-section-head > *,
+.school-card > * {
+  position: relative;
+  z-index: 2;
+}
+.school-hero::before,
+.school-hero::after,
+.school-section::before,
+.school-section::after,
+.school-card::before,
+.school-card::after {
+  pointer-events: none;
+  z-index: 0 !important;
+}
+
 .sa-page{width:100%;max-width:100%;min-width:0;overflow-x:hidden;box-sizing:border-box}
 .sa-stack{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
 .sa-page .school-section,.sa-page .school-hero{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
@@ -144,4 +171,26 @@ const css=`
  .sa-summary-card{min-height:68px;padding:8px;border-radius:8px}
  .sa-summary-card span{font-size:6.5px;line-height:1.25;letter-spacing:.035em}
  .sa-summary-card b{margin-top:5px;font-size:10px}
+
+/* =========================================================
+   TABLET + MOBILE: COMPACT FROZEN METRIC COLUMN
+   Desktop remains unchanged at 220px.
+   The first table column itself is reduced to 110px so
+   subject/student columns become visible while scrolling.
+   ========================================================= */
+@media(max-width:1024px){
+  .sa-metric,
+  .sa-summary-label{
+    width:110px !important;
+    min-width:110px !important;
+    max-width:110px !important;
+    padding:10px 8px !important;
+    font-size:9px !important;
+    line-height:1.3 !important;
+  }
+
+  .sa-table col:first-child{
+    width:110px !important;
+  }
+}
 }`;

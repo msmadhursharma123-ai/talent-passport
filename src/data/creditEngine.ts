@@ -132,3 +132,33 @@ export function calculateLeaderboardBonus(
   }
 
 }
+
+/* ============================================================
+   DAILY FEEDBACK CREDITS
+
+   +1 for every successfully submitted academic feedback.
+   -10 for every missed feedback attached to a completed
+   teacher daily log.
+============================================================ */
+
+const DAILY_FEEDBACK_CREDIT = 1;
+const DAILY_FEEDBACK_MISSED_PENALTY = 10;
+
+export function calculateDailyFeedbackCreditSummary(
+  feedbackCount: number,
+  missedFeedbackCount: number
+) {
+
+  const earnedCredits =
+    Math.max(0, feedbackCount) * DAILY_FEEDBACK_CREDIT;
+
+  const lostCredits =
+    Math.max(0, missedFeedbackCount) * DAILY_FEEDBACK_MISSED_PENALTY;
+
+  return {
+    earnedCredits,
+    lostCredits,
+    totalCredits: earnedCredits - lostCredits,
+  };
+}
+

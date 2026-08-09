@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import {
   getTodaysLectureLogs,
+  getStudentDailyLectureLogs,
 } from "../data/studentGrowthPlanRepository";
 
 import {
@@ -20,6 +21,7 @@ submitStudentDailyFeedback,
 hasStudentSubmittedFeedback,
 
 getStudentFeedbackByLecture,
+getStudentFeedbackHistory,
 
 } from "../data/studentDailyFeedbackRepository";
 
@@ -38,6 +40,12 @@ import {
 requireIdentity,
 
 } from "../services/identityService";
+
+import {
+
+calculateDailyFeedbackCreditSummary,
+
+} from "../data/creditEngine";
 
 export default function DailyLectureFeedback() {
   const [lectureLogs, setLectureLogs] = useState<any[]>([]);
@@ -121,11 +129,26 @@ const [submittedFeedback, setSubmittedFeedback] =
 
 useState<Record<string, any>>({});
 
+
+const [dailyFeedbackEarnedCredits, setDailyFeedbackEarnedCredits] =
+  useState(0);
+
+const [dailyFeedbackLostCredits, setDailyFeedbackLostCredits] =
+  useState(0);
+
+const [dailyFeedbackTotalCredits, setDailyFeedbackTotalCredits] =
+  useState(0);
+
+const [isLoadingCreditSummary, setIsLoadingCreditSummary] =
+  useState(true);
+
 useEffect(()=>{
 
 loadDailyLogs();
 
 loadPendingDoubts();
+
+loadDailyFeedbackCreditSummary();
 
 },[]);
 
@@ -159,6 +182,70 @@ async function loadDailyLogs() {
   } finally {
     setIsLoadingLogs(false);
   }
+}
+
+async function loadDailyFeedbackCreditSummary() {
+
+setIsLoadingCreditSummary(true);
+
+try {
+
+const [allLectureLogs, feedbackHistory] = await Promise.all([
+getStudentDailyLectureLogs(),
+getStudentFeedbackHistory(),
+]);
+
+const now = new Date();
+
+const today = [
+now.getFullYear(),
+String(now.getMonth() + 1).padStart(2, "0"),
+String(now.getDate()).padStart(2, "0"),
+].join("-");
+
+const completedLectureLogs = (allLectureLogs ?? []).filter(
+(log: any) =>
+typeof log.log_date === "string" &&
+log.log_date < today
+);
+
+const submittedLogIds = new Set(
+(feedbackHistory ?? []).map(
+(feedback: any) => feedback.daily_log_uuid
+)
+);
+
+const missedFeedbackCount =
+completedLectureLogs.filter(
+(log: any) => !submittedLogIds.has(log.id)
+).length;
+
+const summary = calculateDailyFeedbackCreditSummary(
+(feedbackHistory ?? []).length,
+missedFeedbackCount
+);
+
+setDailyFeedbackEarnedCredits(summary.earnedCredits);
+setDailyFeedbackLostCredits(summary.lostCredits);
+setDailyFeedbackTotalCredits(summary.totalCredits);
+
+} catch (error) {
+
+console.error(
+"DAILY FEEDBACK CREDIT SUMMARY LOAD FAILED",
+error
+);
+
+setDailyFeedbackEarnedCredits(0);
+setDailyFeedbackLostCredits(0);
+setDailyFeedbackTotalCredits(0);
+
+} finally {
+
+setIsLoadingCreditSummary(false);
+
+}
+
 }
 
 async function loadPendingDoubts(){
@@ -345,6 +432,9 @@ alert(
 "Feedback submitted successfully."
 
 );
+
+
+await loadDailyFeedbackCreditSummary();
 
 
 setExpandedCard(null);
@@ -1330,6 +1420,132 @@ return (
 
 
       /* =========================================================
+         DAILY FEEDBACK CREDIT LEDGER
+         Same responsive credit language as CreditDashboard
+      ========================================================= */
+
+      .dlf-credit-section {
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 18px;
+        padding: 22px 24px 24px;
+      }
+
+      .dlf-credit-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 14px;
+      }
+
+      .dlf-credit-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 102px;
+        border-radius: 18px;
+        padding: 17px 20px;
+      }
+
+      .dlf-credit-card::after {
+        content: "";
+        position: absolute;
+        width: 82px;
+        height: 82px;
+        border-radius: 50%;
+        right: -26px;
+        top: -34px;
+        pointer-events: none;
+      }
+
+      .dlf-credit-card-inner {
+        position: relative;
+        z-index: 1;
+      }
+
+      .dlf-credit-label {
+        font-size: 10px;
+        line-height: 1.2;
+        font-weight: 800;
+        letter-spacing: .7px;
+      }
+
+      .dlf-credit-value {
+        margin-top: 11px;
+        font-size: 27px;
+        line-height: 1;
+        font-weight: 900;
+      }
+
+      .dlf-credit-copy {
+        margin-top: 9px;
+        color: #64748B;
+        font-size: 11px;
+        line-height: 1.4;
+        font-weight: 600;
+      }
+
+      .dlf-credit-earned {
+        background: linear-gradient(135deg, #F0FDF4 0%, #FBFFFC 100%);
+        border: 1px solid #BBF7D0;
+      }
+
+      .dlf-credit-earned::after { background: rgba(22,163,74,.07); }
+      .dlf-credit-earned .dlf-credit-label { color: #166534; }
+      .dlf-credit-earned .dlf-credit-value { color: #16A34A; }
+
+      .dlf-credit-lost {
+        background: linear-gradient(135deg, #FFF7F7 0%, #FFFCFC 100%);
+        border: 1px solid #FCA5A5;
+      }
+
+      .dlf-credit-lost::after { background: rgba(220,38,38,.06); }
+      .dlf-credit-lost .dlf-credit-label { color: #B91C1C; }
+      .dlf-credit-lost .dlf-credit-value { color: #DC2626; }
+
+      .dlf-credit-total {
+        background: linear-gradient(135deg, #FFF8EF 0%, #FFFCF7 100%);
+        border: 1px solid #FED7AA;
+      }
+
+      .dlf-credit-total::after { background: rgba(249,115,22,.08); }
+      .dlf-credit-total .dlf-credit-label { color: #9A3412; }
+      .dlf-credit-total .dlf-credit-value { color: #F97316; }
+
+      .dlf-credit-formula {
+        margin-top: 12px;
+        padding: 9px 11px;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        background: #F8FAFC;
+        color: #64748B;
+        font-size: 11px;
+        line-height: 1.4;
+        font-weight: 700;
+      }
+
+      @media (max-width: 1024px) {
+        .dlf-credit-section { padding: 19px 20px 20px; margin-bottom: 15px; }
+        .dlf-credit-grid { gap: 8px; }
+        .dlf-credit-card { min-height: 64px; padding: 9px 9px; }
+        .dlf-credit-card::after { width: 58px; height: 58px; }
+        .dlf-credit-label { font-size: 7.5px; }
+        .dlf-credit-value { margin-top: 5px; font-size: 20px; }
+        .dlf-credit-copy { margin-top: 5px; font-size: 8.5px; }
+        .dlf-credit-formula { font-size: 10px; }
+      }
+
+      @media (max-width: 767px) {
+        .dlf-credit-section { padding: 15px; margin-bottom: 12px; }
+        .dlf-credit-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin-top: 10px; }
+        .dlf-credit-card { min-height: 68px; border-radius: 18px; padding: 8px 7px; }
+        .dlf-credit-card::after { width: 66px; height: 66px; right: -34px; top: -42px; }
+        .dlf-credit-label { font-size: 6.5px; letter-spacing: .7px; }
+        .dlf-credit-value { margin-top: 5px; font-size: 18px; }
+        .dlf-credit-copy { margin-top: 5px; font-size: 7px; line-height: 1.4; }
+        .dlf-credit-formula { margin-top: 9px; padding: 8px 9px; font-size: 9px; }
+      }
+
+      /* =========================================================
          TABLET
       ========================================================= */
 
@@ -1355,6 +1571,172 @@ return (
 
         .dlf-copy {
           font-size: 14px;
+        }
+
+        /* CREDIT + TODAY'S FEEDBACK COPY — COMPACT ON TABLET */
+        .dlf-credit-section .dlf-copy,
+        .dlf-ledger > .dlf-section-head .dlf-copy {
+          font-size: 11.5px;
+          line-height: 1.32;
+          max-width: 560px;
+        }
+
+        /* COMPACT LECTURE CARDS — TABLET */
+        .dlf-lecture-card {
+          border-radius: 11px;
+        }
+
+        .dlf-lecture-row {
+          gap: 8px;
+          padding: 9px 9px 9px 12px;
+        }
+
+        .dlf-lecture-top {
+          gap: 6px;
+        }
+
+        .dlf-subject-row {
+          gap: 6px;
+        }
+
+        .dlf-subject {
+          min-height: 22px;
+          padding: 0 7px;
+          font-size: 8px;
+          border-radius: 7px;
+        }
+
+        .dlf-date {
+          font-size: 9px;
+        }
+
+        .dlf-topic {
+          margin-top: 6px;
+          font-size: 16px;
+          line-height: 1.14;
+        }
+
+        .dlf-covered {
+          margin-top: 7px;
+          padding: 7px 8px;
+          border-radius: 9px;
+        }
+
+        .dlf-covered-title {
+          font-size: 8px;
+        }
+
+        .dlf-concepts {
+          gap: 4px;
+          margin-top: 5px;
+        }
+
+        .dlf-concept-chip {
+          padding: 4px 6px;
+          border-radius: 7px;
+          font-size: 9px;
+        }
+
+        .dlf-meta {
+          gap: 4px;
+          margin-top: 6px;
+        }
+
+        .dlf-meta-item {
+          padding: 6px 7px;
+          border-radius: 8px;
+        }
+
+        .dlf-label {
+          margin-bottom: 2px;
+          font-size: 7px;
+          letter-spacing: .55px;
+        }
+
+        .dlf-meta-value {
+          font-size: 9px;
+          line-height: 1.25;
+        }
+
+        .dlf-feedback-panel {
+          margin-top: 7px;
+          padding: 7px 0 0;
+        }
+
+        .dlf-submitted {
+          gap: 4px;
+        }
+
+        .dlf-submitted-head {
+          padding: 6px 7px;
+          border-radius: 8px;
+        }
+
+        .dlf-submitted-head span:first-child {
+          font-size: 9px;
+        }
+
+        .dlf-submitted-head span:last-child {
+          font-size: 8px;
+        }
+
+        .dlf-feedback-info {
+          padding: 6px 7px;
+          border-radius: 8px;
+        }
+
+        .dlf-feedback-info-title {
+          margin-bottom: 3px;
+          font-size: 7px;
+        }
+
+        .dlf-feedback-info-value {
+          font-size: 9.5px;
+          line-height: 1.28;
+        }
+
+        .dlf-difficult-list {
+          gap: 4px;
+        }
+
+        .dlf-difficult-chip {
+          padding: 4px 5px;
+          border-radius: 6px;
+          font-size: 9px;
+        }
+
+        /* COMPACT GREEN LEARNING-GAP STATUS — TABLET */
+        .dlf-clear-card {
+          padding: 10px 12px;
+        }
+
+        .dlf-clear-row {
+          gap: 8px;
+        }
+
+        .dlf-clear-icon {
+          width: 32px;
+          height: 32px;
+          flex-basis: 32px;
+          border-radius: 9px;
+          font-size: 17px;
+        }
+
+        .dlf-clear-eyebrow {
+          font-size: 8px;
+          letter-spacing: .9px;
+        }
+
+        .dlf-clear-title {
+          margin-top: 2px;
+          font-size: 15px;
+          line-height: 1.15;
+        }
+
+        .dlf-clear-copy {
+          margin-top: 2px;
+          font-size: 10.5px;
+          line-height: 1.28;
         }
 
         .dlf-gap-grid {
@@ -1436,6 +1818,14 @@ return (
           line-height: 1.4;
         }
 
+        /* ONLY THE TWO REQUESTED HEADER PARAGRAPHS */
+        .dlf-credit-section .dlf-copy,
+        .dlf-ledger > .dlf-section-head .dlf-copy {
+          font-size: 10.5px;
+          line-height: 1.3;
+          max-width: 300px;
+        }
+
         .dlf-status-pill {
           padding: 6px 8px;
           font-size: 9px;
@@ -1496,36 +1886,37 @@ return (
         /* CLEAR STATUS */
 
         .dlf-clear-card {
-          padding: 13px 14px;
+          padding: 9px 10px;
           margin-bottom: 12px;
         }
 
         .dlf-clear-row {
-          gap: 10px;
+          gap: 7px;
         }
 
         .dlf-clear-icon {
-          width: 38px;
-          height: 38px;
-          flex-basis: 38px;
-          border-radius: 10px;
-          font-size: 19px;
+          width: 30px;
+          height: 30px;
+          flex-basis: 30px;
+          border-radius: 8px;
+          font-size: 16px;
         }
 
         .dlf-clear-eyebrow {
-          font-size: 9px;
-          letter-spacing: 1px;
+          font-size: 7.5px;
+          letter-spacing: .8px;
         }
 
         .dlf-clear-title {
-          margin-top: 2px;
-          font-size: 17px;
+          margin-top: 1px;
+          font-size: 14px;
+          line-height: 1.12;
         }
 
         .dlf-clear-copy {
-          margin-top: 3px;
-          font-size: 12px;
-          line-height: 1.35;
+          margin-top: 2px;
+          font-size: 9.5px;
+          line-height: 1.25;
         }
 
 
@@ -1559,7 +1950,7 @@ return (
         /* LECTURE */
 
         .dlf-lecture-card {
-          border-radius: 13px;
+          border-radius: 11px;
         }
 
         .dlf-lecture-card::before {
@@ -1568,31 +1959,32 @@ return (
 
         .dlf-lecture-row {
           display: block;
-          padding: 13px 12px 12px 15px;
+          padding: 8px 8px 8px 11px;
         }
 
         .dlf-lecture-top {
-          gap: 8px;
+          gap: 6px;
         }
 
         .dlf-subject-row {
-          gap: 7px;
+          gap: 5px;
         }
 
         .dlf-subject {
-          min-height: 25px;
-          padding: 0 8px;
-          font-size: 9px;
+          min-height: 21px;
+          padding: 0 6px;
+          font-size: 7.5px;
+          border-radius: 6px;
         }
 
         .dlf-date {
-          font-size: 10px;
+          font-size: 8.5px;
         }
 
         .dlf-topic {
-          margin-top: 8px;
-          font-size: 19px;
-          line-height: 1.18;
+          margin-top: 5px;
+          font-size: 15px;
+          line-height: 1.12;
         }
 
 
@@ -1617,23 +2009,24 @@ return (
         /* CONCEPTS */
 
         .dlf-covered {
-          margin-top: 10px;
-          padding: 10px;
-          border-radius: 10px;
+          margin-top: 6px;
+          padding: 7px;
+          border-radius: 8px;
         }
 
         .dlf-covered-title {
-          font-size: 9px;
+          font-size: 7.5px;
         }
 
         .dlf-concepts {
-          gap: 5px;
-          margin-top: 7px;
+          gap: 4px;
+          margin-top: 5px;
         }
 
         .dlf-concept-chip {
-          padding: 6px 8px;
-          font-size: 11px;
+          padding: 4px 6px;
+          border-radius: 6px;
+          font-size: 9px;
         }
 
 
@@ -1641,13 +2034,13 @@ return (
 
         .dlf-meta {
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 6px;
-          margin-top: 8px;
+          gap: 4px;
+          margin-top: 6px;
         }
 
         .dlf-meta-item {
-          padding: 8px 9px;
-          border-radius: 8px;
+          padding: 6px 7px;
+          border-radius: 7px;
         }
 
         .dlf-meta-item-wide {
@@ -1655,73 +2048,89 @@ return (
         }
 
         .dlf-meta-value {
-          font-size: 11px;
+          font-size: 9px;
+          line-height: 1.22;
+        }
+
+        .dlf-meta-item .dlf-label {
+          margin-bottom: 2px;
+          font-size: 7px;
+          letter-spacing: .5px;
         }
 
 
         /* FEEDBACK */
 
         .dlf-feedback-panel {
-          margin-top: 11px;
-          padding: 11px 0 0;
+          margin-top: 6px;
+          padding: 6px 0 0;
           border-top: 1px solid #e5ebf3;
         }
 
         .dlf-feedback-empty {
-          padding: 12px;
-          border-radius: 10px;
+          padding: 8px;
+          border-radius: 8px;
         }
 
         .dlf-feedback-empty-label {
-          font-size: 9px;
+          font-size: 7.5px;
         }
 
         .dlf-feedback-empty-title {
-          font-size: 14px;
+          font-size: 11px;
         }
 
         .dlf-feedback-empty-copy {
-          font-size: 11px;
+          font-size: 9px;
         }
 
         .dlf-feedback-button {
           width: 100%;
-          min-height: 38px;
-          margin-top: 9px;
-          font-size: 11px;
+          min-height: 32px;
+          margin-top: 6px;
+          font-size: 9px;
         }
 
         .dlf-submitted {
-          gap: 6px;
+          gap: 4px;
         }
 
         .dlf-submitted-head {
-          padding: 9px 10px;
+          padding: 6px 7px;
+          border-radius: 7px;
         }
 
         .dlf-submitted-head span:first-child {
-          font-size: 11px;
+          font-size: 8.5px;
         }
 
         .dlf-submitted-head span:last-child {
-          font-size: 9px;
+          font-size: 7.5px;
         }
 
         .dlf-feedback-info {
-          padding: 9px 10px;
-          border-radius: 9px;
+          padding: 6px 7px;
+          border-radius: 7px;
         }
 
         .dlf-feedback-info-title {
-          font-size: 9px;
+          margin-bottom: 3px;
+          font-size: 7px;
         }
 
         .dlf-feedback-info-value {
-          font-size: 12px;
+          font-size: 9px;
+          line-height: 1.25;
+        }
+
+        .dlf-difficult-list {
+          gap: 3px;
         }
 
         .dlf-difficult-chip {
-          font-size: 11px;
+          padding: 3px 5px;
+          border-radius: 6px;
+          font-size: 8.5px;
         }
 
 
@@ -2082,6 +2491,69 @@ return (
         </section>
 
       )}
+
+
+      {/* =====================================================
+          DAILY FEEDBACK CREDIT LEDGER
+      ===================================================== */}
+
+      <section className="dlf-surface dlf-credit-section">
+        <div className="dlf-section-head">
+          <div>
+            <div className="dlf-eyebrow">DAILY FEEDBACK CREDITS</div>
+            <h2 className="dlf-title">Academic Feedback Credit Ledger</h2>
+            <p className="dlf-copy">
+              Earn 1 credit for every submitted lecture feedback.
+              Missed feedback from a completed day carries a 10-credit penalty.
+            </p>
+          </div>
+          <div className="dlf-ledger-count">
+            {isLoadingCreditSummary ? "CALCULATING" : "LIVE"}
+          </div>
+        </div>
+
+        <div className="dlf-credit-grid">
+          <div className="dlf-credit-card dlf-credit-earned">
+            <div className="dlf-credit-card-inner">
+              <div className="dlf-credit-label">CREDITS EARNED</div>
+              <div className="dlf-credit-value">
+                {isLoadingCreditSummary ? "—" : dailyFeedbackEarnedCredits}
+              </div>
+              <div className="dlf-credit-copy">
+                +1 for every successful feedback submission
+              </div>
+            </div>
+          </div>
+
+          <div className="dlf-credit-card dlf-credit-lost">
+            <div className="dlf-credit-card-inner">
+              <div className="dlf-credit-label">CREDITS LOST</div>
+              <div className="dlf-credit-value">
+                {isLoadingCreditSummary ? "—" : dailyFeedbackLostCredits}
+              </div>
+              <div className="dlf-credit-copy">
+                -10 for each missed completed-day feedback
+              </div>
+            </div>
+          </div>
+
+          <div className="dlf-credit-card dlf-credit-total">
+            <div className="dlf-credit-card-inner">
+              <div className="dlf-credit-label">TOTAL CREDITS</div>
+              <div className="dlf-credit-value">
+                {isLoadingCreditSummary ? "—" : dailyFeedbackTotalCredits}
+              </div>
+              <div className="dlf-credit-copy">
+                Earned credits minus lost credits
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="dlf-credit-formula">
+          Total Credits = Credits Earned − Credits Lost
+        </div>
+      </section>
 
 
       {/* =====================================================

@@ -39,6 +39,31 @@ export default function TeacherIntelligencePage(){
 }
 function M({l,v}:{l:string;v:string}){return <div><span>{l}</span><b>{v}</b></div>}
 const css=`
+/* =========================================================
+   CONTENT ABOVE DECORATIVE CARD BACKGROUNDS
+   Keep headings/body text above decorative circles/gradients.
+   ========================================================= */
+.school-hero,
+.school-section,
+.school-card {
+  isolation: isolate;
+}
+.school-hero > *,
+.school-section-head > *,
+.school-card > * {
+  position: relative;
+  z-index: 2;
+}
+.school-hero::before,
+.school-hero::after,
+.school-section::before,
+.school-section::after,
+.school-card::before,
+.school-card::after {
+  pointer-events: none;
+  z-index: 0 !important;
+}
+
 .ti-page{width:100%;max-width:100%;min-width:0;overflow-x:hidden;box-sizing:border-box}
 .ti-audit{width:100%;max-width:100%;min-width:0;box-sizing:border-box;margin-top:18px;padding:24px;border:1px solid #DCE4EF;border-radius:22px;background:#FFF;color:#0B1D38;overflow:hidden;box-shadow:0 4px 16px rgba(15,35,65,.035)}
 .ti-head{display:flex;justify-content:space-between;gap:22px;padding-bottom:18px;border-bottom:1px solid #E5EAF1}
