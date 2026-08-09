@@ -41,6 +41,10 @@ import {
 
 } from "../../data/partnerMarketplaceRepository";
 
+import {
+  getTalentDiscoveryTimeline,
+} from "../../data/talentDiscoveryRepository";
+
 interface StudentRecord {
 
   id?: string;
@@ -387,11 +391,20 @@ async function saveScholarship() {
   setScholarshipType("");
   setScholarshipValue("");
 
-  setShowScholarshipDialog(false);
+setShowScholarshipDialog(false);
 
-  showSuccessMessage(
-    "Scholarship sent successfully"
-  );
+// Refresh Marketplace KPIs
+await loadPartnerActivity();
+
+// Refresh Opportunity Timeline
+await loadPipeline();
+
+// Optional: refresh allocated students
+await loadStudents();
+
+showSuccessMessage(
+  "Scholarship sent successfully"
+);
 
 }
 
@@ -468,11 +481,15 @@ async function saveWorkshop() {
   setWorkshopDate("");
   setWorkshopMode("");
 
-  setShowWorkshopDialog(false);
+setShowWorkshopDialog(false);
 
-  showSuccessMessage(
-    "Workshop invitation sent"
-  );
+await loadPartnerActivity();
+await loadPipeline();
+await loadStudents();
+
+showSuccessMessage(
+  "Workshop invitation sent"
+);
 
 }
 
@@ -564,11 +581,17 @@ async function saveContactRequest() {
 
   setContactMessage("");
 
-  setShowContactDialog(false);
+setContactMessage("");
 
-  showSuccessMessage(
-    "Contact request sent"
-  );
+setShowContactDialog(false);
+
+await loadPartnerActivity();
+await loadPipeline();
+await loadStudents();
+
+showSuccessMessage(
+  "Contact request sent"
+);
 
 }
 
@@ -823,36 +846,34 @@ async function loadStudents(): Promise<void> {
    LOAD PARTNER PIPELINE
 ============================================================ */
 
+
 async function loadPipeline(): Promise<void> {
 
   try {
 
     const pipelineData =
-
-      await fetchPartnerPipeline(
-
+      await getTalentDiscoveryTimeline(
         partnerId
-
       );
 
     setPipeline(
-
-      pipelineData ?? []
-
+      pipelineData
     );
 
   } catch (error) {
 
     logError(
-  "LOAD PIPELINE ERROR",
-  error
-);
+      "LOAD PIPELINE ERROR",
+      error
+    );
 
     setPipeline([]);
 
   }
 
 }
+
+
 
 /* ============================================================
    RESEND OFFER
@@ -1020,52 +1041,27 @@ async function loadPartnerActivity(): Promise<void> {
 
   try {
 
-    const [
-
-      scholarshipOffers,
-
-      workshopOffers,
-
-      contactRequests
-
-    ] = await Promise.all([
-
-      fetchPartnerScholarshipOffers(
-
+    const timeline =
+      await getTalentDiscoveryTimeline(
         partnerId
-
-      ),
-
-      fetchPartnerWorkshopOffers(
-
-        partnerId
-
-      ),
-
-      fetchPartnerContactRequests(
-
-        partnerId
-
-      )
-
-    ]);
+      );
 
     setScholarshipOffers(
-
-      scholarshipOffers ?? []
-
+      timeline.filter(
+        item => item.type === "Scholarship"
+      )
     );
 
     setWorkshopOffers(
-
-      workshopOffers ?? []
-
+      timeline.filter(
+        item => item.type === "Workshop"
+      )
     );
 
     setContactRequests(
-
-      contactRequests ?? []
-
+      timeline.filter(
+        item => item.type === "Contact"
+      )
     );
 
   } catch (error) {
@@ -1076,12 +1072,10 @@ async function loadPartnerActivity(): Promise<void> {
     );
 
     setScholarshipOffers([]);
-
     setWorkshopOffers([]);
-
     setContactRequests([]);
 
-}
+  }
 
 }
 
@@ -1877,7 +1871,7 @@ const events =
                         fontWeight: 750
                       }}
                     >
-                      {item.student_name}
+                        {item.student_name ?? item.studentName}
                     </td>
 
                     <td
@@ -1887,7 +1881,7 @@ const events =
                         fontSize: "15px"
                       }}
                     >
-                      {item.school_name}
+                        {item.school_name ?? item.schoolName}
                     </td>
 
                     <td
