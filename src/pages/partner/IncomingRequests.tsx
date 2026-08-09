@@ -391,6 +391,130 @@ function RequestDetailCard({
   );
 }
 
+
+/* =========================================================
+   CONSULTATION DATA ENRICHMENT
+   Consultation requests can arrive with only the canonical
+   student id. Resolve the student's display data from
+   students_master without changing marketplace request data.
+   ========================================================= */
+async function enrichConsultationStudentData(rows: any[]) {
+  const supabase = getSupabaseClient() as any;
+
+  if (!supabase || !Array.isArray(rows) || rows.length === 0) {
+    return rows || [];
+  }
+
+  const consultationRows = rows.filter(
+    (row: any) =>
+      String(row?.request_type ?? "").toLowerCase() === "consultation"
+  );
+
+  if (consultationRows.length === 0) {
+    return rows;
+  }
+
+  const cache = new Map<string, any>();
+
+  async function resolveStudent(studentId: any) {
+    if (!studentId) return null;
+
+    const key = String(studentId);
+    if (cache.has(key)) return cache.get(key);
+
+    let student: any = null;
+
+    try {
+      const { data } = await supabase
+        .from("students_master")
+        .select(
+          "student_uuid,student_id,student_name,student_email,phone,school_name,class_name"
+        )
+        .eq("student_uuid", key)
+        .maybeSingle();
+
+      student = data ?? null;
+    } catch {
+      student = null;
+    }
+
+    if (!student) {
+      try {
+        const { data } = await supabase
+          .from("students_master")
+          .select(
+            "student_uuid,student_id,student_name,student_email,phone,school_name,class_name"
+          )
+          .eq("student_id", key)
+          .maybeSingle();
+
+        student = data ?? null;
+      } catch {
+        student = null;
+      }
+    }
+
+    cache.set(key, student);
+    return student;
+  }
+
+  const enriched = await Promise.all(
+    rows.map(async (row: any) => {
+      if (
+        String(row?.request_type ?? "").toLowerCase() !==
+        "consultation"
+      ) {
+        return row;
+      }
+
+      const student = await resolveStudent(
+        row?.student_uuid ?? row?.student_id
+      );
+
+      if (!student) return row;
+
+      return {
+        ...row,
+
+        requester_name:
+          row.requester_name ||
+          row.student_name ||
+          row.studentName ||
+          student.student_name ||
+          "",
+
+        school_name:
+          row.school_name ||
+          row.schoolName ||
+          student.school_name ||
+          "",
+
+        class_name:
+          row.class_name ||
+          row.className ||
+          student.class_name ||
+          "",
+
+        email:
+          row.email ||
+          row.student_email ||
+          row.studentEmail ||
+          student.student_email ||
+          "",
+
+        phone:
+          row.phone ||
+          row.student_phone ||
+          row.studentPhone ||
+          student.phone ||
+          ""
+      };
+    })
+  );
+
+  return enriched;
+}
+
 export default function IncomingRequests() {
 
 const partnerIdentity =
@@ -471,7 +595,12 @@ console.log(
   requests
 );
 
-setRequests(requests);
+const enrichedRequests =
+  await enrichConsultationStudentData(
+    requests || []
+  );
+
+setRequests(enrichedRequests);
 }
 
   async function

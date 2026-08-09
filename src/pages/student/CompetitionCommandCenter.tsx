@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   submitCompetitionEntry
@@ -7,6 +7,13 @@ import {
 import {
   requireIdentity
 } from "../../services/identityService";
+
+import {
+  CompetitionAnnouncement,
+  getCompetitionAnnouncementForStudent,
+  getCompetitionUpcomingAnnouncementForStudent,
+  getCompetitionSubmittedPathways
+} from "../../data/competitionControlRepository";
 
 const pathwayData = {
   Communication: {
@@ -249,7 +256,7 @@ const [summary, setSummary] =
 const [selectedFile, setSelectedFile] =
   useState<File | null>(null);
 
-  const [isSubmitting, setIsSubmitting] =
+const [isSubmitting, setIsSubmitting] =
   useState(false);
 
 const [uploadProgress, setUploadProgress] =
@@ -258,16 +265,119 @@ const [uploadProgress, setUploadProgress] =
 const [submitMessage, setSubmitMessage] =
   useState("");
 
-  const eventData =
+const [
+  competitionAnnouncement,
+  setCompetitionAnnouncement
+] = useState<CompetitionAnnouncement | null>(null);
+
+const [
+  upcomingAnnouncement,
+  setUpcomingAnnouncement
+] = useState<CompetitionAnnouncement | null>(null);
+
+const [
+  submittedPathways,
+  setSubmittedPathways
+] = useState<string[]>([]);
+
+const [
+  competitionControlLoading,
+  setCompetitionControlLoading
+] = useState(true);
+
+const eventData =
   (
     pathwayData[
       pathway as keyof typeof pathwayData
     ].events as any
   )[selectedEvent];
 
+  const loadCompetitionControl = async () => {
+    try {
+      setCompetitionControlLoading(true);
+
+      const identity = requireIdentity();
+
+      const live =
+        await getCompetitionAnnouncementForStudent(
+          identity.studentUuid
+        );
+
+      setCompetitionAnnouncement(live);
+
+      if (live) {
+        const submitted =
+          await getCompetitionSubmittedPathways(
+            live.id,
+            identity.studentUuid
+          );
+
+        setSubmittedPathways(submitted);
+        setUpcomingAnnouncement(null);
+      } else {
+        setSubmittedPathways([]);
+
+        const upcoming =
+          await getCompetitionUpcomingAnnouncementForStudent(
+            identity.studentUuid
+          );
+
+        setUpcomingAnnouncement(upcoming);
+      }
+    } catch (error) {
+      console.error(
+        "COMPETITION CONTROL LOAD ERROR",
+        error
+      );
+
+      setCompetitionAnnouncement(null);
+      setUpcomingAnnouncement(null);
+      setSubmittedPathways([]);
+    } finally {
+      setCompetitionControlLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadCompetitionControl();
+
+    const timer = window.setInterval(
+      () => {
+        void loadCompetitionControl();
+      },
+      30000
+    );
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const isPathwaySubmitted =
+    submittedPathways.includes(pathway);
+
+  const canSubmitCompetition =
+    !!competitionAnnouncement &&
+    !isPathwaySubmitted &&
+    !competitionControlLoading;
+
 const handleSubmit = async () => {
   try {
     setSubmitMessage("");
+
+    if (!competitionAnnouncement) {
+      setSubmitMessage(
+        "⏳ Competitions are not live for your school right now. Please wait for the announced competition window."
+      );
+      return;
+    }
+
+    if (isPathwaySubmitted) {
+      setSubmitMessage(
+        "⚠️ You have already submitted one entry for this event during the current competition window."
+      );
+      return;
+    }
 
     if (!selectedFile) {
       alert("Please upload a file first.");
@@ -304,6 +414,8 @@ const handleSubmit = async () => {
 
       setSummary("");
       setSelectedFile(null);
+
+      await loadCompetitionControl();
     } else {
       setSubmitMessage(
         "❌ " + result.error
@@ -564,6 +676,12 @@ return (
         .competition-command-center > div > div:first-child > div:nth-child(2) {
           padding: 16px !important;
         }
+
+        .competition-command-control {
+          margin: 10px 12px 0 !important;
+          padding: 10px 11px !important;
+          border-radius: 13px !important;
+        }
       }
     `}</style>
     {/* ==========================================================
@@ -663,11 +781,228 @@ return (
           </div>
         </div>
 
+        {/* ========================================================
+            COMPETITION CONTROL BANNER
+        ======================================================== */}
+
+        <div
+          className="competition-command-control"
+          style={{
+            margin: "16px 20px 0",
+            padding: "13px 15px",
+            borderRadius: 16,
+            border: competitionAnnouncement
+              ? "1px solid #BBF7D0"
+              : upcomingAnnouncement
+                ? "1px solid #BFDBFE"
+                : "1px solid #FED7AA",
+            background: competitionAnnouncement
+              ? "#F0FDF4"
+              : upcomingAnnouncement
+                ? "#EFF6FF"
+                : "#FFF7ED",
+            color: competitionAnnouncement
+              ? "#166534"
+              : upcomingAnnouncement
+                ? "#1D4ED8"
+                : "#C2410C"
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 12
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: 9,
+                  fontWeight: 900,
+                  letterSpacing: 1.3,
+                  textTransform: "uppercase"
+                }}
+              >
+                {competitionControlLoading
+                  ? "Checking Competition Access"
+                  : competitionAnnouncement
+                    ? "● Competitions Live"
+                    : upcomingAnnouncement
+                      ? "Upcoming Competition"
+                      : "Competition Access Closed"}
+              </div>
+
+              <div
+                style={{
+                  marginTop: 4,
+                  fontSize: 14,
+                  lineHeight: 1.35,
+                  fontWeight: 850,
+                  color: "#0F172A"
+                }}
+              >
+                {competitionControlLoading
+                  ? "Checking your school competition window..."
+                  : competitionAnnouncement
+                    ? competitionAnnouncement.eventName
+                    : upcomingAnnouncement
+                      ? upcomingAnnouncement.eventName
+                      : "Competitions are not live for your school right now."}
+              </div>
+
+              {!competitionControlLoading &&
+                (competitionAnnouncement ||
+                  upcomingAnnouncement) && (
+                  <div
+                    style={{
+                      marginTop: 5,
+                      fontSize: 10,
+                      lineHeight: 1.45,
+                      color: "#64748B",
+                      fontWeight: 600
+                    }}
+                  >
+                    {new Date(
+                      (
+                        competitionAnnouncement ??
+                        upcomingAnnouncement
+                      )!.startsAt
+                    ).toLocaleString([], {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
+                    {"  →  "}
+                    {new Date(
+                      (
+                        competitionAnnouncement ??
+                        upcomingAnnouncement
+                      )!.endsAt
+                    ).toLocaleString([], {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
+                  </div>
+                )}
+
+              {competitionAnnouncement?.rules && (
+                <div
+                  style={{
+                    marginTop: 7,
+                    fontSize: 9.5,
+                    lineHeight: 1.45,
+                    color: "#475569"
+                  }}
+                >
+                  <strong>Rules:</strong>{" "}
+                  {competitionAnnouncement.rules}
+                </div>
+              )}
+            </div>
+
+            <div
+              style={{
+                flexShrink: 0,
+                padding: "5px 8px",
+                borderRadius: 999,
+                background: "#FFFFFF",
+                border: "1px solid rgba(148,163,184,.25)",
+                fontSize: 8,
+                fontWeight: 900,
+                letterSpacing: .7,
+                color: "#475569",
+                whiteSpace: "nowrap"
+              }}
+            >
+              {competitionAnnouncement
+                ? "1 ENTRY / EVENT"
+                : "SUBMISSIONS LOCKED"}
+            </div>
+          </div>
+
+          {competitionAnnouncement && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(4,minmax(0,1fr))",
+                gap: 6,
+                marginTop: 10
+              }}
+            >
+              {[
+                ["Communication", "01"],
+                ["Creativity", "02"],
+                ["Thinking", "03"],
+                ["Team Event", "04"]
+              ].map(([name, number]) => {
+                const done =
+                  submittedPathways.includes(name);
+
+                return (
+                  <div
+                    key={name}
+                    style={{
+                      padding: "6px 7px",
+                      borderRadius: 10,
+                      background: done
+                        ? "#DCFCE7"
+                        : "#FFFFFF",
+                      border: done
+                        ? "1px solid #86EFAC"
+                        : "1px solid #E2E8F0",
+                      textAlign: "center"
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 7,
+                        fontWeight: 900,
+                        color: done
+                          ? "#15803D"
+                          : "#94A3B8"
+                      }}
+                    >
+                      {done ? "✓" : number}
+                    </div>
+                    <div
+                      style={{
+                        marginTop: 2,
+                        fontSize: 7.5,
+                        fontWeight: 800,
+                        color: "#475569",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis"
+                      }}
+                    >
+                      {name}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* FORM BODY */}
 
         <div
           style={{
-            padding: 28
+            padding: 28,
+            opacity:
+              competitionControlLoading ||
+              !competitionAnnouncement ||
+              isPathwaySubmitted
+                ? 0.72
+                : 1
           }}
         >
           {/* ====================================================
@@ -742,7 +1077,11 @@ return (
                         );
 
                       setSelectedEvent(newEvents[0]);
-                    }}
+                       setSelectedFile(null);
+                       setSummary("");
+                       setSubmitMessage("");
+                     }}
+                     disabled={competitionControlLoading}
                     style={{
                       minHeight: 62,
                       padding: "12px 10px",
@@ -834,6 +1173,11 @@ return (
             </div>
 
             <select
+              disabled={
+                competitionControlLoading ||
+                !competitionAnnouncement ||
+                isPathwaySubmitted
+              }
               value={selectedEvent}
               onChange={(e) =>
                 setSelectedEvent(e.target.value)
@@ -1089,6 +1433,11 @@ return (
 
               <input
                 type="file"
+                disabled={
+                  competitionControlLoading ||
+                  !competitionAnnouncement ||
+                  isPathwaySubmitted
+                }
                 accept=".mp4,.mp3,.wav,.pdf"
                 style={{
                   display: "none"
@@ -1152,6 +1501,11 @@ return (
             </div>
 
             <textarea
+              disabled={
+                competitionControlLoading ||
+                !competitionAnnouncement ||
+                isPathwaySubmitted
+              }
               value={summary}
               onChange={(e) =>
                 setSummary(e.target.value)
@@ -1174,11 +1528,44 @@ return (
             />
           </div>
 
+          {/* SUBMISSION ACCESS NOTE */}
+
+          {!competitionControlLoading &&
+            (!competitionAnnouncement ||
+              isPathwaySubmitted) && (
+              <div
+                style={{
+                  marginTop: 18,
+                  padding: "10px 12px",
+                  borderRadius: 12,
+                  background: isPathwaySubmitted
+                    ? "#F0FDF4"
+                    : "#FFF7ED",
+                  border: isPathwaySubmitted
+                    ? "1px solid #BBF7D0"
+                    : "1px solid #FED7AA",
+                  color: isPathwaySubmitted
+                    ? "#15803D"
+                    : "#C2410C",
+                  fontSize: 10,
+                  fontWeight: 750,
+                  lineHeight: 1.45
+                }}
+              >
+                {isPathwaySubmitted
+                  ? "✓ This event has already been submitted in this competition window. You may participate in the remaining events."
+                  : "🔒 Submission is locked. Your school administrator must announce a live competition window before an entry can be submitted."}
+              </div>
+            )}
+
           {/* SUBMIT */}
 
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={
+              isSubmitting ||
+              !canSubmitCompetition
+            }
             style={{
               width: "100%",
               marginTop: 22,
@@ -1190,12 +1577,18 @@ return (
               borderRadius: 14,
               fontWeight: 800,
               fontSize: 13,
-              cursor: isSubmitting
-                ? "default"
-                : "pointer",
+              cursor:
+                isSubmitting ||
+                !canSubmitCompetition
+                  ? "default"
+                  : "pointer",
               letterSpacing: 0.7,
               textTransform: "uppercase",
-              opacity: isSubmitting ? 0.7 : 1,
+              opacity:
+                isSubmitting ||
+                !canSubmitCompetition
+                  ? 0.55
+                  : 1,
               boxShadow:
                 "0 8px 18px rgba(249,115,22,.16)"
             }}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import useTeacherManagementViewModel
 from "../teacher/TeacherManagementViewModel";
@@ -27,6 +27,15 @@ import {
     setPlatformAccountSuspended
 
 } from "../../../data/platformAccountControlRepository";
+
+import {
+    CompetitionAnnouncement,
+    CompetitionClassOption,
+    createCompetitionAnnouncement,
+    getCompetitionAnnouncements,
+    getCompetitionClassOptions,
+    revokeCompetitionAnnouncement
+} from "../../../data/competitionControlRepository";
 
 export default function TeacherRegistry() {
 
@@ -195,6 +204,266 @@ const [
         setAccounts
 
     ] = useState<PlatformAccount[]>([]);
+
+    const [
+        competitionSchoolUuid,
+        setCompetitionSchoolUuid
+    ] = useState("");
+
+    const [
+        competitionSchoolName,
+        setCompetitionSchoolName
+    ] = useState("");
+
+    const [
+        competitionClass,
+        setCompetitionClass
+    ] = useState("");
+
+    const [
+        competitionSection,
+        setCompetitionSection
+    ] = useState("");
+
+    const [
+        competitionClasses,
+        setCompetitionClasses
+    ] = useState<CompetitionClassOption[]>([]);
+
+    const [
+        competitionEventName,
+        setCompetitionEventName
+    ] = useState("");
+
+    const [
+        competitionStartAt,
+        setCompetitionStartAt
+    ] = useState("");
+
+    const [
+        competitionEndAt,
+        setCompetitionEndAt
+    ] = useState("");
+
+    const [
+        competitionRules,
+        setCompetitionRules
+    ] = useState("");
+
+    const [
+        competitionAnnouncements,
+        setCompetitionAnnouncements
+    ] = useState<CompetitionAnnouncement[]>([]);
+
+    const [
+        competitionLoading,
+        setCompetitionLoading
+    ] = useState(false);
+
+    const [
+        competitionSaving,
+        setCompetitionSaving
+    ] = useState(false);
+
+    const loadCompetitionAnnouncements = async () => {
+        try {
+            setCompetitionLoading(true);
+
+            const rows =
+                await getCompetitionAnnouncements();
+
+            setCompetitionAnnouncements(rows);
+        } catch (error) {
+            console.error(
+                "COMPETITION CONTROL LOAD ERROR",
+                error
+            );
+        } finally {
+            setCompetitionLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        void loadCompetitionAnnouncements();
+    }, []);
+
+    const handleCompetitionSchoolChange =
+        async (schoolUuid: string) => {
+
+            const school =
+                schools.find(
+                    s =>
+                        s.schoolUuid ===
+                        schoolUuid
+                );
+
+            setCompetitionSchoolUuid(
+                schoolUuid
+            );
+
+            setCompetitionSchoolName(
+                school?.schoolName ?? ""
+            );
+
+            setCompetitionClass("");
+            setCompetitionSection("");
+            setCompetitionClasses([]);
+
+            if (!schoolUuid || !school) {
+                return;
+            }
+
+            try {
+                setCompetitionLoading(true);
+
+                const options =
+                    await getCompetitionClassOptions(
+                        school.schoolName
+                    );
+
+                setCompetitionClasses(
+                    options
+                );
+            } catch (error) {
+                console.error(
+                    "COMPETITION CLASS LOAD ERROR",
+                    error
+                );
+            } finally {
+                setCompetitionLoading(false);
+            }
+        };
+
+    const handleCreateCompetitionAnnouncement =
+        async () => {
+
+            if (
+                !competitionSchoolUuid ||
+                !competitionSchoolName ||
+                !competitionClass ||
+                !competitionEventName.trim() ||
+                !competitionStartAt ||
+                !competitionEndAt
+            ) {
+                alert(
+                    "Please select the school, class, competition name, start time and end time."
+                );
+                return;
+            }
+
+            try {
+
+                setCompetitionSaving(true);
+
+                const created =
+                    await createCompetitionAnnouncement({
+                        schoolUuid:
+                            competitionSchoolUuid,
+
+                        schoolName:
+                            competitionSchoolName,
+
+                        className:
+                            competitionClass,
+
+                        sectionName:
+                            competitionSection ||
+                            null,
+
+                        eventName:
+                            competitionEventName,
+
+                        startsAt:
+                            competitionStartAt,
+
+                        endsAt:
+                            competitionEndAt,
+
+                        rules:
+                            competitionRules
+                    });
+
+                if (!created) {
+                    alert(
+                        "Unable to create competition announcement."
+                    );
+                    return;
+                }
+
+                setCompetitionAnnouncements(
+                    prev => [
+                        created,
+                        ...prev
+                    ]
+                );
+
+                setCompetitionEventName("");
+                setCompetitionStartAt("");
+                setCompetitionEndAt("");
+                setCompetitionRules("");
+
+                alert(
+                    "Competition announcement created successfully."
+                );
+
+            } catch (error: any) {
+
+                console.error(
+                    "COMPETITION ANNOUNCEMENT SAVE ERROR",
+                    error
+                );
+
+                alert(
+                    error?.message ??
+                    "Unable to create competition announcement."
+                );
+
+            } finally {
+
+                setCompetitionSaving(false);
+
+            }
+        };
+
+    const handleRevokeCompetitionAnnouncement =
+        async (
+            announcementId: string
+        ) => {
+
+            const confirmed =
+                window.confirm(
+                    "Revoke this competition window? Students will no longer be allowed to submit entries for it."
+                );
+
+            if (!confirmed) {
+                return;
+            }
+
+            const ok =
+                await revokeCompetitionAnnouncement(
+                    announcementId
+                );
+
+            if (!ok) {
+                alert(
+                    "Unable to revoke competition window."
+                );
+                return;
+            }
+
+            setCompetitionAnnouncements(
+                prev =>
+                    prev.map(item =>
+                        item.id ===
+                        announcementId
+                            ? {
+                                ...item,
+                                isActive: false
+                            }
+                            : item
+                    )
+            );
+        };
 
     const toggle = (
 
@@ -2035,6 +2304,710 @@ setGracePeriodDays(
                     )
 
                 }
+
+            </section>
+
+            {/* ============================================================
+                COMPETITION CONTROL
+                Keep this section at the bottom of the existing registry.
+            ============================================================ */}
+
+            <section className="competition-admin-control" style={card}>
+
+                <style>{`
+                    .competition-admin-control {
+                        overflow: hidden;
+                    }
+
+                    .competition-admin-grid {
+                        display: grid;
+                        grid-template-columns:
+                            repeat(3, minmax(0, 1fr));
+                        gap: 12px;
+                    }
+
+                    .competition-admin-span-2 {
+                        grid-column: span 2;
+                    }
+
+                    .competition-admin-form {
+                        background: #F8FAFC;
+                        border: 1px solid #E2E8F0;
+                        border-radius: 14px;
+                        padding: 16px;
+                    }
+
+                    .competition-admin-title {
+                        color: #143B73;
+                        font-size: 20px;
+                        font-weight: 800;
+                        margin: 0;
+                    }
+
+                    .competition-admin-subtitle {
+                        margin: 5px 0 16px;
+                        color: #64748B;
+                        font-size: 12px;
+                        line-height: 1.45;
+                    }
+
+                    .competition-admin-field label {
+                        display: block;
+                        margin-bottom: 5px;
+                        color: #334155;
+                        font-size: 10px;
+                        font-weight: 800;
+                        letter-spacing: .35px;
+                    }
+
+                    .competition-admin-field input,
+                    .competition-admin-field select,
+                    .competition-admin-field textarea {
+                        width: 100%;
+                        min-width: 0;
+                        box-sizing: border-box;
+                        border: 1px solid #CBD5E1;
+                        border-radius: 9px;
+                        background: #FFFFFF;
+                        color: #334155;
+                        padding: 9px 10px;
+                        font-size: 11px;
+                        outline: none;
+                    }
+
+                    .competition-admin-field textarea {
+                        min-height: 74px;
+                        resize: vertical;
+                        line-height: 1.4;
+                    }
+
+                    .competition-admin-actions {
+                        display: flex;
+                        justify-content: flex-end;
+                        margin-top: 12px;
+                    }
+
+                    .competition-admin-list {
+                        margin-top: 14px;
+                        border-top: 1px solid #E2E8F0;
+                    }
+
+                    .competition-admin-row {
+                        display: grid;
+                        grid-template-columns:
+                            minmax(160px, 1.4fr)
+                            minmax(90px, .7fr)
+                            minmax(160px, 1fr)
+                            minmax(140px, .9fr)
+                            auto;
+                        gap: 10px;
+                        align-items: center;
+                        padding: 11px 0;
+                        border-bottom: 1px solid #E2E8F0;
+                    }
+
+                    .competition-admin-row-main {
+                        min-width: 0;
+                    }
+
+                    .competition-admin-row-title {
+                        color: #0F172A;
+                        font-size: 11px;
+                        font-weight: 800;
+                    }
+
+                    .competition-admin-row-meta {
+                        margin-top: 3px;
+                        color: #64748B;
+                        font-size: 9px;
+                        line-height: 1.35;
+                    }
+
+                    .competition-admin-status {
+                        width: fit-content;
+                        padding: 4px 7px;
+                        border-radius: 999px;
+                        font-size: 8px;
+                        font-weight: 900;
+                        letter-spacing: .5px;
+                        text-transform: uppercase;
+                    }
+
+                    @media (max-width: 1024px) {
+                        .competition-admin-grid {
+                            grid-template-columns:
+                                repeat(2, minmax(0, 1fr));
+                        }
+
+                        .competition-admin-span-2 {
+                            grid-column: span 2;
+                        }
+
+                        .competition-admin-row {
+                            grid-template-columns:
+                                minmax(150px, 1.4fr)
+                                minmax(80px, .7fr)
+                                minmax(140px, 1fr)
+                                auto;
+                        }
+
+                        .competition-admin-row > div:nth-child(4) {
+                            display: none;
+                        }
+                    }
+
+                    @media (max-width: 767px) {
+                        .competition-admin-control {
+                            padding: 14px !important;
+                            border-radius: 14px !important;
+                        }
+
+                        .competition-admin-title {
+                            font-size: 16px !important;
+                        }
+
+                        .competition-admin-subtitle {
+                            font-size: 9px !important;
+                            margin-bottom: 12px !important;
+                        }
+
+                        .competition-admin-form {
+                            padding: 11px !important;
+                            border-radius: 11px !important;
+                        }
+
+                        .competition-admin-grid {
+                            grid-template-columns:
+                                repeat(2, minmax(0, 1fr)) !important;
+                            gap: 8px !important;
+                        }
+
+                        .competition-admin-span-2 {
+                            grid-column: span 2 !important;
+                        }
+
+                        .competition-admin-field label {
+                            font-size: 8px !important;
+                            margin-bottom: 3px !important;
+                        }
+
+                        .competition-admin-field input,
+                        .competition-admin-field select,
+                        .competition-admin-field textarea {
+                            padding: 7px 8px !important;
+                            border-radius: 7px !important;
+                            font-size: 9px !important;
+                        }
+
+                        .competition-admin-field textarea {
+                            min-height: 55px !important;
+                        }
+
+                        .competition-admin-row {
+                            grid-template-columns:
+                                minmax(0, 1fr) auto !important;
+                            gap: 7px !important;
+                            padding: 9px 0 !important;
+                        }
+
+                        .competition-admin-row > div:nth-child(2),
+                        .competition-admin-row > div:nth-child(3),
+                        .competition-admin-row > div:nth-child(4) {
+                            grid-column: span 2 !important;
+                        }
+
+                        .competition-admin-row > div:nth-child(3),
+                        .competition-admin-row > div:nth-child(4) {
+                            display: block !important;
+                        }
+
+                        .competition-admin-row-title {
+                            font-size: 9px !important;
+                        }
+
+                        .competition-admin-row-meta {
+                            font-size: 7.5px !important;
+                        }
+
+                        .competition-admin-status {
+                            font-size: 7px !important;
+                            padding: 3px 5px !important;
+                        }
+                    }
+                `}</style>
+
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        gap: 12,
+                        marginBottom: 14
+                    }}
+                >
+                    <div>
+                        <h3 className="competition-admin-title">
+                            Competition Command Control
+                        </h3>
+
+                        <p className="competition-admin-subtitle">
+                            Announce exactly when a school can accept
+                            competition entries. Students in the selected
+                            class and section will see the live banner and
+                            can submit once per event during this window.
+                        </p>
+                    </div>
+
+                    <div
+                        style={{
+                            flexShrink: 0,
+                            padding: "5px 8px",
+                            borderRadius: 999,
+                            background: "#FFF7ED",
+                            border: "1px solid #FED7AA",
+                            color: "#C2410C",
+                            fontSize: 8,
+                            fontWeight: 900,
+                            letterSpacing: .5
+                        }}
+                    >
+                        4 EVENTS
+                    </div>
+                </div>
+
+                <div className="competition-admin-form">
+
+                    <div className="competition-admin-grid">
+
+                        <div className="competition-admin-field">
+                            <label>School</label>
+
+                            <select
+                                value={
+                                    competitionSchoolUuid
+                                }
+                                onChange={e =>
+                                    void handleCompetitionSchoolChange(
+                                        e.target.value
+                                    )
+                                }
+                            >
+                                <option value="">
+                                    Select school
+                                </option>
+
+                                {schools
+                                    .filter(
+                                        s =>
+                                            s.isActive
+                                    )
+                                    .map(s => (
+                                        <option
+                                            key={
+                                                s.schoolUuid
+                                            }
+                                            value={
+                                                s.schoolUuid
+                                            }
+                                        >
+                                            {
+                                                s.schoolName
+                                            }
+                                        </option>
+                                    ))}
+                            </select>
+                        </div>
+
+                        <div className="competition-admin-field">
+                            <label>Class</label>
+
+                            <select
+                                value={
+                                    competitionClass
+                                }
+                                disabled={
+                                    !competitionSchoolUuid ||
+                                    competitionClasses.length === 0
+                                }
+                                onChange={e => {
+                                    setCompetitionClass(
+                                        e.target.value
+                                    );
+                                    setCompetitionSection("");
+                                }}
+                            >
+                                <option value="">
+                                    Select class
+                                </option>
+
+                                {competitionClasses.map(
+                                    item => (
+                                        <option
+                                            key={
+                                                item.className
+                                            }
+                                            value={
+                                                item.className
+                                            }
+                                        >
+                                            {
+                                                item.className
+                                            }
+                                        </option>
+                                    )
+                                )}
+                            </select>
+                        </div>
+
+                        <div className="competition-admin-field">
+                            <label>Section</label>
+
+                            <select
+                                value={
+                                    competitionSection
+                                }
+                                disabled={
+                                    !competitionClass
+                                }
+                                onChange={e =>
+                                    setCompetitionSection(
+                                        e.target.value
+                                    )
+                                }
+                            >
+                                <option value="">
+                                    All sections
+                                </option>
+
+                                {(
+                                    competitionClasses.find(
+                                        item =>
+                                            item.className ===
+                                            competitionClass
+                                    )?.sections ??
+                                    []
+                                ).map(
+                                    section => (
+                                        <option
+                                            key={section}
+                                            value={section}
+                                        >
+                                            Section {section}
+                                        </option>
+                                    )
+                                )}
+                            </select>
+                        </div>
+
+                        <div className="competition-admin-field competition-admin-span-2">
+                            <label>
+                                Competition Banner Heading
+                            </label>
+
+                            <input
+                                value={
+                                    competitionEventName
+                                }
+                                onChange={e =>
+                                    setCompetitionEventName(
+                                        e.target.value
+                                    )
+                                }
+                                placeholder="e.g. August Talent Challenge — Submissions Open"
+                            />
+                        </div>
+
+                        <div className="competition-admin-field">
+                            <label>Starting Date & Time</label>
+
+                            <input
+                                type="datetime-local"
+                                value={
+                                    competitionStartAt
+                                }
+                                onChange={e =>
+                                    setCompetitionStartAt(
+                                        e.target.value
+                                    )
+                                }
+                            />
+                        </div>
+
+                        <div className="competition-admin-field">
+                            <label>Ending Date & Time</label>
+
+                            <input
+                                type="datetime-local"
+                                value={
+                                    competitionEndAt
+                                }
+                                onChange={e =>
+                                    setCompetitionEndAt(
+                                        e.target.value
+                                    )
+                                }
+                            />
+                        </div>
+
+                        <div className="competition-admin-field competition-admin-span-2">
+                            <label>
+                                Rules / Student Instructions
+                            </label>
+
+                            <textarea
+                                value={
+                                    competitionRules
+                                }
+                                onChange={e =>
+                                    setCompetitionRules(
+                                        e.target.value
+                                    )
+                                }
+                                placeholder="Example: One submission per event. Choose any one challenge from this event. Upload your best performance evidence."
+                            />
+                        </div>
+
+                    </div>
+
+                    <div className="competition-admin-actions">
+                        <button
+                            type="button"
+                            onClick={
+                                handleCreateCompetitionAnnouncement
+                            }
+                            disabled={
+                                competitionSaving
+                            }
+                            style={{
+                                ...primary,
+                                padding:
+                                    "9px 16px",
+                                fontSize: 10,
+                                opacity:
+                                    competitionSaving
+                                        ? .6
+                                        : 1
+                            }}
+                        >
+                            {
+                                competitionSaving
+                                    ? "ANNOUNCING..."
+                                    : "ANNOUNCE COMPETITION →"
+                            }
+                        </button>
+                    </div>
+
+                </div>
+
+                <div
+                    style={{
+                        marginTop: 16,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 10
+                    }}
+                >
+                    <div
+                        style={{
+                            color: "#143B73",
+                            fontSize: 12,
+                            fontWeight: 800
+                        }}
+                    >
+                        Competition Windows
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={
+                            () =>
+                                void loadCompetitionAnnouncements()
+                        }
+                        style={{
+                            ...small,
+                            padding:
+                                "5px 9px",
+                            fontSize: 8
+                        }}
+                    >
+                        Refresh
+                    </button>
+                </div>
+
+                <div className="competition-admin-list">
+
+                    {competitionLoading ? (
+                        <div
+                            style={{
+                                padding: "14px 0",
+                                color: "#64748B",
+                                fontSize: 9
+                            }}
+                        >
+                            Loading competition controls...
+                        </div>
+                    ) : competitionAnnouncements.length === 0 ? (
+                        <div
+                            style={{
+                                padding: "14px 0",
+                                color: "#94A3B8",
+                                fontSize: 9
+                            }}
+                        >
+                            No competition windows have been announced yet.
+                        </div>
+                    ) : (
+                        competitionAnnouncements.map(
+                            announcement => {
+
+                                const now =
+                                    Date.now();
+
+                                const start =
+                                    new Date(
+                                        announcement.startsAt
+                                    ).getTime();
+
+                                const end =
+                                    new Date(
+                                        announcement.endsAt
+                                    ).getTime();
+
+                                const live =
+                                    announcement.isActive &&
+                                    now >= start &&
+                                    now <= end;
+
+                                const upcoming =
+                                    announcement.isActive &&
+                                    now < start;
+
+                                const statusLabel =
+                                    !announcement.isActive
+                                        ? "Revoked"
+                                        : live
+                                            ? "Live"
+                                            : upcoming
+                                                ? "Upcoming"
+                                                : "Ended";
+
+                                return (
+                                    <div
+                                        key={
+                                            announcement.id
+                                        }
+                                        className="competition-admin-row"
+                                    >
+                                        <div className="competition-admin-row-main">
+                                            <div className="competition-admin-row-title">
+                                                {
+                                                    announcement.eventName
+                                                }
+                                            </div>
+
+                                            <div className="competition-admin-row-meta">
+                                                {
+                                                    announcement.schoolName
+                                                }
+                                                {" · "}
+                                                {
+                                                    announcement.className
+                                                }
+                                                {" · "}
+                                                {
+                                                    announcement.sectionName ||
+                                                    "All Sections"
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <span
+                                                className="competition-admin-status"
+                                                style={{
+                                                    background:
+                                                        live
+                                                            ? "#DCFCE7"
+                                                            : upcoming
+                                                                ? "#DBEAFE"
+                                                                : "#F1F5F9",
+                                                    color:
+                                                        live
+                                                            ? "#15803D"
+                                                            : upcoming
+                                                                ? "#1D4ED8"
+                                                                : "#64748B"
+                                                }}
+                                            >
+                                                {
+                                                    statusLabel
+                                                }
+                                            </span>
+                                        </div>
+
+                                        <div className="competition-admin-row-meta">
+                                            {new Date(
+                                                announcement.startsAt
+                                            ).toLocaleString([], {
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit"
+                                            })}
+                                            {" → "}
+                                            {new Date(
+                                                announcement.endsAt
+                                            ).toLocaleString([], {
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit"
+                                            })}
+                                        </div>
+
+                                        <div className="competition-admin-row-meta">
+                                            {announcement.rules ||
+                                                "One entry per event during this window."}
+                                        </div>
+
+                                        <div>
+                                            {announcement.isActive && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        void handleRevokeCompetitionAnnouncement(
+                                                            announcement.id
+                                                        )
+                                                    }
+                                                    style={{
+                                                        ...small,
+                                                        background:
+                                                            "#FFF1F2",
+                                                        color:
+                                                            "#BE123C",
+                                                        border:
+                                                            "1px solid #FECDD3",
+                                                        padding:
+                                                            "6px 9px",
+                                                        fontSize: 8,
+                                                        whiteSpace:
+                                                            "nowrap"
+                                                    }}
+                                                >
+                                                    Revoke
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            }
+                        )
+                    )}
+
+                </div>
 
             </section>
 

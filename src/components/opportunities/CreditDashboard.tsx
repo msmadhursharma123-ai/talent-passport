@@ -25,7 +25,8 @@ import {
 } from "../../data/studentDailyFeedbackRepository";
 
 import {
-  fetchConsultationPartners
+  fetchConsultationPartners,
+  fetchStudentConsultationHistory
 } from "../../data/consultationRepository";
 
 import {
@@ -33,12 +34,17 @@ import {
 } from "../../services/walletService";
 
 import {
-  getStudentWallet
+  getStudentWallet,
+  updateStudentWallet
 } from "../../data/walletRepository";
 
 import {
   bookConsultation
 } from "../../services/consultationService";
+
+import {
+  getStudentConsultationSpentCredits
+} from "../../data/creditTransactionRepository";
 
 import {
   calculateCompetitionCredits,
@@ -253,6 +259,22 @@ const [dailyFeedbackTotalCredits,
   setWalletBalance] =
   useState(0);
 
+const [spentCredits,
+  setSpentCredits] =
+  useState(0);
+
+const [totalEarnedCredits,
+  setTotalEarnedCredits] =
+  useState(0);
+
+const [consultationHistory,
+  setConsultationHistory] =
+  useState<any[]>([]);
+
+const [consultationHistoryLoading,
+  setConsultationHistoryLoading] =
+  useState(false);
+
 const [bookingLoading,
   setBookingLoading] =
   useState(false);
@@ -304,7 +326,7 @@ setConsultationDescription
 
 const consultationCost = 60;
 
-const availableCredits = walletBalance;
+const availableCredits = Math.max(0, totalEarnedCredits - spentCredits);
 
 /*
   Credits should only reduce AFTER
@@ -314,14 +336,45 @@ const availableCredits = walletBalance;
   balance is equal to the current
   wallet balance.
 */
-const remainingCredits = walletBalance;
+const remainingCredits = availableCredits;
 
   useEffect(() => {
   loadCredits();
+  loadConsultationHistory();
 }, []);
 
 const student =
   getCurrentStudent();
+
+async function loadConsultationHistory() {
+  const masterStudentId = getMasterStudentId();
+
+  if (!masterStudentId) {
+    setConsultationHistory([]);
+    return;
+  }
+
+  try {
+    setConsultationHistoryLoading(true);
+
+    const history =
+      await fetchStudentConsultationHistory(
+        masterStudentId
+      );
+
+    setConsultationHistory(
+      history ?? []
+    );
+  } catch (error) {
+    console.error(
+      "Consultation history load failed",
+      error
+    );
+    setConsultationHistory([]);
+  } finally {
+    setConsultationHistoryLoading(false);
+  }
+}
 
 async function loadCredits() {
 
@@ -446,6 +499,10 @@ const competition =
     totalEarnedCredits
   );
 
+  setTotalEarnedCredits(
+    totalEarnedCredits
+  );
+
   /* ============================================
      Sync Student Wallet
   ============================================ */
@@ -467,17 +524,56 @@ const competition =
     );
 
     const wallet =
-
       await getStudentWallet(
-
         masterStudentId
-
       );
 
+    const ledgerSpentCredits =
+      await getStudentConsultationSpentCredits(
+        masterStudentId
+      );
+
+    const resolvedTotalEarned =
+      Number(totalEarnedCredits) || 0;
+
+    const resolvedSpentCredits =
+      Number(ledgerSpentCredits) ||
+      Number(wallet.spent_credits) ||
+      0;
+
+    const resolvedAvailableCredits =
+      Math.max(
+        0,
+        resolvedTotalEarned -
+          resolvedSpentCredits
+      );
+
+    if (
+      Number(wallet.spent_credits) !==
+        resolvedSpentCredits ||
+      Number(wallet.available_credits) !==
+        resolvedAvailableCredits ||
+      Number(wallet.lifetime_earned) !==
+        resolvedTotalEarned
+    ) {
+      await updateStudentWallet(
+        masterStudentId,
+        resolvedAvailableCredits,
+        resolvedSpentCredits,
+        resolvedTotalEarned
+      );
+    }
+
+    setTotalEarnedCredits(
+      resolvedTotalEarned
+    );
+
+    setSpentCredits(
+      resolvedSpentCredits
+    );
+
     setWalletBalance(
-
-      wallet.available_credits
-
+      resolvedAvailableCredits
     );
 
   } catch (error) {
@@ -724,6 +820,7 @@ const demoPartners: MarketplacePartner[] = [
 
   return (
  <div
+  className="credit-dashboard-page"
   style={{
     background: "#f8f7f4",
     color: "#0F172A",
@@ -733,7 +830,8 @@ const demoPartners: MarketplacePartner[] = [
     maxWidth: "100%",
     boxSizing: "border-box",
     minHeight: isCompact ? "auto" : "1100px",
-    border: "1px solid #E2E8F0"
+    border: "1px solid #E2E8F0",
+    zoom: isMobile ? 0.88 : isTablet ? 0.93 : 1
   }}
 >
 {/* ==========================================================
@@ -1037,7 +1135,7 @@ const demoPartners: MarketplacePartner[] = [
             fontWeight: 900
           }}
         >
-          {walletBalance}
+          {totalEarnedCredits}
         </div>
 
         <div
@@ -1107,7 +1205,7 @@ const demoPartners: MarketplacePartner[] = [
             fontWeight: 900
           }}
         >
-          0
+          {spentCredits}
         </div>
 
         <div
@@ -1177,7 +1275,7 @@ const demoPartners: MarketplacePartner[] = [
             fontWeight: 900
           }}
         >
-          {totalCredits}
+          {availableCredits}
         </div>
 
         <div
@@ -2065,7 +2163,7 @@ const demoPartners: MarketplacePartner[] = [
               whiteSpace: "nowrap"
             }}
           >
-            {walletBalance} CREDITS AVAILABLE
+            {availableCredits} CREDITS AVAILABLE
           </div>
         </div>
 
@@ -2531,7 +2629,7 @@ const demoPartners: MarketplacePartner[] = [
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    minHeight: isCompact ? 178 : 320
+    minHeight: isCompact ? (isMobile ? 152 : 168) : 320
   }}
 >
   {/* DECORATIVE CIRCLE */}
@@ -2693,7 +2791,7 @@ const demoPartners: MarketplacePartner[] = [
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    minHeight: isCompact ? 178 : 320
+    minHeight: isCompact ? (isMobile ? 152 : 168) : 320
   }}
 >
   {/* DECORATIVE CIRCLE */}
@@ -2857,7 +2955,7 @@ const demoPartners: MarketplacePartner[] = [
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    minHeight: isCompact ? 178 : 320
+    minHeight: isCompact ? (isMobile ? 152 : 168) : 320
   }}
 >
   {/* DECORATIVE CIRCLE */}
@@ -3543,9 +3641,9 @@ selectedPartner?.id===partner.id
 
 borderRadius: isCompact ? 18 : 24,
 
-padding: isMobile ? 15 : isTablet ? 18 : 28,
-minWidth: isCompact ? (isMobile ? "82%" : 340) : undefined,
-maxWidth: isCompact ? (isMobile ? "82%" : 340) : undefined,
+padding: isMobile ? 12 : isTablet ? 15 : 28,
+minWidth: isCompact ? (isMobile ? "78%" : 320) : undefined,
+maxWidth: isCompact ? (isMobile ? "78%" : 320) : undefined,
 flexShrink: isCompact ? 0 : undefined,
 scrollSnapAlign: isCompact ? "start" : undefined,
 
@@ -4336,6 +4434,7 @@ true
 );
 
 await loadCredits();
+await loadConsultationHistory();
 
 }
 catch(error:any){
@@ -4661,6 +4760,213 @@ View My Consultations
 </div>
 
 )}
+
+{/* ============================================================
+                 CONSULTATION HISTORY
+============================================================ */}
+
+<div
+  style={{
+    marginTop: isCompact ? 18 : 40,
+    background: "#FFFFFF",
+    border: "1px solid #E2E8F0",
+    borderRadius: isCompact ? 20 : 28,
+    overflow: "hidden"
+  }}
+>
+  <div
+    style={{
+      padding: isMobile ? "16px 14px" : isTablet ? "20px 18px" : "26px 28px",
+      borderBottom: "1px solid #E2E8F0"
+    }}
+  >
+    <div
+      style={{
+        color: "#F97316",
+        fontSize: isMobile ? 9 : isTablet ? 10 : 11,
+        fontWeight: 800,
+        letterSpacing: 1.8,
+        textTransform: "uppercase",
+        marginBottom: 7
+      }}
+    >
+      CONSULTATION HISTORY
+    </div>
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: isMobile ? "flex-start" : "center",
+        flexDirection: isMobile ? "column" : "row",
+        gap: 7
+      }}
+    >
+      <h2
+        style={{
+          margin: 0,
+          color: "#0F172A",
+          fontSize: isMobile ? 18 : isTablet ? 21 : 24,
+          lineHeight: 1.2
+        }}
+      >
+        My Consultations
+      </h2>
+
+      {(isMobile || isTablet) && consultationHistory.length > 0 && (
+        <div
+          style={{
+            color: "#64748B",
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: .35
+          }}
+        >
+          Swipe left or right to see →
+        </div>
+      )}
+    </div>
+  </div>
+
+  {consultationHistoryLoading ? (
+    <div
+      style={{
+        padding: isMobile ? 22 : 30,
+        color: "#64748B",
+        fontSize: isMobile ? 11 : 13
+      }}
+    >
+      Loading consultation history...
+    </div>
+  ) : consultationHistory.length === 0 ? (
+    <div
+      style={{
+        padding: isMobile ? 22 : 30,
+        color: "#64748B",
+        fontSize: isMobile ? 11 : 13
+      }}
+    >
+      No consultations booked yet.
+    </div>
+  ) : (
+    <div
+      style={{
+        width: "100%",
+        overflowX: "auto",
+        WebkitOverflowScrolling: "touch"
+      }}
+    >
+      <table
+        style={{
+          width: "100%",
+          minWidth: isCompact ? 780 : 900,
+          borderCollapse: "collapse",
+          fontSize: isMobile ? 10 : isTablet ? 11 : 13
+        }}
+      >
+        <thead>
+          <tr style={{ background: "#F8FAFC" }}>
+            {[
+              "BOOKED DATE",
+              "PARTNER",
+              "REASON / NOTES",
+              "STATUS",
+              "PARTNER CONTACT"
+            ].map((heading) => (
+              <th
+                key={heading}
+                style={{
+                  padding: isMobile ? "9px 10px" : isTablet ? "10px 12px" : "13px 16px",
+                  textAlign: "left",
+                  color: "#64748B",
+                  fontSize: isMobile ? 8 : isTablet ? 9 : 10,
+                  fontWeight: 850,
+                  letterSpacing: .75,
+                  whiteSpace: "nowrap",
+                  borderBottom: "1px solid #E2E8F0"
+                }}
+              >
+                {heading}
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {consultationHistory.map((item: any) => {
+            const status =
+              String(
+                item.status ??
+                item.booking_status ??
+                "pending"
+              ).toLowerCase();
+
+            const accepted =
+              status === "accepted";
+
+            return (
+              <tr key={item.booking_id ?? item.request_id}>
+                <td style={{ padding: isMobile ? "10px" : isTablet ? "11px 12px" : "14px 16px", color: "#475569", whiteSpace: "nowrap", borderBottom: "1px solid #E2E8F0", verticalAlign: "top" }}>
+                  {item.booked_at ? new Date(item.booked_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "-"}
+                </td>
+
+                <td style={{ padding: isMobile ? "10px" : isTablet ? "11px 12px" : "14px 16px", color: "#0F172A", fontWeight: 750, borderBottom: "1px solid #E2E8F0", verticalAlign: "top" }}>
+                  <div>{item.partner_name || "Partner"}</div>
+                  {item.partner_city && (
+                    <div style={{ marginTop: 3, color: "#64748B", fontSize: isMobile ? 9 : 11, fontWeight: 500 }}>
+                      {item.partner_city}
+                    </div>
+                  )}
+                </td>
+
+                <td style={{ padding: isMobile ? "10px" : isTablet ? "11px 12px" : "14px 16px", color: "#475569", borderBottom: "1px solid #E2E8F0", verticalAlign: "top", maxWidth: 330 }}>
+                  <div style={{ color: "#0F172A", fontWeight: 700 }}>{item.topic || "Consultation"}</div>
+                  <div style={{ marginTop: 4, lineHeight: 1.45, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{item.description || "No notes added"}</div>
+                </td>
+
+                <td style={{ padding: isMobile ? "10px" : isTablet ? "11px 12px" : "14px 16px", borderBottom: "1px solid #E2E8F0", verticalAlign: "top" }}>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      padding: isMobile ? "4px 7px" : "5px 9px",
+                      borderRadius: 999,
+                      background: accepted ? "#ECFDF5" : status === "rejected" ? "#FEF2F2" : "#FEFCE8",
+                      border: `1px solid ${accepted ? "#BBF7D0" : status === "rejected" ? "#FECACA" : "#FDE68A"}`,
+                      color: accepted ? "#15803D" : status === "rejected" ? "#B91C1C" : "#A16207",
+                      fontSize: isMobile ? 8 : 9,
+                      fontWeight: 850,
+                      textTransform: "capitalize",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    {status || "pending"}
+                  </span>
+                </td>
+
+                <td style={{ padding: isMobile ? "10px" : isTablet ? "11px 12px" : "14px 16px", color: "#475569", borderBottom: "1px solid #E2E8F0", verticalAlign: "top", minWidth: 180 }}>
+                  {accepted ? (
+                    <div>
+                      {item.partner_phone && (
+                        <div style={{ fontWeight: 700 }}>{item.partner_phone}</div>
+                      )}
+                      {item.partner_email && (
+                        <div style={{ marginTop: 3, fontSize: isMobile ? 9 : 11, wordBreak: "break-word" }}>{item.partner_email}</div>
+                      )}
+                      {!item.partner_phone && !item.partner_email && "Contact details not available"}
+                    </div>
+                  ) : (
+                    <span style={{ color: "#94A3B8" }}>Available after acceptance</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
 
     </div>
 </div>

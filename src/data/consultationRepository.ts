@@ -536,3 +536,190 @@ fetchConsultationPartners() {
   }));
 
 }
+
+/* ============================================================
+   STUDENT CONSULTATION HISTORY
+   ------------------------------------------------------------
+   Read-only aggregation for the student's consultation ledger.
+   Existing create/update flows are intentionally untouched.
+============================================================ */
+
+export async function fetchStudentConsultationHistory(
+  studentId?: string
+) {
+  const supabase = getSupabaseClient() as any;
+
+  if (!supabase) return [];
+
+  const resolvedStudentId =
+    studentId ?? currentStudentId();
+
+  const { data: bookings, error: bookingError } =
+    await supabase
+      .from("consultation_bookings")
+      .select("*")
+      .eq("student_id", resolvedStudentId)
+      .order("booked_at", { ascending: false });
+
+  if (bookingError) {
+    console.error(
+      "STUDENT CONSULTATION HISTORY - BOOKINGS ERROR",
+      bookingError
+    );
+    throw bookingError;
+  }
+
+  if (!bookings?.length) return [];
+
+  const requestIds = Array.from(
+    new Set(
+      bookings
+        .map((booking: any) => booking.request_id)
+        .filter(Boolean)
+    )
+  );
+
+  const partnerIds = Array.from(
+    new Set(
+      bookings
+        .map((booking: any) => booking.partner_id)
+        .filter(Boolean)
+    )
+  );
+
+  const [requestResult, incomingResult, partnerResult] =
+    await Promise.all([
+      requestIds.length
+        ? supabase
+            .from("consultation_requests")
+            .select("*")
+            .in("id", requestIds)
+        : Promise.resolve({ data: [], error: null }),
+
+      requestIds.length
+        ? supabase
+            .from("partner_incoming_requests")
+            .select("*")
+            .in("consultation_request_id", requestIds)
+        : Promise.resolve({ data: [], error: null }),
+
+      partnerIds.length
+        ? supabase
+            .from("marketplace_partners")
+            .select("*")
+            .in("id", partnerIds)
+        : Promise.resolve({ data: [], error: null })
+    ]);
+
+  if (requestResult.error) {
+    console.error(
+      "STUDENT CONSULTATION HISTORY - REQUESTS ERROR",
+      requestResult.error
+    );
+    throw requestResult.error;
+  }
+
+  if (incomingResult.error) {
+    console.error(
+      "STUDENT CONSULTATION HISTORY - INCOMING STATUS ERROR",
+      incomingResult.error
+    );
+    throw incomingResult.error;
+  }
+
+  if (partnerResult.error) {
+    console.error(
+      "STUDENT CONSULTATION HISTORY - PARTNER ERROR",
+      partnerResult.error
+    );
+    throw partnerResult.error;
+  }
+
+  const requestsById = new Map(
+    (requestResult.data ?? []).map((row: any) => [row.id, row])
+  );
+
+  const incomingByRequestId = new Map(
+    (incomingResult.data ?? []).map((row: any) => [
+      row.consultation_request_id,
+      row
+    ])
+  );
+
+  const partnersById = new Map(
+    (partnerResult.data ?? []).map((row: any) => [row.id, row])
+  );
+
+  return bookings.map((booking: any) => {
+    const request =
+      requestsById.get(booking.request_id) ?? {};
+
+    const incoming =
+      incomingByRequestId.get(booking.request_id) ?? {};
+
+    const partner =
+      partnersById.get(booking.partner_id) ?? {};
+
+    const rawStatus =
+      incoming.status ??
+      booking.booking_status ??
+      request.status ??
+      "pending";
+
+    const normalizedStatus =
+      String(rawStatus).toLowerCase();
+
+    const accepted =
+      normalizedStatus === "accepted";
+
+    return {
+      booking_id: booking.id,
+      request_id: booking.request_id,
+      booked_at: booking.booked_at,
+      scheduled_date: booking.scheduled_date,
+      scheduled_time: booking.scheduled_time,
+      booking_status: booking.booking_status,
+      credits_deducted: booking.credits_deducted,
+
+      partner_id: booking.partner_id,
+      partner_name:
+        partner.name ??
+        incoming.partner_name ??
+        "Partner",
+      partner_city:
+        partner.city ?? "",
+
+      // Only expose partner contact details after acceptance.
+      partner_phone: accepted
+        ? (
+            partner.phone ??
+            partner.mobile ??
+            partner.phone_number ??
+            partner.contact_phone ??
+            partner.contact_mobile ??
+            partner.whatsapp ??
+            null
+          )
+        : null,
+
+      partner_email: accepted
+        ? (
+            partner.email ??
+            partner.email_address ??
+            partner.contact_email ??
+            null
+          )
+        : null,
+
+      category: request.category ?? "",
+      skill: request.skill ?? "",
+      topic: request.topic ?? "",
+      description:
+        request.description ??
+        incoming.message ??
+        "",
+
+      status: rawStatus
+    };
+  });
+}
