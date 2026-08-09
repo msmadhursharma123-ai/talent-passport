@@ -18,7 +18,7 @@ import {
 
 import {
   fetchConsultationPartners
-} from "../../data/partnerMarketplaceRepository";
+} from "../../data/consultationRepository";
 
 import {
   syncStudentWallet

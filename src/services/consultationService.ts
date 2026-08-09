@@ -1,19 +1,17 @@
 import {
   createConsultationRequest,
+  createConsultationBooking,
+  createConsultationIncomingRequest,
   CreateConsultationRequestInput
 } from "../data/consultationRepository";
 
-import {
-  createConsultationBooking
-} from "../data/consultationBookingRepository";
+
 
 import {
   createCreditTransaction
 } from "../data/creditTransactionRepository";
 
-import {
-  createIncomingRequest
-} from "../data/partnerMarketplaceRepository";
+
 
 import {
   deductConsultationCredits
@@ -156,7 +154,8 @@ console.log({
 });
 console.log("======================================");
 
-const incomingRequest = await createIncomingRequest({
+const incomingRequest =
+await createConsultationIncomingRequest({
 
     partner_id: input.partnerId,
     partner_uuid: input.partnerUuid,

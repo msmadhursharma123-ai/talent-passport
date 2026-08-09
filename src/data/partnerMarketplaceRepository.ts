@@ -1171,74 +1171,67 @@ const { data, error } = query;
 // ACCEPT / REJECT
 // SCHOLARSHIP
 // ======================================
-
 export async function acceptScholarshipOffer(
-  id:string
-){
+  id: string
+) {
+  const supabase = getSupabaseClient() as any;
 
-    const supabase =
-      getSupabaseClient() as any;
+  const { data } = await supabase
+    .from("partner_scholarship_offers")
+    .select("*")
+    .eq("id", id)
+    .single();
 
-    const { data } =
-      await supabase
-      .from("partner_scholarship_offers")
-      .select("*")
-      .eq("id",id)
-      .single();
-console.table({
-    email: data.email,
-    phone: data.phone,
-    class_name: data.class_name,
-    student_name: data.student_name,
-    student_id: data.student_id
-});
+  console.table({
+    email: data?.email,
+    phone: data?.phone,
+    class_name: data?.class_name,
+    student_name: data?.student_name,
+    student_id: data?.student_id,
+  });
 
+  console.log("ACCEPT SCHOLARSHIP", id);
 
-   console.log(
-  "ACCEPT SCHOLARSHIP",
-  id
-);
+  await updateOfferStatus(
+    "partner_scholarship_offers",
+    id,
+    "accepted"
+  );
 
-await updateOfferStatus(
-  "partner_scholarship_offers",
-  id,
-  "accepted"
-);
+  if (data) {
+    console.log("========== OUTGOING LEAD ==========");
+    console.dir(data, { depth: null });
 
-    if(data){
+    try {
+      const lead = await createLead({
+        partner_id: data.partner_id,
+        partner_uuid: data.partner_uuid,
+        partner_name: data.partner_name,
 
-       await createLead({
+        student_id: data.student_id,
+        student_name: data.student_name,
+        school_name: data.school_name,
 
-    partner_id: data.partner_id,
+        email: data.email,
+        phone: data.phone,
+        class_name: data.class_name,
 
-    partner_uuid: data.partner_uuid,
+        request_type: "Scholarship",
 
-    partner_name: data.partner_name,
+        lead_source: "outgoing",
 
-    student_id: data.student_id,
+        status: "new_lead",
 
-    student_name: data.student_name,
+        notes: "",
+      });
 
-    school_name: data.school_name,
-
-    email: data.email,
-
-    phone: data.phone,
-
-    class_name: data.class_name,
-
-    request_type: "Scholarship",
-
-    lead_source: "outgoing",
-
-    status: "new_lead",
-
-    notes: ""
-
-});
-
+      console.log("CREATE LEAD RESULT");
+      console.dir(lead, { depth: null });
+    } catch (e) {
+      console.error("CREATE LEAD FAILED");
+      console.error(e);
     }
-
+  }
 }
 
 export async function rejectScholarshipOffer(
@@ -1266,41 +1259,50 @@ export async function acceptWorkshopOffer(
     .select("*")
     .eq("id", id)
     .single();
-console.log("SOURCE OFFER", data);
 
-  console.log(
-  "ACCEPT WORKSHOP",
-  id
-);
+  console.log("SOURCE OFFER", data);
 
-await updateOfferStatus(
-  "partner_workshop_offers",
-  id,
-  "accepted"
-);
+  console.log("ACCEPT WORKSHOP", id);
+
+  await updateOfferStatus(
+    "partner_workshop_offers",
+    id,
+    "accepted"
+  );
 
   if (data) {
-    await createLead({
-      partner_id: data.partner_id,
-      partner_uuid: data.partner_uuid,
-      partner_name: data.partner_name,
+    console.log("========== OUTGOING LEAD ==========");
+    console.dir(data, { depth: null });
 
-      student_id: data.student_id,
-      student_name: data.student_name,
-      school_name: data.school_name,
+    try {
+      const lead = await createLead({
+        partner_id: data.partner_id,
+        partner_uuid: data.partner_uuid,
+        partner_name: data.partner_name,
 
-      email: data.email,
-      phone: data.phone,
-      class_name: data.class_name,
+        student_id: data.student_id,
+        student_name: data.student_name,
+        school_name: data.school_name,
 
-      request_type: "Workshop",
+        email: data.email,
+        phone: data.phone,
+        class_name: data.class_name,
 
-      lead_source: "outgoing",
+        request_type: "Workshop",
 
-      status: "new_lead",
+        lead_source: "outgoing",
 
-      notes: "",
-    });
+        status: "new_lead",
+
+        notes: "",
+      });
+
+      console.log("CREATE LEAD RESULT");
+      console.dir(lead, { depth: null });
+    } catch (e) {
+      console.error("CREATE LEAD FAILED");
+      console.error(e);
+    }
   }
 }
 
@@ -1318,7 +1320,6 @@ export async function rejectWorkshopOffer(
 // ACCEPT / REJECT
 // CONTACT
 // ======================================
-
 export async function acceptContactOffer(
   id: string
 ) {
@@ -1329,42 +1330,50 @@ export async function acceptContactOffer(
     .select("*")
     .eq("id", id)
     .single();
-console.log("SOURCE OFFER", data);
 
+  console.log("SOURCE OFFER", data);
 
-console.log(
-  "ACCEPT CONTACT",
-  id
-);
+  console.log("ACCEPT CONTACT", id);
 
-await updateOfferStatus(
-  "partner_contact_requests",
-  id,
-  "accepted"
-);
+  await updateOfferStatus(
+    "partner_contact_requests",
+    id,
+    "accepted"
+  );
 
   if (data) {
-    await createLead({
-      partner_id: data.partner_id,
-      partner_uuid: data.partner_uuid,
-      partner_name: data.partner_name,
+    console.log("========== OUTGOING LEAD ==========");
+    console.dir(data, { depth: null });
 
-      student_id: data.student_id,
-      student_name: data.student_name,
-      school_name: data.school_name,
+    try {
+      const lead = await createLead({
+        partner_id: data.partner_id,
+        partner_uuid: data.partner_uuid,
+        partner_name: data.partner_name,
 
-      email: data.email,
-      phone: data.phone,
-      class_name: data.class_name,
+        student_id: data.student_id,
+        student_name: data.student_name,
+        school_name: data.school_name,
 
-      request_type: "Contact",
+        email: data.email,
+        phone: data.phone,
+        class_name: data.class_name,
 
-      lead_source: "outgoing",
+        request_type: "Contact",
 
-      status: "new_lead",
+        lead_source: "outgoing",
 
-      notes: "",
-    });
+        status: "new_lead",
+
+        notes: "",
+      });
+
+      console.log("CREATE LEAD RESULT");
+      console.dir(lead, { depth: null });
+    } catch (e) {
+      console.error("CREATE LEAD FAILED");
+      console.error(e);
+    }
   }
 }
 
@@ -1585,103 +1594,63 @@ export async function withdrawApplication(
 // ======================================
 // LEAD PIPELINE
 // ======================================
-
-export async function
-createLead(
+export async function createLead(
   lead: any
 ) {
 
-  const supabase =
-    getSupabaseClient() as any;
+  const supabase = getSupabaseClient() as any;
 
   if (!supabase) {
     return null;
   }
 
+  const payload = {
+    ...lead,
+  };
+
+  console.log("================================");
+  console.log("CREATE LEAD");
+  console.dir(payload, { depth: null });
+
+/* ============================================================
+   Every Accepted Interest Creates A New Lead
+
+   Business Rule:
+   - Never block duplicate enquiries.
+   - Every acceptance becomes a CRM Lead.
+   - Same student may enquire multiple times.
+   - Incoming and Outgoing are both preserved.
+   - Interest history is maintained through created_at.
+============================================================ */
+
+console.log("Creating a new CRM Lead...");
+
   /* ============================================================
-     Resolve Identity
+     Insert New Lead
   ============================================================ */
-
-const payload = {
-    ...lead
-};
-
- 
-
-  /* ============================================================
-     Create Lead
-  ============================================================ */
-
-
-
-
-const {
-  data: authData,
-  error: authError,
-} = await supabase.auth.getUser();
-
-console.log("================================");
-console.log("SUPABASE AUTH USER");
-console.log(authData.user);
-
-console.log("AUTH USER ID");
-console.log(authData.user?.id);
-
-console.log("PAYLOAD PARTNER UUID");
-console.log(payload.partner_uuid);
-
-console.log("PAYLOAD STUDENT UUID");
-console.log(payload.student_uuid);
-
-console.log("================================");
-
 
   const {
-
     data,
+    error,
+  } = await supabase
+    .from("partner_student_leads")
+    .insert([payload])
+    .select()
+    .single();
 
-    error
-
-  } =
-    await supabase
-
-      .from(
-        "partner_student_leads"
-      )
-
-      .insert([payload])
-
-      .select()
-
-      .single();
-
-      console.log("================================");
-console.log("INSERT RESPONSE");
-
-
-console.log("INSERT DATA");
-console.dir(data, { depth: null });
-
-console.log("INSERT ERROR");
-console.dir(error, { depth: null });
+  console.log("================================");
+  console.log("INSERT RESPONSE");
+  console.dir(data, { depth: null });
+  console.dir(error, { depth: null });
 
   if (error) {
-
-    console.error(
-
-      "CREATE LEAD ERROR",
-
-      error
-
-    );
-
+    console.error("CREATE LEAD ERROR", error);
     return null;
-
   }
 
   return data;
-
 }
+
 export async function fetchPartnerLeads(
   partnerId?: string
 ) {
@@ -1697,40 +1666,64 @@ export async function fetchPartnerLeads(
      Resolve Marketplace Partner ID
   ========================================== */
 
-const { data: partnerRow, error: partnerError } =
-  await supabase
-    .from("marketplace_partners")
-    .select("id")
-    .eq("partner_uuid", resolvedPartnerId)
-    .single();
+const identity = requirePartnerIdentity();
 
-  if (partnerError || !partnerRow) {
-    console.error(
-      "Unable to resolve marketplace partner",
-      partnerError
-    );
-    return [];
-  }
+const partnerTextId = identity.partnerId;
 
-  console.log(
-    "Marketplace Partner ID:",
-    partnerRow.id
+const marketplacePartnerId =
+  await resolveMarketplacePartnerId(
+    resolvedPartnerId
   );
 
-  /* ==========================================
-     Fetch Leads
-  ========================================== */
+console.log("================================");
+console.log("LEAD PIPELINE");
+console.log("Partner UUID:", resolvedPartnerId);
+console.log("Partner Text ID:", partnerTextId);
+console.log("Marketplace Partner ID:", marketplacePartnerId);
+console.log("================================");
 
-  const {
-    data,
-    error
-  } = await supabase
+let query = supabase
     .from("partner_student_leads")
-    .select("*")
-    .eq("partner_id", partnerRow.id)
-    .order("created_at", {
-      ascending: false,
-    });
+    .select("*");
+
+if (partnerTextId && marketplacePartnerId) {
+
+  query = query.or(
+    `partner_id.eq.${partnerTextId},partner_id.eq.${marketplacePartnerId}`
+  );
+
+} else if (partnerTextId) {
+
+  query = query.eq(
+    "partner_id",
+    partnerTextId
+  );
+
+} else if (marketplacePartnerId) {
+
+  query = query.eq(
+    "partner_id",
+    marketplacePartnerId
+  );
+
+} else {
+
+  console.error(
+    "Unable to resolve any partner identity."
+  );
+
+  return [];
+}
+
+const {
+  data,
+  error
+} = await query.order(
+  "created_at",
+  {
+    ascending: false,
+  }
+);
 
   console.log("LEADS RETURNED", data);
 
@@ -2197,104 +2190,3 @@ export async function fetchAllocatedStudents(
 
 }
 
-
-/* ============================================================
-   CONSULTATION PARTNERS
-   SOURCE OF TRUTH = marketplace_partners
-============================================================ */
-
-export async function
-fetchConsultationPartners() {
-
-  const supabase =
-    getSupabaseClient() as any;
-
-  if (!supabase) {
-    return [];
-  }
-
-  const {
-    data,
-    error
-  } = await supabase
-
-    .from("marketplace_partners")
-
-    .select(`
-      id,
-      partner_uuid,
-      name,
-      city,
-      state,
-      category,
-      skills,
-      consultation_duration,
-      consultation_credits,
-      rating,
-      total_reviews,
-      verified,
-      featured
-    `)
-
-    .eq("active", true)
-
-    .order(
-      "featured",
-      {
-        ascending: false
-      }
-    )
-
-    .order(
-      "rating",
-      {
-        ascending: false
-      }
-    );
-
-  if (error) {
-
-    console.error(
-      "CONSULTATION PARTNERS ERROR",
-      error
-    );
-
-    return [];
-  }
-
-  return (data ?? []).map((partner: any) => ({
-
-    // THIS IS THE IMPORTANT FK
-    id: partner.id,
-
-    // Identity
-    partner_uuid: partner.partner_uuid,
-    partner_id: partner.partner_uuid,
-
-    // UI
-    institute_name: partner.name,
-    institute_city: partner.city,
-    category: partner.category,
-    skill_focus: partner.skills ?? [],
-
-    consultation_duration:
-      partner.consultation_duration,
-
-    consultation_credits:
-      partner.consultation_credits,
-
-    rating:
-      partner.rating,
-
-    total_reviews:
-      partner.total_reviews,
-
-    verified:
-      partner.verified,
-
-    featured:
-      partner.featured
-
-  }));
-
-}
