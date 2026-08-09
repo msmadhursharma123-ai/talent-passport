@@ -7,6 +7,10 @@ import React,
 from "react";
 
 import {
+  formatCRMDate
+} from "../../utils/dateFormatter";
+
+import {
   fetchPartnerLeads,
   updateLeadStatus,
   updateLeadNotes,
@@ -118,6 +122,18 @@ if (!partnerUuid) {
     setSourceFilter
   ] =
     useState("all");
+
+const [
+  timeFilter,
+  setTimeFilter
+] =
+useState("all");
+
+const [
+  typeFilter,
+  setTypeFilter
+] =
+useState("all");
 
   const [
     selectedLead,
@@ -316,27 +332,80 @@ const counsellingCount =
             lead.lead_source ===
             sourceFilter;
 
-          return (
-            searchMatch
-            &&
-            statusMatch
-            &&
-            sourceMatch
-          );
+            const timeMatch =
+    timeFilter === "all" ||
+
+    (() => {
+
+        const leadDate = new Date(lead.created_at);
+
+        const now = new Date();
+
+        if (timeFilter === "today") {
+
+            return leadDate.toDateString() === now.toDateString();
+
+        }
+
+        if (timeFilter === "week") {
+
+            const weekAgo = new Date();
+
+            weekAgo.setDate(now.getDate() - 7);
+
+            return leadDate >= weekAgo;
+
+        }
+
+        if (timeFilter === "month") {
+
+            return (
+                leadDate.getMonth() === now.getMonth() &&
+                leadDate.getFullYear() === now.getFullYear()
+            );
+
+        }
+
+        if (timeFilter === "year") {
+
+            return (
+                leadDate.getFullYear() === now.getFullYear()
+            );
+
+        }
+
+        return true;
+
+    })();
+
+
+const typeMatch =
+
+    typeFilter === "all" ||
+
+    lead.request_type
+        ?.toLowerCase()
+        ===
+    typeFilter.toLowerCase();
+
+         return (
+    searchMatch &&
+    statusMatch &&
+    sourceMatch &&
+    timeMatch &&
+    typeMatch
+);
         }
       );
 
     }, [
-
-      leads,
-
-      search,
-
-      statusFilter,
-
-      sourceFilter
-
-    ]);
+    leads,
+    search,
+    statusFilter,
+    sourceFilter,
+    timeFilter,
+    typeFilter
+]);
 
   function
   getStatusColor(
@@ -422,7 +491,13 @@ const counsellingCount =
 
           .lp-filter-desk { padding: 12px !important; }
           .lp-filter-desk > div:first-child { font-size: 8px !important; margin-bottom: 7px !important; }
-          .lp-filter-grid { grid-template-columns: minmax(0,1.6fr) minmax(0,.7fr) minmax(0,.7fr) !important; gap: 6px !important; }
+          .lp-filter-grid{
+    grid-template-columns:
+        minmax(0,1.8fr)
+        repeat(4,minmax(0,.7fr))
+        !important;
+    gap:6px !important;
+}
           .lp-filter-grid input, .lp-filter-grid select { min-width: 0 !important; height: 32px !important; padding: 0 8px !important; border-radius: 8px !important; font-size: 9px !important; }
 
           .lp-ledger-header { padding: 15px !important; }
@@ -500,7 +575,28 @@ const counsellingCount =
 
           .lp-filter-desk { padding: 9px !important; }
           .lp-filter-desk > div:first-child { font-size: 6px !important; margin-bottom: 5px !important; }
-          .lp-filter-grid { grid-template-columns: minmax(0,1.6fr) minmax(0,.7fr) minmax(0,.7fr) !important; gap: 3px !important; }
+.lp-filter-grid{
+    grid-template-columns:
+        repeat(3,minmax(0,1fr))
+        !important;
+    gap:4px !important;
+}
+
+.lp-filter-grid input{
+    grid-column:span 1;
+}
+
+.lp-filter-grid select{
+    width:100%;
+}
+
+.lp-filter-grid select:nth-of-type(3){
+    grid-column:1/span 1;
+}
+
+.lp-filter-grid select:nth-of-type(4){
+    grid-column:2/span 1;
+}
           .lp-filter-grid input, .lp-filter-grid select { height: 27px !important; padding: 0 4px !important; border-radius: 6px !important; font-size: 6.5px !important; }
 
           .lp-ledger-header { padding: 10px !important; }
@@ -940,15 +1036,15 @@ const counsellingCount =
           PIPELINE FILTERS
         </div>
 
-        <div
-          className="lp-filter-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "minmax(300px,1.6fr) minmax(180px,.7fr) minmax(180px,.7fr)",
-            gap: "10px"
-          }}
-        >
+   <div
+  className="lp-filter-grid"
+  style={{
+      display: "grid",
+      gridTemplateColumns:
+          "minmax(300px,1.8fr) repeat(4,minmax(150px,.7fr))",
+      gap: "10px"
+  }}
+>
 
           <input
             value={search}
@@ -957,7 +1053,7 @@ const counsellingCount =
                 e.target.value
               )
             }
-            placeholder="Search Student / School / Phone"
+            placeholder="Search Student / School / Phone / Time / Type"
             style={{
               width: "100%",
               boxSizing: "border-box",
@@ -1049,6 +1145,49 @@ const counsellingCount =
             </option>
 
           </select>
+
+<select
+    value={timeFilter}
+    onChange={(e)=>setTimeFilter(e.target.value)}
+    style={{
+        width: "100%",
+        padding: "12px 14px",
+        borderRadius: "12px",
+        border: "1px solid #CBD5E1",
+        background: "#FFFFFF",
+        color: "#334155",
+        fontSize: "15px",
+        fontWeight: 600,
+        outline: "none"
+    }}
+>
+    <option value="all">All Time</option>
+    <option value="today">Today</option>
+    <option value="week">This Week</option>
+    <option value="month">This Month</option>
+    <option value="year">This Year</option>
+</select>
+
+<select
+    value={typeFilter}
+    onChange={(e)=>setTypeFilter(e.target.value)}
+    style={{
+        width: "100%",
+        padding: "12px 14px",
+        borderRadius: "12px",
+        border: "1px solid #CBD5E1",
+        background: "#FFFFFF",
+        color: "#334155",
+        fontSize: "15px",
+        fontWeight: 600,
+        outline: "none"
+    }}
+>
+<option value="scholarship">Scholarship</option>
+<option value="workshop">Workshop</option>
+<option value="consultation">Consultation</option>
+<option value="contact">Contact</option>
+</select>
 
         </div>
 
@@ -1201,6 +1340,7 @@ const counsellingCount =
                   "School",
                   "Phone",
                   "Email",
+                  "Added",
                   "Source",
                   "Status",
                   "Follow Up",
@@ -1384,6 +1524,21 @@ const counsellingCount =
                         {lead.email || "-"}
                       </td>
 
+{/* ADDED */}
+
+<td
+  style={{
+    whiteSpace: "pre-line",
+    fontSize: 12,
+    color: "#475569",
+    fontWeight: 600
+  }}
+>
+  {formatCRMDate(
+    lead.created_at ??
+    lead.updated_at
+  )}
+</td>
 
                       {/* SOURCE */}
 

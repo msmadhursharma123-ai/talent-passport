@@ -40,7 +40,8 @@ import {
 
 import {
   getCurrentStudent,
-  getMasterStudentId
+  getMasterStudentId,
+  requireIdentity
 } from "../../services/identityService";
 
 export default function CreditDashboard() {
@@ -4141,33 +4142,36 @@ console.log("selectedPartner.partner_uuid =", selectedPartner?.partner_uuid);
 console.log("selectedPartner.partner_id =", selectedPartner?.partner_id);
 console.log("======================================");
 
+const identity = requireIdentity();
 const result = await bookConsultation({
 
     studentId: getMasterStudentId(),
 
-    partnerId:
-        selectedPartner.partner_id,
+    partnerId: selectedPartner.partner_id,
 
-    partnerUuid:
-        selectedPartner.partner_uuid,
+    partnerUuid: selectedPartner.partner_uuid,
 
-    partnerName:
-        selectedPartner.name,
+    partnerName: selectedPartner.name,
 
-    category:
-        selectedCategory!,
+    studentName: identity.studentName,
 
-    skill:
-        selectedSkill,
+    studentEmail: identity.email,
 
-    topic:
-        consultationTopic,
+    studentPhone: identity.parentPhone,
 
-    description:
-        consultationDescription,
+    schoolName: identity.schoolName,
 
-    consultationCredits:
-        selectedPartner.credits
+    className: identity.className,
+
+    category: selectedCategory,
+
+    skill: selectedSkill,
+
+    topic: consultationTopic,
+
+    description: consultationDescription,
+
+    consultationCredits: selectedPartner.credits
 
 });
 

@@ -19,6 +19,9 @@ import {
   requirePartnerIdentity,
 } from "../../services/identityService";
 
+import {
+  formatCRMDate
+} from "../../utils/dateFormatter";
 
 /* =========================================================
    INCOMING REQUESTS — UI HELPERS
@@ -426,6 +429,30 @@ const partnerName =
   ] =
     useState(false);
 
+const [search, setSearch] = useState("");
+
+const [timeFilter, setTimeFilter] =
+useState("all");
+
+const [statusFilter, setStatusFilter] =
+useState("all");
+
+const [
+
+typeFilter,
+
+setTypeFilter
+
+]=
+
+useState("all");
+
+const [customRange, setCustomRange] =
+useState({
+    from: "",
+    to: ""
+});
+
 useEffect(() => {
     if (partnerUuid) {
         loadRequests();
@@ -621,6 +648,143 @@ await loadRequests();
     await loadRequests();
   }
 
+  const filteredRequests =
+requests.filter((request:any)=>{
+
+    const searchMatch =
+
+        (
+            request.requester_name ??
+            ""
+        )
+        .toLowerCase()
+        .includes(search.toLowerCase())
+
+        ||
+
+        (
+            request.school_name ??
+            ""
+        )
+        .toLowerCase()
+        .includes(search.toLowerCase())
+
+        ||
+
+        (
+            request.phone ??
+            ""
+        )
+        .toLowerCase()
+        .includes(search.toLowerCase());
+
+const typeMatch=
+
+typeFilter==="all"
+
+||
+
+request.request_type
+?.toLowerCase()
+
+===
+
+typeFilter.toLowerCase();
+
+    const statusMatch =
+
+        statusFilter==="all"
+
+        ||
+
+        request.status===statusFilter;
+
+    let timeMatch=true;
+
+    if(request.created_at){
+
+        const today=new Date();
+
+        const created=new Date(request.created_at);
+
+        if(timeFilter==="today"){
+
+            timeMatch=
+            created.toDateString()===
+            today.toDateString();
+
+        }
+
+        if(timeFilter==="week"){
+
+            const week=new Date();
+
+            week.setDate(
+                today.getDate()-7
+            );
+
+            timeMatch=
+            created>=week;
+
+        }
+
+        if(timeFilter==="month"){
+
+            const month=new Date();
+
+            month.setMonth(
+                today.getMonth()-1
+            );
+
+            timeMatch=
+            created>=month;
+
+        }
+
+        if(
+            timeFilter==="custom"
+
+            &&
+
+            customRange.from
+
+            &&
+
+            customRange.to
+        ){
+
+            timeMatch=
+
+                created>=new Date(customRange.from)
+
+                &&
+
+                created<=new Date(customRange.to);
+
+        }
+
+    }
+
+return(
+
+searchMatch
+
+&&
+
+statusMatch
+
+&&
+
+typeMatch
+
+&&
+
+timeMatch
+
+);
+
+}); 
+
   function
   getStatusColor(
     status: string
@@ -707,6 +871,40 @@ await loadRequests();
             font-size: 8px;
             font-weight: 800;
           }
+
+/* ================= FILTER DESK ================= */
+
+.ir-filter-desk{
+    padding:12px !important;
+    border-radius:17px !important;
+    margin-bottom:10px !important;
+}
+
+.ir-filter-desk>div:first-child{
+    font-size:8px !important;
+    margin-bottom:7px !important;
+}
+
+.ir-filter-grid{
+    display:grid !important;
+    grid-template-columns:
+        minmax(0,1.6fr)
+        minmax(0,.7fr)
+        minmax(0,.7fr)
+        minmax(0,.7fr) !important;
+    gap:6px !important;
+}
+
+.ir-filter-grid input,
+.ir-filter-grid select{
+    width:100% !important;
+    min-width:0 !important;
+    height:32px !important;
+    padding:0 8px !important;
+    border-radius:8px !important;
+    font-size:9px !important;
+    box-sizing:border-box;
+}
           .ir-table-scroll {
             overflow-x: auto !important;
             -webkit-overflow-scrolling: touch;
@@ -767,6 +965,39 @@ await loadRequests();
           .ir-metric-card > div:last-child > div:first-child { font-size: 5.5px !important; }
           .ir-metric-card > div:last-child > div:nth-child(2) { font-size: 16px !important; margin-top: 4px !important; }
           .ir-metric-card > div:last-child > div:last-child { font-size: 6px !important; margin-top: 3px !important; }
+/* ================= FILTER DESK ================= */
+
+.ir-filter-desk{
+    padding:9px !important;
+    border-radius:14px !important;
+    margin-bottom:8px !important;
+}
+
+.ir-filter-desk>div:first-child{
+    font-size:6px !important;
+    margin-bottom:5px !important;
+}
+
+.ir-filter-grid{
+    display:grid !important;
+    grid-template-columns:
+        minmax(0,1.6fr)
+        minmax(0,.7fr)
+        minmax(0,.7fr)
+        minmax(0,.7fr) !important;
+    gap:3px !important;
+}
+
+.ir-filter-grid input,
+.ir-filter-grid select{
+    width:100% !important;
+    min-width:0 !important;
+    height:27px !important;
+    padding:0 4px !important;
+    border-radius:6px !important;
+    font-size:6.5px !important;
+    box-sizing:border-box;
+}
 
           .ir-ledger-header { padding: 10px !important; }
           .ir-ledger-header > div:last-child > div:last-child { padding: 4px 6px !important; font-size: 6px !important; }
@@ -937,7 +1168,7 @@ await loadRequests();
                 fontWeight: 800
               }}
             >
-              {requests.length} TOTAL REQUESTS
+              {filteredRequests.length} TOTAL REQUESTS
             </div>
 
             <div
@@ -1108,7 +1339,7 @@ await loadRequests();
 
           <RequestMetricCard
             label="Total Requests"
-            value={requests.length}
+            value={filteredRequests.length}
             description="Requests received from students"
             tone="orange"
           />
@@ -1153,7 +1384,110 @@ await loadRequests();
 
       </div>
 
+<div
+    className="ir-filter-desk"
+    style={{
+        background: "linear-gradient(135deg,#FFFFFF,#FFFCF8)",
+        padding: "18px",
+        borderRadius: "20px",
+        marginBottom: "20px",
+        border: "1px solid #E2E8F0",
+        boxShadow: "0 6px 18px rgba(15,23,42,.025)"
+    }}
+>
 
+    <div
+        style={{
+            color: "#F97316",
+            fontSize: "12px",
+            fontWeight: 850,
+            letterSpacing: "1.4px",
+            marginBottom: "11px"
+        }}
+    >
+        REQUEST FILTERS
+    </div>
+
+    <div
+        className="ir-filter-grid"
+        style={{
+            display: "grid",
+            gridTemplateColumns:
+                "minmax(300px,1.6fr) minmax(180px,.7fr) minmax(180px,.7fr) minmax(180px,.7fr)",
+            gap: "10px"
+        }}
+    >
+
+        <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search Student / School / Phone"
+            style={{
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "12px 14px",
+                borderRadius: "12px",
+                border: "1px solid #CBD5E1",
+                background: "#FFFFFF"
+            }}
+        />
+
+        <select
+            value={timeFilter}
+            onChange={(e) => setTimeFilter(e.target.value)}
+            style={{
+                width: "100%",
+                padding: "12px 14px",
+                borderRadius: "12px",
+                border: "1px solid #CBD5E1",
+                background: "#FFFFFF"
+            }}
+        >
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="week">Last 7 Days</option>
+            <option value="month">Last 30 Days</option>
+            <option value="custom">Custom</option>
+        </select>
+
+        <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            style={{
+                width: "100%",
+                padding: "12px 14px",
+                borderRadius: "12px",
+                border: "1px solid #CBD5E1",
+                background: "#FFFFFF"
+            }}
+        >
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+        </select>
+
+        <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            style={{
+                width: "100%",
+                padding: "12px 14px",
+                borderRadius: "12px",
+                border: "1px solid #CBD5E1",
+                background: "#FFFFFF"
+            }}
+        >
+            <option value="all">All Types</option>
+            <option value="consultation">Consultation</option>
+            <option value="scholarship">Scholarship</option>
+            <option value="workshop">Workshop</option>
+            <option value="contact">Contact</option>
+        </select>
+
+    </div>
+
+</div>
       {/* =========================================================
           REQUEST LEDGER
          ========================================================= */}
@@ -1261,7 +1595,7 @@ await loadRequests();
                 whiteSpace: "nowrap"
               }}
             >
-              {requests.length} REQUESTS
+             {filteredRequests.length} REQUESTS
             </div>
 
           </div>
@@ -1303,6 +1637,7 @@ await loadRequests();
                   "Type",
                   "Student",
                   "School",
+                  "Received",
                   "Status",
                   "Actions"
                 ].map(label => (
@@ -1332,20 +1667,19 @@ await loadRequests();
             </thead>
 
 
-            <tbody>
+          <tbody>
 
-              {requests.map(
-                (
-                  request: any
-                ) => (
+  {filteredRequests.map(
+    (
+      request: any
+    ) => (
 
-                  <tr
-                    key={request.id}
-                    style={{
-                      borderBottom:
-                        "1px solid #F1F5F9"
-                    }}
-                  >
+      <tr
+        key={request.id}
+        style={{
+          borderBottom: "1px solid #F1F5F9"
+        }}
+      >
 
                     {/* TYPE */}
 
@@ -1448,6 +1782,22 @@ await loadRequests();
                       {request.school_name || "-"}
                     </td>
 
+{/* RECIEVED */}
+
+<td
+  style={{
+    whiteSpace: "pre-line",
+    fontSize: 12,
+    color: "#475569",
+    fontWeight: 600
+  }}
+>
+  {formatCRMDate(
+    request.created_at ??
+    request.updated_at
+  )}
+</td>
+
 
                     {/* STATUS */}
 
@@ -1543,7 +1893,7 @@ await loadRequests();
 
         {/* EMPTY STATE */}
 
-        {requests.length === 0 && (
+        {filteredRequests.length === 0 && (
 
           <div
             style={{

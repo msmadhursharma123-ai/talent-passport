@@ -34,6 +34,20 @@ export type CreateConsultationRequestInput = {
 
   consultationCredits: number;
 
+  studentName?: string;
+
+studentEmail?: string;
+
+studentPhone?: string;
+
+schoolName?: string;
+
+className?: string;
+
+partnerUuid?: string;
+
+partnerName?: string;
+
 };
 
 /* ============================================================
