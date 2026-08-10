@@ -32,29 +32,6 @@ export default function IdentityWorld({
         overflowX: "hidden",
     }}
 >
-        {/* Identity World visual corrections
-            - Keep the public landing navbar solid white.
-            - Move the hero content down to match the frozen landing layout.
-            - These are intentionally scoped to this page only.
-        */}
-        <style>{`
-            .landing-shell .landing-navbar {
-                background: #FFFFFF !important;
-                background-color: #FFFFFF !important;
-                z-index: 100 !important;
-            }
-
-            .landing-shell .landing-navbar-scrolled {
-                background: #FFFFFF !important;
-                background-color: #FFFFFF !important;
-            }
-
-            .landing-shell #hero {
-                position: relative;
-                transform: translateY(72px);
-                margin-bottom: 72px;
-            }
-        `}</style>
 
         {/* ===========================
         NAVBAR
