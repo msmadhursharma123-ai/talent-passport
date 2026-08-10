@@ -13,30 +13,26 @@ export default function ResetPasswordPage() {
 const [error,setError]=
 useState("");
     const [loading, setLoading] = useState(false);
-    const [checkingRecovery, setCheckingRecovery] = useState(true);
+const [checkingRecovery, setCheckingRecovery] = useState(true);
     const [validRecovery, setValidRecovery] = useState(false);
 
    
-    useEffect(() => {
 
+    useEffect(() => {
         let mounted = true;
 
         async function validateRecoverySession() {
-
             try {
-
                 /*
-                 * Supabase may need a moment to consume the recovery
-                 * tokens from the URL hash and establish the temporary
-                 * recovery session. Retry briefly instead of declaring
-                 * the link invalid during that startup window.
+                 * Supabase consumes the recovery token from the URL hash and
+                 * creates a temporary authenticated recovery session.
+                 * Give that process a short window to complete on slower
+                 * production devices/browsers.
                  */
                 let session = null;
 
-                for (let attempt = 0; attempt < 15; attempt += 1) {
-
-                    session =
-                        await getCurrentSession();
+                for (let attempt = 0; attempt < 20; attempt += 1) {
+                    session = await getCurrentSession();
 
                     if (session || !mounted) {
                         break;
@@ -51,14 +47,12 @@ useState("");
                     return;
                 }
 
-                setValidRecovery(
-                    Boolean(session)
-                );
+                setValidRecovery(Boolean(session));
 
                 /*
-                 * Once Supabase has consumed the recovery hash and we
-                 * have a valid session, remove the token fragment from
-                 * the address bar. Do this only after the session exists.
+                 * Only remove the recovery hash after the session has been
+                 * established. Removing it earlier can destroy the token
+                 * before Supabase has consumed it.
                  */
                 if (session && window.location.hash) {
                     window.history.replaceState(
@@ -67,10 +61,7 @@ useState("");
                         `${window.location.pathname}${window.location.search}`
                     );
                 }
-
-            }
-            catch (error) {
-
+            } catch (error) {
                 console.error(
                     "PASSWORD RECOVERY SESSION CHECK FAILED",
                     error
@@ -79,16 +70,11 @@ useState("");
                 if (mounted) {
                     setValidRecovery(false);
                 }
-
-            }
-            finally {
-
+            } finally {
                 if (mounted) {
                     setCheckingRecovery(false);
                 }
-
             }
-
         }
 
         validateRecoverySession();
@@ -96,152 +82,98 @@ useState("");
         return () => {
             mounted = false;
         };
-
     }, []);
 
+    async function updatePassword() {
+        setError("");
 
-  async function updatePassword() {
-
-    setError("");
-
-    if (!password.trim()) {
-
-        setError("Please enter a password.");
-
-        return;
-
-    }
-
-    if (password.length < 8) {
-
-        setError("Password must contain at least 8 characters.");
-
-        return;
-
-    }
-
-    const hasUpper = /[A-Z]/.test(password);
-
-    const hasLower = /[a-z]/.test(password);
-
-    const hasNumber = /[0-9]/.test(password);
-
-    if (
-
-        !hasUpper ||
-
-        !hasLower ||
-
-        !hasNumber
-
-    ) {
-
-        setError(
-
-            "Password must contain an uppercase letter, lowercase letter and a number."
-
-        );
-
-        return;
-
-    }
-
-    if (password !== confirmPassword) {
-
-        setError("Passwords do not match.");
-
-        return;
-
-    }
-
-    setLoading(true);
-
-    try {
-
-        /*
-         * The Supabase recovery link establishes a temporary
-         * authenticated recovery session. Update the password
-         * through that session instead of an email + role lookup.
-         */
-        const result =
-            await updatePasswordWithRecoverySession(
-                password
-            );
-
-        if (!result.success) {
-
-            throw new Error(
-
-                result.error ??
-
-                "Unable to update password."
-
-            );
-
+        if (!password.trim()) {
+            setError("Please enter a password.");
+            return;
         }
 
-        /*
-         * End the temporary recovery session so the application
-         * does not silently log the user into a portal after reset.
-         */
-        await signOut();
+        if (password.length < 8) {
+            setError("Password must contain at least 8 characters.");
+            return;
+        }
 
-        alert(
-            "Password updated successfully.\n\nPlease login using your new password."
-        );
+        const hasUpper = /[A-Z]/.test(password);
+        const hasLower = /[a-z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
 
-        window.location.href = "/";
+        if (!hasUpper || !hasLower || !hasNumber) {
+            setError(
+                "Password must contain an uppercase letter, lowercase letter and a number."
+            );
+            return;
+        }
 
+        if (password !== confirmPassword) {
+            setError("Passwords do not match.");
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const result =
+                await updatePasswordWithRecoverySession(
+                    password
+                );
+
+            if (!result.success) {
+                throw new Error(
+                    result.error ??
+                    "Unable to update password."
+                );
+            }
+
+            /*
+             * End the temporary recovery session so the user is not silently
+             * signed into a portal after changing the password.
+             */
+            /*
+             * This was a password reset for an already-existing authenticated
+             * account. It is never an onboarding/new-user event.
+             * Keep only a short-lived semantic marker so the next Existing
+             * User Login remains unambiguously an existing-user flow.
+             */
+            sessionStorage.setItem(
+                "passwordResetCompleted",
+                "true"
+            );
+
+            await signOut();
+
+            alert(
+                "Password updated successfully.\n\nPlease login using your new password."
+            );
+
+            window.location.href = "/";
+        } catch (error: any) {
+            setError(
+                error?.message ??
+                "Unable to update password."
+            );
+        } finally {
+            setLoading(false);
+        }
     }
-
-    catch (error: any) {
-
-        alert(
-
-            error?.message ??
-
-            "Unable to update password."
-
-        );
-
-    }
-
-    finally {
-
-        setLoading(false);
-
-    }
-
-}
 
     if (checkingRecovery) {
-
         return (
             <div className="reset-page">
-
                 <div className="reset-card">
-
-                    <div className="reset-icon">
-                        🔒
-                    </div>
-
-                    <h1>
-                        Verifying Reset Link
-                    </h1>
-
+                    <div className="reset-icon">🔒</div>
+                    <h1>Verifying Reset Link</h1>
                     <p>
                         Please wait while we securely verify your password reset link.
                     </p>
-
                 </div>
-
                 <style>{styles}</style>
-
             </div>
         );
-
     }
-
 
     if (!validRecovery) {
 

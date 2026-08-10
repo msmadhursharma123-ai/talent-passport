@@ -28,9 +28,7 @@ export default function ForgotPasswordDialog({
 
     role,
 
-    onClose,
-
-    onVerified
+    onClose
 
 }: Props) {
 
@@ -123,156 +121,132 @@ useEffect(() => {
   async function handleVerify() {
 
     if (
-
         lockedUntil &&
-
         Date.now() < lockedUntil
-
     ) {
-
         alert(
-
-            `Too many failed attempts.
-
-Please wait ${remainingSeconds} seconds before trying again.`
-
+            `Too many failed attempts.\n\nPlease wait ${remainingSeconds} seconds before trying again.`
         );
-
         return;
-
     }
 
-    if (!email.trim()) {
+    const verifiedEmail = email.trim();
 
+    if (!verifiedEmail) {
         alert("Please enter your email.");
-
         return;
-
     }
-
 
     setLoading(true);
-
     setStatus("verifying");
 
     try {
-
-   const verification =
-    await verifyRecoveryIdentity(
-
-        role,
-
-        email.trim()
-
-    );
+        /*
+         * STEP 1 — Verify that this is an existing account for the
+         * selected portal role.
+         *
+         * This is NOT the password-reset session. It only confirms
+         * that the account is eligible for password recovery.
+         */
+        const verification =
+            await verifyRecoveryIdentity(
+                role,
+                verifiedEmail
+            );
 
         if (!verification.success) {
-
             const attempts = failedAttempts + 1;
-
             setFailedAttempts(attempts);
-
-setStatus("idle");
+            setStatus("idle");
 
             if (attempts >= 3) {
-
                 setLockedUntil(
-
                     Date.now() + 5 * 60 * 1000
-
                 );
 
                 alert(
-
                     "Too many failed attempts.\n\nForgot Password has been locked for 5 minutes."
-
                 );
-
                 return;
-
             }
 
             alert(
-
-                `${verification.error}
-
-Remaining Attempts:
-
-${3 - attempts}`
-
+                `${verification.error ?? "Unable to verify this account."}\n\nRemaining Attempts:\n\n${3 - attempts}`
             );
-
             return;
-
         }
 
         /*
-         * Identity verification has passed.
+         * STEP 2 — NOW actually send the Supabase password-reset email.
          *
-         * Do NOT open the password form here.
-         * The password form must only be reachable through
-         * the Supabase recovery link delivered to this email.
+         * The previous implementation stopped after identity verification
+         * and immediately opened ResetPasswordPage. That page correctly
+         * expects a Supabase PASSWORD_RECOVERY session created from the
+         * email link, so it displayed "Invalid Recovery Session" because
+         * no reset email/link had ever been generated.
          */
         setStatus("sending");
 
         const resetResult =
             await sendPasswordResetEmail(
-                email.trim()
+                verifiedEmail
             );
 
         if (!resetResult.success) {
-
-            setStatus("idle");
-
-            alert(
+            throw new Error(
                 resetResult.error ??
                 "Unable to send the password reset email."
             );
-
-            return;
-
         }
 
+        /*
+         * These are only recovery-context values. They do NOT indicate
+         * a new user and must never be used to trigger onboarding.
+         */
+        sessionStorage.setItem(
+            "recoveryEmail",
+            verifiedEmail
+        );
+
+        sessionStorage.setItem(
+            "recoveryRole",
+            role
+        );
+
         setStatus("success");
-
-        const verifiedEmail =
-            email.trim();
-
-        setTimeout(() => {
-
-            setEmail("");
-            setStatus("idle");
-
-            onVerified(verifiedEmail);
-
-        }, 1200);
-
-        return;
-
-
-    }
-
-    catch (error: any) {
+        setEmail("");
+        setLoading(false);
 
         alert(
+            "Password reset link sent successfully.\n\nPlease check your email and open the secure reset link to create your new password."
+        );
 
+        /*
+         * IMPORTANT:
+         * Do NOT call onVerified() here.
+         *
+         * The user is not yet inside a recovery session. The recovery
+         * session is created only after the user clicks the email link.
+         * ResetPasswordPage will then be opened by App.tsx through the
+         * PASSWORD_RECOVERY event / reset-password query marker.
+         */
+        onClose();
+
+        return;
+    }
+    catch (error: any) {
+        alert(
             error?.message ??
-
-            "Unable to verify identity."
-
+            "Unable to send the password reset email."
         );
 
         setStatus("idle");
-
     }
-
     finally {
-
         setLoading(false);
-
     }
-
 }
+
 
     
     return (
@@ -433,11 +407,8 @@ style={primaryButton}
 
                         loading
 
-                            ? (
-                                status === "sending"
-                                    ? "Sending..."
-                                    : "Verifying..."
-                            )
+                            ? "Verifying..."
+
                             : "Verify Identity"
 
                     }

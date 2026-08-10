@@ -14,6 +14,7 @@ interface Props {
 
     onBack: () => void;
 
+    onForgotPasswordVerified: (email: string) => void;
 
 }
 
@@ -23,6 +24,7 @@ export default function PartnerLogin({
 
     onBack,
 
+    onForgotPasswordVerified
 
 }: Props) {
 
@@ -106,6 +108,8 @@ setForgotPasswordOpen
             }
 
 
+            /* Existing Partner Login always returns to the Partner Portal. */
+            sessionStorage.removeItem("passwordResetCompleted");
             onSuccess();
 
         }
@@ -400,8 +404,12 @@ Forgot Password?
     open={forgotPasswordOpen}
     role="partner"
     onClose={() => setForgotPasswordOpen(false)}
-    onVerified={() => {
+    onVerified={(email) => {
+
         setForgotPasswordOpen(false);
+
+        onForgotPasswordVerified(email);
+
     }}
 />
         

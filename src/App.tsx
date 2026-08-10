@@ -179,7 +179,11 @@ const adminIdentity = getCurrentAdmin();
 
 
 
-const routeTeacherAfterLogin = async () => {
+const routeTeacherAfterLogin = async (
+  options: { existingLogin?: boolean } = {}
+) => {
+
+  const { existingLogin = false } = options;
 
   const teacher =
     getCurrentTeacher();
@@ -190,21 +194,6 @@ const routeTeacherAfterLogin = async () => {
   if (!user) {
 
     setTeacherSchoolName(null);
-
-    return;
-  }
-
-  const profileExists =
-    await doesTeacherProfileExist(
-      user.id
-    );
-
-  if (!profileExists) {
-
-    setTeacherSchoolName(null);
-
-    setTeacherStage("profile");
-    setActiveTab("teacher");
 
     return;
   }
@@ -228,13 +217,32 @@ const routeTeacherAfterLogin = async () => {
   /*
    * Teacher identity is authenticated.
    *
-   * Store the teacher's school in App state.
-   * AppHeader receives this only while the
-   * Teacher Portal itself is active.
+   * IMPORTANT: An Existing User Login is an authentication flow,
+   * not an onboarding flow. A password reset does not make an
+   * existing teacher a new teacher. Therefore, when the login was
+   * initiated from TeacherExistingLogin, go directly to the portal
+   * and do not re-run profile/academic onboarding checks.
    */
   setTeacherSchoolName(
     teacher.schoolName?.trim() || null
   );
+
+  if (existingLogin) {
+    setTeacherStage("portal");
+    setActiveTab("teacher");
+    return;
+  }
+
+  const profileExists =
+    await doesTeacherProfileExist(
+      user.id
+    );
+
+  if (!profileExists) {
+    setTeacherStage("profile");
+    setActiveTab("teacher");
+    return;
+  }
 
   const assignments =
     await getTeacherAssignmentsByTeacher(
@@ -254,29 +262,17 @@ const routeTeacherAfterLogin = async () => {
 };
 
 const routeStudentAfterLogin =
-async () => {
+async (
+  options: { existingLogin?: boolean } = {}
+) => {
+
+  const { existingLogin = false } = options;
 
   const user =
     await getCurrentUser();
 
   if (!user) {
     setStudentSchoolName(null);
-    return;
-  }
-
-  const profileExists =
-    await doesStudentProfileExist(
-      user.id
-    );
-
-  if (!profileExists) {
-
-    setStudentSchoolName(null);
-
-    setActiveTab(
-      "student-profile"
-    );
-
     return;
   }
 
@@ -306,6 +302,31 @@ async () => {
     studentIdentity.schoolName?.trim() || null
   );
 
+  /*
+   * EXISTING USER LOGIN IS NEVER ONBOARDING.
+   *
+   * This is especially important after Forgot Password. Updating a
+   * password changes only the authentication credential. It does not
+   * create a new student, reset the questionnaire, reset the DNA, or
+   * require parental OTP again. The identity has already been resolved
+   * from the authenticated Supabase user, so return the student directly
+   * to the existing Student Portal.
+   */
+  if (existingLogin) {
+    setActiveTab("passport");
+    return;
+  }
+
+  const profileExists =
+    await doesStudentProfileExist(
+      user.id
+    );
+
+  if (!profileExists) {
+    setActiveTab("student-profile");
+    return;
+  }
+
   const questionnaireCompleted =
     await isQuestionnaireCompleted(
       studentIdentity.studentUuid
@@ -323,8 +344,8 @@ async () => {
   /*
    * STUDENT-ONLY OTP CHECK
    *
-   * Teacher, School, Partner and Admin flows do not
-   * enter this helper and therefore remain unchanged.
+   * This branch is retained for the NEW-USER onboarding flow.
+   * Existing User Login never reaches it.
    */
   try {
 
@@ -427,6 +448,9 @@ useEffect(() => {
     ) ||
     window.location.hash.includes(
       "type=recovery"
+    ) ||
+    new URLSearchParams(window.location.search).has(
+      "code"
     );
 
   if (supabase) {
@@ -977,7 +1001,9 @@ if (selectedRole === "teacher") {
 
     onSuccess={async () => {
 
-      await routeStudentAfterLogin();
+      await routeStudentAfterLogin({
+        existingLogin: true
+      });
 
     }}
 
@@ -1397,7 +1423,9 @@ alert(
 
 onSuccess={async () => {
 
-    await routeTeacherAfterLogin();
+    await routeTeacherAfterLogin({
+        existingLogin: true
+    });
 
 }}
 
@@ -1472,3 +1500,4 @@ onForgotPasswordVerified={(email: string) => {
 )}
 
   </div>)}
+

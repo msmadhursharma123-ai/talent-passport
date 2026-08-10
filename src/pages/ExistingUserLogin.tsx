@@ -13,6 +13,7 @@ interface Props {
 
     onBack: () => void;
 
+onForgotPasswordVerified: (email: string) => void;
 
 }
 
@@ -24,6 +25,7 @@ export default function ExistingUserLogin({
 
     onBack,
 
+    onForgotPasswordVerified
 
 }: Props) {
 
@@ -103,6 +105,11 @@ export default function ExistingUserLogin({
             }
 
 
+            /*
+             * This component is exclusively the Existing User Login path.
+             * A successful password login must never start onboarding.
+             */
+            sessionStorage.removeItem("passwordResetCompleted");
             onSuccess();
 
         }
@@ -353,8 +360,17 @@ export default function ExistingUserLogin({
     open={forgotPasswordOpen}
     role="student"
     onClose={() => setForgotPasswordOpen(false)}
-    onVerified={() => {
+    onVerified={(email) => {
+
+        sessionStorage.setItem(
+            "recoveryEmail",
+            email
+        );
+
         setForgotPasswordOpen(false);
+
+        onForgotPasswordVerified(email);
+
     }}
 />
 

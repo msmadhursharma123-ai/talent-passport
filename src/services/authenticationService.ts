@@ -88,6 +88,13 @@ extends AuthResult {
 
     requiresPasswordReset?: boolean;
 
+    /**
+     * signInWithPassword is the Existing User Login operation.
+     * New-user onboarding is performed by registration flows and never
+     * by this function.
+     */
+    authenticationFlow?: "existing-user";
+
 }
 
 export interface SignUpResult
@@ -1070,7 +1077,9 @@ const admin = schoolAdmin as any;
 
             identity: resolved.identity,
 
-            requiresPasswordReset: true
+            requiresPasswordReset: true,
+
+            authenticationFlow: "existing-user"
 
         };
 
@@ -1215,7 +1224,10 @@ console.log(
             success: true,
 
             identity:
-                resolved.identity
+                resolved.identity,
+
+            authenticationFlow:
+                "existing-user"
 
         };
 
@@ -2739,28 +2751,19 @@ export async function sendPasswordResetEmail(
         const supabase = getClient();
 
         /*
-         * This application is a single-page React app.
-         * Redirect to the app root with a recovery marker rather than
-         * a physical /reset-password route. Supabase appends the
-         * recovery session tokens to the URL hash.
-         */
-        /*
-         * Use a stable application URL when one is configured.
-         * This prevents password-reset emails from pointing at an
-         * ephemeral/deleted Vercel deployment URL.
+         * PASSWORD RESET REDIRECT
          *
-         * Local development still falls back to the current origin.
+         * Always use the origin from which the user requested the reset.
+         * Therefore:
+         *   localhost -> http://localhost:3000/?reset-password=1
+         *   Vercel     -> https://<current-vercel-domain>/?reset-password=1
+         *
+         * This keeps local and production flows identical and prevents a
+         * reset link from accidentally pointing to a different deployment.
+         * The corresponding redirect URLs must be allow-listed in Supabase.
          */
-        const configuredAppUrl =
-            String(
-                import.meta.env.VITE_PUBLIC_APP_URL ??
-                import.meta.env.VITE_PASSWORD_RESET_REDIRECT_URL ??
-                ""
-            ).trim().replace(/\/$/, "");
-
         const appUrl =
-            configuredAppUrl ||
-            window.location.origin;
+            window.location.origin.replace(/\/$/, "");
 
         const redirectTo =
             `${appUrl}/?reset-password=1`;

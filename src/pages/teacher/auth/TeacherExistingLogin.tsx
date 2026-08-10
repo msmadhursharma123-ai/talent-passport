@@ -16,6 +16,7 @@ interface Props {
 
     onBack: () => void;
 
+    onForgotPasswordVerified: (email: string) => void;
 
 }
 
@@ -27,6 +28,7 @@ export default function TeacherExistingLogin({
 
     onBack,
 
+    onForgotPasswordVerified
 
 }: Props) {
 
@@ -111,6 +113,11 @@ setForgotPasswordOpen
             }
 
 
+            /*
+             * This is the Existing User Login path. Password recovery does
+             * not turn an existing teacher into a new/onboarding teacher.
+             */
+            sessionStorage.removeItem("passwordResetCompleted");
             onSuccess();
 
         }
@@ -379,8 +386,12 @@ Forgot Password?
     open={forgotPasswordOpen}
     role="teacher"
     onClose={() => setForgotPasswordOpen(false)}
-    onVerified={() => {
+    onVerified={(email) => {
+
         setForgotPasswordOpen(false);
+
+        onForgotPasswordVerified(email);
+
     }}
 />
         
