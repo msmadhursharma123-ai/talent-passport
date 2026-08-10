@@ -1,0 +1,11 @@
+# Add these blocks to your EXISTING supabase/config.toml.
+# Do not delete any existing function configuration.
+
+[functions.send-otp]
+verify_jwt = false
+
+[functions.verify-otp]
+verify_jwt = false
+
+[functions.consent-status]
+verify_jwt = false

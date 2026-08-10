@@ -16,6 +16,8 @@ import ExistingUserLogin from "./pages/ExistingUserLogin";
 import GrowthCenter from "./pages/GrowthCenter";
 import StudentProfileForm from "./pages/StudentProfileForm";
 import StudentRegistrationAuth from "./pages/StudentRegistrationAuth";
+import ParentalOtpVerification from "./pages/ParentalOtpVerification";
+import ParentalConsentTerms from "./pages/ParentalConsentTerms";
 import AdminLogin from "./pages/AdminLogin";
 import RoleSelection from "./pages/RoleSelection";
 import UserType from "./pages/UserType";
@@ -52,29 +54,19 @@ import {
 } from "./services/identityService";
 
 import {
-    initializeAuth,
-    getCurrentUser,
-    getCurrentIdentity,
-    signOut
+  initializeAuth,
+  getCurrentUser,
+  getCurrentIdentity,
+  signOut
 } from "./services/authenticationService";
 
-import { getSupabaseClient }
-from "./supabaseClient";
+import {
+  getParentalConsentStatus
+} from "./services/otpService";
 
 import {
-    getCurrentTeacher,
-} from "./services/identityService";
-
-import {
-
-doesStudentProfileExist,
-isQuestionnaireCompleted
-
+  isQuestionnaireCompleted
 } from "./data/studentRepository";
-
-import {
-getTeacherAssignmentsByTeacher,
-} from "./domains/teacherIntelligence/repository/TeacherAssignmentRepository";
 
 import TeacherRegistrationAuth
 from "./pages/teacher/auth/TeacherRegistrationAuth";
@@ -88,27 +80,8 @@ from "./pages/teacher/auth/TeacherVerifyEmail";
 import TeacherProfileForm
 from "./pages/teacher/auth/TeacherProfileForm";
 
-import TeacherAcademicQuestionnaire
-from "./pages/teacher/auth/TeacherAcademicQuestionnaire";
-
 import TeacherPortal
 from "./pages/teacher/TeacherPortal";
-
-import SchoolLogin
-from "./domains/school/pages/SchoolLogin";
-
-import SchoolDashboard
-from "./domains/school/pages/SchoolDashboard";
-
-import SchoolResetPassword
-from "./domains/school/pages/SchoolResetPassword";
-
-import ResetPasswordPage
-from "./pages/ResetPassword";
-
-import {
-doesTeacherProfileExist
-} from "./data/teacherRepository";
 
 const DEMO_ITEMS: Submission[] = [
   {
@@ -156,173 +129,19 @@ export default function App() {
   useState<string>("");
   const [userType, setUserType] =
 useState<"new" | "existing" | null>(null);
-
-const [activeTab, setActiveTab] =
+ const [activeTab, setActiveTab] =
   useState<string>("identity");
 
-const [studentSchoolName, setStudentSchoolName] =
-  useState<string | null>(null);
-
-const [teacherSchoolName, setTeacherSchoolName] =
-  useState<string | null>(null);
+ const [parentalConsentTermsAccepted, setParentalConsentTermsAccepted] =
+  useState(false);
 
 const adminIdentity = getCurrentAdmin();
-
-
-
-const routeTeacherAfterLogin = async () => {
-
-  const teacher =
-    getCurrentTeacher();
-
-  const user =
-    await getCurrentUser();
-
-  if (!user) {
-
-    setTeacherSchoolName(null);
-
-    return;
-  }
-
-  const profileExists =
-    await doesTeacherProfileExist(
-      user.id
-    );
-
-  if (!profileExists) {
-
-    setTeacherSchoolName(null);
-
-    setTeacherStage("profile");
-    setActiveTab("teacher");
-
-    return;
-  }
-
-  if (!teacher) {
-
-    setTeacherSchoolName(null);
-
-    await signOut();
-
-    alert(
-      "Unable to restore your teacher session. Please login again."
-    );
-
-    setTeacherStage("login");
-    setActiveTab("teacher");
-
-    return;
-  }
-
-  /*
-   * Teacher identity is authenticated.
-   *
-   * Store the teacher's school in App state.
-   * AppHeader receives this only while the
-   * Teacher Portal itself is active.
-   */
-  setTeacherSchoolName(
-    teacher.schoolName?.trim() || null
-  );
-
-  const assignments =
-    await getTeacherAssignmentsByTeacher(
-      teacher.teacherUuid
-    );
-
-  if (!assignments.length) {
-
-    setTeacherStage("academic");
-    setActiveTab("teacher");
-
-    return;
-  }
-
-  setTeacherStage("portal");
-  setActiveTab("teacher");
-};
-
-const routeStudentAfterLogin =
-async () => {
-
-  const user =
-    await getCurrentUser();
-
-  if (!user) {
-    setStudentSchoolName(null);
-    return;
-  }
-
-  const profileExists =
-    await doesStudentProfileExist(
-      user.id
-    );
-
-  if (!profileExists) {
-
-    setStudentSchoolName(null);
-
-    setActiveTab(
-      "student-profile"
-    );
-
-    return;
-  }
-
-  const identity =
-    await getCurrentIdentity();
-
-  if (!identity) {
-
-    setStudentSchoolName(null);
-
-    setActiveTab(
-      "student-profile"
-    );
-
-    return;
-  }
-
-  const studentIdentity =
-    identity as any;
-
-  /*
-   * Keep the school identity in App state.
-   * AppHeader will receive it only when
-   * Student Portal itself is active.
-   */
-  setStudentSchoolName(
-    studentIdentity.schoolName?.trim() || null
-  );
-
-  const questionnaireCompleted =
-    await isQuestionnaireCompleted(
-      studentIdentity.studentUuid
-    );
-
-  if (!questionnaireCompleted) {
-
-    setActiveTab(
-      "wizard"
-    );
-
-    return;
-  }
-
-  setActiveTab(
-    "passport"
-  );
-
-};
 
 const [teacherStage, setTeacherStage] =
 useState<
     | "register"
     | "verify"
     | "profile"
-    | "academic"
     | "login"
     | "portal"
 >(
@@ -362,11 +181,9 @@ const handleLogout = async () => {
   "userRole"
 );
 
-setSelectedRole("");
+  setSelectedRole("");
 
-setUserType(null);
-
-setStudentSchoolName(null);
+  setUserType(null);
 
 await signOut();
 
@@ -403,53 +220,39 @@ if (user) {
 
   switch (identity.role) {
 
-case "student": {
+  case "student": {
 
-setSelectedRole(
-"student"
-);
+  setSelectedRole("student");
+  setUserType("existing");
 
-setUserType(
-"existing"
-);
+  try {
+    const questionnaireCompleted =
+      await isQuestionnaireCompleted();
 
-await routeStudentAfterLogin();
+    if (questionnaireCompleted) {
+      setActiveTab("passport");
+      break;
+    }
 
-break;
+    const consent =
+      await getParentalConsentStatus();
 
-} 
+    setActiveTab(
+      consent.verified
+        ? "wizard"
+        : "parental-otp"
+    );
 
-case "teacher": {
+  } catch (error) {
+    console.error(
+      "STUDENT ONBOARDING STATUS CHECK FAILED",
+      error
+    );
 
-setSelectedRole(
-"teacher"
-);
+    setActiveTab("parental-otp");
+  }
 
-setUserType(
-"existing"
-);
-
-await routeTeacherAfterLogin();
-
-break;
-
-}
-
-case "school": {
-
-setSelectedRole(
-"school"
-);
-
-setUserType(
-"existing"
-);
-
-setActiveTab(
-"school-dashboard"
-);
-
-break;
+  break;
 
 }
 
@@ -493,53 +296,6 @@ break;
 
   initializeApplication();
 
-const supabase =
-    getSupabaseClient();
-
-if (supabase) {
-
-    const {
-
-        data: authListener
-
-    } = supabase.auth.onAuthStateChange(
-
-        async (
-
-            event,
-
-            session
-
-        ) => {
-
-            if (
-
-                event ===
-
-                "PASSWORD_RECOVERY"
-
-            ) {
-
-                setActiveTab(
-
-                    "reset-password"
-
-                );
-
-            }
-
-        }
-
-    );
-
-    return () => {
-
-        authListener.subscription.unsubscribe();
-
-    };
-
-}
-
 }, []);
 
  useEffect(() => {
@@ -576,33 +332,61 @@ if (
 ) {
 
   setUserType("existing");
+  setSelectedRole("student");
 
-console.log(
-  "FORCE DNA FLAG =",
-  forceDNA
-);
+  const routeStudent = async () => {
 
-if (forceDNA === "true") {
+    try {
 
-  console.log(
-    "GOING TO WIZARD"
-  );
+      if (forceDNA === "true") {
 
-  localStorage.removeItem(
-    "forceDNAAssessment"
-  );
+        localStorage.removeItem(
+          "forceDNAAssessment"
+        );
 
-  setSelectedRole(
-    "student"
-  );
+        const consent =
+          await getParentalConsentStatus();
 
-  setActiveTab("wizard");
+        setActiveTab(
+          consent.verified
+            ? "wizard"
+            : "parental-otp"
+        );
 
-} else {
+        return;
+      }
 
-    setActiveTab("passport");
+      const questionnaireCompleted =
+        await isQuestionnaireCompleted();
 
-  }
+      if (questionnaireCompleted) {
+        setActiveTab("passport");
+        return;
+      }
+
+      const consent =
+        await getParentalConsentStatus();
+
+      setActiveTab(
+        consent.verified
+          ? "wizard"
+          : "parental-otp"
+      );
+
+    } catch (error) {
+
+      console.error(
+        "STUDENT ROUTING STATUS ERROR",
+        error
+      );
+
+      setActiveTab("parental-otp");
+
+    }
+
+  };
+
+  routeStudent();
 
 }
 
@@ -673,35 +457,16 @@ schoolName: string;
  return (
   <div>
 
-<AppHeader
-  schoolName={
-    activeTab === "passport"
-      ? studentSchoolName
-      : activeTab === "teacher" &&
-        teacherStage === "portal"
-      ? teacherSchoolName
-      : null
-  }
-  workspaceLabel={
-    activeTab === "passport"
-      ? "Student Academic Workspace"
-      : activeTab === "teacher" &&
-        teacherStage === "portal"
-      ? "Teacher Academic Workspace"
-      : null
-  }
-/>
+    {activeTab !== "identity" && (
+      <AppHeader />
+    )}
 
-{activeTab === "identity" && (
-
-    <IdentityWorld
-
-        onContinue={() =>
-            setActiveTab("role-selection")
-        }
-
-    />
-
+   {activeTab === "identity" && (
+  <IdentityWorld
+    onContinue={() =>
+      setActiveTab("role-selection")
+    }
+  />
 )}
 
 {activeTab === "role-selection" && (
@@ -722,16 +487,6 @@ schoolName: string;
         return;
       }
 
-if (role === "school") {
-
-    setActiveTab(
-        "school-login"
-    );
-
-    return;
-
-}
-
       setActiveTab(
         "user-type"
       );
@@ -739,8 +494,6 @@ if (role === "school") {
     }}
   />
 )}
-
-
 
 {activeTab === "user-type" && (
   <UserType
@@ -756,19 +509,111 @@ if (role === "school") {
 
 if (selectedRole === "teacher") {
 
-    if (type === "new") {
+    switch (teacherStage) {
 
-        setTeacherStage("register");
+        case "register":
 
-    } else {
+            return (
 
-        setTeacherStage("login");
+                <TeacherRegistrationAuth
+
+                    onRegistrationComplete={() =>
+                        setTeacherStage("profile")
+                    }
+
+                    onVerificationRequired={(email) => {
+
+                        setTeacherEmail(email);
+
+                        setTeacherStage("verify");
+
+                    }}
+
+                    onLogin={() =>
+                        setTeacherStage("login")
+                    }
+
+                    onBack={() => {
+
+                        setSelectedRole("");
+
+                        setTeacherStage("register");
+
+                    }}
+
+                />
+
+            );
+
+        case "verify":
+
+            return (
+
+                <TeacherVerifyEmail
+
+                    email={teacherEmail}
+
+                    onContinue={() =>
+                        setTeacherStage("profile")
+                    }
+
+                    onBackToLogin={() =>
+                        setTeacherStage("login")
+                    }
+
+                />
+
+            );
+
+        case "profile":
+
+            return (
+
+                <TeacherProfileForm
+
+                    onContinue={() =>
+                        setTeacherStage("portal")
+                    }
+
+                    onBack={() =>
+                        setTeacherStage("register")
+                    }
+
+                />
+
+            );
+
+        case "login":
+
+            return (
+
+                <TeacherExistingLogin
+
+                    onSuccess={() =>
+                        setTeacherStage("portal")
+                    }
+
+                    onRegister={() =>
+                        setTeacherStage("register")
+                    }
+
+                    onBack={() => {
+
+                        setSelectedRole("");
+
+                        setTeacherStage("register");
+
+                    }}
+
+                />
+
+            );
+
+        case "portal":
+
+            return <TeacherPortal />;
 
     }
-
-    setActiveTab("teacher");
-
-    return;
 
 }
 
@@ -848,9 +693,10 @@ if (selectedRole === "teacher") {
         "user-type"
       )
     }
-    onContinue={() =>
-      setActiveTab("wizard")
-    }
+    onContinue={() => {
+      setParentalConsentTermsAccepted(false);
+      setActiveTab("parental-otp");
+    }}
   />
 )}
 
@@ -875,98 +721,49 @@ if (selectedRole === "teacher") {
 
 )}
 
-{activeTab === "existing-login" && (
+{activeTab ===
+  "existing-login" && (
   <ExistingUserLogin
-
     onBack={() =>
-      setActiveTab("user-type")
+      setActiveTab(
+        "user-type"
+      )
     }
-
-    onSuccess={async () => {
-
-      await routeStudentAfterLogin();
-
-    }}
-
-    onRegister={() => {
-
-      setUserType("new");
-
-      setSelectedRole("student");
-
-      setActiveTab("student-register-auth");
-
-    }}
-
-      onForgotPasswordVerified={(email: string) => {
-
-        sessionStorage.setItem(
-            "resetEmail",
-            email
-        );
-
-        setActiveTab(
-            "reset-password"
-        );
-
-    }}
-
+    onSuccess={() =>
+      setActiveTab(
+        "passport"
+      )
+    }
+    onRegister={() =>
+      setActiveTab(
+        "student-profile"
+      )
+    }
   />
 )}
 
 {activeTab ===
   "partner-login" && (
 
-<PartnerLogin
+  <PartnerLogin
 
-onBack={()=>
+    onBack={() =>
+      setActiveTab(
+        "user-type"
+      )
+    }
 
-    setActiveTab("user-type")
+    onSuccess={() =>
+      setActiveTab(
+        "partner-portal"
+      )
+    }
 
-}
-
-onSuccess={()=>
-
-    setActiveTab("partner-portal")
-
-}
-
-onForgotPasswordVerified={(email: string) => {
-
-    sessionStorage.setItem(
-        "resetEmail",
-        email
-    );
-
-    setActiveTab(
-        "reset-password"
-    );
-
-}}
-
-/>
+  />
 
 )}
 
-{activeTab === "school-login" && (
 
-    <SchoolLogin
-
-        onBack={()=>
-            setActiveTab("role-selection")
-        }
-
-        onSuccess={()=>
-            setActiveTab("school-dashboard")
-        }
-
-        onResetPassword={()=>
-            setActiveTab("school-reset-password")
-        }
-
-    />
-
-)}
 
 {activeTab ===
   "admin-login" && (
@@ -981,6 +778,35 @@ onForgotPasswordVerified={(email: string) => {
         "admin"
       )
     }
+  />
+)}
+
+{activeTab === "parental-otp" && (
+  <ParentalOtpVerification
+    termsAccepted={parentalConsentTermsAccepted}
+    onTermsChange={setParentalConsentTermsAccepted}
+    onOpenTerms={() =>
+      setActiveTab("parental-consent-terms")
+    }
+    onBack={() =>
+      setActiveTab("student-profile")
+    }
+    onVerified={() => {
+      setParentalConsentTermsAccepted(true);
+      setActiveTab("wizard");
+    }}
+  />
+)}
+
+{activeTab === "parental-consent-terms" && (
+  <ParentalConsentTerms
+    onBack={() =>
+      setActiveTab("parental-otp")
+    }
+    onAgree={() => {
+      setParentalConsentTermsAccepted(true);
+      setActiveTab("parental-otp");
+    }}
   />
 )}
 
@@ -1101,250 +927,6 @@ setActiveTab("identity");
     }}
 
   />
-
-)}
-
-{activeTab === "school-reset-password" && (
-
-    <SchoolResetPassword
-
-        onSuccess={()=>
-
-            setActiveTab(
-
-                "school-dashboard"
-
-            )
-
-        }
-
-    />
-
-)}
-
-{activeTab === "reset-password" && (
-
-    <ResetPasswordPage />
-
-)}
-
-{activeTab === "school-dashboard" && (
-
-  <SchoolDashboard
-    onLogout={async () => {
-
-        await signOut();
-
-        setSelectedRole("");
-
-        setUserType(null);
-
-        setActiveTab("identity");
-
-    }}
-/>
-
-)}
-
-{activeTab === "teacher" && (
-
-    (() => {
-
-        switch (teacherStage) {
-
-            case "register":
-
-                return (
-
-                    <TeacherRegistrationAuth
-
-                        onRegistrationComplete={() =>
-                            setTeacherStage("profile")
-                        }
-
-                        onVerificationRequired={(email) => {
-
-                            setTeacherEmail(email);
-
-                            setTeacherStage("verify");
-
-                        }}
-
-                        onLogin={() =>
-                            setTeacherStage("login")
-                        }
-
-                        onBack={() => {
-
-                            setActiveTab("user-type");
-
-                            setTeacherStage("register");
-
-                        }}
-
-                    />
-
-                );
-
-            case "verify":
-
-                return (
-
-                    <TeacherVerifyEmail
-
-                        email={teacherEmail}
-
-                        onContinue={() =>
-                            setTeacherStage("profile")
-                        }
-
-                        onBackToLogin={() =>
-                            setTeacherStage("login")
-                        }
-
-                    />
-
-                );
-
-            case "profile":
-
-                return (
-
-                    <TeacherProfileForm
-
-                     onContinue={() =>
-setTeacherStage("academic")
-}
-
-                     onBack={() => {
-
-alert(
-"Your teacher account has already been created. Please complete your profile to continue."
-);
-
-}}
-
-                    />
-
-                );
-
-case "academic":
-
-return (
-
-<TeacherAcademicQuestionnaire
-
-onContinue={async () => {
-
-  /*
-   * Academic onboarding is now complete.
-   *
-   * Resolve the teacher identity again so
-   * the global AppHeader receives the school
-   * before Teacher Portal becomes visible.
-   */
-  const teacher =
-    getCurrentTeacher();
-
-  setTeacherSchoolName(
-    teacher?.schoolName?.trim() || null
-  );
-
-  setTeacherStage("portal");
-
-}}
-
-onBack={() => {
-
-alert(
-"Your teacher profile has already been saved. Please complete your academic questionnaire to continue."
-);
-
-}}
-
-/>
-
-);
-
-         case "login":
-
-    return (
-
-<TeacherExistingLogin
-
-onSuccess={async () => {
-
-    await routeTeacherAfterLogin();
-
-}}
-
-onRegister={() =>
-
-    setTeacherStage("register")
-
-}
-
-onBack={() =>
-
-    setActiveTab("user-type")
-
-}
-
-onForgotPasswordVerified={(email: string) => {
-
-    sessionStorage.setItem(
-        "resetEmail",
-        email
-    );
-
-    setActiveTab(
-        "reset-password"
-    );
-
-}}
-
-/>
-
-    );
-       case "portal":
-
-  return (
-
-    <TeacherPortal
-
-      onLogout={async () => {
-
-        /*
-         * Immediately remove teacher school
-         * identity from the global AppHeader.
-         */
-        setTeacherSchoolName(null);
-
-        await signOut();
-
-        setSelectedRole("");
-
-        setUserType(null);
-
-        setTeacherStage("login");
-
-        setTeacherEmail("");
-
-        setActiveTab("identity");
-
-      }}
-
-    />
-
-  );
-
-            default:
-
-                return null;
-
-        }
-
-    })()
 
 )}
 

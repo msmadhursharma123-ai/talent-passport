@@ -665,7 +665,9 @@ parentEmail:
     row.student_email ?? undefined,
 
 parentPhone:
-    row.phone ?? undefined,
+    row.parent_phone ??
+    row.phone ??
+    undefined,
 
         walletId:
             row.wallet_id ?? undefined,
