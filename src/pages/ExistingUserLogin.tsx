@@ -13,7 +13,6 @@ interface Props {
 
     onBack: () => void;
 
-onForgotPasswordVerified: (email: string) => void;
 
 }
 
@@ -25,7 +24,6 @@ export default function ExistingUserLogin({
 
     onBack,
 
-    onForgotPasswordVerified
 
 }: Props) {
 
@@ -355,17 +353,8 @@ export default function ExistingUserLogin({
     open={forgotPasswordOpen}
     role="student"
     onClose={() => setForgotPasswordOpen(false)}
-    onVerified={(email) => {
-
-        sessionStorage.setItem(
-            "recoveryEmail",
-            email
-        );
-
+    onVerified={() => {
         setForgotPasswordOpen(false);
-
-        onForgotPasswordVerified(email);
-
     }}
 />
 

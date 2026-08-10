@@ -14,7 +14,6 @@ interface Props {
 
     onBack: () => void;
 
-    onForgotPasswordVerified: (email: string) => void;
 
 }
 
@@ -24,7 +23,6 @@ export default function PartnerLogin({
 
     onBack,
 
-    onForgotPasswordVerified
 
 }: Props) {
 
@@ -402,12 +400,8 @@ Forgot Password?
     open={forgotPasswordOpen}
     role="partner"
     onClose={() => setForgotPasswordOpen(false)}
-    onVerified={(email) => {
-
+    onVerified={() => {
         setForgotPasswordOpen(false);
-
-        onForgotPasswordVerified(email);
-
     }}
 />
         

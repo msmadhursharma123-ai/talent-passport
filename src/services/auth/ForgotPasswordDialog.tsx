@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 
 import {
-    verifyRecoveryIdentity
+    verifyRecoveryIdentity,
+    sendPasswordResetEmail
 } from "../../services/authenticationService";
 
 interface Props {
@@ -205,31 +206,48 @@ ${3 - attempts}`
 
         }
 
-     setStatus("success");
-setTimeout(() => {
+        /*
+         * Identity verification has passed.
+         *
+         * Do NOT open the password form here.
+         * The password form must only be reachable through
+         * the Supabase recovery link delivered to this email.
+         */
+        setStatus("sending");
 
-const verifiedEmail =
-    email.trim();
+        const resetResult =
+            await sendPasswordResetEmail(
+                email.trim()
+            );
 
-sessionStorage.setItem(
-    "recoveryEmail",
-    verifiedEmail
-);
+        if (!resetResult.success) {
 
-sessionStorage.setItem(
-    "recoveryRole",
-    role
-);
+            setStatus("idle");
 
-setEmail("");
+            alert(
+                resetResult.error ??
+                "Unable to send the password reset email."
+            );
 
-setStatus("idle");
+            return;
 
-onVerified(verifiedEmail);
+        }
 
-},300);
+        setStatus("success");
 
-return;
+        const verifiedEmail =
+            email.trim();
+
+        setTimeout(() => {
+
+            setEmail("");
+            setStatus("idle");
+
+            onVerified(verifiedEmail);
+
+        }, 1200);
+
+        return;
 
 
     }
@@ -415,8 +433,11 @@ style={primaryButton}
 
                         loading
 
-                            ? "Verifying..."
-
+                            ? (
+                                status === "sending"
+                                    ? "Sending..."
+                                    : "Verifying..."
+                            )
                             : "Verify Identity"
 
                     }

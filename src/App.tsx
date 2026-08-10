@@ -408,11 +408,76 @@ setActiveTab("identity");
 
 useEffect(() => {
 
+  const supabase =
+    getSupabaseClient();
+
+  /*
+   * PASSWORD RECOVERY
+   *
+   * Register the Supabase auth listener BEFORE initializeAuth().
+   * This is important because the recovery link can establish the
+   * PASSWORD_RECOVERY session while the application is starting.
+   */
+  let authSubscription:
+    { unsubscribe(): void } | null = null;
+
+  let recoveryFlow =
+    window.location.search.includes(
+      "reset-password=1"
+    ) ||
+    window.location.hash.includes(
+      "type=recovery"
+    );
+
+  if (supabase) {
+
+    const {
+      data: authListener
+    } = supabase.auth.onAuthStateChange(
+      async (event) => {
+
+        if (
+          event ===
+          "PASSWORD_RECOVERY"
+        ) {
+
+          recoveryFlow = true;
+
+          setSelectedRole("");
+          setUserType("existing");
+          setActiveTab(
+            "reset-password"
+          );
+
+        }
+
+      }
+    );
+
+    authSubscription =
+      authListener.subscription;
+  }
+
   async function initializeApplication() {
 
     try {
 
       await initializeAuth();
+
+      /*
+       * Never allow normal saved-session routing to take over
+       * while a password recovery flow is active.
+       */
+      if (recoveryFlow) {
+
+        setSelectedRole("");
+        setUserType("existing");
+        setActiveTab(
+          "reset-password"
+        );
+
+        return;
+      }
 
       const user =
         await getCurrentUser();
@@ -526,52 +591,11 @@ break;
 
   initializeApplication();
 
-const supabase =
-    getSupabaseClient();
+  return () => {
 
-if (supabase) {
+    authSubscription?.unsubscribe();
 
-    const {
-
-        data: authListener
-
-    } = supabase.auth.onAuthStateChange(
-
-        async (
-
-            event,
-
-            session
-
-        ) => {
-
-            if (
-
-                event ===
-
-                "PASSWORD_RECOVERY"
-
-            ) {
-
-                setActiveTab(
-
-                    "reset-password"
-
-                );
-
-            }
-
-        }
-
-    );
-
-    return () => {
-
-        authListener.subscription.unsubscribe();
-
-    };
-
-}
+  };
 
 }, []);
 
@@ -584,6 +608,19 @@ if (supabase) {
 
   // Check setup parameters
 useEffect(() => {
+
+  const recoveryUrl =
+    window.location.search.includes(
+      "reset-password=1"
+    ) ||
+    window.location.hash.includes(
+      "type=recovery"
+    );
+
+  if (recoveryUrl) {
+    return;
+  }
+
   setSupabaseDetected(
     isSupabaseConfigured()
   );
@@ -1435,4 +1472,3 @@ onForgotPasswordVerified={(email: string) => {
 )}
 
   </div>)}
-

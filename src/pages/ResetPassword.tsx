@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { updateRecoveredPassword } from "../services/authenticationService";
+import {
+    getCurrentSession,
+    updatePasswordWithRecoverySession,
+    signOut
+} from "../services/authenticationService";
 
 export default function ResetPasswordPage() {
 
@@ -9,9 +13,92 @@ export default function ResetPasswordPage() {
 const [error,setError]=
 useState("");
     const [loading, setLoading] = useState(false);
-const [validRecovery] = useState(true);
+    const [checkingRecovery, setCheckingRecovery] = useState(true);
+    const [validRecovery, setValidRecovery] = useState(false);
 
    
+    useEffect(() => {
+
+        let mounted = true;
+
+        async function validateRecoverySession() {
+
+            try {
+
+                /*
+                 * Supabase may need a moment to consume the recovery
+                 * tokens from the URL hash and establish the temporary
+                 * recovery session. Retry briefly instead of declaring
+                 * the link invalid during that startup window.
+                 */
+                let session = null;
+
+                for (let attempt = 0; attempt < 15; attempt += 1) {
+
+                    session =
+                        await getCurrentSession();
+
+                    if (session || !mounted) {
+                        break;
+                    }
+
+                    await new Promise((resolve) =>
+                        setTimeout(resolve, 300)
+                    );
+                }
+
+                if (!mounted) {
+                    return;
+                }
+
+                setValidRecovery(
+                    Boolean(session)
+                );
+
+                /*
+                 * Once Supabase has consumed the recovery hash and we
+                 * have a valid session, remove the token fragment from
+                 * the address bar. Do this only after the session exists.
+                 */
+                if (session && window.location.hash) {
+                    window.history.replaceState(
+                        {},
+                        document.title,
+                        `${window.location.pathname}${window.location.search}`
+                    );
+                }
+
+            }
+            catch (error) {
+
+                console.error(
+                    "PASSWORD RECOVERY SESSION CHECK FAILED",
+                    error
+                );
+
+                if (mounted) {
+                    setValidRecovery(false);
+                }
+
+            }
+            finally {
+
+                if (mounted) {
+                    setCheckingRecovery(false);
+                }
+
+            }
+
+        }
+
+        validateRecoverySession();
+
+        return () => {
+            mounted = false;
+        };
+
+    }, []);
+
 
   async function updatePassword() {
 
@@ -71,34 +158,13 @@ const [validRecovery] = useState(true);
 
     try {
 
-        const email =
-            sessionStorage.getItem(
-                "recoveryEmail"
-            );
-
-        const role =
-            sessionStorage.getItem(
-                "recoveryRole"
-            ) as
-                | "student"
-                | "teacher"
-                | "partner"
-                | "school"
-                | "admin"
-                | null;
-
-        if (!email || !role) {
-
-            throw new Error(
-                "Recovery session expired."
-            );
-
-        }
-
+        /*
+         * The Supabase recovery link establishes a temporary
+         * authenticated recovery session. Update the password
+         * through that session instead of an email + role lookup.
+         */
         const result =
-            await updateRecoveredPassword(
-                role,
-                email,
+            await updatePasswordWithRecoverySession(
                 password
             );
 
@@ -114,13 +180,11 @@ const [validRecovery] = useState(true);
 
         }
 
-        sessionStorage.removeItem(
-            "recoveryEmail"
-        );
-
-        sessionStorage.removeItem(
-            "recoveryRole"
-        );
+        /*
+         * End the temporary recovery session so the application
+         * does not silently log the user into a portal after reset.
+         */
+        await signOut();
 
         alert(
             "Password updated successfully.\n\nPlease login using your new password."
@@ -149,6 +213,35 @@ const [validRecovery] = useState(true);
     }
 
 }
+
+    if (checkingRecovery) {
+
+        return (
+            <div className="reset-page">
+
+                <div className="reset-card">
+
+                    <div className="reset-icon">
+                        🔒
+                    </div>
+
+                    <h1>
+                        Verifying Reset Link
+                    </h1>
+
+                    <p>
+                        Please wait while we securely verify your password reset link.
+                    </p>
+
+                </div>
+
+                <style>{styles}</style>
+
+            </div>
+        );
+
+    }
+
 
     if (!validRecovery) {
 

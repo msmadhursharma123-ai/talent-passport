@@ -2620,6 +2620,73 @@ export async function updateRecoveredPassword(
 
 }
 
+export async function updatePasswordWithRecoverySession(
+    newPassword: string
+): Promise<AuthResult> {
+
+    try {
+
+        const supabase = getClient();
+
+        const {
+            data: sessionData,
+            error: sessionError
+        } = await supabase.auth.getSession();
+
+        if (sessionError) {
+
+            return {
+                success: false,
+                error: sessionError.message
+            };
+
+        }
+
+        if (!sessionData.session) {
+
+            return {
+                success: false,
+                error:
+                    "Your password reset link is invalid or has expired. Please request a new reset link."
+            };
+
+        }
+
+        const {
+            error
+        } =
+            await supabase.auth.updateUser({
+                password: newPassword
+            });
+
+        if (error) {
+
+            return {
+                success: false,
+                error: error.message
+            };
+
+        }
+
+        return {
+            success: true
+        };
+
+    }
+    catch (error: any) {
+
+        return {
+            success: false,
+            error:
+                error?.message ??
+                "Unable to update password."
+        };
+
+    }
+
+}
+
+
 export async function verifyRecoveryIdentity(
     role: AuthRole,
     email: string
@@ -2671,8 +2738,32 @@ export async function sendPasswordResetEmail(
 
         const supabase = getClient();
 
+        /*
+         * This application is a single-page React app.
+         * Redirect to the app root with a recovery marker rather than
+         * a physical /reset-password route. Supabase appends the
+         * recovery session tokens to the URL hash.
+         */
+        /*
+         * Use a stable application URL when one is configured.
+         * This prevents password-reset emails from pointing at an
+         * ephemeral/deleted Vercel deployment URL.
+         *
+         * Local development still falls back to the current origin.
+         */
+        const configuredAppUrl =
+            String(
+                import.meta.env.VITE_PUBLIC_APP_URL ??
+                import.meta.env.VITE_PASSWORD_RESET_REDIRECT_URL ??
+                ""
+            ).trim().replace(/\/$/, "");
+
+        const appUrl =
+            configuredAppUrl ||
+            window.location.origin;
+
         const redirectTo =
-            `${window.location.origin}/reset-password`;
+            `${appUrl}/?reset-password=1`;
 
         const { error } =
             await supabase.auth.resetPasswordForEmail(
