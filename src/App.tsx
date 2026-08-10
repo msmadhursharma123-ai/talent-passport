@@ -57,7 +57,8 @@ import {
     initializeAuth,
     getCurrentUser,
     getCurrentIdentity,
-    signOut
+    signOut,
+    markPortalActivated
 } from "./services/authenticationService";
 
 import {
@@ -177,6 +178,23 @@ const [teacherSchoolName, setTeacherSchoolName] =
 
 const adminIdentity = getCurrentAdmin();
 
+/*
+ * Portal activation is the boundary between onboarding and Existing User.
+ * This is set only when the application actually enters a portal.
+ */
+const activatePortal = async (
+  role: "student" | "teacher" | "partner"
+) => {
+  const result = await markPortalActivated(role);
+
+  if (!result.success) {
+    console.error(
+      "PORTAL ACTIVATION MARK FAILED:",
+      result.error
+    );
+  }
+};
+
 
 
 const routeTeacherAfterLogin = async (
@@ -257,6 +275,7 @@ const routeTeacherAfterLogin = async (
     return;
   }
 
+  await activatePortal("teacher");
   setTeacherStage("portal");
   setActiveTab("teacher");
 };
@@ -333,6 +352,8 @@ async (
     );
 
   if (questionnaireCompleted) {
+
+    await activatePortal("student");
 
     setActiveTab(
       "passport"
@@ -579,6 +600,7 @@ break;
 
       setSelectedRole("partner");
       setUserType("existing");
+      await activatePortal("partner");
       setActiveTab("partner-portal");
       break;
 
@@ -982,11 +1004,12 @@ if (selectedRole === "teacher") {
       )
     }
 
-    onContinue={() =>
+    onContinue={async () => {
+      await activatePortal("partner");
       setActiveTab(
         "partner-portal"
-      )
-    }
+      );
+    }}
 
   />
 
@@ -1143,8 +1166,10 @@ onForgotPasswordVerified={(email: string) => {
           "student-profile"
         )
       }
-      onComplete={() => {
+      onComplete={async () => {
         console.log("GOING TO PASSPORT");
+
+        await activatePortal("student");
 
         setActiveTab("passport");
 
@@ -1398,6 +1423,8 @@ onContinue={async () => {
   setTeacherSchoolName(
     teacher?.schoolName?.trim() || null
   );
+
+  await activatePortal("teacher");
 
   setTeacherStage("portal");
 

@@ -12,6 +12,8 @@ interface Props {
 
     onSuccess: () => void;
 
+    onRegister: () => void;
+
     onBack: () => void;
 
     onForgotPasswordVerified: (email: string) => void;
@@ -21,6 +23,8 @@ interface Props {
 export default function PartnerLogin({
 
     onSuccess,
+
+    onRegister,
 
     onBack,
 
@@ -82,6 +86,20 @@ setForgotPasswordOpen
 
                 return;
 
+            }
+
+            /*
+             * Valid credentials + tp_portal_activated=false means the
+             * previous Partner onboarding was interrupted before the portal
+             * was entered. Resume onboarding instead of treating it as an
+             * Existing Partner.
+             */
+            if (result.onboardingIncomplete) {
+                alert(
+                    "Your earlier registration was not completed. Let's complete your partner onboarding again."
+                );
+                onRegister();
+                return;
             }
 
             if (result.identity?.role !== "partner") {

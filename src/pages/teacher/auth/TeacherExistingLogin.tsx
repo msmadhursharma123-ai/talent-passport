@@ -89,6 +89,18 @@ setForgotPasswordOpen
 
             }
 
+            /*
+             * A valid Auth account without first portal activation is still
+             * an incomplete onboarding account, not an Existing Teacher.
+             */
+            if (result.onboardingIncomplete) {
+                alert(
+                    "Your earlier registration was not completed. Let's complete your teacher onboarding again."
+                );
+                onRegister();
+                return;
+            }
+
             if (result.identity?.role !== "teacher") {
                 const role = result.identity?.role;
                 await signOut();

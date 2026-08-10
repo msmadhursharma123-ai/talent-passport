@@ -95,6 +95,12 @@ extends AuthResult {
      */
     authenticationFlow?: "existing-user";
 
+    /**
+     * Credentials are valid, but the account has not entered a portal yet.
+     * This is an incomplete onboarding account, not an Existing User.
+     */
+    onboardingIncomplete?: boolean;
+
 }
 
 export interface SignUpResult
@@ -105,6 +111,12 @@ export interface SignUpResult
     email?: string;
 
     sessionExists?: boolean;
+
+    /**
+     * Registration resumed an Auth account created earlier while onboarding
+     * was still incomplete.
+     */
+    resumedIncompleteOnboarding?: boolean;
 
 }
 
@@ -980,6 +992,24 @@ const resolved =
         authUser.id
     );
 
+/*
+ * A newly-created profile can exist before the first portal activation.
+ * It must remain in the onboarding state even though resolveIdentity()
+ * can already find its profile row.
+ */
+if (
+    resolved &&
+    hasExplicitPortalActivation(authUser) &&
+    authUser.user_metadata?.tp_portal_activated === false
+) {
+    return {
+        success: true,
+        identity: resolved.identity,
+        onboardingIncomplete: true,
+        authenticationFlow: "existing-user"
+    };
+}
+
 /* ============================================================
    SCHOOL SUBSCRIPTION VALIDATION
 ============================================================ */
@@ -1088,6 +1118,23 @@ const admin = schoolAdmin as any;
 }
 
       if (!resolved) {
+
+            /*
+             * An Auth account with our explicit onboarding marker can exist
+             * before the portal profile is created. It is still onboarding,
+             * not an Existing User.
+             */
+            if (
+                hasExplicitPortalActivation(authUser) &&
+                authUser.user_metadata?.tp_portal_activated === false
+            ) {
+                return {
+                    success: true,
+                    onboardingIncomplete: true,
+                    authenticationFlow: "existing-user"
+                };
+            }
+
             await supabase.auth.signOut();
             clearStudentIdentity();
             clearTeacherIdentity();
@@ -1252,94 +1299,252 @@ console.log(
 }
 
 
+
+/* ============================================================
+   ONBOARDING STATE
+   ------------------------------------------------------------
+   A Supabase Auth row alone does NOT make a user an Existing User.
+
+   New accounts are created with:
+       tp_portal_activated = false
+
+   That flag becomes true only when the first portal is actually
+   entered. Legacy accounts without this marker remain backward
+   compatible and continue to behave as established users.
+============================================================ */
+
+function hasExplicitPortalActivation(user: User): boolean {
+    return Object.prototype.hasOwnProperty.call(
+        user.user_metadata ?? {},
+        "tp_portal_activated"
+    );
+}
+
+function isPortalActivated(user: User): boolean {
+    return user.user_metadata?.tp_portal_activated === true;
+}
+
+async function resumeIncompleteRegistration(
+    role: Extract<AuthRole, "student" | "teacher" | "partner">,
+    email: string,
+    password: string
+): Promise<SignUpResult> {
+
+    const supabase = getClient();
+
+    const { data, error } =
+        await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password
+        });
+
+    if (error || !data.user) {
+        return {
+            success: false,
+            error:
+                error?.message ??
+                "Unable to resume this registration."
+        };
+    }
+
+    const user = data.user;
+
+    /*
+     * Once the first portal has been entered, this is an Existing User.
+     * Never let the New User path overwrite that account.
+     */
+    if (isPortalActivated(user)) {
+        await supabase.auth.signOut();
+
+        return {
+            success: false,
+            error:
+                "This account is already active. Please use the Existing User Login screen."
+        };
+    }
+
+    const resolved = await resolveIdentity(user.id);
+
+    if (resolved) {
+
+        if (resolved.role !== role) {
+            await supabase.auth.signOut();
+
+            const portalName =
+                resolved.role === "student"
+                    ? "Student"
+                    : resolved.role === "teacher"
+                    ? "Teacher"
+                    : resolved.role === "partner"
+                    ? "Partner"
+                    : resolved.role === "school"
+                    ? "School"
+                    : "Admin";
+
+            return {
+                success: false,
+                error:
+                    `This account belongs to the ${portalName} Portal. Please use ${portalName} Login.`
+            };
+        }
+
+        /*
+         * Only an explicit false marker is resumable.
+         * An account with no marker is an older established account.
+         */
+        if (
+            !hasExplicitPortalActivation(user) ||
+            user.user_metadata?.tp_portal_activated !== false
+        ) {
+            await supabase.auth.signOut();
+
+            return {
+                success: false,
+                error:
+                    "This account is already registered. Please use the Existing User Login screen."
+            };
+        }
+    } else if (
+        !hasExplicitPortalActivation(user) ||
+        user.user_metadata?.tp_portal_activated !== false
+    ) {
+        await supabase.auth.signOut();
+
+        return {
+            success: false,
+            error:
+                "This account already exists. Please use the Existing User Login screen."
+        };
+    }
+
+    /*
+     * Keep this session alive. The profile repositories will UPDATE the
+     * existing incomplete profile instead of creating a duplicate row.
+     */
+    return {
+        success: true,
+        userId: user.id,
+        email: user.email ?? email.trim(),
+        sessionExists: data.session !== null,
+        resumedIncompleteOnboarding: true
+    };
+}
+
+export async function markPortalActivated(
+    role: Extract<AuthRole, "student" | "teacher" | "partner">
+): Promise<AuthResult> {
+
+    try {
+        const supabase = getClient();
+
+        const { data, error } =
+            await supabase.auth.updateUser({
+                data: {
+                    tp_portal_activated: true,
+                    tp_portal_activated_at:
+                        new Date().toISOString(),
+                    tp_role: role
+                }
+            });
+
+        if (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+
+        return {
+            success: true,
+            authUserId: data.user?.id
+        };
+
+    } catch (error: any) {
+        return {
+            success: false,
+            error:
+                error?.message ??
+                "Unable to mark portal activation."
+        };
+    }
+}
+
 export async function registerStudent(
     email: string,
     password: string
 ): Promise<SignUpResult> {
 
     try {
+        const supabase = getClient();
 
-        const supabase =
-            getClient();
-
-        const {
-            data,
-            error
-        } =
+        const { data, error } =
             await supabase.auth.signUp({
-
-                email:
-                    email.trim(),
-
-                password
-
+                email: email.trim(),
+                password,
+                options: {
+                    data: {
+                        tp_role: "student",
+                        tp_portal_activated: false
+                    }
+                }
             });
 
-      if (error) {
+        /*
+         * Existing confirmed users may be returned by Supabase as an
+         * obfuscated user. If so, verify the supplied credentials and
+         * resume only an explicitly incomplete onboarding account.
+         */
+        if (
+            error ||
+            (
+                data.user &&
+                Array.isArray(data.user.identities) &&
+                data.user.identities.length === 0
+            )
+        ) {
+            const resumed =
+                await resumeIncompleteRegistration(
+                    "student",
+                    email,
+                    password
+                );
 
-    console.error(
-        "BOOTSTRAP INSERT ERROR",
-        error
-    );
-
-    return {
-
-        success: false,
-
-        error:
-            error.message
-
-    };
-
-}
-
-        const user =
-            data.user;
-
-        if (!user) {
+            if (resumed.success) return resumed;
 
             return {
-
                 success: false,
-
                 error:
-                    "Unable to create authentication account."
-
+                    resumed.error ??
+                    error?.message ??
+                    "Unable to create account."
             };
-
         }
 
-  return {
+        const user = data.user;
 
-    success: true,
-
-    userId:
-        user.id,
-
-    email:
-        user.email ?? undefined,
-
-    sessionExists:
-        data.session !== null
-
-};
-
-    }
-
-    catch (error: any) {
+        if (!user) {
+            return {
+                success: false,
+                error:
+                    "Unable to create authentication account."
+            };
+        }
 
         return {
+            success: true,
+            userId: user.id,
+            email: user.email ?? undefined,
+            sessionExists: data.session !== null
+        };
 
+    } catch (error: any) {
+        return {
             success: false,
-
             error:
                 error?.message ??
                 "Unable to create account."
-
         };
-
     }
-
 }
 
 export async function registerPartner(
@@ -1348,74 +1553,71 @@ export async function registerPartner(
 ): Promise<SignUpResult> {
 
     try {
-
         const supabase = getClient();
 
-        const {
-            data,
-            error
-        } = await supabase.auth.signUp({
+        const { data, error } =
+            await supabase.auth.signUp({
+                email: email.trim(),
+                password,
+                options: {
+                    data: {
+                        tp_role: "partner",
+                        tp_portal_activated: false
+                    }
+                }
+            });
 
-            email: email.trim(),
+        if (
+            error ||
+            (
+                data.user &&
+                Array.isArray(data.user.identities) &&
+                data.user.identities.length === 0
+            )
+        ) {
+            const resumed =
+                await resumeIncompleteRegistration(
+                    "partner",
+                    email,
+                    password
+                );
 
-            password
-
-        });
-
-        if (error) {
+            if (resumed.success) return resumed;
 
             return {
-
                 success: false,
-
-                error: error.message
-
+                error:
+                    resumed.error ??
+                    error?.message ??
+                    "Unable to create account."
             };
-
         }
 
         const user = data.user;
 
         if (!user) {
-
             return {
-
                 success: false,
-
-                error: "Unable to create authentication account."
-
+                error:
+                    "Unable to create authentication account."
             };
-
         }
 
         return {
-
             success: true,
-
             userId: user.id,
-
             email: user.email ?? undefined,
-
             sessionExists: data.session !== null
-
         };
 
-    }
-
-    catch (error: any) {
-
+    } catch (error: any) {
         return {
-
             success: false,
-
             error:
                 error?.message ??
                 "Unable to create account."
-
         };
-
     }
-
 }
 
 export async function registerTeacher(
@@ -1424,80 +1626,71 @@ export async function registerTeacher(
 ): Promise<SignUpResult> {
 
     try {
+        const supabase = getClient();
 
-        const supabase =
-            getClient();
+        const { data, error } =
+            await supabase.auth.signUp({
+                email: email.trim(),
+                password,
+                options: {
+                    data: {
+                        tp_role: "teacher",
+                        tp_portal_activated: false
+                    }
+                }
+            });
 
-        const {
-            data,
-            error
-        } = await supabase.auth.signUp({
+        if (
+            error ||
+            (
+                data.user &&
+                Array.isArray(data.user.identities) &&
+                data.user.identities.length === 0
+            )
+        ) {
+            const resumed =
+                await resumeIncompleteRegistration(
+                    "teacher",
+                    email,
+                    password
+                );
 
-            email: email.trim(),
-
-            password
-
-        });
-
-        if (error) {
+            if (resumed.success) return resumed;
 
             return {
-
                 success: false,
-
-                error: error.message
-
+                error:
+                    resumed.error ??
+                    error?.message ??
+                    "Unable to create account."
             };
-
         }
 
-        const user =
-            data.user;
+        const user = data.user;
 
         if (!user) {
-
             return {
-
                 success: false,
-
                 error:
                     "Unable to create authentication account."
-
             };
-
         }
 
         return {
-
             success: true,
-
-            userId:
-                user.id,
-
-            email:
-                user.email ?? undefined,
-
-            sessionExists:
-                data.session !== null
-
+            userId: user.id,
+            email: user.email ?? undefined,
+            sessionExists: data.session !== null
         };
 
-    }
-
-    catch (error: any) {
-
+    } catch (error: any) {
         return {
-
             success: false,
-
             error:
                 error?.message ??
                 "Unable to create teacher account."
-
         };
-
     }
-
 }
 
 export async function registerSchool(
@@ -1938,28 +2131,35 @@ if (resolved && await isResolvedAccountSuspended(resolved.role, resolved.identit
 
         if (!resolved) {
 
+            /*
+             * A newly created onboarding account may survive a browser
+             * restart before a portal profile is saved. Keep that session
+             * alive so the user can restart onboarding. It is not an
+             * Existing User until tp_portal_activated becomes true.
+             */
+            if (
+                hasExplicitPortalActivation(session.user) &&
+                session.user.user_metadata?.tp_portal_activated === false
+            ) {
+                return {
+                    success: true
+                };
+            }
+
             await supabase.auth.signOut();
 
-         clearStudentIdentity();
-
-clearTeacherIdentity();
-
-clearSchoolIdentity();
-
-clearPartnerIdentity();
-
-clearAdminIdentity();
+            clearStudentIdentity();
+            clearTeacherIdentity();
+            clearSchoolIdentity();
+            clearPartnerIdentity();
+            clearAdminIdentity();
             clearAuthSession();
 
             return {
-
                 success: false,
-
                 error:
                     "No linked profile found."
-
             };
-
         }
 
         /**

@@ -81,6 +81,20 @@ export default function ExistingUserLogin({
 
             }
 
+            /*
+             * The Auth credentials can exist before onboarding is complete.
+             * That account is NOT an Existing User yet. Send the user back
+             * into the New User onboarding path, where registration will
+             * safely resume the same incomplete Auth account.
+             */
+            if (result.onboardingIncomplete) {
+                alert(
+                    "Your earlier registration was not completed. Let's complete your onboarding again."
+                );
+                onRegister();
+                return;
+            }
+
             if (result.identity?.role !== "student") {
                 const role = result.identity?.role;
                 await signOut();

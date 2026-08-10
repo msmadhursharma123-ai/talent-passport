@@ -82,7 +82,9 @@ if (!result.userId) {
 if (result.sessionExists) {
 
   alert(
-    "Teacher account created successfully. Let's complete your profile."
+    result.resumedIncompleteOnboarding
+      ? "Your previous teacher onboarding was incomplete. Let's complete it again."
+      : "Teacher account created successfully. Let's complete your profile."
   );
 
 console.log("CALLING onRegistrationComplete");

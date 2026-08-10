@@ -36,9 +36,7 @@ export interface CreateTeacherProfileRequest {
 }
 
 export async function createTeacherProfile(
-
     request: CreateTeacherProfileRequest
-
 ): Promise<TeacherIdentity | null> {
 
     const supabase =
@@ -48,9 +46,7 @@ export async function createTeacherProfile(
         return null;
 
     const {
-
         data: authData
-
     } = await supabase.auth.getUser();
 
     const authUser =
@@ -60,146 +56,166 @@ export async function createTeacherProfile(
         return null;
 
     const teacherId =
+        request.email
+            .trim()
+            .toLowerCase()
+            .replace("@", "_")
+            .replace(/\./g, "_");
 
-    request.email
+    const payload = {
+        teacher_id: teacherId,
+        auth_user_id: authUser.id,
+        full_name: request.fullName,
+        email: request.email,
+        phone: request.phone,
+        school_uuid: request.schoolUuid,
+        school_name: request.schoolName,
+        department: request.department,
+        designation: request.designation,
+        account_status: "PENDING",
+        profile_completed: false,
+        is_active: true
+    };
 
-        .trim()
+    /*
+     * IMPORTANT:
+     * If the teacher created the Auth account and saved the profile before
+     * the browser was interrupted, retrying registration must UPDATE that
+     * same profile instead of inserting a second teachers_master row.
+     */
+    const {
+        data: existingTeacher
+    } = await (supabase as any)
+        .from("teachers_master")
+        .select("*")
+        .eq("auth_user_id", authUser.id)
+        .maybeSingle();
 
-        .toLowerCase()
+    let teacher: any;
+    let error: any;
 
-        .replace("@", "_")
+    if (existingTeacher) {
 
-        .replace(/\./g, "_");
+        const result =
+            await (supabase as any)
+                .from("teachers_master")
+                .update(payload)
+                .eq(
+                    "teacher_uuid",
+                    existingTeacher.teacher_uuid
+                )
+                .select()
+                .single();
 
-const payload = {
+        teacher = result.data;
+        error = result.error;
 
-    teacher_id:
-        teacherId,
+    } else {
 
-    auth_user_id:
-        authUser.id,
+        const result =
+            await (supabase as any)
+                .from("teachers_master")
+                .insert([payload])
+                .select()
+                .single();
 
-    full_name:
-        request.fullName,
+        teacher = result.data;
+        error = result.error;
 
-    email:
-        request.email,
+        /*
+         * A teacher email can also be unique. If a previous incomplete
+         * profile exists for this exact Auth user, update it rather than
+         * failing the onboarding retry.
+         */
+        if (
+            error?.code === "23505" &&
+            String(error?.message ?? "")
+                .toLowerCase()
+                .includes("email")
+        ) {
 
-    phone:
-        request.phone,
+            const {
+                data: duplicateTeacher
+            } = await (supabase as any)
+                .from("teachers_master")
+                .select("*")
+                .eq(
+                    "email",
+                    request.email
+                )
+                .maybeSingle();
 
-    school_uuid:
-    request.schoolUuid,
+            if (
+                duplicateTeacher &&
+                duplicateTeacher.auth_user_id === authUser.id
+            ) {
 
-school_name:
-    request.schoolName,
+                const retry =
+                    await (supabase as any)
+                        .from("teachers_master")
+                        .update(payload)
+                        .eq(
+                            "teacher_uuid",
+                            duplicateTeacher.teacher_uuid
+                        )
+                        .select()
+                        .single();
 
-    department:
-        request.department,
+                teacher = retry.data;
+                error = retry.error;
+            }
+        }
+    }
 
-    designation:
-        request.designation, 
+    if (error) {
+        console.error(
+            "CREATE / UPDATE TEACHER PROFILE ERROR:",
+            error
+        );
+        return null;
+    }
 
-    account_status:
-    "PENDING",
+    if (!teacher) {
+        return null;
+    }
 
-    profile_completed:
-    false,
+    const identity =
+        buildTeacherIdentity({
+            authUserId:
+                teacher.auth_user_id,
+            teacherUuid:
+                teacher.teacher_uuid,
+            teacherId:
+                teacher.teacher_id,
+            teacherName:
+                teacher.full_name,
+            email:
+                teacher.email,
+            phone:
+                teacher.phone,
+            schoolUuid:
+                teacher.school_uuid,
+            schoolName:
+                teacher.school_name,
+            boardUuid:
+                teacher.board_uuid,
+            department:
+                teacher.department,
+            designation:
+                teacher.designation,
+            profileCompleted:
+                teacher.profile_completed,
+            isActive:
+                teacher.is_active,
+            role:
+                "teacher",
+            permissions:
+                []
+        });
 
-    is_active:
-        true
+    saveTeacherIdentity(identity);
 
-};
-
-const {
-
-    data: teacher,
-
-    error
-
-} = await (supabase as any)
-
-    .from("teachers_master")
-
-    .insert([
-
-        payload
-
-    ])
-
-    .select()
-
-    .single();
-
-if (error) {
-
-    console.error(error);
-
-    return null;
-
-}
-
-if (!teacher) {
-
-    return null;
-
-}
-
-const identity = buildTeacherIdentity({
-
-        authUserId:
-            teacher.auth_user_id,
-
-        teacherUuid:
-            teacher.teacher_uuid,
-
-        teacherId:
-            teacher.teacher_id,
-
-        teacherName:
-            teacher.full_name,
-
-        email:
-            teacher.email,
-
-        phone:
-            teacher.phone,
-
-        schoolUuid:
-            teacher.school_uuid,
-
-        schoolName:
-            teacher.school_name,
-
-        boardUuid:
-            teacher.board_uuid,
-
-        department:
-            teacher.department,
-
-        designation:
-            teacher.designation,
-
-     profileCompleted:
-    teacher.profile_completed,
-
-isActive:
-    teacher.is_active,
-
-role:
-    "teacher",
-
-permissions:
-    []
-
-});
-
-saveTeacherIdentity(
-    identity
-);
-
-return identity;
-
+    return identity;
 }
 
 export async function doesTeacherProfileExist(
