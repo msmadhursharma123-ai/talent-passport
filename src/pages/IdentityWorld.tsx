@@ -1,158 +1,159 @@
-import React from "react";
-
+import React, { useEffect, useMemo, useState } from "react";
+import "../styles/identityWorldNavigation.css";
 import LandingNavbar from "../components/landing/LandingNavbar";
-import HeroSlider from "../components/landing/HeroSlider";
-
-import ProblemSection from "../components/landing/ProblemSection";
-
-import ImageSection from "../components/common/ImageSection";
-import JourneySection from "../components/common/JourneySection";
-import PartnerSection from "../components/identityWorld/sections/PartnerSection";
-import FounderSection from "../components/landing/FounderSection";
-import TestimonialsSection from "../components/landing/TestimonialsSection";
-import AcademicIntelligenceSection from "../components/identityWorld/sections/AcademicIntelligenceSection";
-import SchoolSection from "../components/identityWorld/sections/SchoolSection";
 import LandingCTA from "../components/common/LandingCTA";
 import LandingFooter from "../components/common/LandingFooter";
 
+import IdentityWorldHome from "./identityWorld/IdentityWorldHome";
+import SchoolsPage from "./identityWorld/SchoolsPage";
+import PartnersPage from "./identityWorld/PartnersPage";
+import HPCPage from "./identityWorld/HPCPage";
+import RecognitionPage from "./identityWorld/RecognitionPage";
+import GrowthPage from "./identityWorld/GrowthPage";
+import AcademicIntelligencePage from "./identityWorld/AcademicIntelligencePage";
+import FounderPage from "./identityWorld/FounderPage";
+import TestimonialsPage from "./identityWorld/TestimonialsPage";
+import MarketplacePage from "./identityWorld/MarketplacePage";
+import ConsultationPage from "./identityWorld/ConsultationPage";
+import TeacherAnalyticsPage from "./identityWorld/TeacherAnalyticsPage";
+import SchoolAnalyticsPage from "./identityWorld/SchoolAnalyticsPage";
+import StudentPortfolioPage from "./identityWorld/StudentPortfolioPage";
+import NEPSkillsPage from "./identityWorld/NEPSkillsPage";
+import CompetitionsPage from "./identityWorld/CompetitionsPage";
+import StarPerformerPage from "./identityWorld/StarPerformerPage";
+import PlansPage from "./identityWorld/PlansPage";
+import FAQPage from "./identityWorld/FAQPage";
+import TrustCenterPage from "./identityWorld/TrustCenterPage";
+import ResourcesPage from "./identityWorld/ResourcesPage";
+import BlogsPage from "./identityWorld/BlogsPage";
+import ContactCenterPage from "./identityWorld/ContactCenterPage";
+import PlatformIntelligenceSection from "./identityWorld/PlatformIntelligenceSection";
+
 interface Props {
-    onContinue: () => void;
+  onContinue: () => void;
 }
 
-export default function IdentityWorld({
-    onContinue,
-}: Props) {
+type PublicPage =
+  | "home"
+  | "academic-intelligence"
+  | "schools"
+  | "partners"
+  | "hpc"
+  | "recognition"
+  | "growth"
+  | "founder"
+  | "testimonials"
+  | "marketplace"
+  | "consultation"
+  | "teacher-analytics"
+  | "school-analytics"
+  | "student-portfolio"
+  | "nep-skills"
+  | "competitions"
+  | "star-performer"
+  | "plans"
+  | "faq"
+  | "trust"
+  | "resources"
+  | "blogs"
+  | "contact";
 
-    return (
+const VALID_PAGES = new Set<PublicPage>([
+  "home",
+  "academic-intelligence",
+  "schools",
+  "partners",
+  "hpc",
+  "recognition",
+  "growth",
+  "founder",
+  "testimonials",
+  "marketplace",
+  "consultation",
+  "teacher-analytics",
+  "school-analytics",
+  "student-portfolio",
+  "nep-skills",
+  "competitions",
+  "star-performer",
+  "plans",
+  "faq",
+  "trust",
+  "resources",
+  "blogs",
+  "contact",
+]);
 
-     <main
-    className="landing-shell"
-    style={{
-        background: "#FFFFFF",
-        overflowX: "hidden",
-    }}
->
+function readPageFromHash(): PublicPage {
+  const raw = window.location.hash.replace(/^#/, "").trim();
+  if (!raw || raw === "hero") return "home";
+  return VALID_PAGES.has(raw as PublicPage) ? (raw as PublicPage) : "home";
+}
 
-        {/* ===========================
-        NAVBAR
-    =========================== */}
+export default function IdentityWorld({ onContinue }: Props) {
+  const [page, setPage] = useState<PublicPage>(() =>
+    typeof window === "undefined" ? "home" : readPageFromHash()
+  );
 
-    <LandingNavbar
-        onPortalClick={onContinue}
-    />
+  useEffect(() => {
+    const onHash = () => {
+      setPage(readPageFromHash());
+      window.scrollTo({ top: 0, behavior: "auto" });
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
 
-    {/* ===========================
-        HERO
-    =========================== */}
+  useEffect(() => {
+    document.title =
+      page === "home"
+        ? "Talent Passport | Identity World"
+        : `Talent Passport | ${page.split("-").map(
+            w => w[0].toUpperCase() + w.slice(1)
+          ).join(" ")}`;
+  }, [page]);
 
-    <section id="hero">
+  const content = useMemo(() => {
+    switch (page) {
+      case "home":
+        return (
+          <>
+            <IdentityWorldHome onContinue={onContinue} />
+            <PlatformIntelligenceSection />
+          </>
+        );
+      case "academic-intelligence": return <AcademicIntelligencePage />;
+      case "schools": return <SchoolsPage />;
+      case "partners": return <PartnersPage />;
+      case "hpc": return <HPCPage />;
+      case "recognition": return <RecognitionPage />;
+      case "growth": return <GrowthPage />;
+      case "founder": return <FounderPage />;
+      case "testimonials": return <TestimonialsPage />;
+      case "marketplace": return <MarketplacePage />;
+      case "consultation": return <ConsultationPage />;
+      case "teacher-analytics": return <TeacherAnalyticsPage />;
+      case "school-analytics": return <SchoolAnalyticsPage />;
+      case "student-portfolio": return <StudentPortfolioPage />;
+      case "nep-skills": return <NEPSkillsPage />;
+      case "competitions": return <CompetitionsPage />;
+      case "star-performer": return <StarPerformerPage />;
+      case "plans": return <PlansPage />;
+      case "faq": return <FAQPage />;
+      case "trust": return <TrustCenterPage />;
+      case "resources": return <ResourcesPage />;
+      case "blogs": return <BlogsPage />;
+      case "contact": return <ContactCenterPage />;
+      default: return <IdentityWorldHome onContinue={onContinue} />;
+    }
+  }, [page, onContinue]);
 
-        <HeroSlider
-            onContinue={onContinue}
-        />
-
-    </section>
-
-    {/* ===========================
-        PROBLEM
-    =========================== */}
-
-    <section id="problem">
-
-        <ProblemSection />
-
-    </section>
-
-
-    {/* ===========================
-        SchoolSection
-    =========================== */}
-
-    <section id="schoolsection">
-
-        <SchoolSection />
-
-    </section>
-
-    {/* ===========================
-        IMAGINE
-    =========================== */}
-
-    <section id="imagine">
-
-        <ImageSection />
-
-    </section>
-
-    {/* ===========================
-        JOURNEY
-    =========================== */}
-
-    <section id="journey">
-
-        <JourneySection />
-
-    </section>
-
-        {/* ===========================
-        academic
-    =========================== */}
-
-    <section id="academicintelligence">
-
-        <AcademicIntelligenceSection />
-
-    </section>
-
-
-       {/* ===========================
-        Partner
-    =========================== */}
-
-    <section id="partnersection">
-
-        <PartnerSection />
-
-    </section>
-
-
-    {/* ===========================
-        FOUNDER MESSAGE
-    =========================== */}
-
-    <section id="founder">
-
-        <FounderSection />
-
-    </section>
-
-    {/* ===========================
-        TESTIMONIALS
-    =========================== */}
-
-    <section id="testimonials">
-
-        <TestimonialsSection />
-
-    </section>
-
-    {/* ===========================
-        FINAL CTA
-    =========================== */}
-
-    <LandingCTA
-        onContinue={onContinue}
-    />
-
-    {/* ===========================
-        FOOTER
-    =========================== */}
-
-    <LandingFooter
-        onContinue={onContinue}
-    />
-
-</main>
-
-    );
+  return (
+    <main className="landing-shell iw-public-shell">
+      <LandingNavbar onPortalClick={onContinue} />
+      <div className="iw-public-content">{content}</div>
+      {page !== "home" && <LandingCTA onContinue={onContinue} />}
+      <LandingFooter onContinue={onContinue} />
+    </main>
+  );
 }

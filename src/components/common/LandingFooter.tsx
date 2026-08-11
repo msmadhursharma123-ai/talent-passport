@@ -1,156 +1,108 @@
 import React from "react";
+import { ArrowRight, Mail, ShieldCheck } from "lucide-react";
 
 interface LandingFooterProps {
-    onContinue: () => void;
+  onContinue: () => void;
 }
 
-export default function LandingFooter({
-    onContinue,
-}: LandingFooterProps) {
-    return (
+const groups = [
+  {
+    title: "Platform",
+    links: [
+      ["For Schools", "schools"],
+      ["Teacher Analytics", "teacher-analytics"],
+      ["School Analytics", "school-analytics"],
+      ["Student Portfolio", "student-portfolio"],
+      ["NEP-Aligned Skills", "nep-skills"],
+      ["HPC / Talent Passport", "hpc"],
+    ],
+  },
+  {
+    title: "Opportunities",
+    links: [
+      ["Marketplace", "marketplace"],
+      ["Consultation", "consultation"],
+      ["Competitions", "competitions"],
+      ["Partners", "partners"],
+      ["Recognition", "recognition"],
+    ],
+  },
+  {
+    title: "Resources",
+    links: [
+      ["Resources", "resources"],
+      ["Blogs", "blogs"],
+      ["FAQs", "faq"],
+      ["Trust Center", "trust"],
+      ["Testimonials", "testimonials"],
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      ["Founder", "founder"],
+      ["Plans", "plans"],
+      ["Contact Center", "contact"],
+    ],
+  },
+];
 
-        <footer className="landing-footer">
+export default function LandingFooter({ onContinue }: LandingFooterProps) {
+  return (
+    <footer className="iw-footer">
+      <div className="iw-footer-top">
+        <div className="iw-footer-brand">
+          <a href="#hero" className="iw-footer-logo">
+            <span className="iw-footer-mark">TP</span>
+            <span>
+              <strong>talentpassport</strong>
+              <small>ONE PASSPORT, ONE IDENTITY, ENDLESS POSSIBILITIES</small>
+            </span>
+          </a>
 
-            <div className="landing-footer-container">
+          <p>
+            Building India's next-generation talent identity ecosystem where
+            every learner can discover, grow and showcase their journey beyond
+            marks.
+          </p>
 
-                {/* ===========================
-                    BRAND
-                =========================== */}
+          <div className="iw-footer-trust">
+            <ShieldCheck size={15} />
+            <span>Built for a connected education ecosystem</span>
+          </div>
+        </div>
 
-                <div className="landing-footer-brand">
-
-                    <div className="landing-footer-logo">
-                        TALENT PASSPORT
-                    </div>
-
-                    <p className="landing-footer-description">
-
-                        Building India's next generation talent
-                        identity ecosystem where every learner can
-                        discover, grow and showcase their journey
-                        beyond marks.
-
-                    </p>
-
-                </div>
-
-                {/* ===========================
-                    EXPLORE
-                =========================== */}
-
-                <div className="landing-footer-column">
-
-                    <h3>
-                        Explore
-                    </h3>
-
-                    <a href="#hero">
-                        Home
-                    </a>
-
-                    <a href="#journey">
-                        Journey
-                    </a>
-
-                    <a href="#opportunities">
-                        Opportunities
-                    </a>
-
-                    <a href="#community">
-                        Community
-                    </a>
-
-                </div>
-
-                {/* ===========================
-                    ECOSYSTEM
-                =========================== */}
-
-                <div className="landing-footer-column">
-
-                    <h3>
-                        Ecosystem
-                    </h3>
-
-                    <span>
-                        Students
-                    </span>
-
-                    <span>
-                        Schools
-                    </span>
-
-                    <span>
-                        Teachers
-                    </span>
-
-                    <span>
-                        Partners
-                    </span>
-
-                </div>
-
-                {/* ===========================
-                    CTA
-                =========================== */}
-
-                <div className="landing-footer-column">
-
-                    <h3>
-                        Get Started
-                    </h3>
-
-                    <p className="landing-footer-small">
-
-                        Continue your Talent Passport journey.
-
-                    </p>
-
-                    <button
-                        className="landing-footer-button"
-                        onClick={onContinue}
-                    >
-
-                        Login To Identity World →
-
-                    </button>
-
-                </div>
-
+        <div className="iw-footer-links">
+          {groups.map((group) => (
+            <div key={group.title}>
+              <h3>{group.title}</h3>
+              {group.links.map(([label, href]) => (
+                <a key={href} href={`#${href}`}>
+                  {label}
+                </a>
+              ))}
             </div>
+          ))}
+        </div>
+      </div>
 
-            {/* ===========================
-                BOTTOM
-            =========================== */}
+      <div className="iw-footer-bottom">
+        <span>© 2026 Talent Passport OS. All Rights Reserved.</span>
 
-            <div className="landing-footer-bottom">
+        <div>
+          <a href="#trust">Privacy & Trust</a>
+          <a href="#trust">Terms</a>
+          <a href="#contact">
+            <Mail size={14} />
+            Contact
+          </a>
+        </div>
 
-                <p>
-
-                    © 2026 Talent Passport OS.
-                    All Rights Reserved.
-
-                </p>
-
-                <div className="landing-footer-links">
-
-                    <span>
-                        Privacy
-                    </span>
-
-                    <span>
-                        Terms
-                    </span>
-
-                    <span>
-                        Contact
-                    </span>
-
-                </div>
-
-            </div>
-
-        </footer>
-
-    );
+        <button type="button" onClick={onContinue}>
+          Enter Identity World
+          <ArrowRight size={14} />
+        </button>
+      </div>
+    </footer>
+  );
 }

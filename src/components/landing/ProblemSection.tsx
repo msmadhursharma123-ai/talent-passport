@@ -63,7 +63,7 @@ export default function ProblemSection() {
 
         <SectionHeader
           eyebrow="WHY TALENT PASSPORT"
-          title="Every Student Has A Journey. Not Every Journey Has An Identity."
+          title="We help schools unlock their full academic potential."
           description=""
         />
 
@@ -80,9 +80,9 @@ export default function ProblemSection() {
             </div>
 
             <h3>
-              Learning Happens.
+              Learning happens.
               <br />
-              Identity Doesn't.
+              Identity doesn't.
             </h3>
 
             <p className="journey-subtitle">
@@ -125,9 +125,9 @@ export default function ProblemSection() {
             </div>
 
             <h3>
-              Continuous Learning.
+              Continuous learning.
               <br />
-              Lifelong Identity.
+              Lifelong identity.
             </h3>
 
             <p className="journey-subtitle">
@@ -169,7 +169,7 @@ export default function ProblemSection() {
 
           <SectionHeader
             eyebrow="ONE PLATFORM"
-            title="Built For Every Stakeholder"
+            title="Built for every stakeholder"
             description=""
           />
 
@@ -186,9 +186,9 @@ export default function ProblemSection() {
               </div>
 
               <h3>
-                Better Learning.
+                Better learning.
                 <br />
-                Better Outcomes.
+                Better outcomes.
               </h3>
 
               <ul>
@@ -216,9 +216,9 @@ export default function ProblemSection() {
               </div>
 
               <h3>
-                Every Effort.
+                Every effort.
                 <br />
-                Forever Recognised.
+                Forever recognised.
               </h3>
 
               <ul>
@@ -246,9 +246,9 @@ export default function ProblemSection() {
               </div>
 
               <h3>
-                Connect With
+                Connect with
                 <br />
-                Verified Talent.
+                verified talent.
               </h3>
 
               <ul>
