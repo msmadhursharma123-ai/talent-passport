@@ -74,6 +74,9 @@ useState<any[]>([]);
 
 
     
+  const [studentMobile, setStudentMobile] =
+    useState("");
+
   const [parentMobile, setParentMobile] =
     useState("");
 
@@ -160,6 +163,7 @@ setParentEmail(email);
   if (
       !studentName ||
       !parentEmail ||
+      !studentMobile ||
       !parentMobile ||
       !schoolName ||
       !schoolUuid ||
@@ -177,9 +181,23 @@ setParentEmail(email);
       return;
 
   }
+  if (!/^\d{10}$/.test(studentMobile)) {
+      alert(
+          "Student Mobile Number must contain exactly 10 digits."
+      );
+      return;
+  }
+
   if (!/^\d{10}$/.test(parentMobile)) {
       alert(
           "Parent Mobile Number must contain exactly 10 digits."
+      );
+      return;
+  }
+
+  if (studentMobile === parentMobile) {
+      alert(
+          "Student Mobile Number and Parent Mobile Number cannot be the same."
       );
       return;
   }
@@ -213,7 +231,10 @@ setParentEmail(email);
               parent_email:
                   parentEmail,
 
-              parent_mobile:
+              student_mobile:
+                  studentMobile,
+
+              parent_phone:
                   parentMobile,
 
               school_name:
@@ -440,7 +461,27 @@ background:"#F1F5F9",
           inputMode="numeric"
           pattern="[0-9]*"
           maxLength={10}
-          placeholder="Parent Mobile Number *" aria-label="Parent Mobile Number"
+          placeholder="Student Mobile Number *"
+          aria-label="Student Mobile Number"
+          value={studentMobile}
+          onChange={(e) => {
+            const digitsOnly =
+              e.target.value
+                .replace(/\D/g, "")
+                .slice(0, 10);
+
+            setStudentMobile(digitsOnly);
+          }}
+          style={inputStyle}
+        />
+
+        <input
+          type="tel"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={10}
+          placeholder="Parent Mobile Number *"
+          aria-label="Parent Mobile Number"
           value={parentMobile}
           onChange={(e) => {
             const digitsOnly =
@@ -448,12 +489,23 @@ background:"#F1F5F9",
                 .replace(/\D/g, "")
                 .slice(0, 10);
 
-            setParentMobile(
-              digitsOnly
-            );
+            setParentMobile(digitsOnly);
           }}
           style={inputStyle}
         />
+
+        <div
+          style={{
+            marginTop: -8,
+            marginBottom: 6,
+            color: "#64748B",
+            fontSize: 12,
+            lineHeight: 1.5,
+          }}
+        >
+          Parent Mobile Number must be different from the student's mobile
+          number. All parent verification OTPs will be sent to this number.
+        </div>
 
 <select
 value={schoolUuid}

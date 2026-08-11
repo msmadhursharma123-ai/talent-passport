@@ -1,5 +1,11 @@
 import { getSupabaseClient } from "../supabaseClient";
 
+export type ParentOtpPurpose =
+  | "ONBOARDING_CONSENT"
+  | "MARKETPLACE_OUTBOUND"
+  | "MARKETPLACE_INBOUND_ACCEPT"
+  | "CONSULTATION_BOOKING";
+
 export interface OtpSendResult {
   success: boolean;
   error?: string;
@@ -7,12 +13,25 @@ export interface OtpSendResult {
   phoneMasked?: string;
   provider?: string;
   consentVersion?: string;
+  purpose?: ParentOtpPurpose;
+  challengeId?: string;
 }
 
 export interface OtpVerifyResult {
   success: boolean;
   verified?: boolean;
   verifiedAt?: string;
+  error?: string;
+  verificationToken?: string;
+  expiresAt?: string;
+  purpose?: ParentOtpPurpose;
+  challengeId?: string;
+}
+
+export interface ParentActionConsumeResult {
+  authorized: boolean;
+  consumedAt?: string;
+  purpose?: ParentOtpPurpose;
   error?: string;
 }
 
@@ -31,7 +50,9 @@ async function invoke<T>(
     await supabase.auth.getSession();
 
   if (sessionError || !sessionData.session?.access_token) {
-    throw new Error("Your authentication session is missing. Please log in again.");
+    throw new Error(
+      "Your authentication session is missing. Please log in again.",
+    );
   }
 
   const { data, error } = await supabase.functions.invoke(functionName, {
@@ -40,11 +61,6 @@ async function invoke<T>(
   });
 
   if (error) {
-    /*
-     * Supabase may return a FunctionsHttpError whose response body contains
-     * our JSON error. Try to surface that message instead of the generic
-     * "Failed to send a request" message.
-     */
     try {
       const context = (error as any).context;
       if (context?.json) {
@@ -67,11 +83,12 @@ async function invoke<T>(
 
 export async function sendParentOtp(
   consentAccepted: boolean,
+  purpose: ParentOtpPurpose = "ONBOARDING_CONSENT",
 ): Promise<OtpSendResult> {
   try {
     return await invoke<OtpSendResult>(
       "send-otp",
-      { consentAccepted },
+      { consentAccepted, purpose },
       "POST",
     );
   } catch (error: any) {
@@ -85,11 +102,13 @@ export async function sendParentOtp(
 export async function verifyParentOtp(
   otp: string,
   consentAccepted: boolean,
+  purpose: ParentOtpPurpose = "ONBOARDING_CONSENT",
+  challengeId?: string,
 ): Promise<OtpVerifyResult> {
   try {
     return await invoke<OtpVerifyResult>(
       "verify-otp",
-      { otp, consentAccepted },
+      { otp, consentAccepted, purpose, challengeId },
       "POST",
     );
   } catch (error: any) {
@@ -97,6 +116,41 @@ export async function verifyParentOtp(
       success: false,
       verified: false,
       error: error?.message ?? "Unable to verify OTP.",
+    };
+  }
+}
+
+export async function sendParentActionOtp(
+  purpose: Exclude<ParentOtpPurpose, "ONBOARDING_CONSENT">,
+  consentAccepted: boolean,
+): Promise<OtpSendResult> {
+  return sendParentOtp(consentAccepted, purpose);
+}
+
+export async function verifyParentActionOtp(
+  otp: string,
+  purpose: Exclude<ParentOtpPurpose, "ONBOARDING_CONSENT">,
+  consentAccepted: boolean,
+  challengeId: string,
+): Promise<OtpVerifyResult> {
+  return verifyParentOtp(otp, consentAccepted, purpose, challengeId);
+}
+
+export async function consumeParentActionVerification(
+  purpose: Exclude<ParentOtpPurpose, "ONBOARDING_CONSENT">,
+  verificationToken: string,
+): Promise<ParentActionConsumeResult> {
+  try {
+    return await invoke<ParentActionConsumeResult>(
+      "consume-otp",
+      { purpose, verificationToken },
+      "POST",
+    );
+  } catch (error: any) {
+    return {
+      authorized: false,
+      error:
+        error?.message ?? "Unable to authorize the protected action.",
     };
   }
 }
@@ -111,8 +165,6 @@ export async function getParentalConsentStatus(): Promise<{
       verifiedAt?: string | null;
     }>("consent-status", undefined, "GET");
   } catch {
-    return {
-      verified: false,
-    };
+    return { verified: false };
   }
 }

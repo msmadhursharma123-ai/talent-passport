@@ -49,6 +49,8 @@ export interface StudentIdentity {
 
   parentEmail?: string;
 
+  studentPhone?: string;
+
   parentPhone?: string;
 
   /* ========================================================
@@ -1432,6 +1434,9 @@ export function buildIdentity(
 
     parentEmail:
       data.parentEmail,
+
+    studentPhone:
+      data.studentPhone,
 
     parentPhone:
       data.parentPhone,

@@ -172,7 +172,9 @@ school_name: string | null;
 
     parent_email: string | null;
 
-    parent_phone: string |null;
+    student_mobile: string | null;
+
+    parent_phone: string | null;
 
     wallet_id?: string | null;
 
@@ -682,6 +684,11 @@ function createStudentIdentity(
 
 parentEmail:
     row.student_email ?? undefined,
+
+studentPhone:
+    row.student_mobile ??
+    row.phone ??
+    undefined,
 
 parentPhone:
     row.parent_phone ??

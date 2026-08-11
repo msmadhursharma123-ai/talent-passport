@@ -9,6 +9,9 @@ import {
   getStudentUuid,
 } from "../../services/identityService";
 
+import ParentActionOtpVerification from "../../components/ParentActionOtpVerification";
+import type { ParentOtpPurpose } from "../../services/otpService";
+
 import {
   fetchPartners,
   fetchStudentScholarshipOffers,
@@ -123,6 +126,29 @@ export default function MaukePeChauka() {
     timelineFilter,
     setTimelineFilter,
   ] = useState("all");
+
+  const [
+    parentOtpPurpose,
+    setParentOtpPurpose,
+  ] = useState<Exclude<ParentOtpPurpose, "ONBOARDING_CONSENT"> | null>(null);
+
+  const [
+    parentOtpTitle,
+    setParentOtpTitle,
+  ] = useState("");
+
+  const [
+    parentOtpDescription,
+    setParentOtpDescription,
+  ] = useState("");
+
+  const [
+    pendingOfferAction,
+    setPendingOfferAction,
+  ] = useState<{
+    offer: InboxOffer;
+    action: "accept";
+  } | null>(null);
 
   useEffect(() => {
     loadMarketplace();
@@ -341,80 +367,20 @@ export default function MaukePeChauka() {
       );
     }, []);
 
-  async function handleRequest() {
+  async function executeRequestAfterVerification() {
     if (!selectedPartner) {
       return;
     }
 
-    const identity =
-      requireIdentity();
+    const identity = requireIdentity();
 
-    console.log(
-      "===================================="
-    );
+    console.log("====================================");
+    console.log("PARENT VERIFIED — MARKETPLACE REQUEST");
+    console.log("IDENTITY OBJECT");
+    console.dir(identity, { depth: null });
 
-    console.log(
-      "IDENTITY OBJECT"
-    );
-
-    console.dir(
-      identity,
-      { depth: null }
-    );
-
-    console.log(
-      "IDENTITY VALUES"
-    );
-
-    console.table({
-      studentName:
-        identity.studentName,
-
-      schoolName:
-        identity.schoolName,
-
-      parentEmail:
-        identity.parentEmail,
-
-      parentPhone:
-        identity.parentPhone,
-
-      className:
-        identity.className,
-    });
-
-    console.log(
-      "=================================="
-    );
-
-    console.log(
-      "SELECTED PARTNER"
-    );
-
-    console.dir(
-      selectedPartner,
-      { depth: null }
-    );
-
-    console.log(
-      "PARTNER ID"
-    );
-
-    console.log(
-      selectedPartner.partner_id
-    );
-
-    console.log(
-      "PARTNER UUID"
-    );
-
-    console.log(
-      selectedPartner.partner_uuid
-    );
-
-    console.log(
-      "=================================="
-    );
+    console.log("SELECTED PARTNER");
+    console.dir(selectedPartner, { depth: null });
 
     await createIncomingRequest({
       partner_id:
@@ -471,16 +437,26 @@ export default function MaukePeChauka() {
 
       metadata: {
         requestType,
+        parentOtpVerified: true,
       },
     });
 
-    setShowRequestDialog(
-      false
-    );
-
+    setShowRequestDialog(false);
     setMessage("");
-
+    setSelectedPartner(null);
     await loadMarketplace();
+  }
+
+  function handleRequest() {
+    if (!selectedPartner) {
+      return;
+    }
+
+    setParentOtpPurpose("MARKETPLACE_OUTBOUND");
+    setParentOtpTitle(`Approve ${requestType} Request`);
+    setParentOtpDescription(
+      "A parent must approve this partner request before the student's details are shared and the request is sent to the partner's Incoming Requests."
+    );
   }
 
   async function handleWithdraw(
@@ -524,105 +500,202 @@ export default function MaukePeChauka() {
     await loadMarketplace();
   }
 
+  async function executeOfferActionAfterVerification(
+    offer: InboxOffer,
+    action: "accept"
+  ) {
+    if (offer.type === "Scholarship") {
+      await acceptScholarshipOffer(offer.id);
+
+      await createMarketplaceActivity({
+        student_id:
+          getStudentUuid(),
+
+        activity_type:
+          "offer",
+
+        activity_title:
+          "Scholarship Accepted",
+
+        partner_id: "",
+
+        partner_name:
+          offer.partner_name ||
+          "",
+
+        status:
+          "accepted",
+
+        metadata: {
+          parentOtpVerified: true,
+        },
+      });
+    }
+
+    if (offer.type === "Workshop") {
+      await acceptWorkshopOffer(offer.id);
+
+      await createMarketplaceActivity({
+        student_id:
+          getStudentUuid(),
+
+        activity_type:
+          "offer",
+
+        activity_title:
+          "Workshop Accepted",
+
+        partner_id: "",
+
+        partner_name:
+          offer.partner_name ||
+          "",
+
+        status:
+          "accepted",
+
+        metadata: {
+          parentOtpVerified: true,
+        },
+      });
+    }
+
+    if (offer.type === "Contact") {
+      await acceptContactOffer(offer.id);
+
+      await createMarketplaceActivity({
+        student_id:
+          getStudentUuid(),
+
+        activity_type:
+          "offer",
+
+        activity_title:
+          "Partner Contact Accepted",
+
+        partner_id: "",
+
+        partner_name:
+          offer.partner_name ||
+          "",
+
+        status:
+          "accepted",
+
+        metadata: {
+          parentOtpVerified: true,
+        },
+      });
+    }
+
+    await loadMarketplace();
+  }
+
   async function handleOfferAction(
     offer: InboxOffer,
     action:
       | "accept"
       | "reject"
   ) {
-    if (
-      offer.type ===
-      "Scholarship"
-    ) {
-      if (
-        action === "accept"
-      ) {
-        await acceptScholarshipOffer(
-          offer.id
-        );
+    if (action === "accept") {
+      setPendingOfferAction({
+        offer,
+        action,
+      });
 
-        await createMarketplaceActivity({
-          student_id:
-            getStudentUuid(),
+      setParentOtpPurpose("MARKETPLACE_INBOUND_ACCEPT");
+      setParentOtpTitle("Approve Partner Invitation");
+      setParentOtpDescription(
+        "A parent must approve this invitation before the partner relationship is accepted and the opportunity is moved into the partner's lead pipeline."
+      );
 
-          activity_type:
-            "offer",
-
-          activity_title:
-            "Scholarship Accepted",
-
-          partner_id: "",
-
-          partner_name:
-            offer.partner_name ||
-            "",
-
-          status:
-            "accepted",
-        });
-      } else {
-        await rejectScholarshipOffer(
-          offer.id
-        );
-
-        await createMarketplaceActivity({
-          student_id:
-            getStudentUuid(),
-
-          activity_type:
-            "offer",
-
-          activity_title:
-            "Scholarship Rejected",
-
-          partner_id: "",
-
-          partner_name:
-            offer.partner_name ||
-            "",
-
-          status:
-            "rejected",
-        });
-      }
+      return;
     }
 
-    if (
-      offer.type ===
-      "Workshop"
-    ) {
-      if (
-        action === "accept"
-      ) {
-        await acceptWorkshopOffer(
-          offer.id
-        );
-      } else {
-        await rejectWorkshopOffer(
-          offer.id
-        );
-      }
+    if (offer.type === "Scholarship") {
+      await rejectScholarshipOffer(
+        offer.id
+      );
+
+      await createMarketplaceActivity({
+        student_id:
+          getStudentUuid(),
+
+        activity_type:
+          "offer",
+
+        activity_title:
+          "Scholarship Rejected",
+
+        partner_id: "",
+
+        partner_name:
+          offer.partner_name ||
+          "",
+
+        status:
+          "rejected",
+      });
     }
 
-    if (
-      offer.type ===
-      "Contact"
-    ) {
-      if (
-        action === "accept"
-      ) {
-        await acceptContactOffer(
-          offer.id
-        );
-      } else {
-        await rejectContactOffer(
-          offer.id
-        );
-      }
+    if (offer.type === "Workshop") {
+      await rejectWorkshopOffer(
+        offer.id
+      );
+    }
+
+    if (offer.type === "Contact") {
+      await rejectContactOffer(
+        offer.id
+      );
     }
 
     await loadMarketplace();
   }
+
+  function closeParentOtp() {
+    setParentOtpPurpose(null);
+    setParentOtpTitle("");
+    setParentOtpDescription("");
+    setPendingOfferAction(null);
+  }
+
+  async function handleParentOtpVerified() {
+    const purpose = parentOtpPurpose;
+
+    const pendingOffer = pendingOfferAction;
+
+    closeParentOtp();
+
+    try {
+      if (purpose === "MARKETPLACE_OUTBOUND") {
+        await executeRequestAfterVerification();
+        return;
+      }
+
+      if (
+        purpose === "MARKETPLACE_INBOUND_ACCEPT" &&
+        pendingOffer
+      ) {
+        await executeOfferActionAfterVerification(
+          pendingOffer.offer,
+          pendingOffer.action
+        );
+      }
+    } catch (error) {
+      console.error(
+        "PARENT VERIFIED MARKETPLACE ACTION FAILED",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to complete the marketplace action."
+      );
+    }
+  }
+
 
 
   
@@ -3155,6 +3228,17 @@ export default function MaukePeChauka() {
 
           </div>
 
+        )}
+
+        {parentOtpPurpose && (
+          <ParentActionOtpVerification
+            purpose={parentOtpPurpose}
+            title={parentOtpTitle}
+            description={parentOtpDescription}
+            actionLabel="Verify & Continue"
+            onCancel={closeParentOtp}
+            onVerified={handleParentOtpVerified}
+          />
         )}
 
               </div>

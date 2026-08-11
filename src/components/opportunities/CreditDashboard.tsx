@@ -58,6 +58,7 @@ import {
   getMasterStudentId,
   requireIdentity
 } from "../../services/identityService";
+import ParentActionOtpVerification from "../../components/ParentActionOtpVerification";
 
 export default function CreditDashboard() {
 
@@ -80,6 +81,8 @@ useEffect(() => {
     "resize",
     handleResize
   );
+
+
 
   return () =>
     window.removeEventListener(
@@ -290,6 +293,10 @@ const [bookingError,
 const [bookingResult,
   setBookingResult] =
   useState<any>(null);
+
+const [showParentBookingOtp,
+  setShowParentBookingOtp] =
+  useState(false);
 
 const [totalCredits,
   setTotalCredits] =
@@ -812,6 +819,59 @@ const demoPartners: MarketplacePartner[] = [
   }
 ];
 
+
+async function executeConsultationBookingAfterParentVerification() {
+  if (!selectedPartner) {
+    return;
+  }
+
+  setBookingError("");
+  setBookingLoading(true);
+
+  try {
+    console.log("PARENT VERIFIED — BOOK CONSULTATION");
+    console.log("BOOKING PARTNER", {
+      id: selectedPartner.id,
+      partner_uuid: selectedPartner.partner_uuid,
+      partner_id: selectedPartner.partner_id,
+      name: selectedPartner.name,
+    });
+
+    const identity = requireIdentity();
+
+    const result = await bookConsultation({
+      studentId: getMasterStudentId(),
+      partnerId: selectedPartner.partner_id,
+      partnerUuid: selectedPartner.partner_uuid,
+      partnerName: selectedPartner.name,
+      studentName: identity.studentName,
+      studentEmail: identity.email,
+      studentPhone: identity.parentPhone,
+      schoolName: identity.schoolName,
+      className: identity.className,
+      category: selectedCategory,
+      skill: selectedSkill,
+      topic: consultationTopic,
+      description: consultationDescription,
+      consultationCredits: selectedPartner.credits,
+    });
+
+    setBookingResult(result);
+    setBookingSuccess(true);
+
+    await loadCredits();
+    await loadConsultationHistory();
+  } catch (error: any) {
+    console.error(error);
+
+    setBookingError(
+      error?.message ??
+      "Unable to submit consultation request."
+    );
+  } finally {
+    setBookingLoading(false);
+  }
+}
   return (
  <div
   className="credit-dashboard-page"
@@ -4364,94 +4424,9 @@ fontWeight:600
 
 <button
 
-onClick={async()=>{
-
-setBookingError("");
-
-setBookingLoading(true);
-
-try{
-
-  console.log("BOOKING PARTNER", {
-    id: selectedPartner.id,
-    partner_uuid: selectedPartner.partner_uuid,
-    partner_id: selectedPartner.partner_id,
-    name: selectedPartner.name
-  });
-
-console.log("========== CREDIT DASHBOARD ==========");
-console.log("selectedPartner =", selectedPartner);
-console.log("selectedPartner.id =", selectedPartner?.id);
-console.log("selectedPartner.partner_uuid =", selectedPartner?.partner_uuid);
-console.log("selectedPartner.partner_id =", selectedPartner?.partner_id);
-console.log("======================================");
-
-const identity = requireIdentity();
-const result = await bookConsultation({
-
-    studentId: getMasterStudentId(),
-
-    partnerId: selectedPartner.partner_id,
-
-    partnerUuid: selectedPartner.partner_uuid,
-
-    partnerName: selectedPartner.name,
-
-    studentName: identity.studentName,
-
-    studentEmail: identity.email,
-
-    studentPhone: identity.parentPhone,
-
-    schoolName: identity.schoolName,
-
-    className: identity.className,
-
-    category: selectedCategory,
-
-    skill: selectedSkill,
-
-    topic: consultationTopic,
-
-    description: consultationDescription,
-
-    consultationCredits: selectedPartner.credits
-
-});
-
-setBookingResult(
-result
-);
-
-setBookingSuccess(
-true
-);
-
-await loadCredits();
-await loadConsultationHistory();
-
-}
-catch(error:any){
-
-console.error(error);
-
-setBookingError(
-
-error?.message ??
-
-"Unable to submit consultation request."
-
-);
-
-}
-finally{
-
-setBookingLoading(
-false
-);
-
-}
-
+onClick={() => {
+  setBookingError("");
+  setShowParentBookingOtp(true);
 }}
 
 disabled={
@@ -4898,6 +4873,10 @@ View My Consultations
             const accepted =
               status === "accepted";
 
+
+
+
+
             return (
               <tr key={item.booking_id ?? item.request_id}>
                 <td style={{ padding: isMobile ? "10px" : isTablet ? "11px 12px" : "14px 16px", color: "#475569", whiteSpace: "nowrap", borderBottom: "1px solid #E2E8F0", verticalAlign: "top" }}>
@@ -4961,6 +4940,20 @@ View My Consultations
     </div>
   )}
 </div>
+
+  {showParentBookingOtp && (
+    <ParentActionOtpVerification
+      purpose="CONSULTATION_BOOKING"
+      title="Approve Consultation Booking"
+      description="A parent must approve this consultation before the request is sent to the expert and the consultation credits are deducted."
+      actionLabel="Verify & Book Consultation"
+      onCancel={() => setShowParentBookingOtp(false)}
+      onVerified={async () => {
+        setShowParentBookingOtp(false);
+        await executeConsultationBookingAfterParentVerification();
+      }}
+    />
+  )}
 
     </div>
 </div>

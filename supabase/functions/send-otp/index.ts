@@ -3,14 +3,26 @@ import {
   CONSENT_VERSION,
   corsHeaders,
   generateOtp,
-  getProvider,
+  getOtpDeliveryProvider,
   json,
   maskPhone,
   normalizeIndianMobile,
+  OTP_PURPOSES,
   resolveAuthenticatedStudent,
   sendOtpThroughProvider,
   sha256Hex,
+  type OtpPurpose,
 } from "../_shared/otp.ts";
+
+function resolvePurpose(value: unknown): OtpPurpose {
+  const purpose = String(value || "ONBOARDING_CONSENT");
+
+  if ((OTP_PURPOSES as readonly string[]).includes(purpose)) {
+    return purpose as OtpPurpose;
+  }
+
+  throw new Error("Invalid parent OTP purpose.");
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -24,12 +36,16 @@ Deno.serve(async (req) => {
   try {
     const { supabase, user } = await authenticateUser(req);
     const body = await req.json().catch(() => ({}));
+    const purpose = resolvePurpose(body?.purpose);
 
     if (body?.consentAccepted !== true) {
       return json(
         {
           success: false,
-          error: "Parental consent must be accepted before an OTP can be sent.",
+          error:
+            purpose === "ONBOARDING_CONSENT"
+              ? "Parental consent must be accepted before an OTP can be sent."
+              : "Please confirm parent/guardian approval before an OTP can be sent.",
         },
         400,
       );
@@ -52,8 +68,9 @@ Deno.serve(async (req) => {
 
     const { data: recentChallenge, error: recentError } = await supabase
       .from("student_parent_otp_challenges")
-      .select("id, last_sent_at")
+      .select("id, last_sent_at, purpose")
       .eq("student_uuid", student.student_uuid)
+      .eq("purpose", purpose)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -78,22 +95,25 @@ Deno.serve(async (req) => {
     const otp = generateOtp();
     const otpHash = await sha256Hex(otp);
     const expiresAt = new Date(Date.now() + 5 * 60_000).toISOString();
-    const provider = getProvider();
+    const provider = getOtpDeliveryProvider();
     const sentAt = new Date().toISOString();
 
-    // Retire any older active challenge before creating the new one.
-    const { error: consumeError } = await supabase
+    const { error: retireError } = await supabase
       .from("student_parent_otp_challenges")
-      .update({ consumed_at: sentAt })
+      .update({
+        consumed_at: sentAt,
+        action_consumed_at: sentAt,
+      })
       .eq("student_uuid", student.student_uuid)
+      .eq("purpose", purpose)
       .is("consumed_at", null)
       .is("verified_at", null);
 
-    if (consumeError) {
-      throw new Error(consumeError.message);
+    if (retireError) {
+      throw new Error(retireError.message);
     }
 
-    const { error: insertError } = await supabase
+    const { data: challenge, error: insertError } = await supabase
       .from("student_parent_otp_challenges")
       .insert({
         student_uuid: student.student_uuid,
@@ -102,8 +122,13 @@ Deno.serve(async (req) => {
         expires_at: expiresAt,
         provider,
         consent_version: CONSENT_VERSION,
+        purpose,
+        verification_token_hash: null,
+        action_consumed_at: null,
         last_sent_at: sentAt,
-      });
+      })
+      .select("id")
+      .single();
 
     if (insertError) {
       throw new Error(insertError.message);
@@ -111,11 +136,21 @@ Deno.serve(async (req) => {
 
     await sendOtpThroughProvider(phone, otp);
 
+    console.log("PARENT OTP SENT", {
+      purpose,
+      challengeId: challenge.id,
+      studentUuid: student.student_uuid,
+      provider,
+      expiresAt,
+    });
+
     return json({
       success: true,
       expiresAt,
       phoneMasked: maskPhone(phone),
       provider,
+      purpose,
+      challengeId: challenge.id,
       consentVersion: CONSENT_VERSION,
     });
   } catch (error) {

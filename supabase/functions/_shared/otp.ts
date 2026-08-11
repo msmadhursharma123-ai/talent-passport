@@ -4,6 +4,19 @@ export const CONSENT_VERSION = "2026-08-10-v1";
 export const CONSENT_TEXT_SHA256 =
   "bba218e872c6a5da6ff13f57f9415d60055dacbe4b10110e4ec879bf92b0820e";
 
+export type OtpPurpose =
+  | "ONBOARDING_CONSENT"
+  | "MARKETPLACE_OUTBOUND"
+  | "MARKETPLACE_INBOUND_ACCEPT"
+  | "CONSULTATION_BOOKING";
+
+export const OTP_PURPOSES = [
+  "ONBOARDING_CONSENT",
+  "MARKETPLACE_OUTBOUND",
+  "MARKETPLACE_INBOUND_ACCEPT",
+  "CONSULTATION_BOOKING",
+] as const;
+
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -65,27 +78,10 @@ export async function authenticateUser(req: Request) {
   return { supabase, user };
 }
 
-/**
- * Resolve the currently authenticated student using the same identity model
- * already used by authenticationService.ts.
- *
- * IMPORTANT:
- * Do NOT query students_master.parent_mobile here. That column does not exist
- * in the current database schema and caused the 400 error seen in the browser.
- * The current project identity model uses parent_phone first and phone as the
- * fallback.
- */
 export async function resolveAuthenticatedStudent(
   supabase: SupabaseClient,
   authUserId: string,
 ) {
-  // Use select("*") here deliberately. The current project has had
-  // different historical names for the parent-mobile field. Selecting a
-  // fixed legacy column (for example parent_mobile) can make the entire
-  // OTP request fail before we even read the student row.
-  //
-  // We then resolve the phone in the same order as the current identity
-  // service, with compatibility fallbacks for older rows.
   const { data: masterByAuth, error: authLookupError } = await supabase
     .from("students_master")
     .select("*")
@@ -106,7 +102,6 @@ export async function resolveAuthenticatedStudent(
     };
   }
 
-  // Compatibility fallback for the current onboarding identity model.
   const { data: studentRow, error: studentLookupError } = await supabase
     .from("students")
     .select("id, student_id, student_email")
@@ -169,6 +164,11 @@ export function generateOtp(): string {
   return String(100000 + (bytes % 900000));
 }
 
+export function generateVerificationToken(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 export async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -188,18 +188,21 @@ export function constantTimeEqual(a: string, b: string): boolean {
   return result === 0;
 }
 
-export function getProvider(): "MOCK" | "MSG91" {
+export function getOtpDeliveryProvider(): "MOCK" | "MSG91" {
   return String(Deno.env.get("SMS_PROVIDER") || "MOCK").toUpperCase() ===
     "MSG91"
     ? "MSG91"
     : "MOCK";
 }
 
+// Backward-compatible alias used by older Edge Function versions.
+export const getProvider = getOtpDeliveryProvider;
+
 export async function sendOtpThroughProvider(
   phone: string,
   otp: string,
 ): Promise<"MOCK" | "MSG91"> {
-  const provider = getProvider();
+  const provider = getOtpDeliveryProvider();
 
   if (provider === "MOCK") {
     console.log("============================================================");
@@ -211,7 +214,6 @@ export async function sendOtpThroughProvider(
     return "MOCK";
   }
 
-  // MSG91 adapter placeholder. No MSG91 integration is active yet.
   throw new Error(
     "SMS_PROVIDER=MSG91 is selected, but the MSG91 adapter is not configured yet.",
   );

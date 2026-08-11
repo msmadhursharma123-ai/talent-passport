@@ -45,213 +45,243 @@ export async function createStudent(
 
   if (!supabase) return null;
 
-  const studentEmail =
-    String(student.parent_email || "").trim();
+const studentEmail =
+  student.parent_email || "";
 
-  const {
-    data: authData
-  } = await supabase.auth.getUser();
+const {
+  data: authData
+} = await supabase.auth.getUser();
 
-  const authUserId =
-    authData.user?.id ?? null;
+const authUserId =
+  authData.user?.id ?? null;
 
-  if (!authUserId) {
-    console.error("STUDENT PROFILE: authenticated user not found.");
-    return null;
-  }
+console.log("AUTH USER:", authData.user);
+console.log("AUTH USER ID:", authUserId);
 
-  const studentCode =
-    studentEmail
-      .toLowerCase()
-      .replace("@", "_")
-      .replace(/\./g, "_");
+const studentCode =
+  studentEmail
+    .trim()
+    .toLowerCase()
+    .replace("@", "_")
+    .replace(/\./g, "_");
 
-  const {
-    school_uuid: selectedSchoolUuid,
-    ...legacyStudentFields
-  } = student;
+const { school_uuid: selectedSchoolUuid, ...legacyStudentFields } = student;
 
-  const payload = {
-    ...legacyStudentFields,
-    class_name: normalizeClassName(
+const payload = {
+  ...legacyStudentFields,
+
+   class_name: normalizeClassName(
       student.class_name
-    ),
-    student_email: studentEmail,
-    student_id: studentCode,
-  };
+   ),
 
-  console.log("========== STUDENT PROFILE SAVE ==========");
-  console.log("AUTH USER ID:", authUserId);
-  console.log("PAYLOAD:", payload);
+  student_email: studentEmail,
+  student_id: studentCode,
 
   /*
-   * IMPORTANT:
-   * A user may have created an incomplete onboarding profile before the
-   * browser/laptop was interrupted. Do NOT insert a second students row.
-   * Reuse the same student UUID and UPDATE the existing row.
+   * Canonical contact split. The current `students` table does not have
+   * a `phone` column, so never write the legacy phone key here.
    */
+  student_mobile: student.student_mobile ?? null,
+  parent_phone:
+    student.parent_phone ??
+    student.parent_mobile ??
+    null,
+};
+
+console.log(
+  "PAYLOAD JSON:",
+  JSON.stringify(payload, null, 2)
+);
+
+  /* ============================================================
+     CREATE STUDENT
+  ============================================================ */
+
+console.log("AUTH USER:", await supabase.auth.getUser());
+console.log("PAYLOAD:", payload);
+
+const {
+  data: sessionData
+} = await supabase.auth.getSession();
+
+console.log("SESSION:", sessionData.session);
+console.log("ACCESS TOKEN EXISTS:", !!sessionData.session?.access_token);
+console.log("USER ID:", sessionData.session?.user?.id);
+
+const {
+    data: userCheck
+} = await supabase.auth.getUser();
+
+console.log("===== PRE INSERT USER =====");
+console.log(userCheck.user);
+console.log("===========================");
+
   const {
-    data: existingMaster
-  } = await (supabase as any)
-    .from("students_master")
-    .select("id, student_uuid")
-    .eq("auth_user_id", authUserId)
-    .maybeSingle();
 
-  let studentRow: any = null;
-  let studentError: any = null;
+  data: studentRow,
 
-  if (existingMaster?.student_uuid) {
+  error: studentError
 
-    const result =
-      await (supabase as any)
-        .from("students")
-        .update(payload)
-        .eq(
-          "student_uuid",
-          existingMaster.student_uuid
-        )
-        .select()
-        .single();
+} = await (supabase as any)
 
-    studentRow = result.data;
-    studentError = result.error;
+  .from("students")
 
-  } else {
+  .insert([payload])
 
-    const result =
-      await (supabase as any)
-        .from("students")
-        .insert([payload])
-        .select()
-        .single();
+  .select()
 
-    studentRow = result.data;
-    studentError = result.error;
+  .single();
 
-    /*
-     * Safety net for the exact error shown in the console:
-     * students_parent_email_key.
-     *
-     * If an older partial row exists for this same onboarding account,
-     * reuse it rather than failing the profile creation.
-     */
-    if (
-      studentError?.code === "23505" &&
-      String(studentError?.message ?? "")
-        .includes("students_parent_email_key")
-    ) {
+if (studentError) {
 
-      const {
-        data: duplicateRow
-      } = await (supabase as any)
-        .from("students")
-        .select("*")
-        .eq("parent_email", studentEmail)
-        .maybeSingle();
+  console.error("STUDENT INSERT ERROR:", studentError);
 
-      if (duplicateRow) {
-        const retry =
-          await (supabase as any)
-            .from("students")
-            .update(payload)
-            .eq(
-              "student_uuid",
-              duplicateRow.student_uuid
-            )
-            .select()
-            .single();
+  return null;
 
-        studentRow = retry.data;
-        studentError = retry.error;
-      }
-    }
-  }
+}
 
-  if (studentError) {
-    console.error(
-      "STUDENT INSERT/UPDATE ERROR:",
-      studentError
-    );
-    return null;
-  }
+console.log("✅ STUDENT INSERT SUCCESS");
+console.log(studentRow);
 
-  if (!studentRow) {
-    console.error(
-      "STUDENT PROFILE: no row returned after save."
-    );
-    return null;
-  }
+  /* ============================================================
+     CREATE / UPDATE STUDENT MASTER
+  ============================================================ */
 
-  const studentUuid =
-    studentRow.student_uuid ??
-    existingMaster?.student_uuid;
-
-  /*
-   * CREATE / UPDATE STUDENT MASTER
-   *
-   * The same auth_user_id + student_uuid is retained across onboarding
-   * retries, so the retry cannot create a second identity.
-   */
   const {
+
     data: masterRow,
+
     error: masterError
+
   } = await (supabase as any)
+
     .from("students_master")
+
     .upsert({
-      student_id: studentCode,
-      auth_user_id: authUserId,
-      student_uuid: studentUuid,
-      student_name: student.student_name,
-      student_email: studentEmail,
-      school_uuid: selectedSchoolUuid,
-      school_name: student.school_name,
-      class_name: normalizeClassName(
-        student.class_name
-      ),
-      phone: student.parent_mobile,
-      student_age: student.student_age,
-      gender: student.gender,
+
+      student_id:
+studentCode,
+
+auth_user_id:
+    authUserId,
+
+student_uuid: studentRow.student_uuid,
+
+      student_name:
+        student.student_name,
+
+      student_email:
+        student.parent_email,
+
+      school_uuid:
+        selectedSchoolUuid,
+
+      school_name:
+        student.school_name,
+
+class_name: normalizeClassName(
+  student.class_name
+),
+
+      /*
+       * Keep the legacy "phone" field mapped to the parent number because
+       * existing partner / consultation data consumers historically used it
+       * as the guardian contact.
+       */
+      phone:
+        student.parent_phone,
+
+      student_mobile:
+        student.student_mobile,
+
+      parent_phone:
+        student.parent_phone,
+
+      student_age:
+        student.student_age,
+
+      gender:
+        student.gender,
+
       favourite_activity:
         student.favourite_activity,
+
       residence_city:
         student.residence_city,
+
       residence_area:
         student.residence_area
+
     })
+
     .select()
+
     .single();
 
-  if (masterError) {
-    console.error(
-      "MASTER UPSERT ERROR:",
-      masterError
-    );
+if (masterError) {
+
+    console.error("MASTER UPSERT ERROR:", masterError);
+
     return null;
-  }
+
+}
+
+console.log("✅ MASTER UPSERT SUCCESS");
+console.log(masterRow);
+
+  /* ============================================================
+     RETURN COMPLETE IDENTITY
+  ============================================================ */
 
   const identity = buildIdentity({
-    authUserId,
+
+    authUserId: authUserId ?? undefined,
+
     studentUuid: studentRow.student_uuid,
+
     masterStudentId: masterRow.id,
+
     studentCode,
+
     studentName: masterRow.student_name,
+
     schoolName: masterRow.school_name,
-    schoolUuid: masterRow.school_uuid,
+
     className: masterRow.class_name,
+
     parentEmail: masterRow.student_email,
-    parentPhone: masterRow.phone,
+
+    studentPhone:
+      masterRow.student_mobile ??
+      masterRow.phone ??
+      undefined,
+
+    parentPhone:
+      masterRow.parent_phone ??
+      masterRow.phone ??
+      undefined,
+
     email: studentRow.student_email
-  });
 
-  saveStudentIdentity(identity);
+});
 
-  console.log(
-    "STUDENT PROFILE SAVED / UPDATED:",
-    identity
-  );
+console.log("IDENTITY CREATED");
 
-  return identity;
+console.table({
+
+  authUserId: identity.authUserId,
+
+  studentCode: identity.studentCode,
+
+  masterStudentId: identity.masterStudentId,
+
+  studentUuid: identity.studentUuid
+
+});
+
+saveStudentIdentity(identity);
+
+return identity;
 }
 
 export async function findStudentByEmail(

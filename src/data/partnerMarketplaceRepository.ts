@@ -695,6 +695,12 @@ export async function fetchIncomingRequests(
       }
     );
 
+    console.log("Query Error:", error);
+
+console.log("Returned Rows:", data?.length);
+
+console.table(data);
+
   console.log("================================");
   console.log("RAW QUERY RESULT");
   console.log("Returned Rows:", data?.length);
