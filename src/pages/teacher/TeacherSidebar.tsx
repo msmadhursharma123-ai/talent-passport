@@ -62,36 +62,6 @@ export default function TeacherSidebar({
           "8px 0 28px rgba(15, 23, 42, 0.035)",
       }}
     >
-      {/* DECORATIVE CIRCLES */}
-
-      <div
-        style={{
-          position: "absolute",
-          width: 145,
-          height: 145,
-          borderRadius: "50%",
-          background: "rgba(249, 115, 22, 0.045)",
-          top: -70,
-          right: -75,
-          pointerEvents: "none",
-        }}
-      />
-
-      <div
-        style={{
-          position: "absolute",
-          width: 100,
-          height: 100,
-          borderRadius: "50%",
-          background: "rgba(59, 130, 246, 0.035)",
-          bottom: 105,
-          left: -65,
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* PORTAL IDENTITY */}
-
       <div
         className="teacher-sidebar-identity"
         style={{
@@ -106,13 +76,10 @@ export default function TeacherSidebar({
         <div
           style={{
             color: "#F97316",
-
             fontSize: 10,
             fontWeight: 800,
-
             letterSpacing: 1.6,
             textTransform: "uppercase",
-
             marginBottom: 7,
           }}
         >
@@ -122,10 +89,8 @@ export default function TeacherSidebar({
         <div
           style={{
             color: "#0F172A",
-
             fontSize: 22,
             fontWeight: 800,
-
             letterSpacing: "-0.4px",
           }}
         >
@@ -135,12 +100,9 @@ export default function TeacherSidebar({
         <div
           style={{
             marginTop: 6,
-
             color: "#64748B",
-
             fontSize: 10,
             fontWeight: 600,
-
             lineHeight: 1.45,
           }}
         >
@@ -148,21 +110,15 @@ export default function TeacherSidebar({
         </div>
       </div>
 
-      {/* SECTION LABEL */}
-
       <div
         className="teacher-sidebar-label"
         style={{
           position: "relative",
           zIndex: 1,
-
           padding: "19px 9px 9px",
-
           color: "#94A3B8",
-
           fontSize: 10,
           fontWeight: 800,
-
           letterSpacing: 1.5,
           textTransform: "uppercase",
         }}
@@ -170,40 +126,30 @@ export default function TeacherSidebar({
         Academic Workspace
       </div>
 
-      {/* NAVIGATION */}
-
       <nav
         className="teacher-sidebar-nav"
         style={{
           position: "relative",
           zIndex: 1,
-
           display: "flex",
           flexDirection: "column",
-
           gap: 7,
         }}
       >
         {items.map((item) => {
-          const isActive =
-            activePage === item.id;
+          const isActive = activePage === item.id;
 
           return (
             <button
               key={item.id}
-              onClick={() =>
-                onNavigate(item.id)
-              }
+              type="button"
+              onClick={() => onNavigate(item.id)}
               style={{
                 width: "100%",
-
                 display: "flex",
                 alignItems: "center",
-
                 gap: 10,
-
                 padding: "10px 11px",
-
                 boxSizing: "border-box",
 
                 background: isActive
@@ -215,7 +161,6 @@ export default function TeacherSidebar({
                   : "1px solid transparent",
 
                 borderRadius: 11,
-
                 cursor: "pointer",
 
                 color: isActive
@@ -232,34 +177,25 @@ export default function TeacherSidebar({
               }}
               onMouseEnter={(event) => {
                 if (!isActive) {
-                  event.currentTarget.style.background =
-                    "#F8FAFC";
-                  event.currentTarget.style.borderColor =
-                    "#E2E8F0";
+                  event.currentTarget.style.background = "#F8FAFC";
+                  event.currentTarget.style.borderColor = "#E2E8F0";
                 }
               }}
               onMouseLeave={(event) => {
                 if (!isActive) {
-                  event.currentTarget.style.background =
-                    "transparent";
-                  event.currentTarget.style.borderColor =
-                    "transparent";
+                  event.currentTarget.style.background = "transparent";
+                  event.currentTarget.style.borderColor = "transparent";
                 }
               }}
             >
-              {/* ICON */}
-
               <div
                 style={{
                   width: 28,
                   height: 28,
-
                   flexShrink: 0,
-
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-
                   borderRadius: 8,
 
                   background: isActive
@@ -296,13 +232,9 @@ export default function TeacherSidebar({
                   style={{
                     width: 5,
                     height: 5,
-
                     borderRadius: "50%",
-
                     background: "#F97316",
-
                     marginLeft: "auto",
-
                     boxShadow:
                       "0 0 0 3px rgba(249,115,22,0.10)",
                   }}
@@ -313,20 +245,14 @@ export default function TeacherSidebar({
         })}
       </nav>
 
-      {/* FLEX SPACE */}
-
       <div style={{ flex: 1 }} />
-
-      {/* INTELLIGENCE STATUS */}
 
       <div
         className="teacher-sidebar-status"
         style={{
           position: "relative",
           zIndex: 1,
-
           marginTop: 20,
-
           padding: 12,
 
           background:
@@ -350,11 +276,8 @@ export default function TeacherSidebar({
             style={{
               width: 6,
               height: 6,
-
               borderRadius: "50%",
-
               background: "#16A34A",
-
               boxShadow:
                 "0 0 0 3px rgba(22,163,74,0.10)",
             }}
@@ -363,10 +286,8 @@ export default function TeacherSidebar({
           <div
             style={{
               color: "#15803D",
-
               fontSize: 9,
               fontWeight: 800,
-
               letterSpacing: 1,
               textTransform: "uppercase",
             }}
@@ -378,12 +299,9 @@ export default function TeacherSidebar({
         <div
           style={{
             marginTop: 8,
-
             color: "#166534",
-
             fontSize: 11,
             fontWeight: 800,
-
             lineHeight: 1.4,
           }}
         >
@@ -393,9 +311,7 @@ export default function TeacherSidebar({
         <div
           style={{
             marginTop: 2,
-
             color: "#16A34A",
-
             fontSize: 10,
             fontWeight: 700,
           }}
@@ -403,29 +319,121 @@ export default function TeacherSidebar({
           Enabled
         </div>
       </div>
-    
-<style>{`
-@media (max-width: 1024px) {
- .teacher-sidebar { width:100% !important; min-width:0 !important; min-height:0 !important; height:auto !important; padding:10px 14px !important; border-right:0 !important; border-bottom:1px solid #E2E8F0 !important; overflow-x:auto !important; flex-direction:row !important; align-items:center !important; gap:12px !important; }
- .teacher-sidebar-identity { padding:0 14px 0 2px !important; border-bottom:0 !important; border-right:1px solid #EEF2F7 !important; flex:0 0 auto; }
- .teacher-sidebar-identity > div:first-child, .teacher-sidebar-identity > div:last-child { display:none !important; }
- .teacher-sidebar-identity > div:nth-child(2) { font-size:15px !important; white-space:nowrap; }
- .teacher-sidebar-label, .teacher-sidebar-status { display:none !important; }
- .teacher-sidebar-nav { flex-direction:row !important; gap:7px !important; flex:0 0 auto; }
- .teacher-sidebar-nav button { width:auto !important; padding:7px 9px !important; gap:6px !important; white-space:nowrap; }
- .teacher-sidebar-nav button > div:first-child { width:24px !important; height:24px !important; font-size:14px !important; }
- .teacher-sidebar-nav button span { font-size:12px !important; }
-}
-@media (max-width: 600px) {
- .teacher-sidebar { padding:8px 10px !important; gap:8px !important; scrollbar-width:none; }
- .teacher-sidebar::-webkit-scrollbar { display:none; }
- .teacher-sidebar-identity { display:none !important; }
- .teacher-sidebar-nav { width:max-content; }
- .teacher-sidebar-nav button { padding:7px 8px !important; border-radius:9px !important; }
- .teacher-sidebar-nav button > div:first-child { width:22px !important; height:22px !important; font-size:13px !important; }
- .teacher-sidebar-nav button span { font-size:11px !important; }
-}
-`}</style>
-</aside>
+
+      <style>{`
+        /*
+         * MOBILE/TABLET SIDEBAR
+         *
+         * This sidebar already becomes a horizontal navigation at <=1024px.
+         * The matching TeacherLayout now also becomes a column at the same
+         * breakpoint, so this 100%-width sidebar no longer squeezes the
+         * teacher content to zero width.
+         */
+        @media (max-width: 1024px) {
+          .teacher-sidebar {
+            width: 100% !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            height: auto !important;
+
+            padding: 10px 14px !important;
+
+            border-right: 0 !important;
+            border-bottom: 1px solid #E2E8F0 !important;
+
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 12px !important;
+
+            flex: 0 0 auto !important;
+          }
+
+          .teacher-sidebar-identity {
+            padding: 0 14px 0 2px !important;
+            border-bottom: 0 !important;
+            border-right: 1px solid #EEF2F7 !important;
+            flex: 0 0 auto !important;
+          }
+
+          .teacher-sidebar-identity > div:first-child,
+          .teacher-sidebar-identity > div:last-child {
+            display: none !important;
+          }
+
+          .teacher-sidebar-identity > div:nth-child(2) {
+            font-size: 15px !important;
+            white-space: nowrap;
+          }
+
+          .teacher-sidebar-label,
+          .teacher-sidebar-status {
+            display: none !important;
+          }
+
+          .teacher-sidebar-nav {
+            flex-direction: row !important;
+            gap: 7px !important;
+            flex: 0 0 auto !important;
+            min-width: max-content !important;
+          }
+
+          .teacher-sidebar-nav button {
+            width: auto !important;
+            flex: 0 0 auto !important;
+            padding: 7px 9px !important;
+            gap: 6px !important;
+            white-space: nowrap !important;
+          }
+
+          .teacher-sidebar-nav button > div:first-child {
+            width: 24px !important;
+            height: 24px !important;
+            font-size: 14px !important;
+          }
+
+          .teacher-sidebar-nav button span {
+            font-size: 12px !important;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .teacher-sidebar {
+            padding: 8px 10px !important;
+            gap: 8px !important;
+            scrollbar-width: none !important;
+          }
+
+          .teacher-sidebar::-webkit-scrollbar {
+            display: none;
+          }
+
+          .teacher-sidebar-identity {
+            display: none !important;
+          }
+
+          .teacher-sidebar-nav {
+            width: max-content !important;
+          }
+
+          .teacher-sidebar-nav button {
+            padding: 7px 8px !important;
+            border-radius: 9px !important;
+          }
+
+          .teacher-sidebar-nav button > div:first-child {
+            width: 22px !important;
+            height: 22px !important;
+            font-size: 13px !important;
+          }
+
+          .teacher-sidebar-nav button span {
+            font-size: 11px !important;
+          }
+        }
+      `}</style>
+    </aside>
   );
 }

@@ -9,6 +9,7 @@ import type {
   SchoolClassroomHealthRow,
   SchoolIntelligenceSnapshot,
 } from "../types/SchoolIntelligenceModels";
+import SchoolPostManagerPage from "./SchoolPostManagerPage";
 
 type RangeValue = "30" | "60" | "90" | "custom";
 type SortKey =
@@ -36,6 +37,7 @@ function classroomLabel(row: SchoolClassroomHealthRow) {
 }
 
 export default function SchoolOverviewPage() {
+  const [showPostManager, setShowPostManager] = useState(false);
   const [data, setData] = useState<SchoolIntelligenceSnapshot | null>(null);
   const [classroomMetrics, setClassroomMetrics] = useState<
     SchoolClassroomSupplementalMetric[]
@@ -340,6 +342,14 @@ export default function SchoolOverviewPage() {
   }
 
   if (!data) return null;
+
+  if (showPostManager) {
+    return (
+      <SchoolPostManagerPage
+        onBack={() => setShowPostManager(false)}
+      />
+    );
+  }
 
   const cards = [
     [
@@ -746,6 +756,32 @@ export default function SchoolOverviewPage() {
             Your institution-wide academic command centre across teachers,
             classrooms and student learning signals.
           </p>
+
+          <div
+            style={{
+              marginTop: 16,
+              display: "flex",
+              justifyContent: "flex-start",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setShowPostManager(true)}
+              style={{
+                border: "1px solid #FDBA74",
+                borderRadius: 12,
+                background: "linear-gradient(135deg,#FFF7ED,#FFFFFF)",
+                color: "#EA580C",
+                padding: "10px 14px",
+                fontSize: 11,
+                fontWeight: 900,
+                cursor: "pointer",
+                boxShadow: "0 6px 16px rgba(249,115,22,.08)",
+              }}
+            >
+              + Add Post
+            </button>
+          </div>
         </section>
 
         <section className="school-section">
