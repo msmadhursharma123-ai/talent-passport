@@ -50,7 +50,7 @@ import {
   calculateCompetitionCredits,
   calculateAchievementCredits,
   calculatePortfolioCredits,
-  calculateDailyFeedbackCreditSummary
+  calculateDailyFeedbackCreditSummaryFromLogs
 } from "../../data/creditEngine";
 
 import {
@@ -416,28 +416,22 @@ const submissionCount =
     String(now.getDate()).padStart(2, "0")
   ].join("-");
 
-  const completedLectureLogs =
-    (dailyLectureLogs ?? []).filter(
-      (log: any) =>
-        typeof log.log_date === "string" &&
-        log.log_date < today
-    );
-
-  const submittedLogIds = new Set(
-    (feedbackHistory ?? []).map(
-      (feedback: any) => feedback.daily_log_uuid
-    )
-  );
-
-  const missedFeedbackCount =
-    completedLectureLogs.filter(
-      (log: any) => !submittedLogIds.has(log.id)
-    ).length;
-
+  /*
+   * DAILY FEEDBACK CREDIT CALCULATION
+   *
+   * A penalty is only possible for a teacher log that actually
+   * exists for the student.
+   *
+   * Therefore:
+   * - holiday / no teacher log = 0 penalty
+   * - teacher log + feedback = +1
+   * - teacher log + no feedback after the day = -10
+   */
   const dailyFeedback =
-    calculateDailyFeedbackCreditSummary(
-      (feedbackHistory ?? []).length,
-      missedFeedbackCount
+    calculateDailyFeedbackCreditSummaryFromLogs(
+      dailyLectureLogs ?? [],
+      feedbackHistory ?? [],
+      today
     );
 
   const verifiedCount =

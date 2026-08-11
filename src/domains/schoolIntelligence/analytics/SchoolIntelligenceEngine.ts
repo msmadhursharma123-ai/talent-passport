@@ -5,7 +5,6 @@ import type {
   SchoolTeacherIntelligenceRow,
   SchoolTeacherDailyIntelligence,
   SchoolExamPreparationClassroom,
-  SchoolTeacherLiveStatus,
 } from "../types/SchoolIntelligenceModels";
 import type { SchoolIntelligenceRawData } from "../repository/SchoolIntelligenceRepository";
 
@@ -15,6 +14,27 @@ const NONE = "I didn't understand.";
 
 const pct = (part: number, total: number) =>
   total === 0 ? 0 : Math.round((part / total) * 100);
+
+function getDoubtMetrics(doubts: any[]) {
+  const doubtsAsked = doubts.length;
+
+  const doubtsResolved = doubts.filter(
+    doubt =>
+      doubt.doubt_resolved === true ||
+      String(doubt.status ?? "")
+        .trim()
+        .toUpperCase() === "RESOLVED"
+  ).length;
+
+  return {
+    doubtsAsked,
+    doubtsResolved,
+    doubtClosureRate: pct(
+      doubtsResolved,
+      doubtsAsked
+    ),
+  };
+}
 
 const sameValue = (a: unknown, b: unknown) =>
   String(a ?? "").trim().toLowerCase() === String(b ?? "").trim().toLowerCase();
@@ -156,43 +176,6 @@ function buildDailyClassroomIntelligence(raw:SchoolIntelligenceRawData):SchoolTe
 }
 
 
-
-function localIsoDate(date:Date){
- const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,"0"),d=String(date.getDate()).padStart(2,"0");
- return `${y}-${m}-${d}`;
-}
-function buildTeacherLiveStatus(raw:SchoolIntelligenceRawData):SchoolTeacherLiveStatus[]{
- const today=localIsoDate(new Date());
- return raw.teachers.filter((t:any)=>t.is_active!==false).map((t:any)=>{
-  const teacherUuid=String(t.teacher_uuid??"");
-  const assignments=raw.assignments.filter((a:any)=>String(a.teacher_uuid??"")===teacherUuid&&a.is_active!==false);
-  const ids=new Set(assignments.map((a:any)=>String(a.id??"")));
-  const amap=new Map(assignments.map((a:any)=>[String(a.id??""),a]));
-  const logs=raw.logs.filter((l:any)=>ids.has(String(l.teacher_assignment_uuid??""))&&String(l.log_date??"").slice(0,10)===today)
-    .sort((a:any,b:any)=>latestLogTime(b)-latestLogTime(a));
-  const subjects=Array.from(new Set(assignments.map((a:any)=>String(a.subject_name??"").trim()).filter(Boolean))) as string[];
-  const classrooms=Array.from(new Set(assignments.map((a:any)=>{
-   const c=String(a.class_name??"").trim(),s=String(a.section_name??"").trim();
-   return c&&s?`${c} - Section ${s}`:c;
-  }).filter(Boolean))) as string[];
-  const todayLectures=logs.map((l:any)=>{
-   const a:any=amap.get(String(l.teacher_assignment_uuid??""));
-   const className=String(l.class_name??a?.class_name??""),sectionName=String(l.section_name??a?.section_name??"");
-   const num=(v:any)=>v===null||v===undefined||v===""?null:Number(v);
-   return {logUuid:String(l.id??""),assignmentUuid:String(l.teacher_assignment_uuid??""),className,sectionName,
-    classroom:className&&sectionName?`${className} - Section ${sectionName}`:className,
-    subjectName:String(l.subject_name??a?.subject_name??"Subject"),topicName:String(l.topic_name??"Topic not recorded"),
-    conceptsCovered:Array.isArray(l.concepts_covered)?l.concepts_covered.map(String):[],
-    pageFrom:num(l.page_from),pageTo:num(l.page_to),homeworkGiven:l.homework_given===true,
-    activityConducted:l.activity_conducted===true,teacherNotes:String(l.teacher_notes??""),
-    logDate:String(l.log_date??""),createdAt:String(l.created_at??"")};
-  });
-  return {teacherUuid,teacherName:String(t.full_name??"Teacher"),subjects,classrooms,
-   isPresentToday:todayLectures.length>0,todayLogCount:todayLectures.length,
-   lastActivityAt:todayLectures[0]?.createdAt??"",todayLectures};
- }).sort((a,b)=>a.isPresentToday===b.isPresentToday?a.teacherName.localeCompare(b.teacherName):(a.isPresentToday?-1:1));
-}
-
 function buildSchoolExamPreparation(raw:SchoolIntelligenceRawData):SchoolExamPreparationClassroom[]{
   const teacherNames=new Map<string,string>(raw.teachers.map((t:any)=>[String(t.teacher_uuid??""),String(t.full_name??"Teacher")]));
   const studentNames=new Map<string,string>(raw.students.map((s:any)=>[String(s.student_uuid??""),String(s.student_name??"Student")]));
@@ -249,6 +232,13 @@ export function buildSchoolIntelligenceSnapshot(
       String(x.status ?? "").trim().toUpperCase() === "RESOLVED"
   ).length;
 
+  const doubtsAsked = raw.doubts.length;
+
+  const doubtClosureRate = pct(
+    resolvedDoubts,
+    doubtsAsked
+  );
+
   const classrooms: SchoolClassroomHealthRow[] = raw.assignments.map(assignment => {
     const logs = raw.logs.filter(
       x => String(x.teacher_assignment_uuid) === String(assignment.id)
@@ -270,6 +260,15 @@ export function buildSchoolIntelligenceSnapshot(
     const difficult = feedback.filter(
       x => x.effective_understanding_level === NONE
     ).length;
+
+    const doubtMetrics = getDoubtMetrics(
+      raw.doubts.filter(
+        doubt =>
+          String(
+            doubt.teacher_assignment_uuid ?? ""
+          ) === String(assignment.id ?? "")
+      )
+    );
 
     return {
       assignmentUuid: assignment.id,
@@ -294,6 +293,9 @@ export function buildSchoolIntelligenceSnapshot(
       understandingRate: pct(fully, feedback.length),
       partialUnderstandingRate: pct(partly, feedback.length),
       doubtRate: pct(difficult, feedback.length),
+      doubtsAsked: doubtMetrics.doubtsAsked,
+      doubtsResolved: doubtMetrics.doubtsResolved,
+      doubtClosureRate: doubtMetrics.doubtClosureRate,
     };
   });
 
@@ -319,6 +321,17 @@ export function buildSchoolIntelligenceSnapshot(
       x => x.effective_understanding_level === NONE
     ).length;
 
+    const doubtMetrics = getDoubtMetrics(
+      raw.doubts.filter(
+        doubt =>
+          assignmentIds.has(
+            String(
+              doubt.teacher_assignment_uuid ?? ""
+            )
+          )
+      )
+    );
+
     return {
       teacherUuid: teacher.teacher_uuid,
       teacherName: teacher.full_name ?? "Teacher",
@@ -335,6 +348,9 @@ export function buildSchoolIntelligenceSnapshot(
       understandingRate: pct(fully, feedback.length),
       partialUnderstandingRate: pct(partly, feedback.length),
       doubtRate: pct(difficult, feedback.length),
+      doubtsAsked: doubtMetrics.doubtsAsked,
+      doubtsResolved: doubtMetrics.doubtsResolved,
+      doubtClosureRate: doubtMetrics.doubtClosureRate,
     };
   });
 
@@ -395,18 +411,15 @@ export function buildSchoolIntelligenceSnapshot(
       understandingRate: pct(complete, raw.feedback.length),
       partialUnderstandingRate: pct(partial, raw.feedback.length),
       doubtRate: pct(none, raw.feedback.length),
+      doubtsAsked,
       activeDoubts,
       resolvedDoubts,
-      doubtResolutionRate: pct(
-        resolvedDoubts,
-        activeDoubts + resolvedDoubts
-      ),
+      doubtResolutionRate: doubtClosureRate,
     },
     classrooms,
     teachers,
     trends,
     dailyClassroomIntelligence: buildDailyClassroomIntelligence(raw),
-    teacherLiveStatus: buildTeacherLiveStatus(raw),
     examPreparation: buildSchoolExamPreparation(raw),
   };
 }

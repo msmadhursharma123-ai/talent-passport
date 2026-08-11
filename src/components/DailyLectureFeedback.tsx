@@ -43,7 +43,7 @@ requireIdentity,
 
 import {
 
-calculateDailyFeedbackCreditSummary,
+calculateDailyFeedbackCreditSummaryFromLogs,
 
 } from "../data/creditEngine";
 
@@ -203,26 +203,21 @@ String(now.getMonth() + 1).padStart(2, "0"),
 String(now.getDate()).padStart(2, "0"),
 ].join("-");
 
-const completedLectureLogs = (allLectureLogs ?? []).filter(
-(log: any) =>
-typeof log.log_date === "string" &&
-log.log_date < today
-);
-
-const submittedLogIds = new Set(
-(feedbackHistory ?? []).map(
-(feedback: any) => feedback.daily_log_uuid
-)
-);
-
-const missedFeedbackCount =
-completedLectureLogs.filter(
-(log: any) => !submittedLogIds.has(log.id)
-).length;
-
-const summary = calculateDailyFeedbackCreditSummary(
-(feedbackHistory ?? []).length,
-missedFeedbackCount
+/*
+ * DAILY FEEDBACK CREDIT CALCULATION
+ *
+ * The student is penalised only for a teacher log that
+ * actually reached the student.
+ *
+ * No teacher log = no feedback obligation = no penalty.
+ * Teacher log + submitted feedback = +1.
+ * Teacher log + missing feedback after the day = -10.
+ */
+const summary =
+calculateDailyFeedbackCreditSummaryFromLogs(
+allLectureLogs ?? [],
+feedbackHistory ?? [],
+today
 );
 
 setDailyFeedbackEarnedCredits(summary.earnedCredits);
@@ -2503,8 +2498,8 @@ return (
             <div className="dlf-eyebrow">DAILY FEEDBACK CREDITS</div>
             <h2 className="dlf-title">Academic Feedback Credit Ledger</h2>
             <p className="dlf-copy">
-              Earn 1 credit for every submitted lecture feedback.
-              Missed feedback from a completed day carries a 10-credit penalty.
+              Earn 1 credit for every submitted teacher-log feedback.
+              Lose 10 credits for every missed teacher-log feedback.
             </p>
           </div>
           <div className="dlf-ledger-count">
@@ -2520,7 +2515,7 @@ return (
                 {isLoadingCreditSummary ? "—" : dailyFeedbackEarnedCredits}
               </div>
               <div className="dlf-credit-copy">
-                +1 for every successful feedback submission
+                +1 for every feedback submitted on a received teacher log
               </div>
             </div>
           </div>
@@ -2532,7 +2527,7 @@ return (
                 {isLoadingCreditSummary ? "—" : dailyFeedbackLostCredits}
               </div>
               <div className="dlf-credit-copy">
-                -10 for each missed completed-day feedback
+                -10 only for a received teacher log whose feedback was missed
               </div>
             </div>
           </div>

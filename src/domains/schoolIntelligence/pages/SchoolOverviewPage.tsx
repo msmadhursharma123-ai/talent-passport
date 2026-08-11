@@ -15,7 +15,8 @@ type SortKey =
   | "responseRate"
   | "understandingRate"
   | "partialUnderstandingRate"
-  | "doubtRate";
+  | "doubtRate"
+  | "doubtClosureRate";
 type SortDirection = "asc" | "desc";
 
 const metricColors = {
@@ -23,6 +24,7 @@ const metricColors = {
   understanding: "#16A34A",
   partial: "#D97706",
   doubt: "#DC2626",
+  closure: "#7C3AED",
 };
 
 function classroomKey(row: SchoolClassroomHealthRow) {
@@ -49,7 +51,7 @@ export default function SchoolOverviewPage() {
   const [subject, setSubject] = useState("ALL");
   const [teacher, setTeacher] = useState("ALL");
 
-  const [sortKey, setSortKey] = useState<SortKey>("doubtRate");
+  const [sortKey, setSortKey] = useState<SortKey>("doubtClosureRate");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   const [classMenuOpen, setClassMenuOpen] = useState(false);
@@ -274,6 +276,24 @@ export default function SchoolOverviewPage() {
         averageUnderstandingRate: average("understandingRate"),
         averagePartialUnderstandingRate: average("partialUnderstandingRate"),
         averageDoubtRate: average("doubtRate"),
+         averageDoubtClosureRate:
+           (() => {
+             const asked = rows.reduce(
+               (sum, row) =>
+                 sum + row.doubtsAsked,
+               0
+             );
+             const resolved = rows.reduce(
+               (sum, row) =>
+                 sum + row.doubtsResolved,
+               0
+             );
+             return asked === 0
+               ? 0
+               : Math.round(
+                   (resolved / asked) * 100
+                 );
+           })(),
       }];
     });
   }, [showClassAverages, selectedClasses, visibleRows, classOptions]);
@@ -330,9 +350,10 @@ export default function SchoolOverviewPage() {
     ],
     ["Active Doubts", data.stats.activeDoubts, "Current learning gaps", "blue"],
     [
-      "Doubt Resolution",
+      "Doubt Closure Rate",
       `${data.stats.doubtResolutionRate}%`,
-      "Resolved learning gaps",
+      `Resolved ${data.stats.resolvedDoubts} of ${data.stats.doubtsAsked} doubts`,
+
       "green",
     ],
     ["Responses", data.stats.responses, "Student feedback records", "purple"],
@@ -526,6 +547,7 @@ export default function SchoolOverviewPage() {
         .so-understanding { color: ${metricColors.understanding}; }
         .so-partial { color: ${metricColors.partial}; }
         .so-doubt { color: ${metricColors.doubt}; }
+         .so-closure { color: ${metricColors.closure}; }
         .so-class-average-row td {
           background: #F8FAFC;
           border-top: 2px solid #CBD5E1;
@@ -968,10 +990,21 @@ export default function SchoolOverviewPage() {
                     </button>
                   </th>
                   <th>
-                    <span className="so-sort-button">
-                      Class Health %
-                    </span>
-                  </th>
+                     <button
+                       className="so-sort-button"
+                       onClick={() => toggleSort("doubtClosureRate")}
+                     >
+                       Doubt Closure %
+                       <span className="so-sort-arrow">
+                         {sortArrow("doubtClosureRate")}
+                       </span>
+                     </button>
+                   </th>
+                   <th>
+                     <span className="so-sort-button">
+                       Class Health %
+                     </span>
+                   </th>
                 </tr>
               </thead>
 
@@ -990,6 +1023,7 @@ export default function SchoolOverviewPage() {
                                                         <td><span className="so-metric so-understanding">{row.understandingRate}%</span></td>
                                                         <td><span className="so-metric so-partial">{row.partialUnderstandingRate}%</span></td>
                                                         <td><span className="so-metric so-doubt">{row.doubtRate}%</span></td>
+                            <td><span className="so-metric so-closure">{row.doubtClosureRate}%</span></td>
                             <td><span className="so-metric so-understanding">{row.classHealthPercentage}%</span></td>
                           </tr>
                         ))}
@@ -1008,13 +1042,14 @@ export default function SchoolOverviewPage() {
                           <td><span className="so-metric so-response">{group.averageResponseRate}%</span></td>
                           <td><span className="so-metric so-understanding">{group.averageUnderstandingRate}%</span></td>
                           <td><span className="so-metric so-partial">{group.averagePartialUnderstandingRate}%</span></td>
-                          <td><span className="so-metric so-doubt">{group.averageDoubtRate}%</span></td>
-                          <td><span className="so-metric so-understanding">{group.averageClassHealthPercentage}%</span></td>
+                          <td><span className="so-doubt">{group.averageDoubtRate}%</span></td>
+                           <td><span className="so-metric so-closure">{group.averageDoubtClosureRate}%</span></td>
+                           <td><span className="so-metric so-understanding">{group.averageClassHealthPercentage}%</span></td>
                         </tr>
 
                         {groupIndex < groupedVisibleRows.length - 1 && (
                           <tr className="so-class-spacer-row" aria-hidden="true">
-                            <td colSpan={10} />
+                            <td colSpan={11} />
                           </tr>
                         )}
                       </Fragment>
@@ -1030,6 +1065,7 @@ export default function SchoolOverviewPage() {
                                                     <td><span className="so-metric so-understanding">{row.understandingRate}%</span></td>
                                                     <td><span className="so-metric so-partial">{row.partialUnderstandingRate}%</span></td>
                                                     <td><span className="so-metric so-doubt">{row.doubtRate}%</span></td>
+                            <td><span className="so-metric so-closure">{row.doubtClosureRate}%</span></td>
                             <td><span className="so-metric so-understanding">{row.classHealthPercentage}%</span></td>
                       </tr>
                     ))}

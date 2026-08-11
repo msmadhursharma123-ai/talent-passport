@@ -13,6 +13,7 @@ export interface SchoolOverviewStats {
   understandingRate: number;
   partialUnderstandingRate: number;
   doubtRate: number;
+  doubtsAsked: number;
   activeDoubts: number;
   resolvedDoubts: number;
   doubtResolutionRate: number;
@@ -35,6 +36,9 @@ export interface SchoolClassroomHealthRow {
   understandingRate: number;
   partialUnderstandingRate: number;
   doubtRate: number;
+  doubtsAsked: number;
+  doubtsResolved: number;
+  doubtClosureRate: number;
 }
 
 export interface SchoolTeacherIntelligenceRow {
@@ -47,6 +51,9 @@ export interface SchoolTeacherIntelligenceRow {
   understandingRate: number;
   partialUnderstandingRate: number;
   doubtRate: number;
+  doubtsAsked: number;
+  doubtsResolved: number;
+  doubtClosureRate: number;
 }
 
 export interface SchoolAcademicTrendPoint {

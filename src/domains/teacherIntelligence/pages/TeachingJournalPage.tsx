@@ -48,7 +48,16 @@ setSelectedAssignmentId,
 ] = useState("");
 
 const [selectedMonth,setSelectedMonth] =
-useState("July");
+useState(
+  () =>
+    new Date().toLocaleString(
+      "default",
+      {
+        month:"long",
+        year:"numeric",
+      }
+    )
+);
 
 const [
 
@@ -89,7 +98,7 @@ const data =
 
 await getOverallClassroomComparison(
 
-selectedMonth.split(" ")[0]
+selectedMonth
 
 );
 
@@ -309,8 +318,8 @@ requiredClasses:number
 const qualifiedClasses =
  voucherClassrooms.filter(
 (item:any)=>
-item.hasData &&
-item.averageUnderstanding >= threshold
+item.hasDoubtData &&
+item.doubtClosureRate >= threshold
 ).length;
 
 const target =
@@ -375,15 +384,15 @@ return `${progress.remaining} CLASSES TO GO`;
 
 }
 
-function getMonthlyAverageLabel(
+function getDoubtClosureLabel(
 item:any
 ){
 
-if(!item.hasData){
-return "No feedback yet";
+if(!item.hasDoubtData){
+return "No doubts recorded yet";
 }
 
-return `${item.averageUnderstanding}% monthly average`;
+return `${item.doubtsResolved}/${item.doubtsAsked} doubts resolved · ${item.doubtClosureRate}% closure`;
 
 }
 
@@ -394,10 +403,10 @@ allClasses:boolean
 ){
 
 if(allClasses){
-return `${threshold}% in every classroom`;
+return `${threshold}% doubt closure in every classroom`;
 }
 
-return `${threshold}% in ${requiredClasses} of ${totalRewardClasses} classrooms`;
+return `${threshold}% doubt closure in ${requiredClasses} of ${totalRewardClasses} classrooms`;
 
 }
 
@@ -1935,10 +1944,10 @@ return (
             MONTHLY CLASSROOM PULSE
           </div>
           <h2>
-            {currentRewardMonth} Classroom Averages
+            {currentRewardMonth} Doubt Closure %
           </h2>
           <p>
-            Live monthly understanding across every classroom you currently teach.
+            Live monthly doubt closure across every classroom you currently teach.
           </p>
         </div>
 
@@ -1956,7 +1965,7 @@ return (
         <div className="tp-reward-class-table">
           <div className="tp-reward-class-table-head">
             <span>CLASSROOM</span>
-            <span>MONTHLY AVG.</span>
+            <span>DOUBT CLOSURE</span>
             <span>PROGRESS</span>
           </div>
 
@@ -1968,25 +1977,25 @@ return (
               <div className="tp-reward-class-name">
                 <strong>{item.classroom}</strong>
                 <span>
-                  {item.feedbackDays} feedback {item.feedbackDays === 1 ? "day" : "days"}
+                  {item.doubtsAsked} {item.doubtsAsked === 1 ? "doubt" : "doubts"} raised · {item.doubtsResolved} resolved
                 </span>
               </div>
 
               <div
                 className="tp-reward-score-pill"
                 style={{
-                  color: item.hasData
-                    ? getRewardScoreColor(item.averageUnderstanding)
+                  color: item.hasDoubtData
+                    ? getRewardScoreColor(item.doubtClosureRate)
                     : "#64748B",
-                  background: item.hasData
-                    ? getRewardScoreBackground(item.averageUnderstanding)
+                  background: item.hasDoubtData
+                    ? getRewardScoreBackground(item.doubtClosureRate)
                     : "#F8FAFC",
-                  borderColor: item.hasData
-                    ? `${getRewardScoreColor(item.averageUnderstanding)}35`
+                  borderColor: item.hasDoubtData
+                    ? `${getRewardScoreColor(item.doubtClosureRate)}35`
                     : "#E2E8F0",
                 }}
               >
-                {item.hasData ? `${item.averageUnderstanding}%` : "—"}
+                {item.hasDoubtData ? `${item.doubtClosureRate}%` : "—"}
               </div>
 
               <div className="tp-reward-row-progress">
@@ -1994,15 +2003,15 @@ return (
                   <div
                     className="tp-reward-row-fill"
                     style={{
-                      width: `${Math.min(item.averageUnderstanding,100)}%`,
-                      background: item.hasData
-                        ? getRewardScoreColor(item.averageUnderstanding)
+                      width: `${Math.min(item.doubtClosureRate,100)}%`,
+                      background: item.hasDoubtData
+                        ? getRewardScoreColor(item.doubtClosureRate)
                         : "#CBD5E1",
                     }}
                   />
                 </div>
                 <span>
-                  {getMonthlyAverageLabel(item)}
+                  {getDoubtClosureLabel(item)}
                 </span>
               </div>
             </div>
@@ -2144,10 +2153,10 @@ return (
            TEACHER REWARDS
          </div>
          <h2>
-           Earn Rewards From Classroom Understanding
+           Earn Rewards From Doubt Closure
          </h2>
          <p>
-           Your progress updates automatically as students submit feedback this month.
+           Your progress updates automatically as doubts are raised and resolved this month.
          </p>
        </div>
 
@@ -2293,8 +2302,8 @@ return (
                  {progress.unlocked
                    ? "Reward unlocked for this month"
                    : progress.remaining > 0
-                   ? `${progress.remaining} more classroom${progress.remaining === 1 ? "" : "s"} needed at ${reward.threshold}%`
-                   : "Start collecting student feedback"}
+                   ? `${progress.remaining} more classroom${progress.remaining === 1 ? "" : "s"} needed at ${reward.threshold}% closure`
+                   : "Start resolving student doubts"}
                </div>
              </div>
            );
@@ -2443,7 +2452,7 @@ return (
   </div>
 
   <div className="teacher-calendar-swipe-hint">
-    <span>CALENDAR VIEW</span>
+    <span></span>
     <strong>Swipe left or right to view the full month →</strong>
   </div>
 
@@ -3277,7 +3286,7 @@ return (
       0 ? (
         <>
         <div className="teacher-table-swipe-hint">
-          <span>CLASSROOM COMPARISON</span>
+          <span> </span>
           <strong>Swipe left or right to compare classrooms →</strong>
         </div>
 
@@ -3384,6 +3393,14 @@ return (
                   `${item.averageDoubtPercentage}%`
               )}
             />
+             <ComparisonRow
+               title="Doubt Closure Rate %"
+               data={overallClassroomComparison.map(
+                 (item: any) =>
+                   `${item.doubtClosureRate}%`
+               )}
+             />
+
 
             <ComparisonRow
               title="Average Feedback %"

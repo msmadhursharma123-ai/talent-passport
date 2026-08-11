@@ -229,8 +229,164 @@ coveredToday
 
 if(coveredToday){
 
+/*
+-------------------------------------
+
+THE DOUBT WAS RESOLVED DIRECTLY
+BY THE TEACHER
+
+The existing second loop previously returned
+without persisting anything when the teacher
+covered the common doubt.
+
+That made a genuine resolution invisible to
+the doubt-closure metric.
+
+We now persist the same doubt ledger records,
+but mark them RESOLVED immediately because the
+teacher's daily log proves the concept was
+revised. Students are NOT shown a second-loop
+question in this case.
+
+-------------------------------------
+*/
+
+const {
+data:coveredFeedbacks
+} = await (supabase as any)
+
+.from("student_daily_feedback")
+
+.select("*")
+
+.eq(
+"daily_log_uuid",
+previousLog.id
+)
+
+.in(
+"understanding_level",
+[
+"I partially understood.",
+"I didn't understand."
+]
+);
+
+if(
+!coveredFeedbacks ||
+coveredFeedbacks.length === 0
+){
+
 console.log(
-"EXIT 4 : TEACHER ALREADY REVISED THE CONCEPT"
+"EXIT 4 : CONCEPT COVERED BUT NO DOUBT FEEDBACK"
+);
+
+return;
+
+}
+
+const resolvedRecords:any[] = [];
+
+for(
+const item of coveredFeedbacks
+){
+
+const { data: studentData } =
+await (supabase as any)
+
+.from("students_master")
+
+.select(
+"student_name,school_name"
+)
+
+.eq(
+"student_uuid",
+item.student_uuid
+)
+
+.single();
+
+resolvedRecords.push({
+
+student_uuid:
+item.student_uuid,
+
+student_name:
+studentData?.student_name ?? "",
+
+teacher_assignment_uuid:
+teacherAssignmentUuid,
+
+teacher_name:
+"",
+
+school_name:
+studentData?.school_name ?? "",
+
+class_name:
+item.class_name ?? null,
+
+section_name:
+item.section_name ?? null,
+
+subject_name:
+item.subject_name ?? null,
+
+daily_log_uuid:
+previousLog.id,
+
+previous_topic_name:
+previousLog.topicName,
+
+previous_difficult_concept:
+mostDifficultConcept,
+
+log_date:
+previousLog.logDate,
+
+status:
+"RESOLVED",
+
+student_response:
+"DISCUSSED",
+
+doubt_resolved:
+true,
+
+revision_checked_at:
+new Date().toISOString(),
+
+created_at:
+new Date().toISOString(),
+
+});
+
+}
+
+console.log(
+"INSERTING DIRECTLY RESOLVED DOUBTS"
+);
+
+console.table(
+resolvedRecords
+);
+
+const { error: resolvedInsertError } =
+await (supabase as any)
+
+.from("pending_teacher_doubts")
+
+.insert(resolvedRecords);
+
+if(resolvedInsertError){
+
+throw resolvedInsertError;
+
+}
+
+console.log(
+"TEACHER-COVERED DOUBTS MARKED RESOLVED"
 );
 
 return;
