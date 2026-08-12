@@ -28,9 +28,8 @@ export default function useTeacherManagementViewModel() {
 
     try {
 
-      setSchools(
-        await getSchools()
-      );
+      const schoolRows = await getSchools();
+      setSchools(schoolRows);
 
     }
 
@@ -90,13 +89,12 @@ export default function useTeacherManagementViewModel() {
 
     );
 
-    if (ok) {
-
-      await loadSchools();
-
+    if (!ok) {
+      return false;
     }
 
-    return ok;
+    await loadSchools();
+    return true;
 
   }
 
@@ -156,13 +154,12 @@ export default function useTeacherManagementViewModel() {
 
         );
 
-    if (featuresOk) {
-
-        await loadSchools();
-
+    if (!featuresOk) {
+      return false;
     }
 
-    return featuresOk;
+    await loadSchools();
+    return true;
 
 }
 
@@ -196,6 +193,7 @@ export default function useTeacherManagementViewModel() {
     schools,
 
     loading,
+
 
     loadSchools,
 

@@ -58,6 +58,10 @@ from "../data/studentRepository";
 import SchoolSubscriptionService
 from "./schoolSubscriptionService";
 
+import {
+    isTeacherEmailAuthorized
+} from "../data/schoolTeacherAllowlistRepository";
+
 export type AuthRole =
     | "student"
     | "teacher"
@@ -1633,11 +1637,26 @@ export async function registerTeacher(
 ): Promise<SignUpResult> {
 
     try {
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const authorized =
+            await isTeacherEmailAuthorized(
+                normalizedEmail
+            );
+
+        if (!authorized) {
+            return {
+                success: false,
+                error:
+                    "This email is not authorized for Teacher Portal registration. Please contact your school administrator or Talent Passport support."
+            };
+        }
+
         const supabase = getClient();
 
         const { data, error } =
             await supabase.auth.signUp({
-                email: email.trim(),
+                email: normalizedEmail,
                 password,
                 options: {
                     data: {

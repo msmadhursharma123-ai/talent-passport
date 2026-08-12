@@ -11,6 +11,10 @@ import {
 
 } from "../services/identityService";
 
+import {
+    isTeacherEmailAuthorizedForSchool
+} from "./schoolTeacherAllowlistRepository";
+
 /* ============================================================
    CREATE TEACHER PROFILE
 ============================================================ */
@@ -44,6 +48,18 @@ export async function createTeacherProfile(
 
     if (!supabase)
         return null;
+
+    const authorizedForSchool =
+        await isTeacherEmailAuthorizedForSchool(
+            request.email,
+            request.schoolUuid
+        );
+
+    if (!authorizedForSchool) {
+        throw new Error(
+            "This teacher email is not authorized for the selected school. Please select the school assigned to this email."
+        );
+    }
 
     const {
         data: authData

@@ -45,6 +45,7 @@ export default function TeacherRegistry() {
 
         loading,
 
+
         addSchool,
 
         editSchool,
@@ -548,6 +549,7 @@ const reset = () => {
         )
 
     );
+
 
 };
 

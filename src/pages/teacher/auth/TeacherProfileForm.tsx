@@ -8,9 +8,11 @@ createTeacherProfile
 } from "../../../data/teacherRepository";
 
 import {
-getSchools,
-SchoolOption
-} from "../../../data/schoolRepository";
+  isTeacherEmailAuthorizedForSchool,
+  getTeacherAuthorizedSchools
+} from "../../../data/schoolTeacherAllowlistRepository";
+
+import type { SchoolOption } from "../../../data/schoolRepository";
 
 import {
 useEffect
@@ -66,38 +68,31 @@ const [loading, setLoading] =
 useState(false);
 
 useEffect(() => {
-
-loadSchools();
-
-loadAuthenticatedEmail();
-
+  void loadAuthenticatedTeacherContext();
 }, []);
 
-async function loadSchools() {
+async function loadAuthenticatedTeacherContext() {
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
 
-const data =
-await getSchools();
+  const { data } = await supabase.auth.getUser();
+  const email = data.user?.email ?? "";
+  setTeacherEmail(email);
 
-setSchools(data);
+  if (!email) {
+    setSchools([]);
+    return;
+  }
 
-}
+  const authorizedSchools = await getTeacherAuthorizedSchools(email);
+  setSchools(authorizedSchools as SchoolOption[]);
 
-async function loadAuthenticatedEmail() {
-
-const supabase =
-getSupabaseClient();
-
-if (!supabase)
-return;
-
-const {
-data
-} = await supabase.auth.getUser();
-
-setTeacherEmail(
-data.user?.email ?? ""
-);
-
+  if (authorizedSchools.length === 1) {
+    const school = authorizedSchools[0];
+    setSchoolUuid(school.schoolUuid);
+    setSchoolName(school.schoolName);
+    setBoard(school.board);
+  }
 }
 
 const handleContinue = async () => {
@@ -124,6 +119,19 @@ return;
 setLoading(true);
 
 try {
+
+const authorizedForSchool =
+  await isTeacherEmailAuthorizedForSchool(
+    teacherEmail,
+    schoolUuid
+  );
+
+if (!authorizedForSchool) {
+  alert(
+    "This teacher email is not authorized for the selected school. Please select the school assigned to this email."
+  );
+  return;
+}
 
 const capacity =
 await checkSchoolProfileCapacity(
@@ -398,7 +406,7 @@ setBoard(
 
     <option value="">
 
-        Select School
+        {schools.length ? "Select Your School" : "No school access assigned"}
 
     </option>
 

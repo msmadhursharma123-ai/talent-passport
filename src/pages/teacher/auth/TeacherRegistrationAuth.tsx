@@ -4,6 +4,10 @@ import {
   registerTeacher
 } from "../../../services/authenticationService";
 
+import {
+  isTeacherEmailAuthorized
+} from "../../../data/schoolTeacherAllowlistRepository";
+
 
 
 interface Props {
@@ -53,6 +57,16 @@ export default function TeacherRegistrationAuth({
   setLoading(true);
 
   try {
+
+    const authorized =
+      await isTeacherEmailAuthorized(email);
+
+    if (!authorized) {
+      alert(
+        "This email is not authorized for Teacher Portal registration. Please contact your school administrator or Talent Passport support."
+      );
+      return;
+    }
 
     const result = await registerTeacher(
   email,

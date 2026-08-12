@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import TeacherHeader from "./TeacherHeader";
 import TeacherSidebar from "./TeacherSidebar";
@@ -15,12 +15,55 @@ import ExamPreparationPage from "../../domains/teacherIntelligence/pages/ExamPre
 
 import SchoolPostFeed from "../../domains/schoolIntelligence/components/SchoolPostFeed";
 
+import {
+  getCurrentTeacher
+} from "../../services/identityService";
+
+import {
+  getSchoolFeatureKeys,
+  TEACHER_FEATURES
+} from "../../data/schoolFeatureAccessRepository";
+
 interface Props {
   onLogout: () => void;
 }
 
 export default function TeacherLayout({ onLogout }: Props) {
   const [activePage, setActivePage] = useState("dashboard");
+  const [enabledTabs, setEnabledTabs] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      const identity = getCurrentTeacher();
+
+      if (!identity?.schoolUuid) {
+        setEnabledTabs(TEACHER_FEATURES.map(feature => feature.key));
+        return;
+      }
+
+      const keys = await getSchoolFeatureKeys(
+        identity.schoolUuid,
+        "teacher"
+      );
+
+      setEnabledTabs(keys);
+
+      if (keys.length > 0 && !keys.includes(activePage)) {
+        setActivePage(keys[0]);
+      }
+    })();
+  }, []);
+
+  if (enabledTabs === null) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#F5F6FA", display: "grid", placeItems: "center", color: "#64748B", fontWeight: 700 }}>
+        Loading Teacher Portal...
+      </div>
+    );
+  }
+
+  const activePageEnabled =
+    enabledTabs.includes(activePage);
 
   return (
     <>
@@ -112,6 +155,7 @@ export default function TeacherLayout({ onLogout }: Props) {
         <TeacherSidebar
           activePage={activePage}
           onNavigate={setActivePage}
+          enabledPages={enabledTabs}
         />
 
         <div className="teacher-layout-main">
@@ -121,15 +165,25 @@ export default function TeacherLayout({ onLogout }: Props) {
             {/* School announcements and polls remain above the active teacher feature. */}
             <SchoolPostFeed audience="teacher" />
 
-            {activePage === "dashboard" && <TeacherHome />}
-
-            {activePage === "daily-log" && <TeacherDailyLogPage />}
-
-            {activePage === "teaching-journal" && <TeachingJournalPage />}
-
-            {activePage === "my-classroom" && <MyClassroomPage />}
-
-            {activePage === "exam-preparation" && <ExamPreparationPage />}
+            {!activePageEnabled ? (
+              <div style={{ padding: 32 }}>
+                <div style={{ maxWidth: 680, margin: "0 auto", background: "white", border: "1px solid #E2E8F0", borderRadius: 20, padding: 32, boxShadow: "0 8px 24px rgba(15,23,42,.05)" }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.2, color: "#F97316", textTransform: "uppercase" }}>School Portal Configuration</div>
+                  <h2 style={{ margin: "10px 0 8px", color: "#143B73" }}>Teacher modules are restricted</h2>
+                  <p style={{ margin: 0, color: "#64748B", lineHeight: 1.6 }}>
+                    Your school administrator has not enabled the selected Teacher Portal module. Please use one of the enabled modules from the sidebar.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {activePage === "dashboard" && <TeacherHome />}
+                {activePage === "daily-log" && <TeacherDailyLogPage />}
+                {activePage === "teaching-journal" && <TeachingJournalPage />}
+                {activePage === "my-classroom" && <MyClassroomPage />}
+                {activePage === "exam-preparation" && <ExamPreparationPage />}
+              </>
+            )}
           </main>
         </div>
       </div>
