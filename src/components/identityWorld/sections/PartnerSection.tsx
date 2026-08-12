@@ -112,7 +112,7 @@ const scrollingCards=[
     <AnimatedHeading
         badge="BECOME A PARTNER"
 
-        title="Bring Great Learning Opportunities To Every Student."
+        title="List your academy. Attract top talent. Grow your enrollment."
 
         subtitle="Talent Passport connects trusted academies, institutes and learning partners with schools and students to create meaningful opportunities beyond the classroom. A marketplace where students and institutes find each other and reach out for workshops, auditions and scholarships."
 

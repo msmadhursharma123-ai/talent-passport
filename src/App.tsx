@@ -811,6 +811,7 @@ schoolName: string;
  return (
   <div>
 
+{activeTab !== "identity" && (
 <AppHeader
   schoolName={
     activeTab === "passport"
@@ -829,6 +830,7 @@ schoolName: string;
       : null
   }
 />
+)}
 
 {activeTab === "identity" && (
 

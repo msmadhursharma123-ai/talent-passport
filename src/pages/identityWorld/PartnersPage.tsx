@@ -5,8 +5,8 @@ export default function PartnersPage() {
   return (
     <IdentityWorldPage
       eyebrow="PARTNER ECOSYSTEM"
-      title="Bring great learning opportunities to every student."
-      subtitle="Connect academies, institutes and education partners with schools and students through a verified opportunity ecosystem."
+      title="A Talent Marketplace that creates opportunities at your fingertips."
+      subtitle="Unlock premium local academies,exclusive masterclasses and auditions in a single tap."
     >
       <div className="iw-legacy-section"><PartnerSection /></div>
     </IdentityWorldPage>

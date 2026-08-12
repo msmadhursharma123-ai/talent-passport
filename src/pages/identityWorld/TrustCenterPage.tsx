@@ -1,29 +1,19 @@
-import { IdentityWorldPage, FeatureGrid, SectionBlock } from "./IdentityWorldPage";
-
-const features = [
-    { icon: "🔐", title: "Identity & Access", text: "Portal access is separated by role so the right workspace reaches the right user." },
-    { icon: "🛡️", title: "Data Protection", text: "The platform is designed with controlled data access and backend-enforced permissions." },
-    { icon: "👥", title: "Role-based Experience", text: "Students, teachers, schools, partners and administrators have distinct responsibilities." },
-    { icon: "📋", title: "Transparency", text: "Policies and operational commitments can be surfaced here as the ecosystem matures." },
-    { icon: "🏫", title: "Institutional Trust", text: "Schools and partners can understand how the platform fits into their operating model." },
-    { icon: "📨", title: "Support & Reporting", text: "A clear route for questions, concerns and trust-related communication." },
+import React from "react";
+import { Check, FileCheck2, LockKeyhole, MessageCircle, ShieldCheck, UserCheck, UsersRound } from "lucide-react";
+const points=[
+[<Check size={22}/> ,"We don’t sell any personal information, including that of students and teachers"],
+[<MessageCircle size={22}/> ,"We dont allow students to book consulation and use Marketplace without parent consent and parent's otp verification"],
+[<UserCheck size={22}/> ,"Students under the age of 16 must obtain parental otp verification and consent to use Talent Passport"],
+[<FileCheck2 size={22}/> ,"Every user has full ownership of their data and the right to delete this data"],
 ];
-
-export default function TrustCenterPage() {
-  return (
-    <IdentityWorldPage
-      eyebrow="TRUST CENTER"
-      title="Built around verified identity, responsible access and clear ownership."
-      subtitle="A transparent home for the principles behind how Talent Passport handles student growth information and ecosystem trust."
-      accent="blue"
-    >
-      <SectionBlock
-        eyebrow="TRUST CENTER"
-        title="Trust is part of the product."
-        text="As the platform grows, this space will become the public reference point for privacy, security, permissions, data practices and institutional responsibility."
-      >
-        <FeatureGrid items={features} columns={3} />
-      </SectionBlock>
-    </IdentityWorldPage>
-  );
-}
+const principles=[
+["Identity & Access","Portal access is separated by role so the right workspace reaches the right user.",<LockKeyhole size={19}/>],
+["Data Protection","The platform is designed with controlled data access and backend-enforced permissions.",<ShieldCheck size={19}/>],
+["Role-based Experience","Students, teachers, schools, partners and administrators have distinct responsibilities.",<UsersRound size={19}/>],
+["Transparency","Policies and operational commitments can be surfaced here as the ecosystem matures.",<FileCheck2 size={19}/>],
+["Institutional Trust","Schools and partners can understand how the platform fits into their operating model.",<ShieldCheck size={19}/>],
+["Support & Reporting","A clear route for questions, concerns and trust-related communication.",<MessageCircle size={19}/>],
+];
+export default function TrustCenterPage(){return <main className="tp-trust"><style>{`
+.tp-trust{--n:#14213d;--b:#244f8f;--m:#66758b;--g:#f4a825;background:#fff;color:var(--n);overflow:hidden}.tp-trust *{box-sizing:border-box}.tp-trust .w{width:min(1160px,calc(100% - 36px));margin:auto}.tp-trust .hero{text-align:center;padding:clamp(62px,8vw,108px) 0 56px;background:linear-gradient(#fff,#fbfcfe)}.tp-trust .ey{display:inline-flex;gap:9px;align-items:center;margin-bottom:15px;color:#9b6912;font-size:11px;font-weight:850;letter-spacing:1.8px;text-transform:uppercase}.tp-trust .ey:before,.tp-trust .ey:after{content:"";width:25px;height:2px;background:var(--g);border-radius:99px}.tp-trust h1{margin:auto;max-width:900px;font-size:clamp(42px,6vw,72px);line-height:1;letter-spacing:-.055em;font-weight:800}.tp-trust .hero p{max-width:620px;margin:18px auto 0;color:var(--m);font-size:17px;line-height:1.55}.tp-trust .tabs{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:27px}.tp-trust .tab{padding:11px 17px;border-radius:8px;background:var(--b);color:#fff;font-size:12px;font-weight:800}.tp-trust .tab.alt{border:1px solid rgba(36,79,143,.25);background:#fff;color:var(--b)}.tp-trust .compliance{padding:50px 0 70px}.tp-trust h2{margin:0;font-size:clamp(28px,3.6vw,44px);line-height:1.05;letter-spacing:-.04em;font-weight:800}.tp-trust .center{text-align:center}.tp-trust .sub{max-width:650px;margin:12px auto 28px;color:var(--m);font-size:13px;line-height:1.55}.tp-trust .compGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.tp-trust .comp{min-height:140px;padding:20px;border:1px solid rgba(36,79,143,.18);border-radius:18px;background:#fbfbff}.tp-trust .compIcon{width:42px;height:42px;display:flex;align-items:center;justify-content:center;margin-bottom:15px;border-radius:12px;background:#edf3fb;color:var(--b)}.tp-trust .comp h3{margin:0 0 8px;font-size:15px;font-weight:800}.tp-trust .soon{display:inline-flex;padding:4px 7px;border-radius:5px;background:#fff6df;color:#946815;font-size:8px;font-weight:850;letter-spacing:1px;text-transform:uppercase}.tp-trust .trust{padding:66px 0 74px;border-top:1px solid rgba(20,33,61,.1)}.tp-trust .trust p.headp{margin:12px auto 0;color:var(--m);font-size:15px}.tp-trust .points{display:grid;grid-template-columns:1fr 1fr;gap:55px 90px;max-width:900px;margin:50px auto 0}.tp-trust .point{text-align:center}.tp-trust .picon{width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin:auto auto 16px;border-radius:50%;background:#f0eaff;color:#7555e8}.tp-trust .point p{margin:0;color:var(--n);font-size:14px;line-height:1.55;font-weight:550}.tp-trust .principles{padding:64px 0 84px;background:#f8fafc}.tp-trust .principlesGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:30px}.tp-trust .pcard{padding:19px;border:1px solid rgba(20,33,61,.1);border-radius:17px;background:#fff}.tp-trust .picon2{width:38px;height:38px;display:flex;align-items:center;justify-content:center;margin-bottom:13px;border-radius:11px;background:#fff8eb;color:var(--b)}.tp-trust .pcard h3{margin:0 0 7px;font-size:14px;font-weight:800}.tp-trust .pcard p{margin:0;color:var(--m);font-size:11.5px;line-height:1.55}.tp-trust .footer{padding:34px 0;text-align:center;color:#8a96a8;font-size:10px;border-top:1px solid rgba(20,33,61,.1)}@media(max-width:800px){.tp-trust .compGrid,.tp-trust .principlesGrid{grid-template-columns:1fr 1fr}.tp-trust .points{gap:35px 35px}}@media(max-width:580px){.tp-trust .w{width:min(100% - 26px,560px)}.tp-trust .hero{padding:50px 0 45px}.tp-trust h1{font-size:clamp(37px,10.8vw,52px)}.tp-trust .hero p{font-size:14px}.tp-trust .compliance{padding:42px 0 55px}.tp-trust .compGrid,.tp-trust .principlesGrid,.tp-trust .points{grid-template-columns:1fr;gap:10px}.tp-trust .comp{min-height:0}.tp-trust .trust{padding:48px 0 58px}.tp-trust .points{margin-top:38px;gap:34px}.tp-trust .point p{font-size:12.5px}.tp-trust .principles{padding:48px 0 62px}}
+`}</style><section className="hero"><div className="w"><div className="ey">Talent Passport Trust Center</div><h1>Talent Passport is designed to be a secure place for authentic student feedback</h1><p>Responsible access, clear ownership and student-first trust across the Talent Passport ecosystem.</p><div className="tabs"><span className="tab">For teachers and school</span><span className="tab alt">For parents</span></div></div></section><section className="compliance"><div className="w center"><h2>Trust infrastructure, being built.</h2><p className="sub">The following security and data-governance deliverables are planned for Talent Passport.</p><div className="compGrid">{[["VAPT report",<ShieldCheck size={19}/>],["DPDP consent",<UserCheck size={19}/>],["DPA package",<FileCheck2 size={19}/>]].map(x=><article className="comp" key={x[0] as string}><div className="compIcon">{x[1]}</div><h3>{x[0]}</h3><span className="soon">Coming soon</span></article>)}</div></div></section><section className="trust"><div className="w center"><h2>At Talent Passport, we build trust into everything we do</h2><p className="headp">We treat the privacy and security of our users seriously</p><div className="points">{points.map(x=><article className="point" key={x[1] as string}><div className="picon">{x[0]}</div><p>{x[1]}</p></article>)}</div></div></section><section className="principles"><div className="w"><div className="ey">Trust principles</div><h2>The operating principles behind the platform.</h2><div className="principlesGrid">{principles.map(x=><article className="pcard" key={x[0] as string}><div className="picon2">{x[2]}</div><h3>{x[0]}</h3><p>{x[1]}</p></article>)}</div></div></section><div className="footer">Talent Passport · Trust, responsibility and student-first design</div></main>}
