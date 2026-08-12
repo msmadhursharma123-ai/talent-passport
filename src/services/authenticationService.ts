@@ -62,6 +62,10 @@ import {
     isTeacherEmailAuthorized
 } from "../data/schoolTeacherAllowlistRepository";
 
+import {
+    isStudentRollAuthorized
+} from "../data/schoolStudentAllowlistRepository";
+
 export type AuthRole =
     | "student"
     | "teacher"
@@ -998,6 +1002,32 @@ export async function signIn(
 
         }
 
+const accessCheckpoint =
+    await (supabase as any).rpc(
+        "is_portal_account_access_allowed"
+    );
+
+if (accessCheckpoint.error) {
+    console.error(
+        "Portal access checkpoint failed.",
+        accessCheckpoint.error
+    );
+} else if (accessCheckpoint.data === false) {
+    await supabase.auth.signOut();
+    clearStudentIdentity();
+    clearTeacherIdentity();
+    clearSchoolIdentity();
+    clearPartnerIdentity();
+    clearAdminIdentity();
+    clearAuthSession();
+
+    return {
+        success: false,
+        error:
+            "Your school has deactivated portal access for this account. Please contact your school administrator."
+    };
+}
+
 const resolved =
     await resolveIdentity(
         authUser.id
@@ -1482,10 +1512,38 @@ export async function markPortalActivated(
 
 export async function registerStudent(
     email: string,
-    password: string
+    password: string,
+    rollNumber?: string
 ): Promise<SignUpResult> {
 
     try {
+        const normalizedRollNumber =
+            String(rollNumber ?? "").trim().toUpperCase();
+
+        /*
+         * STUDENT ACCESS CHECK
+         * --------------------
+         * This happens before Supabase Auth signUp/resume so an unapproved
+         * roll number can never create or resume a Student Auth account.
+         * Existing authentication/identity infrastructure is untouched.
+         */
+        if (!normalizedRollNumber) {
+            return {
+                success: false,
+                error: "Please enter the roll number approved by your school."
+            };
+        }
+
+        const authorized =
+            await isStudentRollAuthorized(normalizedRollNumber);
+
+        if (!authorized) {
+            return {
+                success: false,
+                error: "This roll number is not authorized by your school. Please contact your school administrator."
+            };
+        }
+
         const supabase = getClient();
 
         const { data, error } =
@@ -1495,7 +1553,8 @@ export async function registerStudent(
                 options: {
                     data: {
                         tp_role: "student",
-                        tp_portal_activated: false
+                        tp_portal_activated: false,
+                        student_roll_number: normalizedRollNumber
                     }
                 }
             });

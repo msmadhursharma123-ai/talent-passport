@@ -12,7 +12,9 @@ import {
   getTeacherAuthorizedSchools
 } from "../../../data/schoolTeacherAllowlistRepository";
 
-import type { SchoolOption } from "../../../data/schoolRepository";
+import {
+SchoolOption
+} from "../../../data/schoolRepository";
 
 import {
 useEffect
@@ -68,31 +70,37 @@ const [loading, setLoading] =
 useState(false);
 
 useEffect(() => {
-  void loadAuthenticatedTeacherContext();
+  void loadAuthenticatedEmail();
 }, []);
 
-async function loadAuthenticatedTeacherContext() {
+async function loadSchoolsForEmail(email: string) {
+  const authorized = await getTeacherAuthorizedSchools(email);
+
+  if (authorized.length > 0) {
+    setSchools(authorized.map(school => ({
+      schoolUuid: school.schoolUuid,
+      schoolName: school.schoolName,
+      board: school.board
+    })));
+
+    if (authorized.length === 1) {
+      setSchoolUuid(authorized[0].schoolUuid);
+      setSchoolName(authorized[0].schoolName);
+    }
+    return;
+  }
+
+  setSchools([]);
+}
+
+async function loadAuthenticatedEmail() {
   const supabase = getSupabaseClient();
   if (!supabase) return;
 
   const { data } = await supabase.auth.getUser();
   const email = data.user?.email ?? "";
   setTeacherEmail(email);
-
-  if (!email) {
-    setSchools([]);
-    return;
-  }
-
-  const authorizedSchools = await getTeacherAuthorizedSchools(email);
-  setSchools(authorizedSchools as SchoolOption[]);
-
-  if (authorizedSchools.length === 1) {
-    const school = authorizedSchools[0];
-    setSchoolUuid(school.schoolUuid);
-    setSchoolName(school.schoolName);
-    setBoard(school.board);
-  }
+  if (email) await loadSchoolsForEmail(email);
 }
 
 const handleContinue = async () => {
@@ -406,7 +414,7 @@ setBoard(
 
     <option value="">
 
-        {schools.length ? "Select Your School" : "No school access assigned"}
+        Select School
 
     </option>
 

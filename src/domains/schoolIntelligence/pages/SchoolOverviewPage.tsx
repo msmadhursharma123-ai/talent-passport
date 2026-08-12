@@ -11,6 +11,7 @@ import type {
 } from "../types/SchoolIntelligenceModels";
 import SchoolPostManagerPage from "./SchoolPostManagerPage";
 import SchoolTeacherAccessManager from "./SchoolTeacherAccessManager";
+import SchoolStudentAccessManager from "./SchoolStudentAccessManager";
 
 type RangeValue = "30" | "60" | "90" | "custom";
 type SortKey =
@@ -40,6 +41,7 @@ function classroomLabel(row: SchoolClassroomHealthRow) {
 export default function SchoolOverviewPage() {
   const [showPostManager, setShowPostManager] = useState(false);
   const [showTeacherAccessManager, setShowTeacherAccessManager] = useState(false);
+  const [showStudentAccessManager, setShowStudentAccessManager] = useState(false);
   const [data, setData] = useState<SchoolIntelligenceSnapshot | null>(null);
   const [classroomMetrics, setClassroomMetrics] = useState<
     SchoolClassroomSupplementalMetric[]
@@ -793,6 +795,23 @@ export default function SchoolOverviewPage() {
               >
                 + Manage Teachers
               </button>
+              <button
+                type="button"
+                onClick={() => setShowStudentAccessManager(true)}
+                style={{
+                  border: "1px solid #C7D2FE",
+                  borderRadius: 12,
+                  background: "linear-gradient(135deg,#EEF2FF,#FFFFFF)",
+                  color: "#4338CA",
+                  padding: "10px 14px",
+                  fontSize: 11,
+                  fontWeight: 900,
+                  cursor: "pointer",
+                  boxShadow: "0 6px 16px rgba(67,56,202,.08)",
+                }}
+              >
+                + Create Students
+              </button>
             </div>
           </div>
         </section>
@@ -1145,6 +1164,10 @@ export default function SchoolOverviewPage() {
 
       {showTeacherAccessManager && (
         <SchoolTeacherAccessManager onClose={() => setShowTeacherAccessManager(false)} />
+      )}
+
+      {showStudentAccessManager && (
+        <SchoolStudentAccessManager onClose={() => setShowStudentAccessManager(false)} />
       )}
     </main>
   );

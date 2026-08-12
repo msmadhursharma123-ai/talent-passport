@@ -20,6 +20,7 @@ export default function StudentRegistrationAuth({
 }: Props) {
 
   const [email, setEmail] = useState("");
+  const [rollNumber, setRollNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] =
     useState("");
@@ -34,7 +35,12 @@ export default function StudentRegistrationAuth({
     return;
   }
 
-  if (!password.trim()) {
+  if (!rollNumber.trim()) {
+     alert("Please enter the roll number approved by your school.");
+     return;
+   }
+
+   if (!password.trim()) {
     alert("Please enter a password.");
     return;
   }
@@ -54,9 +60,10 @@ export default function StudentRegistrationAuth({
   try {
 
     const result = await registerStudent(
-  email,
-  password
-);
+      email,
+      password,
+      rollNumber
+    );
 
 if (!result.success) {
 
@@ -301,6 +308,15 @@ console.log("CALLING onVerificationRequired");
             setEmail(e.target.value)
           }
           style={inputStyle}
+        />
+
+        <input
+          type="text"
+          placeholder="School Roll Number"
+          value={rollNumber}
+          onChange={(e) => setRollNumber(e.target.value.toUpperCase())}
+          style={inputStyle}
+          autoComplete="off"
         />
 
         <input

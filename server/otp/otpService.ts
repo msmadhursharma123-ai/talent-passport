@@ -160,13 +160,20 @@ export async function resolveAuthenticatedStudent(
   const { data: masterByAuth } = await supabase
     .from("students_master")
     .select(
-      "id, student_uuid, student_id, student_name, student_email, phone, auth_user_id"
+      "id, student_uuid, student_id, student_name, student_email, phone, parent_phone, auth_user_id"
     )
     .eq("auth_user_id", authUserId)
     .maybeSingle();
 
   if (masterByAuth?.student_uuid) {
-    return masterByAuth;
+    return {
+      ...masterByAuth,
+      /* Parent OTP uses the canonical parent number first.
+       * `phone` remains the legacy fallback for older profiles. */
+      phone:
+        masterByAuth.parent_phone ??
+        masterByAuth.phone,
+    };
   }
 
   /*
@@ -187,7 +194,7 @@ export async function resolveAuthenticatedStudent(
   const { data: masterByStudentCode } = await supabase
     .from("students_master")
     .select(
-      "id, student_uuid, student_id, student_name, student_email, phone, auth_user_id"
+      "id, student_uuid, student_id, student_name, student_email, phone, parent_phone, auth_user_id"
     )
     .eq("student_id", studentRow.student_id)
     .maybeSingle();
@@ -196,7 +203,12 @@ export async function resolveAuthenticatedStudent(
     throw new Error("Student profile could not be resolved.");
   }
 
-  return masterByStudentCode;
+  return {
+    ...masterByStudentCode,
+    phone:
+      masterByStudentCode.parent_phone ??
+      masterByStudentCode.phone,
+  };
 }
 
 export async function getConsentStatus(

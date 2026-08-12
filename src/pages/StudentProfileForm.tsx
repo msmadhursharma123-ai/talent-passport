@@ -20,6 +20,11 @@ from "../supabaseClient";
 import { checkSchoolProfileCapacity }
 from "../services/schoolProfileCapacity";
 
+import {
+  getStudentAuthorizedSchools,
+  isStudentRollAuthorizedForSchool
+} from "../data/schoolStudentAllowlistRepository";
+
 interface Props {
   onContinue: () => void;
   onBack: () => void;
@@ -55,6 +60,9 @@ export default function StudentProfileForm({
     useState("");
 
   const [parentEmail, setParentEmail] =
+    useState("");
+
+  const [rollNumber, setRollNumber] =
     useState("");
 
   const [schoolName, setSchoolName] =
@@ -111,54 +119,49 @@ loadAuthenticatedEmail();
 
 },[]);
 
-async function loadSchools(){
+async function loadSchools(authorizedRoll?: string){
 
-const supabase =
-getSupabaseClient();
+if(authorizedRoll?.trim()){
+  const authorizedSchools = await getStudentAuthorizedSchools(authorizedRoll);
+  const mapped = authorizedSchools.map(school => ({
+    school_uuid: school.schoolUuid,
+    school_name: school.schoolName,
+    board: school.board
+  }));
+  setSchools(mapped);
 
-if(!supabase){
-return;
+  if(authorizedSchools.length === 1){
+    setSchoolUuid(authorizedSchools[0].schoolUuid);
+    setSchoolName(authorizedSchools[0].schoolName);
+  }
+  return;
 }
 
-const { data } =
-await supabase
-.from("schools_master")
-.select("*")
-.order(
-"school_name"
-);
-
+const supabase = getSupabaseClient();
+if(!supabase) return;
+const { data } = await supabase
+  .from("schools_master")
+  .select("*")
+  .order("school_name");
 setSchools(data ?? []);
-
 }
 
-async function
-loadAuthenticatedEmail(){
-
-const supabase =
-getSupabaseClient();
-
-if(!supabase){
-return;
+async function loadAuthenticatedEmail(){
+const supabase = getSupabaseClient();
+if(!supabase) return;
+const result = await supabase.auth.getUser();
+const email = result.data.user?.email;
+if(email) setParentEmail(email);
+const metadataRoll = String(result.data.user?.user_metadata?.student_roll_number ?? "").trim().toUpperCase();
+if(metadataRoll){
+  setRollNumber(metadataRoll);
+  await loadSchools(metadataRoll);
+}else{
+  await loadSchools();
+}
 }
 
-const result =
-await supabase.auth.getUser();
-
-console.log(result);
-
-const email =
-result.data.user?.email;
-
-if(email){
-
-setParentEmail(email);
-
-}
-
-}
-    
- const handleContinue = async () => {
+const handleContinue = async () => {
 
   if (
       !studentName ||
@@ -206,6 +209,14 @@ setParentEmail(email);
 
   try {
 
+      if (rollNumber.trim()) {
+          const authorizedForSchool = await isStudentRollAuthorizedForSchool(rollNumber, schoolUuid);
+          if (!authorizedForSchool) {
+              alert("This roll number is not authorized for the selected school. Please select the school assigned to this roll number.");
+              return;
+          }
+      }
+
       const capacity =
           await checkSchoolProfileCapacity(
               schoolUuid,
@@ -227,6 +238,9 @@ setParentEmail(email);
 
               student_name:
                   studentName,
+
+              roll_number:
+                  rollNumber.trim() || undefined,
 
               parent_email:
                   parentEmail,
@@ -277,6 +291,15 @@ setParentEmail(email);
       );
 
       onContinue();
+
+  } catch (error: any) {
+
+      console.error("STUDENT PROFILE CREATION ERROR:", error);
+
+      alert(
+          error?.message ??
+          "Unable to create student profile."
+      );
 
   } finally {
 
@@ -496,7 +519,7 @@ background:"#F1F5F9",
 
         <div
           style={{
-            marginTop: -8,
+            marginTop: 10,
             marginBottom: 6,
             color: "#64748B",
             fontSize: 12,
@@ -504,8 +527,17 @@ background:"#F1F5F9",
           }}
         >
           Parent Mobile Number must be different from the student's mobile
-          number. All parent verification OTPs will be sent to this number.
+          number.
         </div>
+
+{rollNumber && (
+  <input
+    placeholder="School Roll Number"
+    value={rollNumber}
+    readOnly
+    style={{ ...inputStyle, background: "#F8FAFC", color: "#475569" }}
+  />
+)}
 
 <select
 value={schoolUuid}
