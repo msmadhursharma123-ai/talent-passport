@@ -115,7 +115,7 @@ export default function LandingNavbar({ onPortalClick }: LandingNavbarProps) {
           min-height: 84px;
           margin: 0 auto;
           display: grid;
-          grid-template-columns: 190px minmax(0,1fr) auto;
+          grid-template-columns: 230px minmax(0,1fr) auto;
           align-items: center;
           gap: 24px;
         }
@@ -123,21 +123,26 @@ export default function LandingNavbar({ onPortalClick }: LandingNavbarProps) {
         /* IMPORTANT: the logo is inside the SAME navigation row.
            No extra header/row is created. */
         .tp-public-navbar .iw-logo {
-          width: 156px;
-          height: 66px;
+          width: 220px;
+          height: 84px;
           display: flex;
           align-items: center;
           justify-content: flex-start;
           flex-shrink: 0;
           text-decoration: none;
+          overflow: hidden;
         }
 
         .tp-public-navbar .iw-logo img {
           display: block;
-          width: 156px;
-          height: 62px;
+          width: 220px;
+          height: 84px;
+          max-width: none;
+          max-height: none;
           object-fit: contain;
           object-position: left center;
+          transform: scale(2.35);
+          transform-origin: left center;
         }
 
         .tp-public-navbar .iw-desktop-nav {
@@ -314,16 +319,16 @@ export default function LandingNavbar({ onPortalClick }: LandingNavbarProps) {
 
         @media (max-width: 1080px) {
           .tp-public-navbar .iw-navbar-inner {
-            grid-template-columns: 150px minmax(0,1fr) auto;
+            grid-template-columns: 205px minmax(0,1fr) auto;
             gap: 12px;
           }
           .tp-public-navbar .iw-logo,
           .tp-public-navbar .iw-logo img {
-            width: 132px;
+            width: 190px;
           }
           .tp-public-navbar .iw-logo,
           .tp-public-navbar .iw-logo img {
-            height: 58px;
+            height: 70px;
           }
           .tp-public-navbar .iw-nav-home,
           .tp-public-navbar .iw-nav-trigger {
@@ -339,10 +344,17 @@ export default function LandingNavbar({ onPortalClick }: LandingNavbarProps) {
             grid-template-columns: auto 1fr auto;
           }
 
-          .tp-public-navbar .iw-logo,
+          .tp-public-navbar .iw-logo {
+            width: 160px;
+            height: 70px;
+            overflow: hidden;
+          }
+
           .tp-public-navbar .iw-logo img {
-            width: 118px;
-            height: 54px;
+            width: 160px;
+            height: 70px;
+            transform: scale(2.05);
+            transform-origin: left center;
           }
 
           .tp-public-navbar .iw-desktop-nav,
@@ -458,10 +470,17 @@ export default function LandingNavbar({ onPortalClick }: LandingNavbarProps) {
             min-height: 64px;
           }
 
-          .tp-public-navbar .iw-logo,
+          .tp-public-navbar .iw-logo {
+            width: 145px;
+            height: 64px;
+            overflow: hidden;
+          }
+
           .tp-public-navbar .iw-logo img {
-            width: 104px;
-            height: 49px;
+            width: 145px;
+            height: 64px;
+            transform: scale(1.95);
+            transform-origin: left center;
           }
 
           .tp-public-navbar .iw-mobile-toggle {

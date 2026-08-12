@@ -15,27 +15,29 @@ interface SlideData {
 const slides: SlideData[] = [
   {
     eyebrow: "INDIA'S FIRST TALENT & IDENTITY INFRASTRUCTURE PLATFORM",
-    title: "One Passport.\nOne Identity.\nEndless Possibilities.",
+    title: "One passport.\nOne identity.\nEndless possibilities.",
     description:
       "Capture every competition, project, achievement, portfolio and real-world experience inside one verified lifelong Talent Passport that grows with every student.",
     primaryButton: "Explore Platform",
     secondaryButton: "Enter Portal",
   },
+
   {
-    eyebrow: "BEYOND MARKS • BEYOND CERTIFICATES",
-    title: "Learning Beyond\nThe Classroom.",
+    eyebrow: "FOR SCHOOLS • FROM DATA TO PERFORMANCE",
+    title: "Where student growth\nbecomes school growth.",
     description:
-      "Develop communication, creativity, confidence, leadership, and critical thinking through meaningful real-world experiences that prepare students for tomorrow.",
-    primaryButton: "Discover Features",
-    secondaryButton: "View Student Journey",
+      "Connect academics, skills, participation, teacher intelligence and student growth in one system to identify gaps, improve outcomes, and build a stronger school.",
+    primaryButton: "For Schools",
+    secondaryButton: "See School Intelligence",
   },
+
   {
-    eyebrow: "BUILD • GROW • ACHIEVE",
-    title: "Build Talent.\nEarn Credits.\nUnlock Opportunities.",
+    eyebrow: "ONE PLATFORM • EVERY STAKEHOLDER",
+    title: "Everyone grows.\nEverything connects.",
     description:
-      "Participate in competitions, build your portfolio, earn credits, connect with industry partners, and unlock scholarships, workshops, and future opportunities.",
-    primaryButton: "Explore Marketplace",
-    secondaryButton: "Learn More",
+      "Students understand where they need to grow. Schools resolve learning gaps. Teachers improve classroom performance. Partners reach the right talent and drive meaningful footfall.",
+    primaryButton: "Explore Platform",
+    secondaryButton: "View Opportunities",
   },
 ];
 
@@ -133,7 +135,7 @@ export default function HeroSlider({
         className="hero-primary-btn"
         onClick={onContinue}
     >
-        Enter Identity World →
+        Enter Talent Passport →
     </button>
 
     <button
