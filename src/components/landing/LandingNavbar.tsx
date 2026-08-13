@@ -51,6 +51,7 @@ const menuGroups: MenuGroup[] = [
       { label: "Founder", href: "founder", description: "The thinking behind Talent Passport." },
       { label: "Plans", href: "plans", description: "Simple access paths for institutions." },
       { label: "Contact Center", href: "contact", description: "Find the right team to speak with." },
+      { label: "Request Demo", href: "request-demo", description: "Request a focused school intelligence walkthrough." },
     ],
   },
 ];
@@ -272,6 +273,49 @@ export default function LandingNavbar({ onPortalClick }: LandingNavbarProps) {
           gap: 9px;
         }
 
+        .tp-public-navbar .iw-demo-button,
+        .tp-public-navbar .iw-mobile-demo {
+          border: 1px solid rgba(244,168,37,.45);
+          background: #fffaf1;
+          color: var(--tp-navy);
+          cursor: pointer;
+          font: inherit;
+          font-size: 14px;
+          font-weight: 850;
+          box-shadow: 0 6px 18px rgba(20,33,61,.05);
+        }
+
+        .tp-public-navbar .iw-demo-button {
+          min-height: 50px;
+          padding: 0 17px;
+          border-radius: 13px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          white-space: nowrap;
+        }
+
+        .tp-public-navbar .iw-demo-button:hover {
+          background: #fff5df;
+          border-color: rgba(244,168,37,.7);
+          transform: translateY(-1px);
+        }
+
+        .tp-public-navbar .iw-mobile-demo {
+          min-height: 48px;
+          padding: 0 16px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+        }
+
+        .tp-public-navbar .iw-mobile-demo:hover {
+          background: #fff5df;
+        }
+
         .tp-public-navbar .iw-portal-button,
         .tp-public-navbar .iw-mobile-portal {
           border: 0;
@@ -337,7 +381,7 @@ export default function LandingNavbar({ onPortalClick }: LandingNavbarProps) {
           }
         }
 
-        @media (max-width: 820px) {
+        @media (max-width: 900px) {
           .tp-public-navbar .iw-navbar-inner {
             width: min(100% - 28px, 680px);
             min-height: 70px;
@@ -357,13 +401,31 @@ export default function LandingNavbar({ onPortalClick }: LandingNavbarProps) {
             transform-origin: left center;
           }
 
-          .tp-public-navbar .iw-desktop-nav,
-          .tp-public-navbar .iw-portal-button {
+          .tp-public-navbar .iw-desktop-nav {
             display: none;
           }
 
+          /* Keep both primary acquisition actions visible on tablet/mobile.
+             The logo size is intentionally unchanged. */
           .tp-public-navbar .iw-navbar-actions {
             justify-content: flex-end;
+            gap: 6px;
+          }
+
+          .tp-public-navbar .iw-demo-button,
+          .tp-public-navbar .iw-portal-button {
+            display: inline-flex;
+            min-height: 40px;
+            padding: 0 10px;
+            border-radius: 10px;
+            font-size: 10.5px;
+            gap: 5px;
+          }
+
+          .tp-public-navbar .iw-demo-button svg,
+          .tp-public-navbar .iw-portal-button svg {
+            width: 12px;
+            height: 12px;
           }
 
           .tp-public-navbar .iw-mobile-toggle {
@@ -483,9 +545,43 @@ export default function LandingNavbar({ onPortalClick }: LandingNavbarProps) {
             transform-origin: left center;
           }
 
+          .tp-public-navbar .iw-navbar-inner {
+            width: calc(100% - 12px);
+            gap: 0;
+          }
+
+          .tp-public-navbar .iw-navbar-actions {
+            gap: 3px;
+          }
+
+          .tp-public-navbar .iw-demo-button,
+          .tp-public-navbar .iw-portal-button {
+            min-height: 36px;
+            border-radius: 9px;
+            padding: 0 7px;
+            font-size: 8.5px;
+            gap: 3px;
+            letter-spacing: -.01em;
+          }
+
+          .tp-public-navbar .iw-demo-button {
+            min-width: 54px;
+          }
+
+          .tp-public-navbar .iw-portal-button {
+            min-width: 58px;
+          }
+
+          .tp-public-navbar .iw-demo-button svg,
+          .tp-public-navbar .iw-portal-button svg {
+            width: 10px;
+            height: 10px;
+          }
+
           .tp-public-navbar .iw-mobile-toggle {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
+            margin-left: 1px;
           }
         }
 
@@ -554,6 +650,13 @@ export default function LandingNavbar({ onPortalClick }: LandingNavbarProps) {
           </nav>
 
           <div className="iw-navbar-actions">
+            <button
+              type="button"
+              className="iw-demo-button"
+              onClick={() => go("request-demo")}
+            >
+              Request Demo <ArrowRight size={15} />
+            </button>
             <button type="button" className="iw-portal-button" onClick={onPortalClick}>
               Enter Portal <ArrowRight size={16} />
             </button>
@@ -601,6 +704,15 @@ export default function LandingNavbar({ onPortalClick }: LandingNavbarProps) {
                 )}
               </div>
             ))}
+
+            <button
+              type="button"
+              className="iw-mobile-demo"
+              onClick={() => go("request-demo")}
+            >
+              <span>Request Demo</span>
+              <ArrowRight size={16} />
+            </button>
 
             <button type="button" className="iw-mobile-portal" onClick={onPortalClick}>
               Enter Portal <ArrowRight size={16} />

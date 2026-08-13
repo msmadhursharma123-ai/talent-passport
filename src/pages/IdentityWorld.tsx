@@ -28,6 +28,7 @@ import ResourcesPage from "./identityWorld/ResourcesPage";
 import BlogsPage from "./identityWorld/BlogsPage";
 import ContactCenterPage from "./identityWorld/ContactCenterPage";
 import PlatformIntelligenceSection from "./identityWorld/PlatformIntelligenceSection";
+import RequestDemoPage from "./identityWorld/RequestDemoPage";
 
 interface Props {
   onContinue: () => void;
@@ -56,7 +57,8 @@ type PublicPage =
   | "trust"
   | "resources"
   | "blogs"
-  | "contact";
+  | "contact"
+  | "request-demo";
 
 const VALID_PAGES = new Set<PublicPage>([
   "home",
@@ -82,6 +84,7 @@ const VALID_PAGES = new Set<PublicPage>([
   "resources",
   "blogs",
   "contact",
+  "request-demo",
 ]);
 
 function readPageFromHash(): PublicPage {
@@ -144,6 +147,7 @@ export default function IdentityWorld({ onContinue }: Props) {
       case "resources": return <ResourcesPage />;
       case "blogs": return <BlogsPage />;
       case "contact": return <ContactCenterPage />;
+      case "request-demo": return <RequestDemoPage />;
       default: return <IdentityWorldHome onContinue={onContinue} />;
     }
   }, [page, onContinue]);
