@@ -56,7 +56,7 @@ export default function IdentityWorldHome({ onContinue }: Props) {
           align-items:center;
           margin-bottom:13px;
           color:#9b6912;
-          font-size:8px;
+          font-size:7px;
           font-weight:550;
           letter-spacing:1.75px;
           text-transform:uppercase;
@@ -78,7 +78,7 @@ export default function IdentityWorldHome({ onContinue }: Props) {
           font-size:clamp(37px,4.25vw,59px);
           line-height:1.02;
           letter-spacing:-.045em;
-          font-weight:420;
+          font-weight:400;
         }
         .iw-title span{color:var(--b)}
         .iw-lead{
@@ -159,6 +159,7 @@ export default function IdentityWorldHome({ onContinue }: Props) {
           background:#fff;
           box-shadow:0 6px 20px rgba(20,33,61,.04);
           transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+          cursor:pointer;
         }
         .iw-card:hover{
           transform:translateX(-2px);
@@ -198,6 +199,19 @@ export default function IdentityWorldHome({ onContinue }: Props) {
           line-height:1.42;
         }
         .iw-card-link{
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          justify-content:center;
+          gap:2px;
+          min-width:38px;
+          color:var(--b);
+          text-decoration:none;
+          background:transparent;
+          border:0;
+          padding:0;
+        }
+        .iw-card-link-arrow{
           width:29px;
           height:29px;
           display:flex;
@@ -205,9 +219,16 @@ export default function IdentityWorldHome({ onContinue }: Props) {
           justify-content:center;
           border:1px solid rgba(20,33,61,.09);
           border-radius:50%;
-          color:var(--b);
-          text-decoration:none;
           background:#fbfcfe;
+        }
+        .iw-card-explore{
+          display:block;
+          font-size:7px;
+          line-height:1;
+          font-weight:700;
+          letter-spacing:.7px;
+          text-transform:lowercase;
+          color:#8a96a8;
         }
         .iw-discovery{
           display:flex;
@@ -217,7 +238,7 @@ export default function IdentityWorldHome({ onContinue }: Props) {
           padding:10px 2px;
           border-top:1px solid rgba(20,33,61,.09);
           color:#718096;
-          font-size:10px;
+          font-size:11px;
           font-weight:600;
         }
         .iw-discovery svg{color:#b97c16;flex:0 0 auto}
@@ -293,12 +314,12 @@ export default function IdentityWorldHome({ onContinue }: Props) {
             <div>
               <div className="iw-eyebrow">Identity World</div>
               <h2 className="iw-title">
-                One ecosystem.<br />
-                <span>Your complete growth journey.</span>
+                Let's figure out where your teachers and students <br />
+                <span>are getting stuck today?</span>
               </h2>
             </div>
             <p className="iw-lead">
-              Talent Passport connects learning, growth, recognition and opportunity into one clean student journey.
+              Stop leading your school in the dark. Get complete real-time visibility into student doubts, teacher performance, and learning gaps—all in one place.
             </p>
           </div>
 
@@ -318,19 +339,52 @@ export default function IdentityWorldHome({ onContinue }: Props) {
             </div>
 
             <div className="iw-cards">
-              {cards.map((item) => (
-                <article className="iw-card" key={item.title}>
-                  <div className="iw-card-icon">{item.icon}</div>
-                  <div>
-                    <h3 className="iw-card-title">{item.title}</h3>
-                    <p className="iw-card-text">{item.text}</p>
-                  </div>
-                  <a className="iw-card-link" href={`#${item.href}`} aria-label={`Explore ${item.title}`}>
-                    <ArrowRight size={13} />
-                  </a>
-                  <span className="iw-card-number">{item.number}</span>
-                </article>
-              ))}
+              {cards.map((item) => {
+                const target = `#${item.href}`;
+
+                const openCard = () => {
+                  window.location.hash = item.href;
+                };
+
+                const handleCardKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openCard();
+                  }
+                };
+
+                return (
+                  <article
+                    className="iw-card"
+                    key={item.title}
+                    role="link"
+                    tabIndex={0}
+                    aria-label={`Explore ${item.title}`}
+                    onClick={openCard}
+                    onKeyDown={handleCardKeyDown}
+                  >
+                    <div className="iw-card-icon">{item.icon}</div>
+                    <div>
+                      <h3 className="iw-card-title">{item.title}</h3>
+                      <p className="iw-card-text">{item.text}</p>
+                    </div>
+
+                    <a
+                      className="iw-card-link"
+                      href={target}
+                      aria-label={`Explore ${item.title}`}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <span className="iw-card-link-arrow">
+                        <ArrowRight size={13} />
+                      </span>
+                      <span className="iw-card-explore">explore</span>
+                    </a>
+
+                    <span className="iw-card-number">{item.number}</span>
+                  </article>
+                );
+              })}
             </div>
           </div>
 
