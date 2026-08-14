@@ -124,6 +124,29 @@ export default function TeacherDailyLogDialog({
     );
   }
 
+  function getIndiaCalendarDateKey() {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date());
+
+    const year = parts.find(
+      (part) => part.type === "year"
+    )?.value ?? "";
+
+    const month = parts.find(
+      (part) => part.type === "month"
+    )?.value ?? "";
+
+    const day = parts.find(
+      (part) => part.type === "day"
+    )?.value ?? "";
+
+    return `${year}-${month}-${day}`;
+  }
+
   async function handleSave() {
     const selectedAssignment =
       assignments.find(
@@ -184,8 +207,11 @@ export default function TeacherDailyLogDialog({
       teacher_notes:
         teacherNotes,
 
+      // log_date is the classroom BUSINESS DATE.
+      // Store the India calendar date (YYYY-MM-DD), not a UTC timestamp.
+      // This keeps teacher submission and student "today" filtering aligned.
       log_date:
-        new Date().toISOString(),
+        getIndiaCalendarDateKey(),
     });
 
     resetForm();

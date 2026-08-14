@@ -29,6 +29,7 @@ export interface StudentDailyLectureLog {
   teacher_notes?: string;
 
   log_date?: string;
+  created_at?: string;
 }
 
 /* ============================================================
@@ -219,58 +220,51 @@ console.log("================================");
     return [];
   }
 
-  const teacherUuids = Array.from(
-    new Set(
-      (assignments ?? [])
-        .map((item: any) => item.teacher_uuid)
-        .filter(Boolean)
-    )
-  );
+  const enrichedLogs = [];
 
-  let teacherMap = new Map<string, string>();
+for (const log of logs ?? []) {
 
-  if (teacherUuids.length > 0) {
-    const { data: teachers, error: teachersError } =
-      await (supabase as any)
-        .from("teachers_master")
-        .select("teacher_uuid, full_name")
-        .in("teacher_uuid", teacherUuids);
+  const assignment =
+    assignments.find(
+      (item: any) =>
+        item.id ===
+        log.teacher_assignment_uuid
+    );
 
-    if (teachersError) {
-      console.error("TEACHER FETCH ERROR", teachersError);
-    } else {
-      teacherMap = new Map(
-        (teachers ?? []).map((teacher: any) => [
-          teacher.teacher_uuid,
-          teacher.full_name ?? "Teacher",
-        ])
-      );
-    }
+
+  if (!assignment) {
+
+    enrichedLogs.push(log);
+
+    continue;
+
   }
 
-  const assignmentMap = new Map(
-    (assignments ?? []).map((assignment: any) => [
-      assignment.id,
-      assignment,
-    ])
+
+
+const {
+  data: teacher,
+  error: teacherError,
+} = await (supabase as any)
+  .from("teachers_master")
+  .select("*")
+  .eq(
+    "teacher_uuid",
+    assignment.teacher_uuid
   );
 
-  const enrichedLogs =
-    (logs ?? []).map((log: any) => {
-      const assignment: any =
-        assignmentMap.get(log.teacher_assignment_uuid);
 
-      return {
-        ...log,
-        teacher_uuid: log.teacher_uuid ?? assignment?.teacher_uuid,
-        school_uuid: log.school_uuid ?? assignment?.school_uuid,
-        class_name: log.class_name ?? assignment?.class_name,
-        section_name: log.section_name ?? assignment?.section_name,
-        subject_name: log.subject_name ?? assignment?.subject_name,
-        teacher_name:
-          teacherMap.get(assignment?.teacher_uuid) ?? "Teacher",
-      };
-    });
+enrichedLogs.push({
+
+  ...log,
+
+teacher_name:
+teacher?.[0]?.full_name ??
+"Teacher",
+
+});
+
+}
 
 console.log("================================");
 console.log("STEP 6 : FINAL LOGS");
@@ -284,6 +278,84 @@ return enrichedLogs;
 }
 
 /* ============================================================
+   CLASSROOM DATE NORMALIZATION
+============================================================ */
+
+/**
+ * Returns a YYYY-MM-DD calendar key in India Standard Time.
+ *
+ * teacher_daily_logs.log_date is a classroom BUSINESS DATE.
+ * Older rows may contain an ISO timestamp because the previous
+ * TeacherDailyLogDialog stored an ISO timestamp.
+ */
+function getIndiaCalendarDateKey() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find(
+    (part) => part.type === "year"
+  )?.value ?? "";
+
+  const month = parts.find(
+    (part) => part.type === "month"
+  )?.value ?? "";
+
+  const day = parts.find(
+    (part) => part.type === "day"
+  )?.value ?? "";
+
+  return `${year}-${month}-${day}`;
+}
+
+function toIndiaCalendarDateKey(value: unknown) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  const raw = String(value).trim();
+
+  if (!raw) {
+    return "";
+  }
+
+  // PostgreSQL DATE / already-normalized classroom date.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return raw;
+  }
+
+  const parsed = new Date(raw);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return raw.slice(0, 10);
+  }
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(parsed);
+
+  const year = parts.find(
+    (part) => part.type === "year"
+  )?.value ?? "";
+
+  const month = parts.find(
+    (part) => part.type === "month"
+  )?.value ?? "";
+
+  const day = parts.find(
+    (part) => part.type === "day"
+  )?.value ?? "";
+
+  return `${year}-${month}-${day}`;
+}
+
+/* ============================================================
    TODAY'S DAILY LECTURE LOGS
 ============================================================ */
 
@@ -292,19 +364,61 @@ export async function getTodaysLectureLogs() {
   const logs =
     await getStudentDailyLectureLogs();
 
-  const now = new Date();
-
   const today =
-    [
-      now.getFullYear(),
-      String(now.getMonth() + 1).padStart(2, "0"),
-      String(now.getDate()).padStart(2, "0"),
-    ].join("-");
+    getIndiaCalendarDateKey();
 
-  return logs.filter(
-    (log: any) =>
-      log.log_date === today
+  const todaysLogs =
+    logs.filter(
+      (log: any) => {
+        const logDateKey =
+          toIndiaCalendarDateKey(
+            log.log_date
+          );
+
+        const createdDateKey =
+          toIndiaCalendarDateKey(
+            log.created_at
+          );
+
+        // Primary rule: log_date is the classroom business date.
+        if (logDateKey === today) {
+          return true;
+        }
+
+        // Compatibility for legacy rows created with an ISO
+        // timestamp. The old UTC timestamp can have a UTC date
+        // one day behind the Indian classroom date.
+        const matchesLegacyCreatedAt =
+          logDateKey !== today &&
+          createdDateKey === today;
+
+        if (matchesLegacyCreatedAt) {
+          console.warn(
+            "DAILY LECTURE LOGS — LEGACY DATE FALLBACK",
+            {
+              id: log.id,
+              logDate: log.log_date,
+              createdAt: log.created_at,
+              today,
+            }
+          );
+        }
+
+        return matchesLegacyCreatedAt;
+      }
+    );
+
+  console.log(
+    "DAILY LECTURE LOGS — TODAY FILTER",
+    {
+      today,
+      totalLogs: logs.length,
+      todaysLogs,
+      matchedCount: todaysLogs.length,
+    }
   );
+
+  return todaysLogs;
 
 }
 
