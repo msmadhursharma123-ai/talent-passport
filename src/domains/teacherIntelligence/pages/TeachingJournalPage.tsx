@@ -94,6 +94,8 @@ setVoucherLoading
 const loadOverallClassroomComparison =
 async ()=>{
 
+try {
+
 const data =
 
 await getOverallClassroomComparison(
@@ -105,6 +107,17 @@ selectedMonth
 setOverallClassroomComparison(
 data
 );
+
+} catch(error) {
+
+console.error(
+"TEACHING JOURNAL CLASSROOM COMPARISON LOAD FAILED",
+error
+);
+
+setOverallClassroomComparison([]);
+
+}
 
 };
 
@@ -214,13 +227,31 @@ if(!teacher){
 return;
 }
 
+try {
+
 const data =
 
 await getTeacherAssignmentsByTeacher(
 teacher.teacherUuid
 );
 
-setAssignments(data);
+setAssignments(
+data.filter(
+(assignment) =>
+assignment.isActive !== false
+)
+);
+
+} catch(error) {
+
+console.error(
+"TEACHING JOURNAL ASSIGNMENTS LOAD FAILED",
+error
+);
+
+setAssignments([]);
+
+}
 
 }
 
@@ -248,7 +279,15 @@ console.error(
 error
 );
 
+/*
+Keep the last successful classroom metrics visible
+if a background refresh temporarily fails.
+*/
+if (
+voucherClassrooms.length === 0
+) {
 setVoucherClassrooms([]);
+}
 
 }finally{
 

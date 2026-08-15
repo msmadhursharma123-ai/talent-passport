@@ -196,12 +196,25 @@ count,
 
 }
 
+interface RadarBuildContext {
+  teacherConcepts?: string[];
+  teacherAssignmentUuid?: string;
+  actualClassName?: string;
+  actualSectionName?: string;
+  allStudents?: Array<{
+    student_uuid: string;
+    student_name: string;
+  }>;
+}
+
 async function buildFeedbackRadar(
 
 classroomFeedback:
 StudentFeedbackRow[],
 
-dailyLogUuid?: string
+dailyLogUuid?: string,
+
+context?: RadarBuildContext
 
 ): Promise<ClassroomFeedbackRadar> {
 
@@ -256,9 +269,15 @@ dailyLogUuid ??
 
 classroomFeedback[0]?.daily_log_uuid;
 
-const teacherConcepts:string[] = [];
+const teacherConcepts:string[] =
+  context?.teacherConcepts
+  ? [...context.teacherConcepts]
+  : [];
 
-if(actualDailyLogUuid){
+if(
+  teacherConcepts.length === 0 &&
+  actualDailyLogUuid
+){
 
 const { data: teacherLog } =
 
@@ -352,15 +371,37 @@ item.understanding_level !==
 
 
 const studentUuids =
-
-attentionStudents.map(
-
-(item)=>item.student_uuid
-
+Array.from(
+  new Set(
+    attentionStudents
+      .map(
+        (item)=>item.student_uuid
+      )
+      .filter(Boolean)
+  )
 );
 
-const { data: students } =
+const studentNameMap =
+new Map<string,string>();
 
+const studentSource =
+  context?.allStudents ?? [];
+
+studentSource.forEach(
+  (student:any)=>{
+    studentNameMap.set(
+      student.student_uuid,
+      student.student_name
+    );
+  }
+);
+
+if(
+  !context?.allStudents &&
+  studentUuids.length > 0
+){
+
+const { data: students } =
 await (supabase as any)
 .from("students_master")
 .select(
@@ -371,10 +412,6 @@ await (supabase as any)
 studentUuids
 );
 
-const studentNameMap =
-
-new Map<string,string>();
-
 students?.forEach((student:any)=>{
 
 studentNameMap.set(
@@ -384,6 +421,7 @@ student.student_name
 
 });
 
+}
 console.log("STUDENT NAME MAP");
 
 console.log(studentNameMap);
@@ -460,48 +498,37 @@ let totalStudentsInClass = 0;
 
 let pendingStudents:any[] = [];
 
-let actualClassName = "";
+let actualClassName =
+  context?.actualClassName ?? "";
 
-let actualSectionName = "";
+let actualSectionName =
+  context?.actualSectionName ?? "";
 
+let teacherAssignmentUuid =
+  context?.teacherAssignmentUuid ?? "";
 
-/*
----------------------------------------
-FETCH CLASS + SECTION FROM DAILY LOG
----------------------------------------
-*/
-
-let teacherAssignmentUuid = "";
-
-
-if(actualDailyLogUuid){
+if(
+  !teacherAssignmentUuid &&
+  actualDailyLogUuid
+){
 
 const {
-
 data:dailyLog
-
 } = await (supabase as any)
-
 .from("teacher_daily_logs")
-
 .select(
 "teacher_assignment_uuid"
 )
-
 .eq(
 "id",
 actualDailyLogUuid
 )
-
 .single();
 
-
 teacherAssignmentUuid =
-
 dailyLog?.teacher_assignment_uuid ?? "";
 
 }
-
 
 /*
 ---------------------------------------
@@ -509,41 +536,34 @@ FETCH CLASSROOM ASSIGNMENT
 ---------------------------------------
 */
 
-if(teacherAssignmentUuid){
+if(
+  (!actualClassName ||
+   !actualSectionName) &&
+  teacherAssignmentUuid
+){
 
 const {
-
 data:assignment
-
 } = await (supabase as any)
-
 .from(
 "teacher_classroom_assignments"
 )
-
 .select(
 "class_name,section_name"
 )
-
 .eq(
 "id",
 teacherAssignmentUuid
 )
-
 .single();
 
-
 actualClassName =
-
 assignment?.class_name ?? "";
 
-
 actualSectionName =
-
 assignment?.section_name ?? "";
 
 }
-
 
 /*
 ---------------------------------------
@@ -558,10 +578,15 @@ actualSectionName
 
 ){
 
+let allStudents =
+  context?.allStudents ?? [];
+
+if(
+  !context?.allStudents
+){
+
 const {
-
-data:allStudents
-
+data
 } = await (supabase as any)
 
 .from("students_master")
@@ -580,10 +605,14 @@ actualClassName
 actualSectionName
 );
 
+allStudents =
+  data ?? [];
+
+}
 
 totalStudentsInClass =
 
-allStudents?.length ?? 0;
+allStudents.length;
 
 
 /*
@@ -902,6 +931,145 @@ lectureFeedback,
 dailyLogUuid
 
 );
+
+}
+
+/*
+ =========================================================
+ FAST LECTURE RADAR
+ ---------------------------------------------------------
+ Used by Teacher Home. It keeps the exact radar calculation
+ but preloads the classroom context so buildFeedbackRadar()
+ does not repeat the same database lookups.
+ =========================================================
+*/
+export async function getLectureFeedbackRadarFast(
+  dailyLogUuid: string
+): Promise<ClassroomFeedbackRadar> {
+
+  const supabase = getSupabaseClient();
+
+  if (!supabase) {
+    throw new Error(
+      "Supabase not configured."
+    );
+  }
+
+  const [
+    classroomFeedback,
+    teacherLogResult,
+  ] = await Promise.all([
+
+    getLectureFeedbackRows(
+      dailyLogUuid
+    ),
+
+    (supabase as any)
+      .from("teacher_daily_logs")
+      .select(
+        "teacher_assignment_uuid,concepts_covered"
+      )
+      .eq(
+        "id",
+        dailyLogUuid
+      )
+      .single(),
+
+  ]);
+
+  const teacherLog =
+    teacherLogResult?.data;
+
+  const teacherAssignmentUuid =
+    teacherLog?.teacher_assignment_uuid ??
+    "";
+
+  let actualClassName = "";
+  let actualSectionName = "";
+
+  if (teacherAssignmentUuid) {
+
+    const {
+      data: assignment,
+      error: assignmentError,
+    } = await (supabase as any)
+      .from(
+        "teacher_classroom_assignments"
+      )
+      .select(
+        "class_name,section_name"
+      )
+      .eq(
+        "id",
+        teacherAssignmentUuid
+      )
+      .single();
+
+    if (assignmentError) {
+      throw assignmentError;
+    }
+
+    actualClassName =
+      assignment?.class_name ?? "";
+
+    actualSectionName =
+      assignment?.section_name ?? "";
+
+  }
+
+  let allStudents:
+    Array<{
+      student_uuid: string;
+      student_name: string;
+    }> = [];
+
+  if (
+    actualClassName &&
+    actualSectionName
+  ) {
+
+    const {
+      data: students,
+      error: studentsError,
+    } = await (supabase as any)
+      .from("students_master")
+      .select(
+        "student_uuid,student_name"
+      )
+      .eq(
+        "class_name",
+        actualClassName
+      )
+      .eq(
+        "section_name",
+        actualSectionName
+      );
+
+    if (studentsError) {
+      throw studentsError;
+    }
+
+    allStudents =
+      students ?? [];
+
+  }
+
+  return buildFeedbackRadar(
+    classroomFeedback,
+    dailyLogUuid,
+    {
+      teacherConcepts:
+        teacherLog?.concepts_covered ?? [],
+
+      teacherAssignmentUuid,
+
+      actualClassName,
+
+      actualSectionName,
+
+      allStudents,
+    }
+  );
 
 }
 

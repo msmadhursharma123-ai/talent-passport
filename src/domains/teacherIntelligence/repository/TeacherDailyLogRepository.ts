@@ -70,6 +70,64 @@ ascending:false
   return (data ?? []).map(mapTeacherDailyLog);
 }
 
+export async function getTeacherDailyLogsByAssignments(
+  teacherAssignmentUuids: string[]
+): Promise<TeacherDailyLog[]> {
+
+  const supabase = getSupabaseClient();
+
+  if (
+    !supabase ||
+    teacherAssignmentUuids.length === 0
+  ) {
+    return [];
+  }
+
+  const uniqueAssignmentUuids =
+    Array.from(
+      new Set(
+        teacherAssignmentUuids.filter(
+          Boolean
+        )
+      )
+    );
+
+  if (
+    uniqueAssignmentUuids.length === 0
+  ) {
+    return [];
+  }
+
+  const { data, error } =
+    await supabase
+      .from(TABLE_NAME)
+      .select("*")
+      .in(
+        "teacher_assignment_uuid",
+        uniqueAssignmentUuids
+      )
+      .order("log_date", {
+        ascending: false,
+      })
+      .order("created_at", {
+        ascending: false,
+      });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map(
+    mapTeacherDailyLog
+  );
+}
+
+/*
+ =========================================================
+ TODAY'S LOGS FOR ONE ASSIGNMENT
+ =========================================================
+*/
+
 export async function getTodaysTeacherDailyLogsByAssignment(
 teacherAssignmentUuid: string
 ): Promise<TeacherDailyLog[]> {

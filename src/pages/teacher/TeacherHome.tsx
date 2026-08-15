@@ -12,12 +12,16 @@ import type {
   TeacherAssignment,
 } from "../../domains/teacherIntelligence/types/TeacherAssignment";
 
+import type {
+  TeacherDailyLog,
+} from "../../domains/teacherIntelligence/types/TeacherDailyLog";
+
 import {
-  getTeacherDailyLogsByAssignment,
+  getTeacherDailyLogsByAssignments,
 } from "../../domains/teacherIntelligence/repository/TeacherDailyLogRepository";
 
 import {
-  getLectureFeedbackRadar,
+  getLectureFeedbackRadarFast,
 } from "../../domains/teacherIntelligence/repository/TeacherFeedbackAnalyticsRepository";
 
 
@@ -83,110 +87,304 @@ useState("Teacher");
 
   try {
 
-const teacher =
-getCurrentTeacher();
+    const teacher = getCurrentTeacher();
 
-if (!teacher) {
-    return;
-}
+    if (!teacher) {
+      setLoading(false);
+      return;
+    }
 
-setTeacherName(
-    teacher.teacherName || "Teacher"
-);
+    setTeacherName(
+      teacher.teacherName || "Teacher"
+    );
 
     const assignments =
       await getTeacherAssignmentsByTeacher(
         teacher.teacherUuid
       );
 
-    /* ==========================================
-       DEDUPLICATE CLASS + SECTION ASSIGNMENTS
-       ========================================== */
+    /*
+     =========================================================
+     FAST FIRST PAINT
+     ---------------------------------------------------------
+     The old implementation waited for every classroom's
+     daily-log query AND radar query before it rendered the
+     classroom table.
 
-    const uniqueAssignments =
+     We now:
+       1. Resolve assignments once.
+       2. Render classroom columns immediately.
+       3. Fetch all logs in one request.
+       4. Build classroom groups.
+       5. Calculate radars in parallel.
+
+     This keeps the existing classroom-level behaviour while
+     removing the serial N × (logs + radar) waterfall.
+     =========================================================
+    */
+
+    const activeAssignments =
       assignments.filter(
-        (assignment, index, array) => {
-
-          const classroom =
-            `${assignment.className}-${assignment.sectionName}`;
-
-          return (
-            array.findIndex(
-              (item) =>
-                `${item.className}-${item.sectionName}` ===
-                classroom
-            ) === index
-          );
-
-        }
-      );
-
-    const classroomData:
-      ClassroomDashboardData[] = [];
-
-    const allAssignedClassrooms =
-      uniqueAssignments.map(
         (assignment) =>
-          `${assignment.className}-${assignment.sectionName}`
+          assignment.isActive !== false
       );
 
-    const usedClassrooms: string[] = [];
-
-    /* ==========================================
-       CHECK EACH ASSIGNED CLASSROOM
-       ========================================== */
+    const classroomGroups =
+      new Map<
+        string,
+        TeacherAssignment[]
+      >();
 
     for (
-      const assignment
-      of uniqueAssignments
+      const assignment of activeAssignments
     ) {
 
       const classroom =
         `${assignment.className}-${assignment.sectionName}`;
 
-      const logs =
-        await getTeacherDailyLogsByAssignment(
-          assignment.id!
+      const group =
+        classroomGroups.get(classroom) ?? [];
+
+      group.push(assignment);
+
+      classroomGroups.set(
+        classroom,
+        group
+      );
+
+    }
+
+    const classroomEntries =
+      Array.from(
+        classroomGroups.entries()
+      );
+
+    const allAssignedClassrooms =
+      classroomEntries.map(
+        ([classroom]) => classroom
+      );
+
+    /*
+     Render the classroom headers immediately.
+     Metrics are allowed to arrive afterwards.
+    */
+    setTeacherAssignments(
+      classroomEntries.map(
+        ([, group]) => group[0]
+      )
+    );
+
+    setLoadingClassrooms(
+      allAssignedClassrooms
+    );
+
+    setDashboardData([]);
+
+    /*
+     The page shell/table can now paint without waiting
+     for analytics.
+    */
+    setLoading(false);
+
+    const assignmentIds =
+      activeAssignments
+        .map((assignment) => assignment.id)
+        .filter(
+          (id): id is string =>
+            Boolean(id)
         );
 
-      /* ========================================
-         NO DAILY LOG FOR THIS CLASSROOM
+    if (assignmentIds.length === 0) {
+      return;
+    }
 
-         Do NOT create dashboard analytics here.
+    /*
+     ONE database request for all teacher logs.
+    */
+    const allLogs =
+      await getTeacherDailyLogsByAssignments(
+        assignmentIds
+      );
 
-         If the teacher has never used Daily Log
-         anywhere, we will fall back to ALL
-         assigned classrooms after this loop.
-         ======================================== */
+    const logsByAssignment =
+      new Map<string, TeacherDailyLog[]>();
 
-      if (logs.length === 0) {
+    for (const log of allLogs) {
+
+      const assignmentId =
+        log.teacherAssignmentUuid;
+
+      const existing =
+        logsByAssignment.get(
+          assignmentId
+        ) ?? [];
+
+      existing.push(log);
+
+      logsByAssignment.set(
+        assignmentId,
+        existing
+      );
+
+    }
+
+    /*
+     Keep the existing rule:
+       - If at least one classroom has a log,
+         show only classrooms that have been used.
+       - If none has a log, keep all assigned classrooms.
+
+     Unlike the old implementation, a classroom can now have
+     multiple subject assignments and ANY of those assignments
+     can make the classroom "used".
+    */
+    const usedEntries =
+      classroomEntries.filter(
+        ([, group]) =>
+          group.some(
+            (assignment) =>
+              (logsByAssignment.get(
+                assignment.id!
+              ) ?? []).length > 0
+          )
+      );
+
+    const entriesToAnalyse =
+      usedEntries.length > 0
+        ? usedEntries
+        : classroomEntries;
+
+    setTeacherAssignments(
+      entriesToAnalyse.map(
+        ([, group]) => group[0]
+      )
+    );
+
+    const classroomNames =
+      entriesToAnalyse.map(
+        ([classroom]) => classroom
+      );
+
+    setLoadingClassrooms(
+      classroomNames
+    );
+
+    /*
+     Find the newest lecture across all subject
+     assignments belonging to each classroom.
+    */
+    const radarJobs =
+      entriesToAnalyse.map(
+        async ([classroom, group]) => {
+
+          const classroomLogs =
+            group
+              .flatMap(
+                (assignment) =>
+                  logsByAssignment.get(
+                    assignment.id!
+                  ) ?? []
+              )
+              .filter(
+                (log) => Boolean(log.id)
+              )
+              .sort(
+                (a, b) =>
+                  new Date(
+                    b.logDate ||
+                    b.createdAt ||
+                    ""
+                  ).getTime() -
+                  new Date(
+                    a.logDate ||
+                    a.createdAt ||
+                    ""
+                  ).getTime()
+              );
+
+          if (
+            classroomLogs.length === 0
+          ) {
+            return {
+              classroom,
+              data: null,
+            };
+          }
+
+          const latestLecture =
+            classroomLogs[0];
+
+          try {
+
+            const radar =
+              await getLectureFeedbackRadarFast(
+                latestLecture.id
+              );
+
+            return {
+              classroom,
+              latestLecture,
+              radar,
+            };
+
+          } catch (error) {
+
+            /*
+             A single broken classroom must never
+             blank the entire Teacher Home.
+            */
+            console.error(
+              "TEACHER HOME CLASSROOM RADAR FAILED",
+              classroom,
+              error
+            );
+
+            return {
+              classroom,
+              latestLecture,
+              radar: null,
+            };
+
+          }
+
+        }
+      );
+
+    const radarResults =
+      await Promise.all(
+        radarJobs
+      );
+
+    const classroomData:
+      ClassroomDashboardData[] = [];
+
+    for (
+      const result of radarResults
+    ) {
+
+      if (
+        !result.radar ||
+        !result.latestLecture
+      ) {
         continue;
       }
 
-      /* ========================================
-         THIS CLASSROOM HAS BEEN USED
-         ======================================== */
-
-      usedClassrooms.push(
-        classroom
-      );
-
-      const latestLecture =
-        logs[0];
-
       const radar =
-        await getLectureFeedbackRadar(
-          latestLecture.id
-        );
+        result.radar;
 
       const totalStudents =
-        radar.totalStudents || 1;
+        radar.totalStudents || 0;
+
+      const percentageBase =
+        totalStudents > 0
+          ? totalStudents
+          : 1;
 
       const completelyPercentage =
         Math.round(
           (
             radar.completelyUnderstood /
-            totalStudents
+            percentageBase
           ) * 100
         );
 
@@ -194,7 +392,7 @@ setTeacherName(
         Math.round(
           (
             radar.partiallyUnderstood /
-            totalStudents
+            percentageBase
           ) * 100
         );
 
@@ -202,7 +400,7 @@ setTeacherName(
         Math.round(
           (
             radar.didNotUnderstand /
-            totalStudents
+            percentageBase
           ) * 100
         );
 
@@ -214,20 +412,17 @@ setTeacherName(
       const studentsAttention =
         radar.studentsRequiringAttention
           ?.length > 0
-
           ? radar.studentsRequiringAttention
               .map(
                 (student: any) =>
                   student.studentName
               )
               .join(", ")
-
           : "-";
 
       const studentsNotUnderstood =
         radar.studentsRequiringAttention
           ?.length > 0
-
           ? radar.studentsRequiringAttention
               .filter(
                 (student: any) =>
@@ -241,15 +436,15 @@ setTeacherName(
                   student.studentName
               )
               .join(", ")
-
           : "-";
 
       classroomData.push({
 
-        classroom,
+        classroom:
+          result.classroom,
 
         latestTopic:
-          latestLecture.topicName,
+          result.latestLecture.topicName,
 
         studentsFilledFeedback:
           `${
@@ -291,54 +486,6 @@ setTeacherName(
 
     }
 
-    /* ==========================================
-       FINAL DASHBOARD CLASSROOM RULE
-
-       ZERO used classrooms:
-       → New teacher
-       → Show every assigned classroom
-
-       ONE OR MORE used classrooms:
-       → Active teacher
-       → Show only classrooms with Daily Logs
-       ========================================== */
-
-    if (usedClassrooms.length === 0) {
-
-      setTeacherAssignments(
-        uniqueAssignments
-      );
-
-      setLoadingClassrooms(
-        allAssignedClassrooms
-      );
-
-    } else {
-
-      const usedAssignments =
-        uniqueAssignments.filter(
-          (assignment) => {
-
-            const classroom =
-              `${assignment.className}-${assignment.sectionName}`;
-
-            return usedClassrooms.includes(
-              classroom
-            );
-
-          }
-        );
-
-      setTeacherAssignments(
-        usedAssignments
-      );
-
-      setLoadingClassrooms(
-        usedClassrooms
-      );
-
-    }
-
     setDashboardData(
       classroomData
     );
@@ -352,11 +499,10 @@ setTeacherName(
       error
     );
 
-  }
-
-  finally {
-
-    setLoading(false);
+    /*
+     Do not destroy already-rendered assignment
+     headers if analytics fail.
+    */
 
   }
 

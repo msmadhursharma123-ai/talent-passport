@@ -22,101 +22,55 @@ SUBMIT DAILY FEEDBACK
 ========================================================= */
 
 export async function submitStudentDailyFeedback(
-
-dailyLogUuid:string,
-teacherUuid:string,
-schoolUuid:string,
-className:string,
-sectionName:string,
-subjectName:string,
-topicName:string,
-
-understandingLevel:string,
-
-conceptsNotUnderstood:string[],
-
-additionalNote:string | null
-
+  dailyLogUuid: string,
+  teacherUuid: string,
+  schoolUuid: string,
+  className: string,
+  sectionName: string,
+  subjectName: string,
+  topicName: string,
+  understandingLevel: string,
+  conceptsNotUnderstood: string[],
+  additionalNote: string | null
 ) {
+  console.log("REPOSITORY HIT");
 
-console.log("REPOSITORY HIT");
-    
   const supabase = getSupabaseClient();
-
   const identity = requireIdentity();
+  const hasDoubt = conceptsNotUnderstood.length > 0;
 
-
-const hasDoubt =
-
-conceptsNotUnderstood.length > 0;
-
-
-    
- const { data, error } = await (supabase as any)
-
+  const { data, error } = await (supabase as any)
     .from("student_daily_feedback")
-
     .insert({
-
       daily_log_uuid: dailyLogUuid,
-
       student_uuid: identity.studentUuid,
-
       teacher_uuid: teacherUuid,
-
       school_uuid: schoolUuid,
-
       class_name: className,
-
       section_name: sectionName,
-
       subject_name: subjectName,
-
       topic_name: topicName,
-
- understanding_level:
-understandingLevel,
-
-concepts_not_understood:
-conceptsNotUnderstood,
-
-has_doubt:
-hasDoubt,
-
-additional_note:
-additionalNote,
-
+      understanding_level: understandingLevel,
+      concepts_not_understood: conceptsNotUnderstood,
+      has_doubt: hasDoubt,
+      additional_note: additionalNote,
     });
 
+  if (error) {
+    logRepositoryError("INSERT ERROR", error);
+    throw error;
+  }
 
-if (error) {
+  console.log("INSERT SUCCESS");
+  console.log(data);
 
-logRepositoryError(
-"INSERT ERROR",
-error
-);
-
-throw error;
-
-}
-
-
-console.log(
-"INSERT SUCCESS"
-);
-
-console.log(data);
-
-
+  // Preserve the original public repository contract.
   return true;
-
 }
-
 
 
 /* =========================================================
-
-HAS ALREADY SUBMITTED
+   HAS ALREADY SUBMITTED
 
 ========================================================= */
 
@@ -208,6 +162,94 @@ export async function getStudentFeedbackByLecture(
 
 }
 
+
+
+/* =========================================================
+
+BATCH FEEDBACK FOR MULTIPLE LECTURES
+
+Performance upgrade: the Daily Lecture Feedback page uses this
+function instead of making one database request per lecture.
+The existing getStudentFeedbackByLecture function remains unchanged
+for every existing caller elsewhere in the project.
+
+========================================================= */
+
+export async function getStudentFeedbackForLectures(
+
+  dailyLogUuids: string[]
+
+) {
+
+  const supabase = getSupabaseClient();
+
+  const identity = requireIdentity();
+
+
+  const ids = Array.from(
+
+    new Set(
+
+      (dailyLogUuids ?? [])
+
+        .filter(Boolean)
+
+        .map(String)
+
+    )
+
+  );
+
+
+  if (ids.length === 0) {
+
+    return [];
+
+  }
+
+
+  const { data, error } = await (supabase as any)
+
+    .from("student_daily_feedback")
+
+    .select(
+
+      "id,daily_log_uuid,student_uuid,teacher_uuid,school_uuid,class_name,section_name,subject_name,topic_name,understanding_level,concepts_not_understood,has_doubt,additional_note,submitted_at"
+
+    )
+
+    .eq(
+
+      "student_uuid",
+
+      identity.studentUuid
+
+    )
+
+    .in(
+
+      "daily_log_uuid",
+
+      ids
+
+    );
+
+
+  if (error) {
+
+    logRepositoryError(
+      "BATCH FEEDBACK FETCH ERROR",
+      error
+    );
+
+    throw error;
+
+  }
+
+
+  return data ?? [];
+
+}
 
 
 /* =========================================================

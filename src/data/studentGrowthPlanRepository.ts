@@ -1,8 +1,5 @@
 import { getSupabaseClient } from "../supabaseClient";
-
-import {
-  requireIdentity,
-} from "../services/identityService";
+import { requireIdentity } from "../services/identityService";
 
 /* ============================================================
    TYPES
@@ -11,25 +8,285 @@ import {
 export interface StudentDailyLectureLog {
   id: string;
   teacher_assignment_uuid: string;
+  teacher_uuid?: string;
 
   teacher_name?: string;
 
+  school_uuid?: string;
   school_name?: string;
   class_name?: string;
   section_name?: string;
 
   subject_name?: string;
   topic_name?: string;
+  concepts_covered?: string[];
 
   page_from?: number;
   page_to?: number;
 
   homework_given?: boolean;
-  activity_conducted?: string;
+  activity_conducted?: string | boolean;
   teacher_notes?: string;
 
   log_date?: string;
   created_at?: string;
+  updated_at?: string;
+}
+
+interface StudentAcademicContext {
+  studentUuid: string;
+  schoolUuid: string;
+  schoolName: string;
+  className: string;
+  sectionName: string;
+}
+
+const LOG_SELECT = `
+  id,
+  teacher_assignment_uuid,
+  topic_name,
+  concepts_covered,
+  page_from,
+  page_to,
+  homework_given,
+  activity_conducted,
+  teacher_notes,
+  log_date
+`;
+
+const ASSIGNMENT_SELECT = `
+  id,
+  teacher_uuid,
+  school_uuid,
+  class_name,
+  section_name,
+  subject_name
+`;
+
+// A page can ask for the same student context/assignment set several
+// times (daily feed, subject dropdown, credit summary). Keep the
+// resolved values for this browser session so those calls do not
+// repeatedly hit students_master and teacher_classroom_assignments.
+let cachedContext: StudentAcademicContext | null = null;
+let cachedContextStudentUuid = "";
+let cachedContextPromise: Promise<StudentAcademicContext | null> | null = null;
+let cachedAssignmentsKey = "";
+let cachedAssignments: any[] | null = null;
+let cachedAssignmentsPromise: Promise<any[]> | null = null;
+let cachedLectureLogs: any[] | null = null;
+let cachedLectureLogsStudentUuid = "";
+let cachedLectureLogsPromise: Promise<any[]> | null = null;
+
+/* ============================================================
+   SHARED STUDENT CONTEXT
+
+   The old implementation performed:
+   student -> school -> assignments -> logs -> teacher query #1
+   -> teacher query #2 -> teacher query #3 ...
+
+   The teacher lookups were the biggest avoidable N+1 cost.
+   This helper keeps the same identity resolution while allowing
+   the rest of the repository to batch the database work.
+============================================================ */
+
+async function getStudentAcademicContext(): Promise<StudentAcademicContext | null> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+
+  const identity = requireIdentity();
+
+  if (
+    cachedContext &&
+    cachedContextStudentUuid === identity.studentUuid
+  ) {
+    return cachedContext;
+  }
+
+  if (cachedContextPromise) {
+    return await cachedContextPromise;
+  }
+
+  cachedContextPromise = (async () => {
+    const { data: student, error: studentError } = await (supabase as any)
+      .from("students_master")
+      .select("student_uuid,school_uuid,school_name,class_name,section_name")
+      .eq("student_uuid", identity.studentUuid)
+      .single();
+
+    if (studentError || !student) {
+      console.error("STUDENT FETCH ERROR", studentError);
+      return null;
+    }
+
+    let schoolUuid = student.school_uuid ?? "";
+
+    if (!schoolUuid && student.school_name) {
+      const { data: school, error: schoolError } = await (supabase as any)
+        .from("schools_master")
+        .select("school_uuid")
+        .eq("school_name", student.school_name)
+        .single();
+
+      if (schoolError || !school) {
+        console.error("SCHOOL FETCH ERROR", schoolError);
+        return null;
+      }
+
+      schoolUuid = school.school_uuid;
+    }
+
+    if (!schoolUuid) {
+      console.error("STUDENT SCHOOL UUID MISSING");
+      return null;
+    }
+
+    cachedContext = {
+      studentUuid: identity.studentUuid,
+      schoolUuid: String(schoolUuid),
+      schoolName: student.school_name ?? "",
+      className: student.class_name ?? "",
+      sectionName: student.section_name ?? "",
+    };
+    cachedContextStudentUuid = identity.studentUuid;
+
+    return cachedContext;
+  })();
+
+  try {
+    return await cachedContextPromise;
+  } finally {
+    cachedContextPromise = null;
+  }
+}
+
+async function getStudentAssignments(
+  context: StudentAcademicContext
+) {
+  const supabase = getSupabaseClient();
+  if (!supabase) return [];
+
+  const cacheKey = `${context.schoolUuid}|${context.className}|${context.sectionName}`;
+
+  if (cachedAssignments && cachedAssignmentsKey === cacheKey) {
+    return cachedAssignments;
+  }
+
+  if (cachedAssignmentsPromise) {
+    return await cachedAssignmentsPromise;
+  }
+
+  cachedAssignmentsPromise = (async () => {
+    const { data, error } = await (supabase as any)
+      .from("teacher_classroom_assignments")
+      .select(ASSIGNMENT_SELECT)
+      .eq("school_uuid", context.schoolUuid)
+      .eq("class_name", context.className)
+      .eq("section_name", context.sectionName);
+
+    if (error) {
+      console.error("ASSIGNMENT FETCH ERROR", error);
+      return [];
+    }
+
+    cachedAssignments = data ?? [];
+    cachedAssignmentsKey = cacheKey;
+
+    return cachedAssignments;
+  })();
+
+  try {
+    return await cachedAssignmentsPromise;
+  } finally {
+    cachedAssignmentsPromise = null;
+  }
+}
+
+async function enrichLogsWithTeacherNames(
+  logs: any[],
+  assignments: any[]
+) {
+  const supabase = getSupabaseClient();
+  if (!supabase || logs.length === 0) return logs;
+
+  const assignmentMap = new Map(
+    assignments.map((assignment: any) => [
+      String(assignment.id),
+      assignment,
+    ])
+  );
+
+  const teacherUuids = Array.from(
+    new Set(
+      logs
+        .map((log: any) => {
+          const assignment = assignmentMap.get(
+            String(log.teacher_assignment_uuid)
+          );
+          return assignment?.teacher_uuid ?? log.teacher_uuid ?? null;
+        })
+        .filter(Boolean)
+        .map(String)
+    )
+  );
+
+  const teacherMap = new Map<string, string>();
+
+  if (teacherUuids.length > 0) {
+    const { data: teachers, error } = await (supabase as any)
+      .from("teachers_master")
+      .select("teacher_uuid,full_name")
+      .in("teacher_uuid", teacherUuids);
+
+    if (error) {
+      console.warn("TEACHER BATCH FETCH FAILED", error);
+    } else {
+      for (const teacher of teachers ?? []) {
+        teacherMap.set(
+          String(teacher.teacher_uuid),
+          teacher.full_name ?? "Teacher"
+        );
+      }
+    }
+  }
+
+  return logs.map((log: any) => {
+    const assignment = assignmentMap.get(
+      String(log.teacher_assignment_uuid)
+    );
+
+    const teacherUuid =
+      assignment?.teacher_uuid ??
+      log.teacher_uuid ??
+      "";
+
+    return {
+      ...log,
+      teacher_uuid: teacherUuid,
+      school_uuid:
+        assignment?.school_uuid ??
+        log.school_uuid ??
+        "",
+      school_name:
+        log.school_name ??
+        "",
+      class_name:
+        assignment?.class_name ??
+        log.class_name ??
+        "",
+      section_name:
+        assignment?.section_name ??
+        log.section_name ??
+        "",
+      subject_name:
+        assignment?.subject_name ??
+        log.subject_name ??
+        "",
+      teacher_name:
+        teacherMap.get(String(teacherUuid)) ??
+        log.teacher_name ??
+        "Teacher",
+    };
+  });
 }
 
 /* ============================================================
@@ -38,300 +295,79 @@ export interface StudentDailyLectureLog {
 
 export async function getStudentDailyLectureLogs() {
   const supabase = getSupabaseClient();
+  if (!supabase) return [];
 
-  if (!supabase) {
-    return [];
-  }
-
-const identity = requireIdentity();
-
-/* --------------------------------------------------------
-   FETCH LATEST STUDENT ACADEMIC MAPPING
--------------------------------------------------------- */
-
-const {
-  data: student,
-  error: studentError,
-} = await (supabase as any)
-  .from("students_master")
-  .select(
-    "school_name, class_name, section_name"
-  )
-  .eq(
-    "student_uuid",
-    identity.studentUuid
-  )
-  .single();
-
-if (studentError || !student) {
-  console.error(
-    "STUDENT FETCH ERROR",
-    studentError
-  );
-
-  return [];
-}
-
-console.log("LATEST STUDENT DATA");
-console.log(student);
-
-const schoolName =
-  student.school_name;
-
-const className =
-  student.class_name;
-
-const sectionName =
-  student.section_name;
-
-console.log("================================");
-console.log("STEP 1 : STUDENT DETAILS");
-console.log("Student UUID :", identity.studentUuid);
-console.log("School Name :", schoolName);
-console.log("Class Name :", className);
-console.log("Section Name :", sectionName);
-console.log("================================");
-
-  /* --------------------------------------------------------
-     STEP 1
-
-     FETCH SCHOOL UUID FROM schools_master
-  -------------------------------------------------------- */
-
-  const {
-    data: school,
-    error: schoolError,
-  } = await (supabase as any)
-    .from("schools_master")
-    .select("school_uuid")
-    .eq("school_name", schoolName)
-    .single();
-
-  if (schoolError || !school) {
-    console.error(
-      "SCHOOL FETCH ERROR",
-      schoolError
-    );
-
-    return [];
-  }
-
-  const schoolUuid = school.school_uuid;
-
-console.log("================================");
-console.log("STEP 2 : SCHOOL UUID");
-console.log("School UUID :", schoolUuid);
-console.log("================================");
-
-console.log("SCHOOL DATA");
-console.log(school);
-
-  /* --------------------------------------------------------
-     STEP 2
-
-     FETCH TEACHER ASSIGNMENTS
-  -------------------------------------------------------- */
-
-  const {
-    data: assignments,
-    error: assignmentError,
-  } = await (supabase as any)
-    .from("teacher_classroom_assignments")
-    .select("*")
-    .eq("school_uuid", schoolUuid)
-    .eq("class_name", className)
-    .eq("section_name", sectionName);
-
-console.log("================================");
-console.log("STEP 3 : TEACHER ASSIGNMENTS");
-console.log(assignments);
-console.log("================================");
-
-console.log("TEACHER ASSIGNMENTS");
-console.log(assignments);
-
-  if (assignmentError) {
-    console.error(
-      "ASSIGNMENT FETCH ERROR",
-      assignmentError
-    );
-
-    return [];
-  }
+  const context = await getStudentAcademicContext();
+  if (!context) return [];
 
   if (
-    !assignments ||
-    assignments.length === 0
+    cachedLectureLogs &&
+    cachedLectureLogsStudentUuid === context.studentUuid
   ) {
-    return [];
+    return cachedLectureLogs;
   }
 
+  if (cachedLectureLogsPromise) {
+    return await cachedLectureLogsPromise;
+  }
 
+  cachedLectureLogsPromise = (async () => {
+    const assignments = await getStudentAssignments(context);
+    if (assignments.length === 0) {
+      cachedLectureLogs = [];
+      cachedLectureLogsStudentUuid = context.studentUuid;
+      return [];
+    }
 
-  /* --------------------------------------------------------
-     STEP 3
+    const assignmentIds = assignments
+      .map((item: any) => item.id)
+      .filter(Boolean);
 
-     EXTRACT TEACHER ASSIGNMENT UUIDs
-  -------------------------------------------------------- */
+    const { data: logs, error: logsError } = await (supabase as any)
+      .from("teacher_daily_logs")
+      .select(LOG_SELECT)
+      .in("teacher_assignment_uuid", assignmentIds)
+      .order("log_date", { ascending: false });
 
-  const assignmentIds = assignments.map(
-    (item: any) => item.id
-  );
+    if (logsError) {
+      console.error("LECTURE LOG FETCH ERROR", logsError);
+      return [];
+    }
 
-console.log("================================");
-console.log("STEP 4 : ASSIGNMENT UUIDS");
-console.log(assignmentIds);
-console.log("================================");
-
-console.log("ASSIGNMENT IDS");
-console.log(assignmentIds);
-
-  /* --------------------------------------------------------
-     STEP 4
-
-     FETCH DAILY LOGS
-  -------------------------------------------------------- */
-
-  const {
-    data: logs,
-    error: logsError,
-  } = await (supabase as any)
-    .from("teacher_daily_logs")
-    .select("*")
-    .in(
-      "teacher_assignment_uuid",
-      assignmentIds
-    )
-    .order("log_date", {
-      ascending: false,
-    });
-
-console.log("================================");
-console.log("STEP 5 : DAILY LOGS");
-console.log(logs);
-console.log("================================");
-
-  if (logsError) {
-    console.error(
-      "LECTURE LOG FETCH ERROR",
-      logsError
+    const enrichedLogs = await enrichLogsWithTeacherNames(
+      logs ?? [],
+      assignments
     );
 
-    return [];
+    cachedLectureLogs = enrichedLogs;
+    cachedLectureLogsStudentUuid = context.studentUuid;
+
+    return enrichedLogs;
+  })();
+
+  try {
+    return await cachedLectureLogsPromise;
+  } finally {
+    cachedLectureLogsPromise = null;
   }
-
-  const enrichedLogs = [];
-
-for (const log of logs ?? []) {
-
-  const assignment =
-    assignments.find(
-      (item: any) =>
-        item.id ===
-        log.teacher_assignment_uuid
-    );
-
-
-  if (!assignment) {
-
-    enrichedLogs.push(log);
-
-    continue;
-
-  }
-
-
-
-const {
-  data: teacher,
-  error: teacherError,
-} = await (supabase as any)
-  .from("teachers_master")
-  .select("*")
-  .eq(
-    "teacher_uuid",
-    assignment.teacher_uuid
-  );
-
-
-enrichedLogs.push({
-
-  ...log,
-
-teacher_name:
-teacher?.[0]?.full_name ??
-"Teacher",
-
-});
-
-}
-
-console.log("================================");
-console.log("STEP 6 : FINAL LOGS");
-console.table(enrichedLogs);
-console.log("================================");
-
-return enrichedLogs;
-
-
-
 }
 
 /* ============================================================
    CLASSROOM DATE NORMALIZATION
 ============================================================ */
 
-/**
- * Returns a YYYY-MM-DD calendar key in India Standard Time.
- *
- * teacher_daily_logs.log_date is a classroom BUSINESS DATE.
- * Older rows may contain an ISO timestamp because the previous
- * TeacherDailyLogDialog stored an ISO timestamp.
- */
-function getIndiaCalendarDateKey() {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
+function getIndiaCalendarDateKey(value?: unknown) {
+  const source =
+    value === undefined
+      ? new Date()
+      : value;
 
-  const year = parts.find(
-    (part) => part.type === "year"
-  )?.value ?? "";
+  const parsed =
+    source instanceof Date
+      ? source
+      : new Date(String(source));
 
-  const month = parts.find(
-    (part) => part.type === "month"
-  )?.value ?? "";
-
-  const day = parts.find(
-    (part) => part.type === "day"
-  )?.value ?? "";
-
-  return `${year}-${month}-${day}`;
-}
-
-function toIndiaCalendarDateKey(value: unknown) {
-  if (value === null || value === undefined) {
-    return "";
-  }
-
-  const raw = String(value).trim();
-
-  if (!raw) {
-    return "";
-  }
-
-  // PostgreSQL DATE / already-normalized classroom date.
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-    return raw;
-  }
-
-  const parsed = new Date(raw);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return raw.slice(0, 10);
-  }
+  if (Number.isNaN(parsed.getTime())) return "";
 
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kolkata",
@@ -340,19 +376,41 @@ function toIndiaCalendarDateKey(value: unknown) {
     day: "2-digit",
   }).formatToParts(parsed);
 
-  const year = parts.find(
-    (part) => part.type === "year"
-  )?.value ?? "";
-
-  const month = parts.find(
-    (part) => part.type === "month"
-  )?.value ?? "";
-
-  const day = parts.find(
-    (part) => part.type === "day"
-  )?.value ?? "";
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
 
   return `${year}-${month}-${day}`;
+}
+
+function toIndiaCalendarDateKey(value: unknown) {
+  if (value === null || value === undefined) return "";
+
+  const raw = String(value).trim();
+  if (!raw) return "";
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return raw;
+  }
+
+  return getIndiaCalendarDateKey(raw);
+}
+
+/*
+   TeacherDailyLogDialog writes log_date as an ISO timestamp.
+   Build database boundaries in IST so a log created late/early in
+   the India calendar day is not shifted into the wrong date.
+*/
+function getIndiaDateRangeUtc(startDate: string, endDate: string) {
+  const start = new Date(`${startDate}T00:00:00+05:30`);
+  const endExclusive = new Date(`${endDate}T00:00:00+05:30`);
+
+  endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+
+  return {
+    startIso: start.toISOString(),
+    endExclusiveIso: endExclusive.toISOString(),
+  };
 }
 
 /* ============================================================
@@ -360,119 +418,174 @@ function toIndiaCalendarDateKey(value: unknown) {
 ============================================================ */
 
 export async function getTodaysLectureLogs() {
+  const supabase = getSupabaseClient();
+  if (!supabase) return [];
 
-  const logs =
-    await getStudentDailyLectureLogs();
+  const context = await getStudentAcademicContext();
+  if (!context) return [];
 
-  const today =
-    getIndiaCalendarDateKey();
+  const assignments = await getStudentAssignments(context);
+  if (assignments.length === 0) return [];
 
-  const todaysLogs =
-    logs.filter(
-      (log: any) => {
-        const logDateKey =
-          toIndiaCalendarDateKey(
-            log.log_date
-          );
+  const assignmentIds = assignments
+    .map((item: any) => item.id)
+    .filter(Boolean);
 
-        const createdDateKey =
-          toIndiaCalendarDateKey(
-            log.created_at
-          );
+  const today = getIndiaCalendarDateKey();
+  if (!today) return [];
 
-        // Primary rule: log_date is the classroom business date.
-        if (logDateKey === today) {
-          return true;
-        }
+  const { startIso, endExclusiveIso } = getIndiaDateRangeUtc(today, today);
 
-        // Compatibility for legacy rows created with an ISO
-        // timestamp. The old UTC timestamp can have a UTC date
-        // one day behind the Indian classroom date.
-        const matchesLegacyCreatedAt =
-          logDateKey !== today &&
-          createdDateKey === today;
+  // IMPORTANT: teacher_daily_logs does not have teacher_uuid, school_uuid,
+  // school_name, subject_name, class_name or section_name as persisted log
+  // columns. Those values are resolved from teacher_classroom_assignments.
+  // Query only the actual teacher_daily_logs columns and enrich afterwards.
+  const { data: logs, error } = await (supabase as any)
+    .from("teacher_daily_logs")
+    .select(LOG_SELECT)
+    .in("teacher_assignment_uuid", assignmentIds)
+    .gte("log_date", startIso)
+    .lt("log_date", endExclusiveIso)
+    .order("log_date", { ascending: false });
 
-        if (matchesLegacyCreatedAt) {
-          console.warn(
-            "DAILY LECTURE LOGS — LEGACY DATE FALLBACK",
-            {
-              id: log.id,
-              logDate: log.log_date,
-              createdAt: log.created_at,
-              today,
-            }
-          );
-        }
+  if (error) {
+    console.error("TODAY LECTURE LOG FETCH ERROR", error);
+    throw error;
+  }
 
-        return matchesLegacyCreatedAt;
-      }
-    );
+  return enrichLogsWithTeacherNames(logs ?? [], assignments);
+}
 
-  console.log(
-    "DAILY LECTURE LOGS — TODAY FILTER",
-    {
-      today,
-      totalLogs: logs.length,
-      todaysLogs,
-      matchedCount: todaysLogs.length,
-    }
+/* ============================================================
+   SUBJECT OPTIONS
+============================================================ */
+
+export async function getStudentSubjects() {
+  // Subjects must come from subjects for which the student has actually
+  // received at least one teacher_daily_logs record — not merely from
+  // classroom assignments.
+  const logs = await getStudentDailyLectureLogs();
+
+  const subjects: string[] = Array.from(
+    new Set(
+      (logs ?? [])
+        .map((log: any) => String(log.subject_name ?? "").trim())
+        .filter((subject: string) => Boolean(subject))
+    )
   );
 
-  return todaysLogs;
+  return subjects.sort((a, b) => a.localeCompare(b));
+}
 
+/* ============================================================
+   FEEDBACK STATEMENT DATA
+
+   This is intentionally a dedicated fetch path. The statement is
+   generated only after the student clicks Fetch Feedback Records,
+   so opening Daily Feedback does not pay this historical-query cost.
+============================================================ */
+
+export async function getStudentFeedbackStatementData(
+  startDate: string,
+  endDate: string,
+  subjectName: string
+) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return { logs: [], feedback: [] };
+  }
+
+  const context = await getStudentAcademicContext();
+  if (!context) {
+    return { logs: [], feedback: [] };
+  }
+
+  const assignments = await getStudentAssignments(context);
+  if (assignments.length === 0) {
+    return { logs: [], feedback: [] };
+  }
+
+  const assignmentIds = assignments
+    .map((item: any) => item.id)
+    .filter(Boolean);
+
+  const { startIso, endExclusiveIso } = getIndiaDateRangeUtc(
+    startDate,
+    endDate
+  );
+
+  // Fetch the records from the same teacher_daily_logs source that powers
+  // the daily lecture feed. Do not select/filter on teacher_uuid or
+  // subject_name here because those are resolved from the assignment.
+  const { data: rawLogs, error: logsError } = await (supabase as any)
+    .from("teacher_daily_logs")
+    .select(LOG_SELECT)
+    .in("teacher_assignment_uuid", assignmentIds)
+    .gte("log_date", startIso)
+    .lt("log_date", endExclusiveIso)
+    .order("log_date", { ascending: true });
+
+  if (logsError) {
+    console.error("FEEDBACK STATEMENT LOG FETCH ERROR", logsError);
+    throw logsError;
+  }
+
+  const enrichedLogs = await enrichLogsWithTeacherNames(
+    rawLogs ?? [],
+    assignments
+  );
+
+  const logRows = enrichedLogs.filter((log: any) =>
+    String(log.subject_name ?? "").trim() === String(subjectName).trim()
+  );
+
+  const logIds = logRows
+    .map((log: any) => log.id)
+    .filter(Boolean);
+
+  if (logIds.length === 0) {
+    return { logs: [], feedback: [] };
+  }
+
+  const { data: feedback, error: feedbackError } = await (supabase as any)
+    .from("student_daily_feedback")
+    .select(
+      "id,daily_log_uuid,understanding_level,concepts_not_understood,submitted_at,additional_note"
+    )
+    .eq("student_uuid", context.studentUuid)
+    .in("daily_log_uuid", logIds);
+
+  if (feedbackError) {
+    console.error("FEEDBACK STATEMENT RESPONSE FETCH ERROR", feedbackError);
+    throw feedbackError;
+  }
+
+  return {
+    logs: logRows,
+    feedback: feedback ?? [],
+  };
 }
 
 /* ============================================================
    CONTINUOUS CALENDAR
-
-   FUTURE IMPLEMENTATION
 ============================================================ */
 
-export async function
-getStudentMonthlyLectureLogs() {
-
-  const logs =
-    await getStudentDailyLectureLogs();
-
-  return logs;
-
+export async function getStudentMonthlyLectureLogs() {
+  return await getStudentDailyLectureLogs();
 }
 
 /* ============================================================
    PROGRESS TRACKER
-
-   FUTURE IMPLEMENTATION
 ============================================================ */
 
-export async function
-getProgressTrackerData() {
-
+export async function getProgressTrackerData() {
   return null;
-
 }
 
 /* ============================================================
    STUDENT FEEDBACK
-
-   FUTURE IMPLEMENTATION
 ============================================================ */
 
-export async function
-submitStudentLectureFeedback() {
-
+export async function submitStudentLectureFeedback() {
   return null;
-
-}
-
-/* ============================================================
-   SUBJECTS
-
-   FUTURE IMPLEMENTATION
-============================================================ */
-
-export async function
-getStudentSubjects() {
-
-  return [];
-
 }

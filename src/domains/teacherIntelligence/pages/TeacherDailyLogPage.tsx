@@ -18,7 +18,7 @@ loadTodaysTeacherLogsByAssignment,
 } from "../viewmodels/TeacherDailyLogViewModel";
 
 import {
-  getTeacherDailyLogsByAssignment,
+  getTeacherDailyLogsByAssignments,
 } from "../repository/TeacherDailyLogRepository";
 
 import {
@@ -62,22 +62,15 @@ loadPendingDoubtLedger();
 }, []);
 
 async function fetchLogs() {
-
   setLogsLoading(true);
 
   try {
-
-    const teacher =
-      getCurrentTeacher();
+    const teacher = getCurrentTeacher();
 
     if (!teacher) {
-
       setLogs([]);
-
       setDoubtLedgerClassrooms([]);
-
       return;
-
     }
 
     const assignments =
@@ -85,211 +78,137 @@ async function fetchLogs() {
         teacher.teacherUuid
       );
 
-    /* ==========================================
-       UNIQUE CLASS + SECTION ASSIGNMENTS
-       ========================================== */
+    /* ==========================================================
+       IMPORTANT REGRESSION FIX
 
-    const uniqueAssignments =
-      assignments.filter(
-        (assignment, index, array) => {
+       A teacher can have multiple subject assignments for the
+       same classroom. We must NEVER pick only the first
+       class-section assignment when fetching lecture records.
 
-          const classroom =
-            `${assignment.className}-${assignment.sectionName}`;
+       Teacher Home / Teaching Journal may aggregate by classroom,
+       but Teacher Daily Log must read ALL assignment UUIDs because
+       a published lecture belongs to its exact assignment UUID.
+       ========================================================== */
 
-          return (
-            array.findIndex(
-              (item) =>
-                `${item.className}-${item.sectionName}` ===
-                classroom
-            ) === index
-          );
-
-        }
-      );
-
-    const allAssignedClassrooms =
-      uniqueAssignments.map(
-        (assignment) =>
-          `${assignment.className}-${assignment.sectionName}`
-      );
-
-    let allLogs: any[] = [];
-
-    const usedClassrooms: string[] = [];
-
-    /* ==========================================
-       CHECK DAILY LOG USAGE
-       ========================================== */
-
-    for (
-      const assignment
-      of uniqueAssignments
-    ) {
-
-      if (!assignment.id) {
-        continue;
-      }
-
- const todayLogs =
-  await loadTodaysTeacherLogsByAssignment(
-    assignment.id
-  );
-
-allLogs.push(
-  ...todayLogs
-);
-
-
-/* HISTORICAL USAGE CHECK */
-
-const historicalLogs =
-  await getTeacherDailyLogsByAssignment(
-    assignment.id
-  );
-
-if (
-  historicalLogs.length > 0
-) {
-
-  const classroom =
-    `${assignment.className}-${assignment.sectionName}`;
-
-  if (
-    !usedClassrooms.includes(
-      classroom
-    )
-  ) {
-
-    usedClassrooms.push(
-      classroom
+    const allAssignedClassrooms = Array.from(
+      new Set(
+        assignments
+          .map(
+            (assignment) =>
+              `${assignment.className}-${assignment.sectionName}`
+          )
+          .filter(Boolean)
+      )
     );
 
-  }
+    const assignmentIds = assignments
+      .map((assignment) => assignment.id)
+      .filter((id): id is string => Boolean(id));
 
-}
-
-      /*
-       IMPORTANT:
-
-       Today's records continue controlling the
-       "Today's Published Lecture Records" area.
-
-       We do NOT use todayLogs alone to determine
-       permanent classroom usage below.
-      */
-
+    if (assignmentIds.length === 0) {
+      setLogs([]);
+      setDoubtLedgerClassrooms(
+        allAssignedClassrooms
+      );
+      return;
     }
 
-    allLogs.sort(
-      (a, b) =>
-        new Date(
-          b.createdAt
-        ).getTime()
-        -
-        new Date(
-          a.createdAt
-        ).getTime()
+    /*
+       ONE bulk query instead of:
+       assignment 1 -> today logs -> historical logs
+       assignment 2 -> today logs -> historical logs
+       ...
+
+       This both fixes multi-subject classroom visibility and
+       keeps the page fast.
+    */
+    const allHistoricalLogs =
+      await getTeacherDailyLogsByAssignments(
+        assignmentIds
+      );
+
+    const today = new Date()
+      .toISOString()
+      .split("T")[0];
+
+    const todayLogs =
+      allHistoricalLogs.filter(
+        (log: any) =>
+          String(log.logDate ?? "") === today
+      );
+
+    todayLogs.sort(
+      (a: any, b: any) =>
+        new Date(b.createdAt ?? 0).getTime() -
+        new Date(a.createdAt ?? 0).getTime()
     );
 
-    setLogs(
-      allLogs
-    );
+    setLogs(todayLogs);
 
-    /* ==========================================
+    /* ==========================================================
        DETERMINE CLASSROOMS ALREADY USED
+       ========================================================== */
 
-       pendingDoubts can tell us which classrooms
-       have entered the intelligence lifecycle.
+    const usedClassrooms =
+      new Set<string>();
 
-       We also include today's published logs.
-       ========================================== */
+    allHistoricalLogs.forEach(
+      (log: any) => {
+        const classroom =
+          `${log.className}-${log.sectionName}`;
 
+        if (
+          log.className &&
+          log.sectionName
+        ) {
+          usedClassrooms.add(
+            classroom
+          );
+        }
+      }
+    );
+
+    /*
+       Pending doubt records are also part of the intelligence
+       lifecycle, so preserve the existing behavior where a
+       classroom remains visible after entering that lifecycle.
+    */
     const currentPendingDoubts =
       await getTeacherPendingDoubtLedger();
 
     currentPendingDoubts.forEach(
       (item: any) => {
-
-        if (
-          item.classroom &&
-          !usedClassrooms.includes(
-            item.classroom
-          )
-        ) {
-
-          usedClassrooms.push(
+        if (item.classroom) {
+          usedClassrooms.add(
             item.classroom
           );
-
         }
-
       }
     );
 
-    allLogs.forEach(
-      (log: any) => {
+    /*
+       Nothing has ever been used:
+       -> show every assigned classroom.
 
-        const classroom =
-          `${log.className}-${log.sectionName}`;
-
-        if (
-          !usedClassrooms.includes(
-            classroom
-          )
-        ) {
-
-          usedClassrooms.push(
-            classroom
-          );
-
-        }
-
-      }
+       Teacher has started using the journal:
+       -> show the classrooms that have entered the
+          lecture/intelligence lifecycle.
+    */
+    setDoubtLedgerClassrooms(
+      usedClassrooms.size === 0
+        ? allAssignedClassrooms
+        : Array.from(usedClassrooms)
     );
-
-    /* ==========================================
-       SAME DASHBOARD RULE
-
-       Nothing used yet:
-       → show every assigned classroom
-
-       Teacher has started:
-       → show only used classrooms
-       ========================================== */
-
-    if (
-      usedClassrooms.length === 0
-    ) {
-
-      setDoubtLedgerClassrooms(
-        allAssignedClassrooms
-      );
-
-    } else {
-
-      setDoubtLedgerClassrooms(
-        usedClassrooms
-      );
-
-    }
-
-  }
-
-  catch (error) {
-
+  } catch (error) {
     console.error(
       "DAILY LOG PAGE LOAD ERROR",
       error
     );
 
-  }
-
-  finally {
-
+    setLogs([]);
+  } finally {
     setLogsLoading(false);
-
   }
-
 }
 
 async function

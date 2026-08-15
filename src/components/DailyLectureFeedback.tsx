@@ -1,513 +1,645 @@
+import jsPDF from "jspdf";
 import { useEffect, useState } from "react";
 
 import {
-  getTodaysLectureLogs,
   getStudentDailyLectureLogs,
+  getTodaysLectureLogs,
+  getStudentSubjects,
+  getStudentFeedbackStatementData,
 } from "../data/studentGrowthPlanRepository";
 
 import {
-
-UNDERSTANDING_OPTIONS,
-
-}
-
-from "../data/studentUnderstandingOptions";
-
+  UNDERSTANDING_OPTIONS,
+} from "../data/studentUnderstandingOptions";
 
 import {
-
-submitStudentDailyFeedback,
-
-hasStudentSubmittedFeedback,
-
-getStudentFeedbackByLecture,
-getStudentFeedbackHistory,
-
+  submitStudentDailyFeedback,
+  getStudentFeedbackForLectures,
+  getStudentFeedbackHistory,
 } from "../data/studentDailyFeedbackRepository";
 
 import {
-
-getPendingDoubtsByStudent,
-submitStudentPendingDoubtResponse,
-
-}
-
-from
-"../domains/teacherIntelligence/repository/PendingTeacherDoubtRepository";
+  getPendingDoubtsByStudent,
+  submitStudentPendingDoubtResponse,
+} from "../domains/teacherIntelligence/repository/PendingTeacherDoubtRepository";
 
 import {
-
-requireIdentity,
-
+  requireIdentity,
 } from "../services/identityService";
 
 import {
-
-calculateDailyFeedbackCreditSummaryFromLogs,
-
+  calculateDailyFeedbackCreditSummaryFromLogs,
 } from "../data/creditEngine";
+
+interface FeedbackStatementRow {
+  id: string;
+  date: string;
+  topic: string;
+  subtopics: string[];
+  response: string | null;
+  difficultConcepts: string[];
+  creditChange: number;
+  creditLabel: string;
+  balance: number;
+}
+
+function getIndiaTodayKey() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+
+  return `${year}-${month}-${day}`;
+}
+
+function toDateKey(value: unknown) {
+  if (value === null || value === undefined) return "";
+
+  const raw = String(value).trim();
+  if (!raw) return "";
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return raw;
+  }
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) {
+    return raw.slice(0, 10);
+  }
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(parsed);
+
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatStatementDate(value: string) {
+  if (!value) return "—";
+
+  const parts = value.split("-");
+  if (parts.length !== 3) return value;
+
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+function getResponseLabel(value: string | null | undefined) {
+  if (!value) return "Pending";
+
+  if (value === "I completely understood.") {
+    return "I completely understood";
+  }
+
+  if (value === "I partially understood.") {
+    return "I partially understood";
+  }
+
+  if (value === "I didn't understand.") {
+    return "I didn't understand";
+  }
+
+  return value.replace(/\.$/, "");
+}
 
 export default function DailyLectureFeedback() {
   const [lectureLogs, setLectureLogs] = useState<any[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(true);
 
-
-  
-const [expandedCard, setExpandedCard] =
-
-useState<string | null>(null);
-
-
-const [
-
-understandingLevel,
-
-setUnderstandingLevel,
-
-] = useState("");
-
-
-
-
-
-
-
-const [
-
-conceptsNotUnderstood,
-
-setConceptsNotUnderstood,
-
-] = useState<string[]>([]);
-
-const [
-
-somethingElse,
-
-setSomethingElse,
-
-] = useState(false);
-
-
-const [
-
-somethingElseText,
-
-setSomethingElseText,
-
-] = useState("");
-
-const [
-
-additionalNote,
-
-setAdditionalNote,
-
-] = useState("");
-
-const [
-
-pendingDoubts,
-
-setPendingDoubts,
-
-] = useState<any[]>([]);
-
-
-const [
-
-selectedResponse,
-
-setSelectedResponse,
-
-] = useState<Record<string,string>>({});
-
-
-const [submittedFeedback, setSubmittedFeedback] =
-
-
-
-useState<Record<string, any>>({});
-
-
-const [dailyFeedbackEarnedCredits, setDailyFeedbackEarnedCredits] =
-  useState(0);
-
-const [dailyFeedbackLostCredits, setDailyFeedbackLostCredits] =
-  useState(0);
-
-const [dailyFeedbackTotalCredits, setDailyFeedbackTotalCredits] =
-  useState(0);
-
-const [isLoadingCreditSummary, setIsLoadingCreditSummary] =
-  useState(true);
-
-useEffect(()=>{
-
-loadDailyLogs();
-
-loadPendingDoubts();
-
-loadDailyFeedbackCreditSummary();
-
-},[]);
-
-
-useEffect(() => {
-
-if (
-
-lectureLogs.length > 0
-
-) {
-
-loadSubmittedFeedback();
-
-}
-
-}, [lectureLogs]);
-
-async function loadDailyLogs() {
-
-  setIsLoadingLogs(true);
-
-  try {
-    const logs = await getTodaysLectureLogs();
-
-    console.log("STUDENT DAILY LECTURE LOGS:", logs);
-    setLectureLogs(logs);
-  } catch (error) {
-    console.error("DAILY LECTURE LOG LOAD FAILED", error);
-    setLectureLogs([]);
-  } finally {
-    setIsLoadingLogs(false);
-  }
-}
-
-async function loadDailyFeedbackCreditSummary() {
-
-setIsLoadingCreditSummary(true);
-
-try {
-
-const [allLectureLogs, feedbackHistory] = await Promise.all([
-getStudentDailyLectureLogs(),
-getStudentFeedbackHistory(),
-]);
-
-const now = new Date();
-
-const today = [
-now.getFullYear(),
-String(now.getMonth() + 1).padStart(2, "0"),
-String(now.getDate()).padStart(2, "0"),
-].join("-");
-
-/*
- * DAILY FEEDBACK CREDIT CALCULATION
- *
- * The student is penalised only for a teacher log that
- * actually reached the student.
- *
- * No teacher log = no feedback obligation = no penalty.
- * Teacher log + submitted feedback = +1.
- * Teacher log + missing feedback after the day = -10.
- */
-const summary =
-calculateDailyFeedbackCreditSummaryFromLogs(
-allLectureLogs ?? [],
-feedbackHistory ?? [],
-today
-);
-
-setDailyFeedbackEarnedCredits(summary.earnedCredits);
-setDailyFeedbackLostCredits(summary.lostCredits);
-setDailyFeedbackTotalCredits(summary.totalCredits);
-
-} catch (error) {
-
-console.error(
-"DAILY FEEDBACK CREDIT SUMMARY LOAD FAILED",
-error
-);
-
-setDailyFeedbackEarnedCredits(0);
-setDailyFeedbackLostCredits(0);
-setDailyFeedbackTotalCredits(0);
-
-} finally {
-
-setIsLoadingCreditSummary(false);
-
-}
-
-}
-
-async function loadPendingDoubts(){
-
-const identity =
-requireIdentity();
-
-const doubts =
-
-await getPendingDoubtsByStudent(
-
-identity.studentUuid
-
-);
-
-console.log(
-"PENDING DOUBTS",
-doubts
-);
-
-setPendingDoubts(doubts);
-
-}
-
-async function loadSubmittedFeedback() {
-
-  const feedbackEntries = await Promise.all(
-    lectureLogs.map(async (log) => [
-      log.id,
-      await getStudentFeedbackByLecture(log.id),
-    ] as const)
-  );
-
-  const feedbackMap: Record<string, any> = {};
-
-  for (const [logId, feedback] of feedbackEntries) {
-    if (feedback) feedbackMap[logId] = feedback;
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+
+  const [understandingLevel, setUnderstandingLevel] = useState("");
+  const [conceptsNotUnderstood, setConceptsNotUnderstood] = useState<string[]>([]);
+  const [somethingElse, setSomethingElse] = useState(false);
+  const [somethingElseText, setSomethingElseText] = useState("");
+  const [additionalNote, setAdditionalNote] = useState("");
+
+  const [pendingDoubts, setPendingDoubts] = useState<any[]>([]);
+  const [selectedResponse, setSelectedResponse] = useState<Record<string, string>>({});
+  const [submittedFeedback, setSubmittedFeedback] = useState<Record<string, any>>({});
+
+  const [isSubmittingFeedbackId, setIsSubmittingFeedbackId] = useState<string | null>(null);
+  const [feedbackSubmitError, setFeedbackSubmitError] = useState<string | null>(null);
+
+  const [dailyFeedbackEarnedCredits, setDailyFeedbackEarnedCredits] = useState(0);
+  const [dailyFeedbackLostCredits, setDailyFeedbackLostCredits] = useState(0);
+  const [dailyFeedbackTotalCredits, setDailyFeedbackTotalCredits] = useState(0);
+  const [isLoadingCreditSummary, setIsLoadingCreditSummary] = useState(true);
+
+  const [subjectOptions, setSubjectOptions] = useState<string[]>([]);
+  const [statementSubject, setStatementSubject] = useState("");
+  const [statementStartDate, setStatementStartDate] = useState("");
+  const [statementEndDate, setStatementEndDate] = useState("");
+  const [statementRows, setStatementRows] = useState<FeedbackStatementRow[]>([]);
+  const [hasFetchedStatement, setHasFetchedStatement] = useState(false);
+  const [isFetchingStatement, setIsFetchingStatement] = useState(false);
+  const [statementError, setStatementError] = useState<string | null>(null);
+  const [isGeneratingStatementPdf, setIsGeneratingStatementPdf] = useState(false);
+
+  useEffect(() => {
+    void loadPageData();
+    void loadDailyFeedbackCreditSummary();
+  }, []);
+
+  async function loadPageData() {
+    setIsLoadingLogs(true);
+
+    try {
+      // Critical path: fetch ONLY today's logs. The old page downloaded
+      // the complete lecture history before it could render today's cards.
+      const todaysLogs = await getTodaysLectureLogs();
+
+      setLectureLogs(todaysLogs ?? []);
+      setIsLoadingLogs(false);
+
+      // These are secondary data loads and run together. None of them blocks
+      // the initial daily-log render above.
+      const feedbackPromise = (todaysLogs ?? []).length > 0
+        ? getStudentFeedbackForLectures(
+            (todaysLogs ?? []).map((log: any) => log.id).filter(Boolean)
+          )
+        : Promise.resolve([]);
+
+      // Secondary loads must not be allowed to erase an otherwise healthy
+      // daily feed. A failure in doubts, subjects, or feedback status is
+      // isolated to that feature instead of triggering the page-level catch.
+      const [doubtsResult, subjectsResult, feedbackResult] =
+        await Promise.allSettled([
+          loadPendingDoubtsData(),
+          getStudentSubjects(),
+          feedbackPromise,
+        ]);
+
+      if (doubtsResult.status === "fulfilled") {
+        setPendingDoubts(doubtsResult.value ?? []);
+      } else {
+        console.error("PENDING DOUBTS INITIAL LOAD FAILED", doubtsResult.reason);
+        setPendingDoubts([]);
+      }
+
+      if (subjectsResult.status === "fulfilled") {
+        setSubjectOptions(subjectsResult.value ?? []);
+      } else {
+        console.error("STUDENT SUBJECT OPTIONS LOAD FAILED", subjectsResult.reason);
+        setSubjectOptions([]);
+      }
+
+      if (feedbackResult.status === "fulfilled") {
+        const feedbackMap: Record<string, any> = {};
+
+        for (const feedback of feedbackResult.value ?? []) {
+          if (feedback?.daily_log_uuid) {
+            feedbackMap[feedback.daily_log_uuid] = feedback;
+          }
+        }
+
+        setSubmittedFeedback(feedbackMap);
+      } else {
+        console.error("TODAY FEEDBACK STATUS LOAD FAILED", feedbackResult.reason);
+        setSubmittedFeedback({});
+      }
+    } catch (error) {
+      console.error("DAILY LECTURE FEEDBACK PAGE LOAD FAILED", error);
+      setLectureLogs([]);
+      setPendingDoubts([]);
+      setSubjectOptions([]);
+    } finally {
+      setIsLoadingLogs(false);
+    }
   }
 
-  setSubmittedFeedback(feedbackMap);
-}
-
-
-async function submitFeedback(
-
-log:any
-
-){
-
-console.log(
-"SUBMIT BUTTON CLICKED"
-);
-
-
-if(
-
-understandingLevel.length===0
-
-){
-
-alert(
-
-"Please select your understanding level."
-
-);
-
-return;
-
-}
-
-
-if(
-
-understandingLevel !==
-"I completely understood."
-
-&&
-
-conceptsNotUnderstood.length === 0
-
-&&
-
-!somethingElse
-
-){
-
-alert(
-
-"Please select at least one difficult concept."
-
-);
-
-return;
-
-}
-
-let finalAdditionalNote =
-
-additionalNote;
-
-
-if(
-
-somethingElse
-
-&&
-
-somethingElseText.trim()
-
-){
-
-finalAdditionalNote =
-
-`${
-
-additionalNote
-
-}
-
-${
-additionalNote.trim()
-? "\n\n"
-: ""
-}
-
-Additional Learning Gap:
-
-${somethingElseText}`;
-
-}
-
-
-await submitStudentDailyFeedback(
-
-log.id,
-
-log.teacher_uuid,
-
-log.school_uuid,
-
-log.class_name,
-
-log.section_name,
-
-log.subject_name,
-
-log.topic_name,
-
-understandingLevel,
-
-conceptsNotUnderstood,
-
-finalAdditionalNote.trim().length > 0
-? finalAdditionalNote
-: null
-
-);
-
-
-const feedback =
-
-await getStudentFeedbackByLecture(
-
-log.id
-
-);
-
-
-setSubmittedFeedback(
-
-(previous)=>({
-
-...previous,
-
-[log.id]:feedback,
-
-})
-
-);
-
-
-alert(
-
-"Feedback submitted successfully."
-
-);
-
-
-await loadDailyFeedbackCreditSummary();
-
-
-setExpandedCard(null);
-
-
-setUnderstandingLevel("");
-
-
-
-setConceptsNotUnderstood([]);
-
-setAdditionalNote("");
-
-setSomethingElse(false);
-
-setSomethingElseText("");
-
-}
-
-async function submitPendingDoubt(
-
-doubt:any
-
-){
-
-const response =
-
-selectedResponse[doubt.id];
-
-
-if(!response){
-
-alert(
-
-"Please select your response."
-
-);
-
-return;
-
-}
-
-
-await submitStudentPendingDoubtResponse(
-
-doubt.id,
-response
-
-);
-
-if(
-
-response ===
-
-"DISCUSSED"
-
-){
-
-alert(
-
-"Great! Your teacher revised the concept."
-
-);
-
-}else{
-
-alert(
-
-"Thank you. Your learning gap has been recorded."
-
-);
-
-}
-
-
-await loadPendingDoubts();
-
-}
+  async function loadPendingDoubtsData() {
+    const identity = requireIdentity();
+    return await getPendingDoubtsByStudent(identity.studentUuid);
+  }
+
+  async function loadDailyFeedbackCreditSummary() {
+    setIsLoadingCreditSummary(true);
+
+    try {
+      const [allLectureLogs, feedbackHistory] = await Promise.all([
+        getStudentDailyLectureLogs(),
+        getStudentFeedbackHistory(),
+      ]);
+
+      const today = getIndiaTodayKey();
+
+      const summary = calculateDailyFeedbackCreditSummaryFromLogs(
+        allLectureLogs ?? [],
+        feedbackHistory ?? [],
+        today
+      );
+
+      setDailyFeedbackEarnedCredits(summary.earnedCredits);
+      setDailyFeedbackLostCredits(summary.lostCredits);
+      setDailyFeedbackTotalCredits(summary.totalCredits);
+    } catch (error) {
+      console.error("DAILY FEEDBACK CREDIT SUMMARY LOAD FAILED", error);
+      setDailyFeedbackEarnedCredits(0);
+      setDailyFeedbackLostCredits(0);
+      setDailyFeedbackTotalCredits(0);
+    } finally {
+      setIsLoadingCreditSummary(false);
+    }
+  }
+
+  async function loadPendingDoubts() {
+    try {
+      const doubts = await loadPendingDoubtsData();
+      setPendingDoubts(doubts ?? []);
+    } catch (error) {
+      console.error("PENDING DOUBTS LOAD FAILED", error);
+      setPendingDoubts([]);
+    }
+  }
+
+  function resetFeedbackForm() {
+    setExpandedCard(null);
+    setUnderstandingLevel("");
+    setConceptsNotUnderstood([]);
+    setAdditionalNote("");
+    setSomethingElse(false);
+    setSomethingElseText("");
+    setFeedbackSubmitError(null);
+  }
+
+  async function submitFeedback(log: any) {
+    if (isSubmittingFeedbackId) return;
+
+    if (understandingLevel.length === 0) {
+      alert("Please select your understanding level.");
+      return;
+    }
+
+    if (
+      understandingLevel !== "I completely understood." &&
+      conceptsNotUnderstood.length === 0 &&
+      !somethingElse
+    ) {
+      alert("Please select at least one difficult concept.");
+      return;
+    }
+
+    let finalAdditionalNote = additionalNote;
+
+    if (somethingElse && somethingElseText.trim()) {
+      finalAdditionalNote = `${additionalNote}${
+        additionalNote.trim() ? "\n\n" : ""
+      }Additional Learning Gap:\n${somethingElseText}`;
+    }
+
+    setFeedbackSubmitError(null);
+    setIsSubmittingFeedbackId(log.id);
+
+    try {
+      await submitStudentDailyFeedback(
+        log.id,
+        log.teacher_uuid,
+        log.school_uuid,
+        log.class_name,
+        log.section_name,
+        log.subject_name,
+        log.topic_name,
+        understandingLevel,
+        conceptsNotUnderstood,
+        finalAdditionalNote.trim().length > 0
+          ? finalAdditionalNote
+          : null
+      );
+
+      // Keep the existing repository return contract (true), but update
+      // the UI immediately from the values that were just submitted.
+      // This avoids a second database read after a successful INSERT.
+      const localSubmittedFeedback = {
+        daily_log_uuid: log.id,
+        student_uuid: requireIdentity().studentUuid,
+        teacher_uuid: log.teacher_uuid,
+        school_uuid: log.school_uuid,
+        class_name: log.class_name,
+        section_name: log.section_name,
+        subject_name: log.subject_name,
+        topic_name: log.topic_name,
+        understanding_level: understandingLevel,
+        concepts_not_understood: [...conceptsNotUnderstood],
+        has_doubt: conceptsNotUnderstood.length > 0,
+        additional_note:
+          finalAdditionalNote.trim().length > 0
+            ? finalAdditionalNote
+            : null,
+        submitted_at: new Date().toISOString(),
+      };
+
+      setSubmittedFeedback((previous) => ({
+        ...previous,
+        [log.id]: localSubmittedFeedback,
+      }));
+
+      // The submission itself has succeeded, so reflect the +1 locally.
+      // Do not re-fetch the complete credit history here.
+      setDailyFeedbackEarnedCredits((value) => value + 1);
+      setDailyFeedbackTotalCredits((value) => value + 1);
+
+      resetFeedbackForm();
+    } catch (error) {
+      console.error("DAILY FEEDBACK SUBMISSION FAILED", error);
+      setFeedbackSubmitError(
+        "We could not submit your feedback. Please try again."
+      );
+    } finally {
+      setIsSubmittingFeedbackId(null);
+    }
+  }
+
+  async function submitPendingDoubt(doubt: any) {
+    const response = selectedResponse[doubt.id];
+
+    if (!response) {
+      alert("Please select your response.");
+      return;
+    }
+
+    await submitStudentPendingDoubtResponse(doubt.id, response);
+    await loadPendingDoubts();
+  }
+
+  async function fetchFeedbackStatement() {
+    setStatementError(null);
+
+    if (!statementSubject) {
+      setStatementError("Please choose a subject.");
+      return;
+    }
+
+    if (!statementStartDate || !statementEndDate) {
+      setStatementError("Please choose a start date and end date.");
+      return;
+    }
+
+    if (statementStartDate > statementEndDate) {
+      setStatementError("Start date cannot be after end date.");
+      return;
+    }
+
+    setIsFetchingStatement(true);
+    setHasFetchedStatement(true);
+
+    try {
+      const { logs, feedback } = await getStudentFeedbackStatementData(
+        statementStartDate,
+        statementEndDate,
+        statementSubject
+      );
+
+      const feedbackMap = new Map<string, any>();
+
+      for (const item of feedback ?? []) {
+        if (item?.daily_log_uuid) {
+          feedbackMap.set(String(item.daily_log_uuid), item);
+        }
+      }
+
+      const today = getIndiaTodayKey();
+      let runningBalance = 0;
+
+      const rows = (logs ?? [])
+        .map((log: any) => {
+          const logId = String(log.id);
+          const feedbackRecord = feedbackMap.get(logId);
+          const dateKey = toDateKey(log.log_date || log.created_at);
+          const isCompletedDay = dateKey < today;
+
+          let creditChange = 0;
+          let creditLabel = "Pending — not submitted";
+
+          if (feedbackRecord) {
+            creditChange = 1;
+            creditLabel = "+1 credit";
+          } else if (isCompletedDay) {
+            creditChange = -10;
+            creditLabel = "−10 debit";
+          } else {
+            creditLabel = "Pending — no debit yet";
+          }
+
+          runningBalance += creditChange;
+
+          return {
+            id: logId,
+            date: dateKey,
+            topic: log.topic_name ?? "Topic not available",
+            subtopics: Array.isArray(log.concepts_covered)
+              ? log.concepts_covered
+              : [],
+            response: feedbackRecord?.understanding_level ?? null,
+            difficultConcepts: Array.isArray(
+              feedbackRecord?.concepts_not_understood
+            )
+              ? feedbackRecord.concepts_not_understood
+              : [],
+            creditChange,
+            creditLabel,
+            balance: runningBalance,
+          } satisfies FeedbackStatementRow;
+        })
+        .sort((a, b) => {
+          if (a.date !== b.date) return a.date.localeCompare(b.date);
+          return a.topic.localeCompare(b.topic);
+        });
+
+      // Recalculate balance after the chronological sort.
+      let balance = 0;
+      const chronologicalRows = rows.map((row) => {
+        balance += row.creditChange;
+        return { ...row, balance };
+      });
+
+      setStatementRows(chronologicalRows);
+    } catch (error) {
+      console.error("FEEDBACK STATEMENT LOAD FAILED", error);
+      setStatementRows([]);
+      setStatementError(
+        "We could not fetch the feedback records. Please try again."
+      );
+    } finally {
+      setIsFetchingStatement(false);
+    }
+  }
+
+  async function generateStatementPdf() {
+    if (!statementRows.length) return;
+
+    setIsGeneratingStatementPdf(true);
+
+    try {
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 8;
+      const usableWidth = pageWidth - margin * 2;
+
+      const columnWidths = [
+        17, // Date
+        32, // Topic
+        57, // Subtopics
+        42, // Response
+        48, // Not understood
+        25, // Credit
+        25, // Balance
+      ];
+
+      const headers = [
+        "Date",
+        "Topic",
+        "Teacher subtopics",
+        "Response",
+        "Not understood",
+        "Credits",
+        "Balance",
+      ];
+
+      const wrap = (text: string, width: number, fontSize = 6.5) => {
+        doc.setFontSize(fontSize);
+        return doc.splitTextToSize(text || "—", width - 3);
+      };
+
+      let y = 10;
+
+      const drawHeader = () => {
+        doc.setFillColor(255, 247, 237);
+        doc.rect(margin, y, usableWidth, 13, "F");
+        doc.setDrawColor(226, 232, 240);
+        doc.rect(margin, y, usableWidth, 13);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(6.5);
+        doc.setTextColor(71, 85, 105);
+
+        let x = margin;
+        headers.forEach((header, index) => {
+          doc.text(header, x + 1.5, y + 8);
+          x += columnWidths[index];
+          doc.line(x, y, x, y + 13);
+        });
+
+        y += 13;
+      };
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15);
+      doc.setTextColor(15, 23, 42);
+      doc.text("Daily Lecture Feedback Statement", margin, y + 4);
+
+      y += 9;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text(
+        `Subject: ${statementSubject}   |   Period: ${formatStatementDate(
+          statementStartDate
+        )} to ${formatStatementDate(statementEndDate)}`,
+        margin,
+        y + 2
+      );
+
+      y += 7;
+      drawHeader();
+
+      statementRows.forEach((row) => {
+        const cells = [
+          formatStatementDate(row.date),
+          row.topic,
+          row.subtopics.join(", "),
+          getResponseLabel(row.response),
+          row.difficultConcepts.length
+            ? row.difficultConcepts.join(", ")
+            : row.response
+              ? "—"
+              : "—",
+          row.creditChange > 0
+            ? "+1"
+            : row.creditChange < 0
+              ? "−10"
+              : "0",
+          String(row.balance),
+        ];
+
+        const wrapped = cells.map((cell, index) =>
+          wrap(String(cell), columnWidths[index])
+        );
+
+        const maxLines = Math.max(...wrapped.map((lines) => lines.length));
+        const rowHeight = Math.max(9, maxLines * 3.2 + 3);
+
+        if (y + rowHeight > pageHeight - 10) {
+          doc.addPage();
+          y = 10;
+          drawHeader();
+        }
+
+        let x = margin;
+        doc.setDrawColor(226, 232, 240);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(6.5);
+        doc.setTextColor(51, 65, 85);
+
+        wrapped.forEach((lines, index) => {
+          const color =
+            index === 5 && row.creditChange > 0
+              ? [22, 163, 74]
+              : index === 5 && row.creditChange < 0
+                ? [220, 38, 38]
+                : [51, 65, 85];
+
+          doc.setTextColor(color[0], color[1], color[2]);
+          doc.text(lines, x + 1.5, y + 4.5, {
+            baseline: "top",
+          });
+          x += columnWidths[index];
+          doc.line(x, y, x, y + rowHeight);
+        });
+
+        doc.setDrawColor(226, 232, 240);
+        doc.line(margin, y + rowHeight, margin + usableWidth, y + rowHeight);
+        y += rowHeight;
+      });
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text(
+        "Credit rule: +1 for successful feedback; −10 for a missed completed-day teacher log; today's pending feedback is not debited yet.",
+        margin,
+        pageHeight - 5
+      );
+
+      doc.save(
+        `Daily-Lecture-Feedback-${statementStartDate}-to-${statementEndDate}.pdf`
+      );
+    } catch (error) {
+      console.error("DAILY FEEDBACK PDF GENERATION FAILED", error);
+      alert("The PDF could not be generated. Please try again.");
+    } finally {
+      setIsGeneratingStatementPdf(false);
+    }
+  }
 
 return (
   <>
@@ -2266,6 +2398,410 @@ return (
           font-size: 8px;
         }
       }
+
+
+      /* =========================================================
+         FEEDBACK SUBMISSION STATE
+      ========================================================= */
+
+      .dlf-card-status-submitting {
+        color: #c2410c;
+        background: #fff7ed;
+        border-color: #fdba74;
+      }
+
+      .dlf-inline-spinner {
+        width: 13px;
+        height: 13px;
+        flex: 0 0 13px;
+        display: inline-block;
+        border: 2px solid rgba(249, 115, 22, 0.22);
+        border-top-color: #f97316;
+        border-radius: 50%;
+        animation: dlf-spin 0.75s linear infinite;
+        vertical-align: -2px;
+      }
+
+      .dlf-inline-spinner-light {
+        border-color: rgba(255, 255, 255, 0.35);
+        border-top-color: #ffffff;
+      }
+
+      .dlf-submitting-feedback {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 11px;
+        padding: 9px 11px;
+        border: 1px solid #fed7aa;
+        border-radius: 9px;
+        background: #fff7ed;
+        color: #c2410c;
+        font-size: 11px;
+        line-height: 1.3;
+        font-weight: 850;
+      }
+
+      .dlf-feedback-submit-error {
+        margin-top: 11px;
+        padding: 9px 11px;
+        border: 1px solid #fecaca;
+        border-radius: 9px;
+        background: #fef2f2;
+        color: #b91c1c;
+        font-size: 11px;
+        line-height: 1.4;
+        font-weight: 750;
+      }
+
+      .dlf-submit-button:disabled,
+      .dlf-cancel-button:disabled,
+      .dlf-statement-fetch:disabled,
+      .dlf-statement-pdf:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+
+      @keyframes dlf-spin {
+        to { transform: rotate(360deg); }
+      }
+
+      /* =========================================================
+         FEEDBACK STATEMENT
+      ========================================================= */
+
+      .dlf-statement-section {
+        margin-top: 18px;
+        margin-bottom: 18px;
+        padding: 22px 24px 24px;
+      }
+
+      .dlf-statement-filters {
+        display: grid;
+        grid-template-columns: minmax(180px, 1.1fr) minmax(150px, .8fr) minmax(150px, .8fr) auto;
+        gap: 9px;
+        align-items: end;
+        margin-top: 17px;
+      }
+
+      .dlf-statement-field {
+        min-width: 0;
+      }
+
+      .dlf-statement-field > span {
+        display: block;
+        margin-bottom: 5px;
+        color: #64748b;
+        font-size: 9px;
+        line-height: 1.2;
+        font-weight: 900;
+        letter-spacing: .75px;
+        text-transform: uppercase;
+      }
+
+      .dlf-statement-control {
+        width: 100%;
+        min-height: 38px;
+        padding: 0 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 9px;
+        outline: none;
+        background: #ffffff;
+        color: #334155;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .dlf-statement-control:focus {
+        border-color: #fb923c;
+        box-shadow: 0 0 0 3px rgba(249,115,22,.08);
+      }
+
+      .dlf-statement-fetch,
+      .dlf-statement-pdf {
+        min-height: 38px;
+        padding: 0 13px;
+        border: 1px solid #ea580c;
+        border-radius: 9px;
+        background: #f97316;
+        color: #ffffff;
+        font-size: 10px;
+        line-height: 1;
+        font-weight: 900;
+        letter-spacing: .2px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .dlf-statement-pdf {
+        border-color: #cbd5e1;
+        background: #ffffff;
+        color: #c2410c;
+      }
+
+      .dlf-statement-error {
+        margin-top: 11px;
+        padding: 9px 11px;
+        border: 1px solid #fecaca;
+        border-radius: 9px;
+        background: #fef2f2;
+        color: #b91c1c;
+        font-size: 11px;
+        line-height: 1.4;
+        font-weight: 750;
+      }
+
+      .dlf-statement-result-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 16px;
+        padding: 10px 11px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background: #f8fafc;
+      }
+
+      .dlf-statement-result-title {
+        color: #0f172a;
+        font-size: 12px;
+        line-height: 1.2;
+        font-weight: 900;
+      }
+
+      .dlf-statement-result-copy {
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 9px;
+        line-height: 1.35;
+        font-weight: 650;
+      }
+
+      .dlf-statement-empty {
+        margin-top: 12px;
+        padding: 20px 12px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 11px;
+        background: #fafcff;
+        color: #64748b;
+        text-align: center;
+        font-size: 11px;
+        line-height: 1.45;
+        font-weight: 700;
+      }
+
+      .dlf-statement-mobile-hint {
+        display: none;
+        margin-top: 10px;
+        padding: 7px 9px;
+        border: 1px solid #fed7aa;
+        border-radius: 8px;
+        background: #fff7ed;
+        color: #c2410c;
+        font-size: 9px;
+        line-height: 1.35;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .dlf-statement-scroll {
+        width: 100%;
+        margin-top: 10px;
+        overflow-x: visible;
+      }
+
+      .dlf-statement-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        table-layout: fixed;
+        font-size: 10px;
+      }
+
+      .dlf-statement-table th,
+      .dlf-statement-table td {
+        padding: 7px 6px;
+        border-right: 1px solid #e2e8f0;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: top;
+        text-align: left;
+      }
+
+      .dlf-statement-table th:first-child,
+      .dlf-statement-table td:first-child {
+        border-left: 1px solid #e2e8f0;
+      }
+
+      .dlf-statement-table th {
+        color: #475569;
+        background: #fff7ed;
+        font-size: 8px;
+        line-height: 1.2;
+        font-weight: 900;
+        letter-spacing: .25px;
+        text-transform: uppercase;
+      }
+
+      .dlf-statement-table th:first-child {
+        border-top-left-radius: 9px;
+      }
+
+      .dlf-statement-table th:last-child {
+        border-top-right-radius: 9px;
+      }
+
+      .dlf-statement-table td {
+        color: #475569;
+        background: #ffffff;
+        font-size: 9px;
+        line-height: 1.35;
+        font-weight: 650;
+        overflow-wrap: anywhere;
+      }
+
+      .dlf-statement-date,
+      .dlf-statement-balance {
+        white-space: nowrap;
+        font-weight: 900 !important;
+        color: #334155 !important;
+      }
+
+      .dlf-statement-topic {
+        color: #0f172a !important;
+        font-weight: 850 !important;
+      }
+
+      .dlf-statement-subtopics,
+      .dlf-statement-difficult {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .dlf-statement-subtopics span,
+      .dlf-statement-difficult span {
+        display: block;
+      }
+
+      .dlf-statement-response {
+        display: inline-block;
+        padding: 4px 5px;
+        border-radius: 6px;
+        font-size: 8px;
+        line-height: 1.25;
+        font-weight: 850;
+      }
+
+      .dlf-statement-response-selected {
+        color: #166534;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+      }
+
+      .dlf-statement-response-pending {
+        color: #c2410c;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+      }
+
+      .dlf-statement-credit-positive {
+        color: #15803d !important;
+        font-weight: 900 !important;
+        white-space: nowrap;
+      }
+
+      .dlf-statement-credit-negative {
+        color: #dc2626 !important;
+        font-weight: 900 !important;
+        white-space: nowrap;
+      }
+
+      .dlf-statement-credit-neutral {
+        color: #c2410c !important;
+        font-weight: 900 !important;
+        white-space: nowrap;
+      }
+
+      .dlf-statement-credit-label {
+        display: block;
+        margin-top: 2px;
+        color: #94a3b8;
+        font-size: 7px;
+        line-height: 1.2;
+        font-weight: 700;
+        white-space: normal;
+      }
+
+      @media (max-width: 1099px) {
+        .dlf-statement-section {
+          padding: 15px;
+          margin-top: 12px;
+          margin-bottom: 12px;
+        }
+
+        .dlf-statement-filters {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 7px;
+          margin-top: 11px;
+        }
+
+        .dlf-statement-fetch {
+          width: 100%;
+          grid-column: 1 / -1;
+        }
+
+        .dlf-statement-mobile-hint {
+          display: block;
+        }
+
+        .dlf-statement-scroll {
+          overflow-x: auto;
+          overflow-y: hidden;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior-x: contain;
+          border-radius: 9px;
+        }
+
+        .dlf-statement-table {
+          min-width: 980px;
+          table-layout: fixed;
+        }
+
+        .dlf-statement-table th,
+        .dlf-statement-table td {
+          padding: 6px 5px;
+        }
+
+        .dlf-statement-result-head {
+          align-items: flex-start;
+        }
+      }
+
+      @media (max-width: 767px) {
+        .dlf-statement-filters {
+          grid-template-columns: 1fr;
+        }
+
+        .dlf-statement-fetch {
+          grid-column: auto;
+        }
+
+        .dlf-statement-result-head {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .dlf-statement-pdf {
+          width: 100%;
+        }
+
+        .dlf-statement-mobile-hint {
+          font-size: 8.5px;
+        }
+      }
+
     `}</style>
 
 
@@ -2686,7 +3222,14 @@ return (
                           NEW CARD STATUS
                       ===================================== */}
 
-                      {submittedFeedback[log.id] ? (
+                      {isSubmittingFeedbackId === log.id ? (
+
+                        <div className="dlf-card-status dlf-card-status-submitting">
+                          <span className="dlf-inline-spinner" />
+                          <span>Submitting...</span>
+                        </div>
+
+                      ) : submittedFeedback[log.id] ? (
 
                         <div className="dlf-card-status dlf-card-status-submitted">
 
@@ -3231,10 +3774,26 @@ return (
                         ACTIONS
                     ===================================== */}
 
+                    {feedbackSubmitError && (
+                      <div className="dlf-feedback-submit-error">
+                        {feedbackSubmitError}
+                      </div>
+                    )}
+
+                    {isSubmittingFeedbackId === log.id && (
+                      <div className="dlf-submitting-feedback">
+                        <span className="dlf-inline-spinner" />
+                        <span>Submitting your feedback...</span>
+                      </div>
+                    )}
+
                     <div className="dlf-form-actions">
 
                       <button
+                        disabled={isSubmittingFeedbackId === log.id}
                         onClick={() => {
+
+                          if (isSubmittingFeedbackId === log.id) return;
 
                           setExpandedCard(null);
 
@@ -3256,12 +3815,20 @@ return (
 
 
                       <button
+                        disabled={isSubmittingFeedbackId === log.id}
                         onClick={() =>
                           submitFeedback(log)
                         }
                         className="dlf-submit-button"
                       >
-                        SUBMIT FEEDBACK
+                        {isSubmittingFeedbackId === log.id ? (
+                          <>
+                            <span className="dlf-inline-spinner dlf-inline-spinner-light" />
+                            SUBMITTING...
+                          </>
+                        ) : (
+                          "SUBMIT FEEDBACK"
+                        )}
                       </button>
 
                     </div>
@@ -3278,6 +3845,228 @@ return (
 
         )}
 
+      </section>
+
+
+
+      {/* =====================================================
+          FEEDBACK STATEMENT / CREDIT HISTORY
+      ===================================================== */}
+
+      <section className="dlf-surface dlf-statement-section">
+        <div className="dlf-section-head">
+          <div>
+            <div className="dlf-eyebrow">FEEDBACK STATEMENT</div>
+            <h2 className="dlf-title">Daily Feedback Records</h2>
+            <p className="dlf-copy">
+              Choose a subject and date range to view your classroom feedback,
+              credit calculation, and running balance like a bank statement.
+            </p>
+          </div>
+        </div>
+
+        <div className="dlf-statement-filters">
+          <label className="dlf-statement-field">
+            <span>Subject</span>
+            <select
+              value={statementSubject}
+              onChange={(event) => {
+                setStatementSubject(event.target.value);
+                setHasFetchedStatement(false);
+                setStatementRows([]);
+                setStatementError(null);
+              }}
+              className="dlf-statement-control"
+            >
+              <option value="">Choose subject</option>
+              {subjectOptions.length === 0 ? (
+                <option value="" disabled>
+                  No teacher subjects available
+                </option>
+              ) : (
+                subjectOptions
+                  .filter((subject) => subject)
+                  .map((subject) => (
+                    <option key={subject} value={subject}>
+                      {subject}
+                    </option>
+                  ))
+              )}
+            </select>
+          </label>
+
+          <label className="dlf-statement-field">
+            <span>Start date</span>
+            <input
+              type="date"
+              value={statementStartDate}
+              max={statementEndDate || undefined}
+              onChange={(event) => {
+                setStatementStartDate(event.target.value);
+                setHasFetchedStatement(false);
+                setStatementRows([]);
+                setStatementError(null);
+              }}
+              className="dlf-statement-control"
+            />
+          </label>
+
+          <label className="dlf-statement-field">
+            <span>End date</span>
+            <input
+              type="date"
+              value={statementEndDate}
+              min={statementStartDate || undefined}
+              onChange={(event) => {
+                setStatementEndDate(event.target.value);
+                setHasFetchedStatement(false);
+                setStatementRows([]);
+                setStatementError(null);
+              }}
+              className="dlf-statement-control"
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={fetchFeedbackStatement}
+            disabled={isFetchingStatement}
+            className="dlf-statement-fetch"
+          >
+            {isFetchingStatement ? (
+              <>
+                <span className="dlf-inline-spinner dlf-inline-spinner-light" />
+                FETCHING...
+              </>
+            ) : (
+              "FETCH FEEDBACK RECORDS"
+            )}
+          </button>
+        </div>
+
+        {statementError && (
+          <div className="dlf-statement-error">
+            {statementError}
+          </div>
+        )}
+
+        {hasFetchedStatement && !isFetchingStatement && !statementError && (
+          <>
+            <div className="dlf-statement-result-head">
+              <div>
+                <div className="dlf-statement-result-title">
+                  {statementRows.length} record{statementRows.length === 1 ? "" : "s"}
+                </div>
+                <div className="dlf-statement-result-copy">
+                  Running balance is calculated from the first row of the selected period.
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={generateStatementPdf}
+                disabled={!statementRows.length || isGeneratingStatementPdf}
+                className="dlf-statement-pdf"
+              >
+                {isGeneratingStatementPdf ? "GENERATING..." : "GENERATE PDF"}
+              </button>
+            </div>
+
+            {statementRows.length === 0 ? (
+              <div className="dlf-statement-empty">
+                No teacher feedback records were found for the selected subject and date range.
+              </div>
+            ) : (
+              <>
+                <div className="dlf-statement-mobile-hint">
+                  Scroll left and right to see the full records.
+                </div>
+
+                <div className="dlf-statement-scroll">
+                  <table className="dlf-statement-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Topic</th>
+                        <th>Teacher subtopics</th>
+                        <th>Response</th>
+                        <th>Not understood</th>
+                        <th>Talent Credits</th>
+                        <th>Credits Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {statementRows.map((row) => (
+                        <tr key={row.id}>
+                          <td className="dlf-statement-date">
+                            {formatStatementDate(row.date)}
+                          </td>
+                          <td className="dlf-statement-topic">
+                            {row.topic}
+                          </td>
+                          <td>
+                            {row.subtopics.length > 0 ? (
+                              <div className="dlf-statement-subtopics">
+                                {row.subtopics.map((subtopic) => (
+                                  <span key={subtopic}>{subtopic}</span>
+                                ))}
+                              </div>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td>
+                            <span
+                              className={
+                                row.response
+                                  ? "dlf-statement-response dlf-statement-response-selected"
+                                  : "dlf-statement-response dlf-statement-response-pending"
+                              }
+                            >
+                              {getResponseLabel(row.response)}
+                            </span>
+                          </td>
+                          <td>
+                            {row.difficultConcepts.length > 0 ? (
+                              <div className="dlf-statement-difficult">
+                                {row.difficultConcepts.map((concept) => (
+                                  <span key={concept}>{concept}</span>
+                                ))}
+                              </div>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td
+                            className={
+                              row.creditChange > 0
+                                ? "dlf-statement-credit-positive"
+                                : row.creditChange < 0
+                                  ? "dlf-statement-credit-negative"
+                                  : "dlf-statement-credit-neutral"
+                            }
+                          >
+                            {row.creditChange > 0
+                              ? "+1"
+                              : row.creditChange < 0
+                                ? "−10"
+                                : "0"}
+                            <span className="dlf-statement-credit-label">
+                              {row.creditLabel}
+                            </span>
+                          </td>
+                          <td className="dlf-statement-balance">
+                            {row.balance}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </>
+        )}
       </section>
 
     </div>
