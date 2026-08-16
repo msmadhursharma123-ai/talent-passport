@@ -11,7 +11,7 @@ const pillars = [
   {
     number: "02",
     label: "SEAMLESS INTEGRATION",
-    title: "The Intelligence layer over your existing tech stack",
+    title: "The Intelligence layer that connects every learning signal",
     text: "No migration headaches, no broken workflows, and absolutely zero friction. Our platform sits gracefully at the top of your school's existing ecosystem, serving as the master intelligence layer for the ERP, LMS, or learning tools you already use.",
     points: ["ERP + LMS compatible", "One intelligence layer", "Live real-time insights"],
   },
@@ -23,7 +23,7 @@ export default function PlatformIntelligenceSection() {
       <div className="pi-shell">
         <header className="pi-heading">
           <div className="pi-eyebrow"><span /> ACADEMIC INTELLIGENCE · ECOSYSTEM OVERLAY</div>
-          <h2>One intelligence layer.<br /><em>Every learning signal connected.</em></h2>
+          <h2>One intelligence layer.<br /><em>Over your existing tech stack.</em></h2>
           <p>Talent Passport sits above your existing ecosystem and turns scattered classroom signals into one connected picture of academic progress, skill growth and actionable improvement.</p>
         </header>
 

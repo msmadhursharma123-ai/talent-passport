@@ -102,14 +102,22 @@ export default function TeacherDailyLogDialog({
   }
 
   function addConcept() {
-    if (!conceptInput.trim()) {
-      return;
-    }
+    const normalizedConcept = conceptInput.trim();
 
-    setConceptsCovered([
-      ...conceptsCovered,
-      conceptInput.trim(),
-    ]);
+    if (!normalizedConcept) return;
+
+    const alreadyExists = conceptsCovered.some(
+      (item) =>
+        item.trim().toLowerCase() ===
+        normalizedConcept.toLowerCase()
+    );
+
+    if (!alreadyExists) {
+      setConceptsCovered([
+        ...conceptsCovered,
+        normalizedConcept,
+      ]);
+    }
 
     setConceptInput("");
   }
@@ -173,6 +181,21 @@ export default function TeacherDailyLogDialog({
       return;
     }
 
+    const normalizedConcepts = Array.from(
+      new Set(
+        conceptsCovered
+          .map((concept) => concept.trim())
+          .filter(Boolean)
+      )
+    );
+
+    if (normalizedConcepts.length < 3) {
+      alert(
+        "Please add at least 3 unique concepts or subtopics covered in today's lecture."
+      );
+      return;
+    }
+
     await onSave({
       teacher_assignment_uuid:
         selectedAssignment.id,
@@ -190,7 +213,7 @@ export default function TeacherDailyLogDialog({
         topicName,
 
       concepts_covered:
-        conceptsCovered,
+        normalizedConcepts,
 
       page_from:
         Number(pageFrom),

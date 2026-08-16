@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 
+import { getSupabaseClient } from "../../../supabaseClient";
+
 import TeacherDailyLogDialog from "../dialogs/TeacherDailyLogDialog";
 
 import {
@@ -24,6 +26,43 @@ import {
 import {
 getTeacherPendingDoubtLedger,
 } from "../repository/TeacherPendingDoubtRepository";
+
+interface LiveTeacherDoubtLedgerRow {
+  classroom: string;
+  pendingCount: number;
+  previousTopic: string;
+  difficultConcept: string;
+  students: string;
+  logDate: string;
+  status: string;
+}
+
+function getIndiaCalendarDateKey(value?: unknown): string {
+  const source = value === undefined ? new Date() : value;
+  const parsed = source instanceof Date ? source : new Date(String(source));
+  if (Number.isNaN(parsed.getTime())) return "";
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(parsed);
+
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+
+  return `${year}-${month}-${day}`;
+}
+
+function toIndiaCalendarDateKey(value?: unknown): string {
+  if (value === null || value === undefined) return "";
+  const raw = String(value).trim();
+  if (!raw) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  return getIndiaCalendarDateKey(raw);
+}
 
 export default function TeacherDailyLogPage() {
   const [openDialog, setOpenDialog] =
@@ -53,6 +92,17 @@ setPendingDoubts,
 
 ] = useState<any[]>([]);
 
+  /* ==========================================================
+     LIVE DOUBT RECONCILIATION OVERLAY
+
+     This is deliberately separate from pending_teacher_doubts.
+     The original second-loop ledger remains untouched and is used
+     as the fallback whenever the live student-side ledger has no
+     matching unresolved state.
+     ========================================================== */
+  const [livePendingDoubts, setLivePendingDoubts] =
+    useState<LiveTeacherDoubtLedgerRow[]>([]);
+
 useEffect(() => {
 
 fetchLogs();
@@ -60,6 +110,190 @@ fetchLogs();
 loadPendingDoubtLedger();
 
 }, []);
+
+async function loadLiveTeacherDoubtLedger(
+  assignmentIds?: string[]
+): Promise<LiveTeacherDoubtLedgerRow[]> {
+  try {
+    let resolvedAssignmentIds =
+      assignmentIds && assignmentIds.length > 0
+        ? assignmentIds
+        : [];
+
+    if (resolvedAssignmentIds.length === 0) {
+      const teacher = getCurrentTeacher();
+      if (!teacher) {
+        setLivePendingDoubts([]);
+        return [];
+      }
+
+      const assignments =
+        await getTeacherAssignmentsByTeacher(
+          teacher.teacherUuid
+        );
+
+      resolvedAssignmentIds = assignments
+        .map((assignment) => assignment.id)
+        .filter((id): id is string => Boolean(id));
+    }
+
+    if (resolvedAssignmentIds.length === 0) {
+      setLivePendingDoubts([]);
+      return [];
+    }
+
+    const supabase = getSupabaseClient();
+
+    const { data, error } = await (supabase as any)
+      .from("student_live_unresolved_doubts")
+      .select(
+        "student_uuid,student_name,teacher_assignment_uuid,class_name,section_name,subject_name,topic_name,doubt_concept,last_seen_at,latest_source_submitted_at,is_unresolved"
+      )
+      .in(
+        "teacher_assignment_uuid",
+        resolvedAssignmentIds
+      );
+
+    if (error) throw error;
+
+    const rows = Array.isArray(data) ? data : [];
+    const grouped = new Map<
+      string,
+      {
+        students: Map<string, string>;
+        unresolvedConcepts: string[];
+        unresolvedTopics: string[];
+        latestDate: string;
+        hasLiveState: boolean;
+      }
+    >();
+
+    for (const row of rows) {
+      const classroom =
+        row.class_name && row.section_name
+          ? `${row.class_name}-${row.section_name}`
+          : "";
+
+      if (!classroom) continue;
+
+      const existing = grouped.get(classroom) ?? {
+        students: new Map<string, string>(),
+        unresolvedConcepts: [],
+        unresolvedTopics: [],
+        latestDate: "",
+        hasLiveState: false,
+      };
+
+      existing.hasLiveState = true;
+
+      const isUnresolved =
+        row.is_unresolved === true;
+
+      if (isUnresolved && row.student_uuid) {
+        existing.students.set(
+          String(row.student_uuid),
+          String(row.student_name ?? "Student")
+        );
+      }
+
+      const concept = String(
+        row.doubt_concept ?? ""
+      ).trim();
+      if (
+        isUnresolved &&
+        concept &&
+        !existing.unresolvedConcepts.includes(concept)
+      ) {
+        existing.unresolvedConcepts.push(concept);
+      }
+
+      const topic = String(
+        row.topic_name ?? ""
+      ).trim();
+      if (
+        isUnresolved &&
+        topic &&
+        !existing.unresolvedTopics.includes(topic)
+      ) {
+        existing.unresolvedTopics.push(topic);
+      }
+
+      const dateValue =
+        row.latest_source_submitted_at ??
+        row.last_seen_at ??
+        "";
+
+      if (
+        dateValue &&
+        (!existing.latestDate ||
+          new Date(dateValue).getTime() >
+            new Date(existing.latestDate).getTime())
+      ) {
+        existing.latestDate = String(dateValue);
+      }
+
+      grouped.set(classroom, existing);
+    }
+
+    const result: LiveTeacherDoubtLedgerRow[] =
+      Array.from(grouped.entries()).map(
+        ([classroom, value]) => ({
+          classroom,
+          pendingCount: value.students.size,
+          previousTopic:
+            value.unresolvedTopics.length > 0
+              ? value.unresolvedTopics.slice(0, 3).join(", ")
+              : "No active live doubt",
+          difficultConcept:
+            value.unresolvedConcepts.length > 0
+              ? value.unresolvedConcepts.slice(0, 5).join(", ")
+              : "No active unresolved concept",
+          students:
+            value.students.size > 0
+              ? Array.from(value.students.values()).join(", ")
+              : "No student currently marked unresolved",
+          logDate: value.latestDate
+            ? toIndiaCalendarDateKey(
+                value.latestDate
+              )
+            : "—",
+          status:
+            value.students.size > 0
+              ? "Live · Student Verified"
+              : "Live · All Resolved",
+        })
+      );
+
+    setLivePendingDoubts(result);
+    return result;
+  } catch (error) {
+    /*
+       Failure safety: the original second-loop ledger remains
+       completely usable. A live-overlay failure must never break
+       the Teacher Daily Log page or its existing calculations.
+    */
+    console.error(
+      "LIVE TEACHER DOUBT OVERLAY LOAD FAILED",
+      error
+    );
+    setLivePendingDoubts([]);
+    return [];
+  }
+}
+
+function getDisplayedDoubt(
+  classroom: string
+): LiveTeacherDoubtLedgerRow | any | undefined {
+  const live = livePendingDoubts.find(
+    (item) => item.classroom === classroom
+  );
+
+  if (live) return live;
+
+  return pendingDoubts.find(
+    (item: any) => item.classroom === classroom
+  );
+}
 
 async function fetchLogs() {
   setLogsLoading(true);
@@ -127,15 +361,19 @@ async function fetchLogs() {
         assignmentIds
       );
 
-    const today = new Date()
-      .toISOString()
-      .split("T")[0];
+    const today = getIndiaCalendarDateKey();
 
-    const todayLogs =
-      allHistoricalLogs.filter(
-        (log: any) =>
-          String(log.logDate ?? "") === today
-      );
+    const todayLogs = allHistoricalLogs.filter(
+      (log: any) => {
+        const logDateKey = toIndiaCalendarDateKey(log.logDate);
+        const createdDateKey = toIndiaCalendarDateKey(log.createdAt);
+
+        if (logDateKey === today) return true;
+
+        // Compatibility fallback for historical timestamp-style rows.
+        return logDateKey !== today && createdDateKey === today;
+      }
+    );
 
     todayLogs.sort(
       (a: any, b: any) =>
@@ -178,6 +416,24 @@ async function fetchLogs() {
 
     currentPendingDoubts.forEach(
       (item: any) => {
+        if (item.classroom) {
+          usedClassrooms.add(
+            item.classroom
+          );
+        }
+      }
+    );
+
+    /* Outer live layer: student-verified unresolved doubts may
+       also keep a classroom visible. The original ledger is not
+       modified or replaced. */
+    const currentLiveDoubts =
+      await loadLiveTeacherDoubtLedger(
+        assignmentIds
+      );
+
+    currentLiveDoubts.forEach(
+      (item) => {
         if (item.classroom) {
           usedClassrooms.add(
             item.classroom
@@ -237,39 +493,36 @@ setPendingDoubtLoading(false);
 }
 
 async function handleSave(
-data: Record<string, unknown>
+  data: Record<string, unknown>
 ) {
+  setIsPublishing(true);
 
-setIsPublishing(true);
+  try {
+    await saveTeacherDailyLog(data);
 
-try {
+    /* Primary publication has succeeded. */
+    setOpenDialog(false);
 
-  await saveTeacherDailyLog(
-    data
-  );
+    /* Secondary UI refreshes cannot change the publish result. */
+    await Promise.allSettled([
+      fetchLogs(),
+      loadPendingDoubtLedger(),
+      loadLiveTeacherDoubtLedger(),
+    ]);
+  } catch (error) {
+    console.error(
+      "TEACHER DAILY LOG PUBLISH FAILED",
+      error
+    );
 
-  /*
-   * The publish itself is complete here.
-   * Close the dialog before refreshing the rest
-   * of the page so the UI responds immediately.
-   */
-  setOpenDialog(false);
-
-  /*
-   * These page refreshes are independent, so run
-   * them together instead of one after the other.
-   */
-  await Promise.all([
-    fetchLogs(),
-    loadPendingDoubtLedger(),
-  ]);
-
-} finally {
-
-  setIsPublishing(false);
-
-}
-
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Unable to publish today's lecture. Please try again."
+    );
+  } finally {
+    setIsPublishing(false);
+  }
 }
 
   return (
@@ -1132,6 +1385,28 @@ try {
           </div>
         </div>
 
+        {/* LIVE RECONCILIATION STATUS */}
+        {livePendingDoubts.length > 0 && (
+          <div
+            style={{
+              marginBottom: "14px",
+              padding: "10px 12px",
+              borderRadius: "14px",
+              border: "1px solid #BFDBFE",
+              background:
+                "linear-gradient(135deg, #EFF6FF 0%, #F8FBFF 100%)",
+              color: "#1D4ED8",
+              fontSize: "10px",
+              lineHeight: 1.45,
+              fontWeight: 700,
+            }}
+          >
+            LIVE STUDENT VERIFICATION ACTIVE — Matching classroom doubt
+            values use the latest student-side reconciliation. The original
+            second-loop ledger remains unchanged.
+          </div>
+        )}
+
         {/* TABLE */}
 
         <div
@@ -1399,14 +1674,7 @@ try {
 
                   doubtLedgerClassrooms.map(
                     (classroom) => {
-                      const item =
-                        pendingDoubts.find(
-                          (
-                            doubt: any
-                          ) =>
-                            doubt.classroom ===
-                            classroom
-                        );
+                      const item = getDisplayedDoubt(classroom);
 
                       return item
                         ? String(
@@ -1422,14 +1690,7 @@ try {
 
                   doubtLedgerClassrooms.map(
                     (classroom) => {
-                      const item =
-                        pendingDoubts.find(
-                          (
-                            doubt: any
-                          ) =>
-                            doubt.classroom ===
-                            classroom
-                        );
+                      const item = getDisplayedDoubt(classroom);
 
                       return (
                         item?.previousTopic ??
@@ -1444,14 +1705,7 @@ try {
 
                   doubtLedgerClassrooms.map(
                     (classroom) => {
-                      const item =
-                        pendingDoubts.find(
-                          (
-                            doubt: any
-                          ) =>
-                            doubt.classroom ===
-                            classroom
-                        );
+                      const item = getDisplayedDoubt(classroom);
 
                       return (
                         item?.difficultConcept ??
@@ -1466,14 +1720,7 @@ try {
 
                   doubtLedgerClassrooms.map(
                     (classroom) => {
-                      const item =
-                        pendingDoubts.find(
-                          (
-                            doubt: any
-                          ) =>
-                            doubt.classroom ===
-                            classroom
-                        );
+                      const item = getDisplayedDoubt(classroom);
 
                       return (
                         item?.students ??
@@ -1488,14 +1735,7 @@ try {
 
                   doubtLedgerClassrooms.map(
                     (classroom) => {
-                      const item =
-                        pendingDoubts.find(
-                          (
-                            doubt: any
-                          ) =>
-                            doubt.classroom ===
-                            classroom
-                        );
+                      const item = getDisplayedDoubt(classroom);
 
                       return (
                         item?.logDate ??
@@ -1510,14 +1750,7 @@ try {
 
                   doubtLedgerClassrooms.map(
                     (classroom) => {
-                      const item =
-                        pendingDoubts.find(
-                          (
-                            doubt: any
-                          ) =>
-                            doubt.classroom ===
-                            classroom
-                        );
+                      const item = getDisplayedDoubt(classroom);
 
                       return (
                         item?.status ??

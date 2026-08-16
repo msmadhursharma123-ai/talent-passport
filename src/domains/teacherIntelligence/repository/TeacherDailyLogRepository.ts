@@ -5,6 +5,24 @@ import { mapTeacherDailyLog } from "../types/TeacherDailyLogMapper";
 
 const TABLE_NAME = "teacher_daily_logs";
 
+/* =========================================================
+   INDIA CLASSROOM BUSINESS DATE
+========================================================= */
+function getIndiaCalendarDateKey() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+
+  return `${year}-${month}-${day}`;
+}
+
 /*
 =========================================================
 GET ALL DAILY LOGS
@@ -138,9 +156,7 @@ if (!supabase) {
 return [];
 }
 
-const today = new Date()
-.toISOString()
-.split("T")[0];
+const today = getIndiaCalendarDateKey();
 
 const { data, error } = await supabase
 .from(TABLE_NAME)
@@ -180,6 +196,26 @@ export async function createTeacherDailyLog(
 
   if (!supabase) {
     throw new Error("Supabase not configured.");
+  }
+
+  const teacherAssignmentUuid = String(
+    dailyLog.teacher_assignment_uuid ?? ""
+  ).trim();
+
+  const logDate = String(
+    dailyLog.log_date ?? ""
+  ).trim();
+
+  if (!teacherAssignmentUuid) {
+    throw new Error(
+      "Teacher assignment is required to publish today's lecture."
+    );
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(logDate)) {
+    throw new Error(
+      "Lecture business date is invalid. Please reopen the Daily Log and try again."
+    );
   }
 
   const { error } = await supabase

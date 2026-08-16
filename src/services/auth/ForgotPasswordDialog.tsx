@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
 
 import {
-    verifyRecoveryIdentity,
     sendPasswordResetEmail
 } from "../../services/authenticationService";
 
 interface Props {
-
     open: boolean;
 
     role:
@@ -18,423 +16,214 @@ interface Props {
 
     onClose: () => void;
 
-onVerified: (email: string) => void;
-
+    /*
+     * Kept in the public component API for compatibility with the
+     * existing login/portal callers. The recovery flow now completes
+     * through the Supabase recovery email, so this callback is not used
+     * to enter the reset page prematurely.
+     */
+    onVerified: (email: string) => void;
 }
 
 export default function ForgotPasswordDialog({
-
     open,
-
     role,
-
     onClose
-
 }: Props) {
 
     const [email, setEmail] =
         useState("");
 
-
-
     const [loading, setLoading] =
         useState(false);
 
-const [status,setStatus]=useState<
-"idle"|
-"verifying"|
-"sending"|
-"success"
->("idle");
+    const [status, setStatus] = useState<
+        "idle" |
+        "sending" |
+        "success"
+    >("idle");
 
-const [failedAttempts,setFailedAttempts]=
-useState(0);
-
-const [lockedUntil,setLockedUntil]=
-useState<number|null>(null);
-
-const [remainingSeconds,setRemainingSeconds]=
-useState(0);
-
-useEffect(() => {
-
-    if (!lockedUntil) {
-
-        return;
-
-    }
-
-    const interval = setInterval(() => {
-
-        const seconds = Math.max(
-
-            0,
-
-            Math.ceil(
-
-                (lockedUntil - Date.now()) / 1000
-
-            )
-
-        );
-
-        setRemainingSeconds(seconds);
-
-        if (seconds <= 0) {
-
-            setLockedUntil(null);
-
-            setFailedAttempts(0);
-
-        }
-
-    }, 1000);
-
-    return () => clearInterval(interval);
-
-}, [lockedUntil]);
-
-useEffect(() => {
-
-    if (!open) {
-
-        return;
-
-    }
-
-    setStatus("idle");
-
-    setEmail("");
-
-    
-
-    setLoading(false);
-
-}, [open]);
-
-    if (!open) {
-
-        return null;
-
-    }
-
-  async function handleVerify() {
-
-    if (
-        lockedUntil &&
-        Date.now() < lockedUntil
-    ) {
-        alert(
-            `Too many failed attempts.\n\nPlease wait ${remainingSeconds} seconds before trying again.`
-        );
-        return;
-    }
-
-    const verifiedEmail = email.trim();
-
-    if (!verifiedEmail) {
-        alert("Please enter your email.");
-        return;
-    }
-
-    setLoading(true);
-    setStatus("verifying");
-
-    try {
-        /*
-         * STEP 1 — Verify that this is an existing account for the
-         * selected portal role.
-         *
-         * This is NOT the password-reset session. It only confirms
-         * that the account is eligible for password recovery.
-         */
-        const verification =
-            await verifyRecoveryIdentity(
-                role,
-                verifiedEmail
-            );
-
-        if (!verification.success) {
-            const attempts = failedAttempts + 1;
-            setFailedAttempts(attempts);
-            setStatus("idle");
-
-            if (attempts >= 3) {
-                setLockedUntil(
-                    Date.now() + 5 * 60 * 1000
-                );
-
-                alert(
-                    "Too many failed attempts.\n\nForgot Password has been locked for 5 minutes."
-                );
-                return;
-            }
-
-            alert(
-                `${verification.error ?? "Unable to verify this account."}\n\nRemaining Attempts:\n\n${3 - attempts}`
-            );
+    useEffect(() => {
+        if (!open) {
             return;
         }
 
-        /*
-         * STEP 2 — NOW actually send the Supabase password-reset email.
-         *
-         * The previous implementation stopped after identity verification
-         * and immediately opened ResetPasswordPage. That page correctly
-         * expects a Supabase PASSWORD_RECOVERY session created from the
-         * email link, so it displayed "Invalid Recovery Session" because
-         * no reset email/link had ever been generated.
-         */
+        setStatus("idle");
+        setEmail("");
+        setLoading(false);
+    }, [open]);
+
+    if (!open) {
+        return null;
+    }
+
+    async function handleVerify() {
+
+        const verifiedEmail =
+            email.trim();
+
+        if (!verifiedEmail) {
+            alert("Please enter your email.");
+            return;
+        }
+
+        setLoading(true);
         setStatus("sending");
 
-        const resetResult =
-            await sendPasswordResetEmail(
+        try {
+            /*
+             * IMPORTANT:
+             *
+             * The old flow first called the `verify-recovery` Edge Function.
+             * That function currently returns HTTP 404 in the deployed
+             * environment, which blocked password recovery before Supabase
+             * could send the actual recovery email.
+             *
+             * The Supabase recovery email itself is the secure ownership
+             * verification step. The user must open that email link before
+             * ResetPasswordPage can obtain the PASSWORD_RECOVERY session.
+             *
+             * We therefore remove the broken preflight dependency without
+             * changing OTP, login, identity, or any other portal flow.
+             */
+            const resetResult =
+                await sendPasswordResetEmail(
+                    verifiedEmail
+                );
+
+            if (!resetResult.success) {
+                throw new Error(
+                    resetResult.error ??
+                    "Unable to send the password reset email."
+                );
+            }
+
+            /*
+             * Recovery context only.
+             * These values never create an identity and never trigger
+             * onboarding.
+             */
+            sessionStorage.setItem(
+                "recoveryEmail",
                 verifiedEmail
             );
 
-        if (!resetResult.success) {
-            throw new Error(
-                resetResult.error ??
+            sessionStorage.setItem(
+                "recoveryRole",
+                role
+            );
+
+            setStatus("success");
+            setEmail("");
+
+            alert(
+                "Password reset link sent successfully.\n\nPlease check your email and open the secure reset link to create your new password."
+            );
+
+            /*
+             * Do NOT call onVerified() here.
+             *
+             * The recovery session is created only after the user opens the
+             * Supabase email link. App.tsx then routes to ResetPasswordPage.
+             */
+            onClose();
+
+        } catch (error: any) {
+
+            console.error(
+                "PASSWORD RECOVERY EMAIL FAILED",
+                error
+            );
+
+            setStatus("idle");
+
+            alert(
+                error?.message ??
                 "Unable to send the password reset email."
             );
+
+        } finally {
+            setLoading(false);
         }
-
-        /*
-         * These are only recovery-context values. They do NOT indicate
-         * a new user and must never be used to trigger onboarding.
-         */
-        sessionStorage.setItem(
-            "recoveryEmail",
-            verifiedEmail
-        );
-
-        sessionStorage.setItem(
-            "recoveryRole",
-            role
-        );
-
-        setStatus("success");
-        setEmail("");
-        setLoading(false);
-
-        alert(
-            "Password reset link sent successfully.\n\nPlease check your email and open the secure reset link to create your new password."
-        );
-
-        /*
-         * IMPORTANT:
-         * Do NOT call onVerified() here.
-         *
-         * The user is not yet inside a recovery session. The recovery
-         * session is created only after the user clicks the email link.
-         * ResetPasswordPage will then be opened by App.tsx through the
-         * PASSWORD_RECOVERY event / reset-password query marker.
-         */
-        onClose();
-
-        return;
     }
-    catch (error: any) {
-        alert(
-            error?.message ??
-            "Unable to send the password reset email."
-        );
 
-        setStatus("idle");
-    }
-    finally {
-        setLoading(false);
-    }
-}
-
-
-    
     return (
-
         <div
             style={overlayStyle}
         >
+            <div
+                className="forgot-password-dialog"
+                style={dialogStyle}
+            >
 
-          <div
-
-className="forgot-password-dialog"
-
-style={dialogStyle}
-
->
-
-              <h2
-
-className="forgot-password-title"
-
-style={titleStyle}
-
->
-
+                <h2
+                    className="forgot-password-title"
+                    style={titleStyle}
+                >
                     Forgot Password
-
                 </h2>
 
-               <p
-
-className="forgot-password-subtitle"
-
-
-
-style={subtitleStyle}
-
->
-
-                    Verify your identity before resetting your password.
-
+                <p
+                    className="forgot-password-subtitle"
+                    style={subtitleStyle}
+                >
+                    Enter your registered email. We will send a secure password reset link to verify account ownership and create a new password.
                 </p>
 
-{
-status==="verifying" && (
+                {status === "sending" && (
+                    <div className="forgot-status">
+                        📧 Sending Secure Reset Link...
+                    </div>
+                )}
 
-<div className="forgot-status">
-
-🔍 Verifying Identity...
-
-</div>
-
-)
-}
-
-{
-status==="sending" && (
-
-<div className="forgot-status">
-
-📧 Sending Secure Reset Email...
-
-</div>
-
-)
-}
-
-{
-status==="success" && (
-
-<div className="forgot-status success">
-
-✅ Recovery Email Sent Successfully
-
-</div>
-
-)
-}
-
-{
-
-lockedUntil && (
-
-<div
-
-style={{
-
-background:"#FEF3F2",
-
-border:"1px solid #FDA29B",
-
-padding:14,
-
-borderRadius:12,
-
-marginBottom:18,
-
-color:"#B42318",
-
-fontWeight:700,
-
-textAlign:"center"
-
-}}
-
->
-
-Forgot Password Locked
-
-<br/>
-
-Try again in
-
-{" "}
-
-{remainingSeconds}
-
- seconds
-
-</div>
-
-)
-
-}
+                {status === "success" && (
+                    <div className="forgot-status success">
+                        ✅ Recovery Email Sent Successfully
+                    </div>
+                )}
 
                 <input
-
+                    type="email"
+                    autoComplete="email"
                     placeholder="Registered Email"
-
                     value={email}
-
-                    onChange={(e)=>
+                    onChange={(e) =>
                         setEmail(
                             e.target.value
                         )
                     }
-
                     className="forgot-password-input"
-
-style={inputStyle}
-
+                    style={inputStyle}
+                    disabled={loading}
                 />
 
-         
-
                 <button
-
+                    type="button"
                     onClick={handleVerify}
-
                     disabled={loading}
-
                     className="forgot-password-button"
-
-style={primaryButton}
-
+                    style={primaryButton}
                 >
-
                     {
-
                         loading
-
-                            ? "Verifying..."
-
-                            : "Verify Identity"
-
+                            ? "Sending..."
+                            : "Verify & Send Reset Link"
                     }
-
                 </button>
 
                 <button
-
+                    type="button"
                     onClick={onClose}
-
-                   className="forgot-password-button"
-
-style={secondaryButton}
-
+                    disabled={loading}
+                    className="forgot-password-button"
+                    style={secondaryButton}
                 >
-
                     Cancel
-
                 </button>
 
             </div>
-
         </div>
-
     );
-
 }
 
 const overlayStyle: React.CSSProperties = {

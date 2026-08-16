@@ -1,4 +1,8 @@
 import { getSupabaseClient } from "../../../supabaseClient";
+import {
+  getLiveDoubtsForTeacherAssignments,
+  mergeFeedbackUnderstandingLevels,
+} from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 
 import {
   ClassroomFeedbackRadar,
@@ -218,7 +222,21 @@ context?: RadarBuildContext
 
 ): Promise<ClassroomFeedbackRadar> {
 
-  // WE WILL BUILD THIS IN THE NEXT STEPS.
+  // Existing radar calculation remains the source of truth.
+  // The live layer only replaces the understanding state when the
+  // student has completed the new reconciliation.
+  const liveRows =
+    context?.teacherAssignmentUuid
+      ? await getLiveDoubtsForTeacherAssignments([
+          context.teacherAssignmentUuid,
+        ])
+      : [];
+
+  const effectiveFeedback =
+    mergeFeedbackUnderstandingLevels(
+      classroomFeedback,
+      liveRows.filter((row) => row.last_reconciled_at)
+    );
 
 const supabase = getSupabaseClient();
 
@@ -230,7 +248,7 @@ UNDERSTANDING BREAKDOWN
 
 const completelyUnderstood =
 
-classroomFeedback.filter(
+effectiveFeedback.filter(
 
 (item)=>
 
@@ -242,7 +260,7 @@ item.understanding_level ===
 
 const partiallyUnderstood =
 
-classroomFeedback.filter(
+effectiveFeedback.filter(
 
 (item)=>
 
@@ -254,7 +272,7 @@ item.understanding_level ===
 
 const didNotUnderstand =
 
-classroomFeedback.filter(
+effectiveFeedback.filter(
 
 (item)=>
 
@@ -267,7 +285,7 @@ const actualDailyLogUuid =
 
 dailyLogUuid ??
 
-classroomFeedback[0]?.daily_log_uuid;
+effectiveFeedback[0]?.daily_log_uuid;
 
 const teacherConcepts:string[] =
   context?.teacherConcepts
@@ -308,7 +326,7 @@ const studentResponses:string[] = [];
 
 for(
 
-const item of classroomFeedback
+const item of effectiveFeedback
 
 ){
 
@@ -359,7 +377,7 @@ STUDENTS REQUIRING ATTENTION
 
 const attentionStudents =
 
-classroomFeedback.filter(
+effectiveFeedback.filter(
 
 (item)=>
 
@@ -623,7 +641,7 @@ PENDING STUDENTS
 
 const submittedStudentUuids =
 
-classroomFeedback.map(
+effectiveFeedback.map(
 
 (item)=>item.student_uuid
 
@@ -814,14 +832,14 @@ export async function getClassroomFeedbackRadar(
   sectionName: string
 ): Promise<ClassroomFeedbackRadar> {
 
-  const classroomFeedback =
+  const effectiveFeedback =
     await getClassroomFeedbackRows(
       className,
       sectionName
     );
 
   return await buildFeedbackRadar(
-    classroomFeedback
+    effectiveFeedback
   );
 
 }
@@ -1144,6 +1162,36 @@ export async function getStudentsAtRisk(
     };
   }
 
+  let effectiveFeedbacks = feedbacks;
+
+  try {
+    const { data: assignments } = await (supabase as any)
+      .from("teacher_classroom_assignments")
+      .select("id")
+      .eq("class_name", className)
+      .eq("section_name", sectionName);
+
+    const assignmentIds = (assignments ?? [])
+      .map((assignment: any) => assignment.id)
+      .filter(Boolean);
+
+    const liveRows =
+      await getLiveDoubtsForTeacherAssignments(
+        assignmentIds
+      );
+
+    effectiveFeedbacks =
+      mergeFeedbackUnderstandingLevels(
+        feedbacks,
+        liveRows.filter((row) => row.last_reconciled_at)
+      );
+  } catch (error) {
+    console.error(
+      "LIVE STUDENTS-AT-RISK OVERLAY FAILED — ORIGINAL DATA PRESERVED",
+      error
+    );
+  }
+
 
   /*
   =========================================================
@@ -1157,7 +1205,7 @@ export async function getStudentsAtRisk(
 
       new Set<string>(
 
-        feedbacks
+        effectiveFeedbacks
 
           .map(
             (item: any) =>
@@ -1256,7 +1304,7 @@ export async function getStudentsAtRisk(
     new Map<string, any[]>();
 
 
-  feedbacks.forEach(
+  effectiveFeedbacks.forEach(
     (item: any) => {
 
       if (

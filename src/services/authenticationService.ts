@@ -2685,66 +2685,36 @@ export async function updatePassword(
 
         }
 
-        const {
+        /*
+         * IMPORTANT: password update itself is already complete at this point.
+         * Do not query school_admins for student / teacher / partner users.
+         * Those roles can be blocked by school-admin RLS, which previously
+         * converted a successful auth password update into a false failure.
+         *
+         * The school-admin post-password status update remains intact, but it
+         * runs only when the central identity kernel confirms that the current
+         * session is a school-admin session. Parent OTP is not involved in this
+         * path and is intentionally untouched.
+         */
+        const currentSchool = getCurrentSchool();
 
-            data: schoolAdmin,
-
-            error: schoolAdminLookupError
-
-        } = await (supabase as any)
-
-            .from("school_admins")
-
-            .select("id")
-
-            .eq("auth_user_id", authUser.id)
-
-            .maybeSingle();
-
-        if (schoolAdminLookupError) {
-
-            return {
-
-                success: false,
-
-                error: schoolAdminLookupError.message
-
-            };
-
-        }
-
-        // Only school-admin password changes own the school first-login flag.
-        // Other portal roles keep their existing password-update behaviour.
-        if (schoolAdmin) {
+        if (currentSchool?.authUserId === authUser.id) {
 
             const {
-
                 error: schoolAdminUpdateError
-
             } = await (supabase as any)
-
                 .from("school_admins")
-
                 .update({
-
                     account_status: "Active",
-
                     last_login_at: new Date().toISOString()
-
                 })
-
                 .eq("auth_user_id", authUser.id);
 
             if (schoolAdminUpdateError) {
-
                 return {
-
                     success: false,
-
                     error: schoolAdminUpdateError.message
-
                 };
-
             }
 
         }

@@ -1,6 +1,9 @@
 import { getSupabaseClient } from "../supabaseClient";
 
 import { requireIdentity } from "../services/identityService";
+import {
+  syncStudentLiveDoubtLedger,
+} from "../domains/liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 
 function logRepositoryError(
   title: string,
@@ -63,6 +66,19 @@ export async function submitStudentDailyFeedback(
 
   console.log("INSERT SUCCESS");
   console.log(data);
+
+  // Additive live-layer synchronization. The existing first-loop INSERT
+  // remains authoritative. We wait only for the optional mirror attempt so
+  // that the live ledger is populated before the feedback flow returns, but
+  // a live-layer failure can NEVER make a successful first-loop submission fail.
+  try {
+    await syncStudentLiveDoubtLedger();
+  } catch (syncError) {
+    console.error(
+      "LIVE DOUBT LEDGER SYNC FAILED — FEEDBACK INSERT PRESERVED",
+      syncError
+    );
+  }
 
   // Preserve the original public repository contract.
   return true;

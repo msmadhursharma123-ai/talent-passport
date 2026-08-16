@@ -3,6 +3,8 @@ import React, {
     useState
 } from "react";
 
+import LiveDoubtReconciliationGate from "../domains/liveDoubtIntelligence/components/LiveDoubtReconciliationGate";
+
 import {
     requireIdentity,
     clearStudentIdentity
@@ -69,6 +71,7 @@ export default function TalentPassport({
 
     const studentName =
         identity.studentName ?? "";
+
 
     /* ==========================================
        Logout
@@ -376,13 +379,15 @@ export default function TalentPassport({
 
         <div className="min-h-screen bg-[#F7F9FC] px-2.5 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-5">
 
-            <div className="mx-auto max-w-[1600px] space-y-4 sm:space-y-5 lg:space-y-6">
+            <LiveDoubtReconciliationGate />
+
+            <div className="mx-auto max-w-[1600px] space-y-2.5 sm:space-y-3 lg:space-y-3">
 
                 {/* =========================================================
                     HERO / TALENT PASSPORT OVERVIEW
                 ========================================================= */}
 
-                <section className="relative overflow-hidden rounded-[18px] border border-slate-200 bg-gradient-to-br from-orange-50/80 via-white to-blue-50/70 shadow-sm sm:rounded-[20px] lg:rounded-[22px]">
+                <section className="relative overflow-hidden rounded-[18px] border border-slate-200 bg-gradient-to-br from-white via-white to-[#F7F9FF] shadow-sm sm:rounded-[20px] lg:rounded-[22px]">
 
                     <div className="pointer-events-none absolute -right-20 -top-28 h-[300px] w-[300px] rounded-full bg-orange-50/80" />
 
@@ -412,6 +417,8 @@ export default function TalentPassport({
                                     This is your child's live growth record. The questionnaire shows where they started on Day 0; new meaningful evidence shows where they are today, how they are growing, and how they compare with similar students.
                                 </p>
 
+
+
                             </div>
 
                             <div className="w-full rounded-2xl bg-orange-500 p-4 text-white shadow-sm sm:w-auto sm:min-w-[220px] lg:min-w-[235px]">
@@ -421,7 +428,7 @@ export default function TalentPassport({
                                     <div>
 
                                         <p className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-100">
-                                            Your Talent DNA Today
+                                            Current Talent DNA
                                         </p>
 
                                         <div className="mt-2 flex items-end gap-1 sm:justify-center">
@@ -496,7 +503,7 @@ export default function TalentPassport({
 
                             <div className="rounded-2xl border border-green-100 bg-green-50/70 p-3.5 sm:p-4">
 
-                                <p className="text-[10px] font-black uppercase tracking-wider text-white sm:text-[10px]">
+                                <p className="text-[9px] font-black uppercase tracking-wider text-green-700 sm:text-[10px]">
                                     Strongest Skill
                                 </p>
 
@@ -547,7 +554,7 @@ export default function TalentPassport({
                             </p>
 
                             <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
-                                Your Talent DNA Today
+                                Current Talent DNA
                             </h2>
 
                             <p className="mt-1 max-w-2xl text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs sm:leading-5">
@@ -562,7 +569,7 @@ export default function TalentPassport({
 
                     </div>
 
-                    <div className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
 
                         {dimensions.map((dimension: PassportDimension) => {
 
@@ -645,14 +652,14 @@ export default function TalentPassport({
 
                 <div className="grid gap-2.5 lg:grid-cols-2 lg:gap-3">
 
-                    <section className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[24px] sm:p-5 lg:rounded-[28px] lg:p-6">
+                    <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-green-600">
                             Strength Intelligence
                         </p>
 
                         <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
-                            Where You Are Strongest
+                            Top Strengths
                         </h2>
 
                         <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
@@ -708,14 +715,14 @@ export default function TalentPassport({
 
                     </section>
 
-                    <section className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[24px] sm:p-5 lg:rounded-[28px] lg:p-6">
+                    <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
                             Growth Intelligence
                         </p>
 
                         <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
-                            Where You Can Grow Next
+                            Development Opportunities
                         </h2>
 
                         <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
@@ -787,7 +794,7 @@ export default function TalentPassport({
                             </p>
 
                             <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
-                                How You Have Grown Since Day 0
+                                Growth Since Day 0
                             </h2>
 
                             <p className="mt-1 max-w-2xl text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs sm:leading-5">
@@ -801,7 +808,7 @@ export default function TalentPassport({
 
                     </div>
 
-                    <div className="mt-3.5 grid gap-4 sm:grid-cols-3">
+                    <div className="mt-3.5 grid gap-3 sm:grid-cols-3">
 
                         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                             <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">
@@ -814,7 +821,7 @@ export default function TalentPassport({
 
                         <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
                             <p className="text-[9px] font-black uppercase tracking-wider text-blue-700">
-                                Your Talent DNA Today
+                                Current Talent DNA
                             </p>
                             <p className="mt-2 text-2xl font-black text-[#07142D]">
                                 {currentOverall}
@@ -832,20 +839,13 @@ export default function TalentPassport({
 
                     </div>
 
-                    <div className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
 
-                        {growthDimensionRows.map((dimension, index) => (
+                        {growthDimensionRows.map((dimension) => (
 
                             <div
                                 key={dimension.key}
-                                className={`rounded-2xl border p-3.5 ${[
-                                    "border-orange-100 bg-orange-50/65",
-                                    "border-blue-100 bg-blue-50/65",
-                                    "border-purple-100 bg-purple-50/65",
-                                    "border-rose-100 bg-rose-50/65",
-                                    "border-green-100 bg-green-50/65",
-                                    "border-violet-100 bg-violet-50/65"
-                                ][index % 6]}`}
+                                className="rounded-2xl border border-slate-100 bg-slate-50/70 p-3.5"
                             >
 
                                 <div className="flex items-center justify-between gap-3">
@@ -881,7 +881,7 @@ export default function TalentPassport({
                     {!growthIntelligence && (
                         <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
                             <p className="text-xs font-bold text-slate-500">
-                                Growth history is still building. Your Talent DNA Today remains available while baseline-to-current history becomes available.
+                                Growth history is still building. Current Talent DNA remains available while baseline-to-current history becomes available.
                             </p>
                         </div>
                     )}
@@ -901,7 +901,7 @@ export default function TalentPassport({
                             </p>
 
                             <h2 className="mt-1.5 text-lg font-black text-[#07142D] sm:text-xl">
-                                How Classroom Learning Is Going
+                                Classroom Understanding
                             </h2>
 
                             <p className="mt-1 max-w-3xl text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs sm:leading-5">
@@ -949,7 +949,7 @@ export default function TalentPassport({
                             </div>
 
                             <div className="mt-2.5 grid gap-2.5 lg:grid-cols-2">
-                                <div className="rounded-xl border border-cyan-100 bg-gradient-to-br from-cyan-50/80 to-blue-50/60 p-3">
+                                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
                                     <div className="flex items-center justify-between gap-3">
                                         <div>
                                             <p className="text-xs font-black text-[#07142D]">Subject Understanding</p>
@@ -972,7 +972,7 @@ export default function TalentPassport({
                                     </div>
                                 </div>
 
-                                <div className="rounded-xl border border-purple-100 bg-gradient-to-br from-purple-50/80 to-orange-50/40 p-3">
+                                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
                                     <div className="flex items-center justify-between gap-3">
                                         <div>
                                             <p className="text-xs font-black text-[#07142D]">Learning Consistency</p>
@@ -1024,14 +1024,14 @@ export default function TalentPassport({
 
                 <div className="grid gap-2.5 lg:grid-cols-2 lg:gap-3">
 
-                    <section className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[24px] sm:p-5 lg:rounded-[28px] lg:p-6">
+                    <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">
                             Comparative Intelligence
                         </p>
 
                         <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
-                            How Your Scores Compare
+                            Benchmark Analysis
                         </h2>
 
                         <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
@@ -1089,14 +1089,14 @@ export default function TalentPassport({
 
                     </section>
 
-                    <section className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[24px] sm:p-5 lg:rounded-[28px] lg:p-6">
+                    <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-600">
                             School Benchmark
                         </p>
 
                         <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
-                            Where You Stand In School
+                            School Positioning
                         </h2>
 
                         <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
@@ -1151,21 +1151,21 @@ export default function TalentPassport({
 
                 <div className="grid gap-2.5 lg:grid-cols-2 lg:gap-3">
 
-                    <section className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[24px] sm:p-5 lg:rounded-[28px] lg:p-6">
+                    <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
                             Profile Distinctiveness
                         </p>
 
                         <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
-                            How Distinctive Your Talent Profile Is
+                            Talent Distinctiveness
                         </h2>
 
                         <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
                             Shows how unusual your child's overall combination of the six Talent DNA capabilities is compared with students in the same class across the platform. A higher score means the overall profile is less common; it does not mean better or worse.
                         </p>
 
-                        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
 
                             {rarityRows.map((row: RarityRow) => (
 
@@ -1190,14 +1190,14 @@ export default function TalentPassport({
 
                     </section>
 
-                    <section className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[24px] sm:p-5 lg:rounded-[28px] lg:p-6">
+                    <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 sm:rounded-[20px] sm:p-4 lg:p-5">
 
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">
                             Relative Standing
                         </p>
 
                         <h2 className="mt-2 text-lg font-black text-[#07142D] sm:text-xl">
-                            Where You Stand Among Class Peers
+                            Class Peer Position
                         </h2>
 
                         <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
@@ -1207,6 +1207,7 @@ export default function TalentPassport({
                         <div className="mt-3 space-y-2.5">
 
                             {percentileRows.map((row: PercentileRow, index: number) => {
+
                                 const value = Math.max(0, Math.min(100, Math.round(row.percentile)));
                                 const mod100 = value % 100;
                                 const percentileLabel =
@@ -1215,6 +1216,7 @@ export default function TalentPassport({
                                     value % 10 === 2 ? `${value}nd Percentile` :
                                     value % 10 === 3 ? `${value}rd Percentile` :
                                     `${value}th Percentile`;
+
                                 const styles = [
                                     { card: "border-cyan-100 bg-cyan-50/65", bar: "bg-cyan-500", text: "text-cyan-700" },
                                     { card: "border-blue-100 bg-blue-50/65", bar: "bg-blue-500", text: "text-blue-700" },
@@ -1227,13 +1229,18 @@ export default function TalentPassport({
                                 return (
                                     <div key={row.label} className={`rounded-2xl border p-3.5 ${styles.card}`}>
                                         <div className="flex items-center justify-between gap-4">
-                                            <span className="min-w-0 text-sm font-black text-[#07142D]">{row.label}</span>
+                                            <span className="min-w-0 text-sm font-black text-[#07142D]">
+                                                {row.label}
+                                            </span>
                                             <span className={`shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-black shadow-sm ${styles.text}`}>
                                                 {percentileLabel}
                                             </span>
                                         </div>
                                         <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/90">
-                                            <div className={`h-full rounded-full ${styles.bar}`} style={{ width: `${value}%` }} />
+                                            <div
+                                                className={`h-full rounded-full ${styles.bar}`}
+                                                style={{ width: `${value}%` }}
+                                            />
                                         </div>
                                     </div>
                                 );
@@ -1251,12 +1258,81 @@ export default function TalentPassport({
 
                 <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:rounded-[20px] sm:p-4 lg:rounded-[22px] lg:p-5">
 
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p className="text-[9px] font-black uppercase tracking-[0.18em] text-orange-600">
+                                Personal Growth Action Plan
+                            </p>
+
+                            <h2 className="mt-1.5 text-lg font-black text-[#07142D] sm:text-xl">
+                                What To Do Next
+                            </h2>
+
+                            <p className="mt-1 max-w-3xl text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs sm:leading-5">
+                                Your Passport now turns scores, growth, evidence and classroom learning into practical next steps. The plan updates as new evidence is added.
+                            </p>
+                        </div>
+
+                        <div className="w-fit rounded-full bg-orange-50 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-orange-700">
+                            {personalGrowthPlan
+                                ? `${personalGrowthPlan.primaryFocus} First`
+                                : "Building Plan"}
+                        </div>
+                    </div>
+
+                    {personalGrowthPlan && (
+                        <>
+                            <div className="mt-3 rounded-xl border border-orange-100 bg-orange-50/60 p-3">
+                                <p className="text-xs font-black text-[#07142D]">
+                                    {personalGrowthPlan.headline}
+                                </p>
+                                <p className="mt-1 text-[10px] font-medium leading-4 text-slate-600">
+                                    {personalGrowthPlan.summary}
+                                </p>
+                            </div>
+
+                            <div className="mt-2.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                {personalGrowthPlan.immediatePriorities.map((item, index) => (
+                                    <article
+                                        key={item.id}
+                                        className="rounded-xl border border-slate-200 bg-slate-50/60 p-3"
+                                    >
+                                        <div className="flex items-start justify-between gap-2">
+                                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-[10px] font-black text-orange-600 shadow-sm">
+                                                {index + 1}
+                                            </span>
+                                            <span className="rounded-full bg-white px-2 py-1 text-[8px] font-black uppercase tracking-wider text-slate-500">
+                                                {item.category}
+                                            </span>
+                                        </div>
+
+                                        <h3 className="mt-2 text-xs font-black text-[#07142D]">
+                                            {item.title}
+                                        </h3>
+
+                                        <p className="mt-1 text-[9px] font-medium leading-3.5 text-slate-500">
+                                            {item.why}
+                                        </p>
+
+                                        <p className="mt-2 text-[10px] font-bold leading-4 text-slate-700">
+                                            {item.instruction}
+                                        </p>
+                                    </article>
+                                ))}
+                            </div>
+                        </>
+                    )}
+
+                </section>
+
+                <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:rounded-[20px] sm:p-4 lg:rounded-[22px] lg:p-5">
+
                     <p className="text-[9px] font-black uppercase tracking-[0.18em] text-purple-600">
                         90-Day Growth Plan
                     </p>
 
                     <h2 className="mt-1.5 text-lg font-black text-[#07142D] sm:text-xl">
-                        Your 90-Day Growth Journey
+                        Build → Apply → Prove
                     </h2>
 
                     <p className="mt-1 max-w-3xl text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs sm:leading-5">
@@ -1291,7 +1367,7 @@ export default function TalentPassport({
                                             <p className="text-[10px] font-black text-[#07142D]">
                                                 {item.title}
                                             </p>
-                                            <p className="mt-0.5 text-[11px] font-semibold leading-5 text-slate-600 sm:text-xs">
+                                            <p className="mt-0.5 text-[9px] font-medium leading-3.5 text-slate-500">
                                                 {item.instruction}
                                             </p>
                                         </div>
@@ -1314,7 +1390,7 @@ export default function TalentPassport({
                         </p>
 
                         <h2 className="mt-1.5 text-lg font-black sm:text-xl">
-                            Your Year-End Growth Targets
+                            Where This Plan Is Trying To Take You
                         </h2>
 
                         <p className="mt-1 max-w-3xl text-[11px] font-medium leading-4.5 text-slate-300 sm:text-xs sm:leading-5">
@@ -1362,7 +1438,7 @@ export default function TalentPassport({
                             </p>
 
                             <h2 className="mt-1.5 text-lg font-black text-[#07142D] sm:text-xl">
-                                Evidence That Will Strengthen Your Passport
+                                Make Growth Visible
                             </h2>
 
                             <p className="mt-1 text-[11px] font-medium leading-4.5 text-slate-500 sm:text-xs">
@@ -1386,33 +1462,27 @@ export default function TalentPassport({
                             </div>
                         </div>
 
-                        <div className="relative overflow-hidden rounded-[22px] bg-orange-500 p-4 text-white shadow-sm sm:p-5 lg:p-6">
-                            <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-orange-400/70" />
-                            <div className="pointer-events-none absolute -bottom-16 left-6 h-32 w-32 rounded-full bg-orange-400/60" />
-                            <div className="relative">
-                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-100">
-                                Participation Intelligence
-                            </p>
-                            <p className="mt-1 text-lg font-black text-white sm:text-xl">
+                        <div className="rounded-[18px] border border-orange-200 bg-orange-500 p-3.5 text-white shadow-sm sm:rounded-[20px] sm:p-4 lg:rounded-[22px] lg:p-5">
+                            <p className="text-[9px] font-black uppercase tracking-[0.18em] text-orange-100">
                                 Participation Readiness
                             </p>
 
                             <div className="mt-1 flex items-end gap-1">
-                                <span className="text-4xl font-black text-white sm:text-5xl">
+                                <span className="text-3xl font-black leading-none sm:text-4xl">
                                     {participationReadiness}
                                 </span>
-                                <span className="pb-1 text-sm font-black text-orange-100">
+                                <span className="pb-0.5 text-[9px] font-black text-orange-100 sm:text-[10px]">
                                     /100
                                 </span>
                             </div>
 
-                            <p className="mt-1 text-[10px] font-semibold leading-4 text-white/90">
+                            <p className="mt-1 text-[9px] font-medium leading-3.5 text-orange-50 sm:text-[10px]">
                                 Indicates current readiness to take part in co-curricular opportunities and competitive experiences.
                             </p>
 
                             {recommendedCompetitions.length > 0 && (
                                 <>
-                                    <p className="mt-3 text-[9px] font-black uppercase tracking-wider text-white">
+                                    <p className="mt-3 text-[9px] font-black uppercase tracking-wider text-orange-100">
                                         Best Current Competition Matches
                                     </p>
 
@@ -1420,12 +1490,12 @@ export default function TalentPassport({
                                         {recommendedCompetitions.slice(0, 3).map(competition => (
                                             <div
                                                 key={competition.name}
-                                                className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2.5"
+                                                className="flex items-center justify-between gap-3 rounded-lg bg-white px-2.5 py-2"
                                             >
-                                                <span className="text-[9px] font-black text-[#07142D]">
+                                                <span className="text-[9px] font-black text-[#07142D] sm:text-[10px]">
                                                     {competition.name}
                                                 </span>
-                                                <span className="shrink-0 text-[9px] font-black text-green-700">
+                                                <span className="shrink-0 text-[9px] font-black text-green-700 sm:text-[10px]">
                                                     {competition.score} Match
                                                 </span>
                                             </div>
@@ -1433,7 +1503,6 @@ export default function TalentPassport({
                                     </div>
                                 </>
                             )}
-                            </div>
                         </div>
                     </div>
 

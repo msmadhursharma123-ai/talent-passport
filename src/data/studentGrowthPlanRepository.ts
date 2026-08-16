@@ -203,7 +203,8 @@ async function getStudentAssignments(
 
 async function enrichLogsWithTeacherNames(
   logs: any[],
-  assignments: any[]
+  assignments: any[],
+  fallbackSchoolName = ""
 ) {
   const supabase = getSupabaseClient();
   if (!supabase || logs.length === 0) return logs;
@@ -268,6 +269,7 @@ async function enrichLogsWithTeacherNames(
         "",
       school_name:
         log.school_name ??
+        fallbackSchoolName ??
         "",
       class_name:
         assignment?.class_name ??
@@ -293,7 +295,9 @@ async function enrichLogsWithTeacherNames(
    DAILY LECTURE LOGS
 ============================================================ */
 
-export async function getStudentDailyLectureLogs() {
+export async function getStudentDailyLectureLogs(
+  forceRefresh = false
+) {
   const supabase = getSupabaseClient();
   if (!supabase) return [];
 
@@ -301,6 +305,7 @@ export async function getStudentDailyLectureLogs() {
   if (!context) return [];
 
   if (
+    !forceRefresh &&
     cachedLectureLogs &&
     cachedLectureLogsStudentUuid === context.studentUuid
   ) {
@@ -336,7 +341,8 @@ export async function getStudentDailyLectureLogs() {
 
     const enrichedLogs = await enrichLogsWithTeacherNames(
       logs ?? [],
-      assignments
+      assignments,
+      context.schoolName
     );
 
     cachedLectureLogs = enrichedLogs;
@@ -397,9 +403,8 @@ function toIndiaCalendarDateKey(value: unknown) {
 }
 
 /*
-   TeacherDailyLogDialog writes log_date as an ISO timestamp.
-   Build database boundaries in IST so a log created late/early in
-   the India calendar day is not shifted into the wrong date.
+   Historical statement queries may contain timestamp-style legacy rows.
+   Daily Log publication now writes the classroom business date as YYYY-MM-DD.
 */
 function getIndiaDateRangeUtc(startDate: string, endDate: string) {
   const start = new Date(`${startDate}T00:00:00+05:30`);
@@ -418,42 +423,36 @@ function getIndiaDateRangeUtc(startDate: string, endDate: string) {
 ============================================================ */
 
 export async function getTodaysLectureLogs() {
-  const supabase = getSupabaseClient();
-  if (!supabase) return [];
-
-  const context = await getStudentAcademicContext();
-  if (!context) return [];
-
-  const assignments = await getStudentAssignments(context);
-  if (assignments.length === 0) return [];
-
-  const assignmentIds = assignments
-    .map((item: any) => item.id)
-    .filter(Boolean);
-
+  /*
+   * Force-refresh this path because a teacher can publish while the
+   * student portal session is already open. The daily feed must not
+   * serve a stale module-level lecture-log cache.
+   */
+  const logs = await getStudentDailyLectureLogs(true);
   const today = getIndiaCalendarDateKey();
+
   if (!today) return [];
 
-  const { startIso, endExclusiveIso } = getIndiaDateRangeUtc(today, today);
+  const todaysLogs = (logs ?? []).filter((log: any) => {
+    const logDateKey = toIndiaCalendarDateKey(log.log_date);
+    const createdDateKey = toIndiaCalendarDateKey(log.created_at);
 
-  // IMPORTANT: teacher_daily_logs does not have teacher_uuid, school_uuid,
-  // school_name, subject_name, class_name or section_name as persisted log
-  // columns. Those values are resolved from teacher_classroom_assignments.
-  // Query only the actual teacher_daily_logs columns and enrich afterwards.
-  const { data: logs, error } = await (supabase as any)
-    .from("teacher_daily_logs")
-    .select(LOG_SELECT)
-    .in("teacher_assignment_uuid", assignmentIds)
-    .gte("log_date", startIso)
-    .lt("log_date", endExclusiveIso)
-    .order("log_date", { ascending: false });
+    if (logDateKey === today) return true;
 
-  if (error) {
-    console.error("TODAY LECTURE LOG FETCH ERROR", error);
-    throw error;
-  }
+    // Compatibility fallback for historical timestamp-style rows.
+    return logDateKey !== today && createdDateKey === today;
+  });
 
-  return enrichLogsWithTeacherNames(logs ?? [], assignments);
+  console.log(
+    "DAILY LECTURE LOGS — TODAY FILTER",
+    {
+      today,
+      totalLogs: logs.length,
+      matchedCount: todaysLogs.length,
+    }
+  );
+
+  return todaysLogs;
 }
 
 /* ============================================================
@@ -532,7 +531,8 @@ export async function getStudentFeedbackStatementData(
 
   const enrichedLogs = await enrichLogsWithTeacherNames(
     rawLogs ?? [],
-    assignments
+    assignments,
+    context.schoolName
   );
 
   const logRows = enrichedLogs.filter((log: any) =>

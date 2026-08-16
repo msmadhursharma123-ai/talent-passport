@@ -10,6 +10,7 @@ export interface LiveDoubtRow {
   teacher_assignment_uuid?: string | null;
   daily_log_uuid?: string | null;
   source_feedback_id?: string | null;
+  latest_source_feedback_id?: string | null;
   class_name?: string | null;
   section_name?: string | null;
   subject_name: string;
@@ -18,6 +19,7 @@ export interface LiveDoubtRow {
   normalized_concept: string;
   original_understanding_level?: string | null;
   source_submitted_at?: string | null;
+  latest_source_submitted_at?: string | null;
   first_seen_at?: string | null;
   last_seen_at?: string | null;
   is_unresolved: boolean;
@@ -27,32 +29,15 @@ export interface LiveDoubtRow {
   updated_at?: string | null;
 }
 
-export interface LiveDoubtSubject {
+export interface LiveReconciliationSubject {
   subjectName: string;
-  unresolvedDoubts: LiveDoubtRow[];
-  unresolvedCount: number;
+  doubts: LiveDoubtRow[];
 }
 
-export interface LiveDoubtPrompt {
-  subjects: LiveDoubtSubject[];
-  totalUnresolvedDoubts: number;
-  shouldShow: boolean;
-  alreadySubmittedToday: boolean;
-  liveCalculatedThrough: string | null;
-  checkDate: string;
+export interface LiveReconciliationResult {
+  eligibleSubjects: LiveReconciliationSubject[];
+  available: boolean;
 }
-
-export interface LiveDoubtSelection {
-  subjectName: string;
-  unresolvedConcepts: string[];
-  presentedDoubtIds: string[];
-}
-
-const TABLE = "student_live_unresolved_doubts";
-const CHECK_TABLE = "student_live_doubt_reconciliation_checks";
-const COMPLETE = "I completely understood.";
-const PARTIAL = "I partially understood.";
-const NONE = "I didn't understand.";
 
 function client() {
   const supabase = getSupabaseClient();
@@ -60,172 +45,391 @@ function client() {
   return supabase as any;
 }
 
-function localDate(date = new Date()) {
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
+function isMissingLiveInfrastructure(error: any) {
+  const message = String(error?.message ?? error ?? "").toLowerCase();
+  return (
+    message.includes("student_live_unresolved_doubts") ||
+    message.includes("student_live_doubt_reconciliation_checks") ||
+    message.includes("schema cache") ||
+    message.includes("does not exist")
+  );
 }
 
-export function normalizeLiveDoubtText(value: unknown) {
+function normalize(value: unknown) {
   return String(value ?? "")
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");
 }
 
-function asArray(value: unknown): string[] {
-  if (Array.isArray(value)) return value.map(String).map(v => v.trim()).filter(Boolean);
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      if (Array.isArray(parsed)) return parsed.map(String).map(v => v.trim()).filter(Boolean);
-    } catch {}
+export function normalizeLiveConcept(value: unknown) {
+  return normalize(value);
+}
+
+export async function syncStudentLiveDoubtLedger(): Promise<boolean> {
+  try {
+    const identity = requireIdentity();
+    const { error } = await client().rpc(
+      "sync_student_live_doubt_ledger",
+      { p_student_uuid: identity.studentUuid }
+    );
+    if (error) {
+      if (isMissingLiveInfrastructure(error)) return false;
+      throw error;
+    }
+    return true;
+  } catch (error) {
+    if (isMissingLiveInfrastructure(error)) return false;
+    throw error;
   }
-  return [];
 }
 
-export async function syncStudentLiveDoubtLedger(studentUuid?: string) {
-  const identity = requireIdentity();
-  const resolvedStudentUuid = studentUuid ?? identity.studentUuid;
-  if (!resolvedStudentUuid || resolvedStudentUuid !== identity.studentUuid) {
-    throw new Error("Student identity mismatch while syncing live doubt intelligence.");
+export async function getStudentLiveDoubtRows(): Promise<LiveDoubtRow[]> {
+  try {
+    const identity = requireIdentity();
+    const { data, error } = await client().rpc(
+      "get_student_live_doubt_rows",
+      { p_student_uuid: identity.studentUuid }
+    );
+
+    if (error) {
+      if (isMissingLiveInfrastructure(error)) return [];
+      throw error;
+    }
+
+    return (data ?? []) as LiveDoubtRow[];
+  } catch (error) {
+    if (isMissingLiveInfrastructure(error)) return [];
+    throw error;
+  }
+}
+
+export async function getLiveDoubtsForTeacherAssignments(
+  assignmentIds: string[]
+): Promise<LiveDoubtRow[]> {
+  const ids = Array.from(new Set((assignmentIds ?? []).filter(Boolean).map(String)));
+  if (ids.length === 0) return [];
+
+  try {
+    const { data, error } = await client()
+      .from("student_live_unresolved_doubts")
+      .select("*")
+      .in("teacher_assignment_uuid", ids);
+
+    if (error) {
+      if (isMissingLiveInfrastructure(error)) return [];
+      throw error;
+    }
+
+    return (data ?? []) as LiveDoubtRow[];
+  } catch (error) {
+    if (isMissingLiveInfrastructure(error)) return [];
+    throw error;
+  }
+}
+
+export async function getLiveDoubtsForSchool(
+  schoolUuid: string
+): Promise<LiveDoubtRow[]> {
+  if (!schoolUuid) return [];
+
+  try {
+    const { data, error } = await client()
+      .from("student_live_unresolved_doubts")
+      .select("*")
+      .eq("school_uuid", schoolUuid);
+
+    if (error) {
+      if (isMissingLiveInfrastructure(error)) return [];
+      throw error;
+    }
+
+    return (data ?? []) as LiveDoubtRow[];
+  } catch (error) {
+    if (isMissingLiveInfrastructure(error)) return [];
+    throw error;
+  }
+}
+
+function latestSourceTime(row: LiveDoubtRow) {
+  return new Date(
+    row.latest_source_submitted_at ??
+      row.source_submitted_at ??
+      row.last_seen_at ??
+      0
+  ).getTime();
+}
+
+function liveKey(
+  row: {
+    student_uuid?: string | null;
+    teacher_assignment_uuid?: string | null;
+    subject_name?: string | null;
+    doubt_concept?: string | null;
+  }
+) {
+  return [
+    String(row.student_uuid ?? ""),
+    String(row.teacher_assignment_uuid ?? ""),
+    normalize(row.doubt_concept),
+  ].join("|");
+}
+
+function pendingKey(row: any) {
+  return liveKey({
+    student_uuid: row.student_uuid,
+    teacher_assignment_uuid: row.teacher_assignment_uuid,
+    subject_name: row.subject_name,
+    doubt_concept:
+      row.previous_difficult_concept ??
+      row.previous_topic_name,
+  });
+}
+
+export function mergePendingDoubtsWithLiveLedger(
+  pendingDoubts: any[],
+  liveRows: LiveDoubtRow[]
+) {
+  const liveByKey = new Map<string, LiveDoubtRow>();
+  for (const row of liveRows) {
+    const key = liveKey(row);
+    const previous = liveByKey.get(key);
+    if (!previous || latestSourceTime(row) >= latestSourceTime(previous)) {
+      liveByKey.set(key, row);
+    }
   }
 
-  const { error } = await client().rpc("sync_student_live_doubt_ledger", {
-    p_student_uuid: resolvedStudentUuid,
-  });
-  if (error) throw error;
-  return getStudentLiveDoubtRows(resolvedStudentUuid);
-}
+  const matched = new Set<string>();
 
-export async function getStudentLiveDoubtRows(studentUuid?: string): Promise<LiveDoubtRow[]> {
-  const identity = requireIdentity();
-  const resolvedStudentUuid = studentUuid ?? identity.studentUuid;
-  if (!resolvedStudentUuid || resolvedStudentUuid !== identity.studentUuid) throw new Error("Student identity mismatch.");
-  const { data, error } = await client()
-    .from(TABLE)
-    .select("*")
-    .eq("student_uuid", resolvedStudentUuid)
-    .order("subject_name", { ascending: true })
-    .order("doubt_concept", { ascending: true });
-  if (error) throw error;
-  return data ?? [];
-}
+  const merged = (pendingDoubts ?? []).map((row: any) => {
+    const live = liveByKey.get(pendingKey(row));
+    if (!live) return row;
 
-export async function getStudentLiveDoubtPrompt(studentUuid?: string): Promise<LiveDoubtPrompt> {
-  const identity = requireIdentity();
-  const resolvedStudentUuid = studentUuid ?? identity.studentUuid;
-  const rows = await syncStudentLiveDoubtLedger(resolvedStudentUuid);
-  const today = localDate();
-  const { data: check } = await client()
-    .from(CHECK_TABLE)
-    .select("id,submitted_at,check_date")
-    .eq("student_uuid", resolvedStudentUuid)
-    .eq("check_date", today)
-    .maybeSingle();
+    matched.add(live.id);
 
-  const grouped = new Map<string, LiveDoubtRow[]>();
-  rows.filter(row => row.is_unresolved).forEach(row => {
-    const subject = String(row.subject_name ?? "").trim();
-    if (!subject) return;
-    grouped.set(subject, [...(grouped.get(subject) ?? []), row]);
+    return {
+      ...row,
+      student_name: row.student_name ?? live.student_name ?? "Student",
+      previous_topic_name:
+        row.previous_topic_name ??
+        live.topic_name ??
+        live.doubt_concept,
+      previous_difficult_concept:
+        row.previous_difficult_concept ??
+        live.doubt_concept,
+      status: live.is_unresolved ? "NOT DISCUSSED" : "RESOLVED",
+      doubt_resolved: !live.is_unresolved,
+      student_response: live.is_unresolved
+        ? row.student_response
+        : "DISCUSSED",
+      revision_checked_at:
+        live.last_reconciled_at ??
+        row.revision_checked_at,
+    };
   });
 
-  const subjects: LiveDoubtSubject[] = Array.from(grouped.entries())
-    .map(([subjectName, unresolvedDoubts]) => ({ subjectName, unresolvedDoubts, unresolvedCount: unresolvedDoubts.length }))
-    .filter(item => item.unresolvedCount >= 5)
-    .sort((a, b) => a.subjectName.localeCompare(b.subjectName));
+  // Add live rows that do not already exist in the original second-loop
+  // ledger. Resolved rows are kept as synthetic historical evidence so
+  // school/teacher closure metrics remain correct; exam-preparation views
+  // filter them back out because they are no longer unresolved.
+  for (const live of liveRows) {
+    if (matched.has(live.id)) continue;
 
-  const latest = rows
-    .map(row => row.updated_at ?? row.last_seen_at ?? row.source_submitted_at ?? null)
-    .filter(Boolean)
-    .sort()
-    .at(-1) ?? null;
+    merged.push({
+      id: `live-${live.id}`,
+      student_uuid: live.student_uuid,
+      student_name: live.student_name ?? "Student",
+      teacher_uuid: live.teacher_uuid,
+      teacher_assignment_uuid: live.teacher_assignment_uuid,
+      daily_log_uuid: live.daily_log_uuid,
+      status: live.is_unresolved ? "NOT DISCUSSED" : "RESOLVED",
+      student_response: live.is_unresolved ? null : "DISCUSSED",
+      school_name: null,
+      class_name: live.class_name,
+      section_name: live.section_name,
+      subject_name: live.subject_name,
+      previous_topic_name:
+        live.topic_name ?? live.doubt_concept,
+      previous_difficult_concept: live.doubt_concept,
+      log_date: live.latest_source_submitted_at?.slice(0, 10) ?? null,
+      doubt_resolved: !live.is_unresolved,
+      revision_checked_at: live.last_reconciled_at,
+      created_at: live.first_seen_at,
+    });
+  }
 
-  return {
-    subjects,
-    totalUnresolvedDoubts: subjects.reduce((sum, item) => sum + item.unresolvedCount, 0),
-    shouldShow: subjects.length > 0 && !check,
-    alreadySubmittedToday: Boolean(check),
-    liveCalculatedThrough: latest,
-    checkDate: today,
-  };
+  return merged;
 }
 
-export async function submitStudentLiveDoubtReconciliation(selections: LiveDoubtSelection[], checkDate = localDate()) {
-  const identity = requireIdentity();
-  if (!identity.studentUuid) throw new Error("Student identity missing.");
+export function mergeFeedbackUnderstandingLevels(
+  feedbackRows: any[],
+  liveRows: LiveDoubtRow[]
+) {
+  if (!liveRows.length) return feedbackRows ?? [];
 
-  const payload = selections.map(selection => ({
-    subjectName: selection.subjectName,
-    unresolvedConcepts: selection.unresolvedConcepts.map(normalizeLiveDoubtText),
-    presentedDoubtIds: selection.presentedDoubtIds,
-  }));
+  const byFeedback = new Map<string, LiveDoubtRow[]>();
+  const byStudentSubjectConcept = new Map<string, LiveDoubtRow[]>();
 
-  const { data, error } = await client().rpc("submit_student_live_doubt_reconciliation", {
-    p_student_uuid: identity.studentUuid,
-    p_check_date: checkDate,
-    p_selections: payload,
+  for (const row of liveRows) {
+    const ids = [
+      row.source_feedback_id,
+      row.latest_source_feedback_id,
+    ].filter(Boolean) as string[];
+
+    for (const id of ids) {
+      const list = byFeedback.get(String(id)) ?? [];
+      list.push(row);
+      byFeedback.set(String(id), list);
+    }
+
+    const key = [
+      row.student_uuid,
+      normalize(row.subject_name),
+      normalize(row.doubt_concept),
+    ].join("|");
+    const list = byStudentSubjectConcept.get(key) ?? [];
+    list.push(row);
+    byStudentSubjectConcept.set(key, list);
+  }
+
+  return (feedbackRows ?? []).map((feedback: any) => {
+    const concepts = Array.isArray(feedback.concepts_not_understood)
+      ? feedback.concepts_not_understood.filter(Boolean)
+      : [];
+
+    let related =
+      byFeedback.get(String(feedback.id ?? "")) ?? [];
+
+    if (related.length === 0) {
+      related = concepts.flatMap((concept: string) =>
+        byStudentSubjectConcept.get(
+          [
+            feedback.student_uuid,
+            normalize(feedback.subject_name),
+            normalize(concept),
+          ].join("|")
+        ) ?? []
+      );
+    }
+
+    if (related.length === 0) return feedback;
+
+    const resolvedConcepts = new Set(
+      related
+        .filter((row) => !row.is_unresolved)
+        .map((row) => row.normalized_concept)
+    );
+
+    const activeConcepts = related.filter(
+      (row) => row.is_unresolved
+    );
+
+    const remainingConcepts = concepts.filter(
+      (concept: string) =>
+        !resolvedConcepts.has(normalize(concept))
+    );
+
+    const allFeedbackConceptsResolved =
+      concepts.length > 0 &&
+      remainingConcepts.length === 0 &&
+      activeConcepts.length === 0;
+
+    if (allFeedbackConceptsResolved) {
+      return {
+        ...feedback,
+        concepts_not_understood: [],
+        understanding_level: "I completely understood.",
+        has_doubt: false,
+        _live_reconciled: true,
+      };
+    }
+
+    return {
+      ...feedback,
+      concepts_not_understood: remainingConcepts,
+      has_doubt: remainingConcepts.length > 0,
+      _live_reconciled: true,
+    };
   });
-
-  if (error) throw error;
-  return data ?? { success: true, checkDate };
 }
 
-export async function getLiveDoubtRowsForSchool(schoolUuid: string, startDate?: string, endDate?: string): Promise<LiveDoubtRow[]> {
-  const query = client().from(TABLE).select("*").eq("school_uuid", schoolUuid);
-  if (startDate) query.gte("source_submitted_at", `${startDate}T00:00:00`);
-  if (endDate) query.lt("source_submitted_at", `${endDate}T00:00:00`);
-  const { data, error } = await query;
-  if (error) throw error;
-  return data ?? [];
+export async function getStudentLiveReconciliationState(): Promise<LiveReconciliationResult> {
+  try {
+    await syncStudentLiveDoubtLedger();
+
+    const rows = await getStudentLiveDoubtRows();
+    const bySubject = new Map<string, LiveDoubtRow[]>();
+
+    for (const row of rows) {
+      if (!row.is_unresolved) continue;
+
+      const subject = String(row.subject_name ?? "").trim();
+      if (!subject) continue;
+
+      const list = bySubject.get(subject) ?? [];
+      list.push(row);
+      bySubject.set(subject, list);
+    }
+
+    const eligibleSubjects: LiveReconciliationSubject[] = [];
+
+    for (const [subjectName, doubts] of bySubject.entries()) {
+      const sorted = [...doubts].sort(
+        (a, b) =>
+          latestSourceTime(a) - latestSourceTime(b) ||
+          String(a.doubt_concept).localeCompare(
+            String(b.doubt_concept)
+          )
+      );
+
+      if (sorted.length < 5) continue;
+
+      const needsReconciliation = sorted.some((row) => {
+        if (!row.last_reconciled_at) return true;
+        return latestSourceTime(row) > new Date(row.last_reconciled_at).getTime();
+      });
+
+      if (!needsReconciliation) continue;
+
+      eligibleSubjects.push({
+        subjectName,
+        doubts: sorted,
+      });
+    }
+
+    return {
+      eligibleSubjects,
+      available: true,
+    };
+  } catch (error) {
+    if (isMissingLiveInfrastructure(error)) {
+      return { eligibleSubjects: [], available: false };
+    }
+    throw error;
+  }
 }
 
-export async function getLiveDoubtRowsForAssignments(assignmentIds: string[], startDate?: string, endDate?: string): Promise<LiveDoubtRow[]> {
-  if (assignmentIds.length === 0) return [];
-  const query = client().from(TABLE).select("*").in("teacher_assignment_uuid", assignmentIds);
-  if (startDate) query.gte("source_submitted_at", `${startDate}T00:00:00`);
-  if (endDate) query.lt("source_submitted_at", `${endDate}T00:00:00`);
-  const { data, error } = await query;
-  if (error) throw error;
-  return data ?? [];
-}
+export async function submitStudentLiveReconciliation(
+  subjects: Array<{
+    subjectName: string;
+    presentedDoubtIds: string[];
+    resolvedConcepts: string[];
+  }>
+) {
+  const identity = requireIdentity();
+  const checkDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(new Date());
 
-export function effectiveUnderstandingFromLiveFeedback(feedback: any, liveRows: LiveDoubtRow[]) {
-  const original = feedback?.understanding_level;
-  if (original !== PARTIAL && original !== NONE) return original;
-
-  const concepts = asArray(feedback?.concepts_not_understood);
-  if (concepts.length === 0) return original;
-
-  const relevant = concepts.map(normalizeLiveDoubtText).filter(Boolean);
-  const unresolved = liveRows.some(row =>
-    row.is_unresolved &&
-    String(row.student_uuid) === String(feedback.student_uuid) &&
-    String(row.subject_name ?? "").trim().toLowerCase() === String(feedback.subject_name ?? "").trim().toLowerCase() &&
-    relevant.includes(row.normalized_concept)
+  const { data, error } = await client().rpc(
+    "submit_student_live_doubt_reconciliation",
+    {
+      p_student_uuid: identity.studentUuid,
+      p_check_date: checkDate,
+      p_selections: subjects,
+    }
   );
 
-  return unresolved ? original : COMPLETE;
-}
-
-export function isPendingDoubtLiveResolved(doubt: any, liveRows: LiveDoubtRow[]) {
-  const student = String(doubt.student_uuid ?? "");
-  const subject = String(doubt.subject_name ?? "").trim().toLowerCase();
-  const concept = normalizeLiveDoubtText(doubt.previous_difficult_concept);
-  const topic = normalizeLiveDoubtText(doubt.previous_topic_name);
-
-  const matches = liveRows.filter(row =>
-    String(row.student_uuid) === student &&
-    String(row.subject_name ?? "").trim().toLowerCase() === subject &&
-    (
-      (concept && row.normalized_concept === concept) ||
-      (topic && normalizeLiveDoubtText(row.topic_name) === topic)
-    )
-  );
-
-  if (matches.length === 0) return null;
-  return matches.every(row => !row.is_unresolved);
+  if (error) throw error;
+  return data;
 }

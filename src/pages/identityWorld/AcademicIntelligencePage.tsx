@@ -74,7 +74,7 @@ export default function AcademicIntelligencePage() {
             <div className="ai-metrics">
               <div><strong>100%</strong><span>Topic Visibility</span></div>
               <div><strong>Daily</strong><span>Understanding Tracking</span></div>
-              <div><strong>AI</strong><span>Learning Intelligence</span></div>
+              <div><strong>Academic Intelligence</strong><span>Learning Intelligence</span></div>
               <div><strong>24×7</strong><span>Parent Visibility</span></div>
             </div>
           </div>

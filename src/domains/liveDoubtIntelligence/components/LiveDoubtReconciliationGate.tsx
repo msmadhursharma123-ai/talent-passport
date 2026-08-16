@@ -1,43 +1,73 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  getStudentLiveDoubtPrompt,
-  submitStudentLiveDoubtReconciliation,
-  type LiveDoubtPrompt,
-  type LiveDoubtSelection,
+  getStudentLiveReconciliationState,
+  submitStudentLiveReconciliation,
+  type LiveReconciliationSubject,
 } from "../repository/LiveDoubtReconciliationRepository";
-import { requireIdentity } from "../../../services/identityService";
 
-function formatLiveDate(value: string | null | undefined) {
-  if (!value) return "Not calculated yet";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Live calculation active";
-  return date.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+interface Props {
+  onSubmitted?: () => void;
 }
 
-export default function LiveDoubtReconciliationGate({ children }: { children: React.ReactNode }) {
-  const [prompt, setPrompt] = useState<LiveDoubtPrompt | null>(null);
-  const [selections, setSelections] = useState<Record<string, Set<string>>>({});
-  const [loading, setLoading] = useState(true);
+function buildInitialSelection(subjects: LiveReconciliationSubject[]) {
+  const state: Record<string, string[]> = {};
+  subjects.forEach((subject) => {
+    state[subject.subjectName] = [];
+  });
+  return state;
+}
+
+function buildInitialNothingResolved(subjects: LiveReconciliationSubject[]) {
+  const state: Record<string, boolean> = {};
+  subjects.forEach((subject) => {
+    state[subject.subjectName] = false;
+  });
+  return state;
+}
+
+export default function LiveDoubtReconciliationGate({
+  onSubmitted,
+}: Props) {
+  const [subjects, setSubjects] = useState<LiveReconciliationSubject[]>([]);
+  const [checking, setChecking] = useState(true);
+  const [available, setAvailable] = useState(true);
+  const [resolvedSelections, setResolvedSelections] = useState<Record<string, string[]>>({});
+  const [nothingResolved, setNothingResolved] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);
 
   async function load() {
-    setLoading(true);
-    setError("");
     try {
-      const identity = requireIdentity();
-      const next = await getStudentLiveDoubtPrompt(identity.studentUuid);
-      setPrompt(next);
-      const initial: Record<string, Set<string>> = {};
-      next.subjects.forEach(subject => {
-        initial[subject.subjectName] = new Set();
-      });
-      setSelections(initial);
-    } catch (err: any) {
-      console.error("LIVE DOUBT GATE LOAD FAILED", err);
-      setError(err?.message ?? "Unable to load the live doubt check.");
+      setChecking(true);
+      setError("");
+      setLoadFailed(false);
+
+      const result = await getStudentLiveReconciliationState();
+
+      setAvailable(result.available);
+      setSubjects(result.eligibleSubjects);
+      setResolvedSelections(buildInitialSelection(result.eligibleSubjects));
+      setNothingResolved(buildInitialNothingResolved(result.eligibleSubjects));
+
+      if (!result.available) {
+        setLoadFailed(false);
+      }
+    } catch (loadError) {
+      console.error(
+        "LIVE DOUBT RECONCILIATION GATE LOAD FAILED",
+        loadError
+      );
+      setAvailable(false);
+      setSubjects([]);
+      setLoadFailed(true);
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "The live learning check could not be loaded."
+      );
     } finally {
-      setLoading(false);
+      setChecking(false);
     }
   }
 
@@ -45,150 +75,394 @@ export default function LiveDoubtReconciliationGate({ children }: { children: Re
     void load();
   }, []);
 
-  const complete = useMemo(() => {
-    if (!prompt?.shouldShow) return true;
-    return prompt.subjects.every(subject => selections[subject.subjectName] instanceof Set);
-  }, [prompt, selections]);
+  const totalDoubts = useMemo(
+    () =>
+      subjects.reduce(
+        (total, subject) => total + subject.doubts.length,
+        0
+      ),
+    [subjects]
+  );
 
-  function toggle(subjectName: string, concept: string) {
-    setSelections(previous => {
-      const next = { ...previous };
-      const set = new Set(next[subjectName] ?? []);
-      if (set.has(concept)) set.delete(concept);
-      else set.add(concept);
-      next[subjectName] = set;
-      return next;
+  function toggle(
+    subjectName: string,
+    doubtId: string
+  ) {
+    if (submitting) return;
+
+    setResolvedSelections((current) => {
+      const selected = current[subjectName] ?? [];
+      const nextSelected = selected.includes(doubtId)
+        ? selected.filter((id) => id !== doubtId)
+        : [...selected, doubtId];
+
+      return {
+        ...current,
+        [subjectName]: nextSelected,
+      };
     });
+
+    // Selecting any doubt means at least one doubt has been resolved, so
+    // the explicit "Nothing resolved" choice for that subject is cleared.
+    setNothingResolved((current) => ({
+      ...current,
+      [subjectName]: false,
+    }));
   }
 
+  function toggleNothingResolved(subjectName: string) {
+    if (submitting) return;
+
+    const next = !Boolean(nothingResolved[subjectName]);
+
+    setNothingResolved((current) => ({
+      ...current,
+      [subjectName]: next,
+    }));
+
+    if (next) {
+      setResolvedSelections((selectionState) => ({
+        ...selectionState,
+        [subjectName]: [],
+      }));
+    }
+  }
+
+  const subjectsWithoutResponse = subjects.filter((subject) => {
+    const selected = resolvedSelections[subject.subjectName] ?? [];
+    return selected.length === 0 && !nothingResolved[subject.subjectName];
+  });
+
   async function submit() {
-    if (!prompt?.shouldShow || submitting || !complete) return;
+    if (
+      submitting ||
+      subjects.length === 0 ||
+      subjectsWithoutResponse.length > 0
+    ) {
+      return;
+    }
+
     setSubmitting(true);
     setError("");
+
     try {
-      const payload: LiveDoubtSelection[] = prompt.subjects.map(subject => ({
-        subjectName: subject.subjectName,
-        unresolvedConcepts: Array.from(selections[subject.subjectName] ?? []),
-        presentedDoubtIds: subject.unresolvedDoubts.map(doubt => doubt.id),
-      }));
-      await submitStudentLiveDoubtReconciliation(payload, prompt.checkDate);
-      await load();
-    } catch (err: any) {
-      console.error("LIVE DOUBT RECONCILIATION SUBMIT FAILED", err);
-      setError(err?.message ?? "We could not save this live check. Please try again.");
+      await submitStudentLiveReconciliation(
+        subjects.map((subject) => ({
+          subjectName: subject.subjectName,
+          presentedDoubtIds: subject.doubts.map(
+            (doubt) => doubt.id
+          ),
+          resolvedConcepts: subject.doubts
+            .filter((doubt) =>
+              (resolvedSelections[subject.subjectName] ?? []).includes(
+                doubt.id
+              )
+            )
+            .map((doubt) => doubt.doubt_concept),
+        }))
+      );
+
+      setSubjects([]);
+      onSubmitted?.();
+    } catch (submitError: any) {
+      console.error(
+        "LIVE DOUBT RECONCILIATION SUBMISSION FAILED",
+        submitError
+      );
+
+      setError(
+        submitError?.message ??
+          "Unable to save your reconciliation. Please try again."
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
-  const gateVisible = Boolean(prompt?.shouldShow);
+  if (checking || (!loadFailed && (!available || subjects.length === 0))) {
+    return null;
+  }
+
+  if (loadFailed) {
+    return (
+      <div
+        className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4"
+        style={{
+          background: "rgba(7,20,45,.68)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+        }}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="w-full max-w-[390px] rounded-[22px] border border-white/70 bg-white p-5 shadow-[0_24px_80px_rgba(7,20,45,.28)]">
+          <p className="text-[8px] font-black uppercase tracking-[0.22em] text-orange-500">
+            Live Learning Check
+          </p>
+          <h2 className="mt-1 text-[17px] font-black leading-5 text-[#07142D]">
+            Verification could not be loaded
+          </h2>
+          <p className="mt-2 text-[10px] font-semibold leading-4 text-slate-500">
+            Your existing learning data is safe. The live doubt verification needs to be checked before the Talent Passport can continue.
+          </p>
+          {error && (
+            <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[9px] font-bold leading-3.5 text-red-700">
+              {error}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="mt-4 w-full rounded-xl bg-[#0F2F63] px-4 py-2.5 text-[10px] font-black text-white"
+          >
+            Retry verification
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="live-doubt-gate-root">
-      <style>{`
-        .live-doubt-gate-root{position:relative;min-height:100%;width:100%;}
-        .live-doubt-gate-content{width:100%;transition:filter .25s ease;}
-        .live-doubt-gate-content.is-blocked{filter:blur(5px);pointer-events:none;user-select:none;}
-        .live-doubt-gate-backdrop{position:fixed;inset:0;z-index:9998;background:rgba(7,20,45,.28);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:8px;overflow:hidden;}
-        .live-doubt-gate-modal{position:relative;width:min(520px,calc(100vw - 16px));max-height:min(92vh,760px);overflow:hidden;border:1px solid rgba(255,255,255,.85);border-radius:22px;background:linear-gradient(145deg,#fff 0%,#fffaf5 58%,#f4f7ff 100%);box-shadow:0 28px 80px rgba(7,20,45,.26);display:flex;flex-direction:column;}
-        .live-doubt-gate-modal:before{content:"";position:absolute;width:210px;height:210px;right:-80px;top:-90px;border-radius:999px;background:radial-gradient(circle,#fed7aa 0%,rgba(254,215,170,.18) 55%,transparent 72%);pointer-events:none;}
-        .live-doubt-gate-modal:after{content:"";position:absolute;width:180px;height:180px;left:-90px;bottom:-90px;border-radius:999px;background:radial-gradient(circle,#bfdbfe 0%,rgba(191,219,254,.16) 55%,transparent 72%);pointer-events:none;}
-        .live-doubt-gate-head{position:relative;z-index:2;padding:13px 40px 9px 14px;border-bottom:1px solid #edf0f5;}
-        .live-doubt-gate-kicker{font-size:7px;line-height:1;text-transform:uppercase;letter-spacing:1.25px;font-weight:900;color:#f97316;}
-        .live-doubt-gate-title{margin:5px 0 0;font-size:15px;line-height:1.1;font-weight:950;color:#07142d;letter-spacing:-.25px;}
-        .live-doubt-gate-copy{margin:4px 0 0;font-size:8.5px;line-height:1.35;font-weight:650;color:#64748b;max-width:430px;}
-        .live-doubt-gate-close{position:absolute;right:9px;top:9px;width:24px;height:24px;border:1px solid #e2e8f0;border-radius:9px;background:#fff;color:#64748b;font-size:15px;font-weight:900;line-height:20px;cursor:not-allowed;}
-        .live-doubt-gate-scroll{position:relative;z-index:2;overflow:auto;padding:8px 10px 9px;min-height:0;}
-        .live-doubt-gate-subject{border:1px solid #e2e8f0;border-radius:13px;background:rgba(255,255,255,.9);padding:8px;margin-bottom:7px;}
-        .live-doubt-gate-subject-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
-        .live-doubt-gate-subject-name{font-size:9px;font-weight:950;color:#07142d;}
-        .live-doubt-gate-count{font-size:7px;font-weight:900;color:#c2410c;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;padding:3px 6px;white-space:nowrap;}
-        .live-doubt-gate-doubts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;}
-        .live-doubt-gate-card{width:100%;min-height:35px;text-align:left;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc;padding:6px 7px;cursor:pointer;transition:.14s ease;display:flex;align-items:center;gap:6px;}
-        .live-doubt-gate-card:hover{border-color:#cbd5e1;transform:translateY(-1px);}
-        .live-doubt-gate-card.is-unresolved{background:#fff1f2;border-color:#fecdd3;box-shadow:inset 0 0 0 1px #ffe4e6;}
-        .live-doubt-gate-dot{width:8px;height:8px;flex:0 0 8px;border-radius:3px;border:1px solid #cbd5e1;background:#fff;}
-        .live-doubt-gate-card.is-unresolved .live-doubt-gate-dot{background:#fca5a5;border-color:#f87171;}
-        .live-doubt-gate-text{font-size:7.5px;line-height:1.25;font-weight:800;color:#334155;overflow-wrap:anywhere;}
-        .live-doubt-gate-help{margin:2px 0 7px;font-size:7px;line-height:1.3;color:#94a3b8;font-weight:700;}
-        .live-doubt-gate-foot{position:relative;z-index:2;border-top:1px solid #edf0f5;padding:8px 10px;background:rgba(255,255,255,.9);}
-        .live-doubt-gate-live{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:7px;font-weight:850;color:#64748b;}
-        .live-doubt-gate-live strong{color:#15803d;}
-        .live-doubt-gate-submit{width:100%;border:0;border-radius:10px;padding:8px 10px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;font-size:8px;font-weight:950;letter-spacing:.35px;text-transform:uppercase;box-shadow:0 7px 18px rgba(234,88,12,.22);cursor:pointer;}
-        .live-doubt-gate-submit:disabled{opacity:.55;cursor:not-allowed;box-shadow:none;}
-        .live-doubt-gate-error{margin-top:6px;padding:6px 7px;border:1px solid #fecdd3;background:#fff1f2;border-radius:8px;color:#be123c;font-size:7px;line-height:1.3;font-weight:800;}
-        .live-doubt-gate-loading{min-height:92vh;display:flex;align-items:center;justify-content:center;padding:10px;background:#f7f9fc;}
-        .live-doubt-gate-loading-card{width:min(330px,calc(100vw - 24px));padding:15px;border:1px solid #e2e8f0;border-radius:18px;background:#fff;text-align:center;box-shadow:0 15px 40px rgba(15,23,42,.08);}
-        .live-doubt-gate-loading-title{font-size:11px;font-weight:950;color:#07142d;}
-        .live-doubt-gate-loading-copy{margin-top:4px;font-size:8px;line-height:1.35;color:#64748b;font-weight:650;}
-        @media(max-width:390px){.live-doubt-gate-modal{border-radius:18px}.live-doubt-gate-head{padding:11px 36px 8px 11px}.live-doubt-gate-title{font-size:13px}.live-doubt-gate-copy{font-size:7.5px}.live-doubt-gate-scroll{padding:7px 7px 8px}.live-doubt-gate-doubts{grid-template-columns:1fr;gap:4px}.live-doubt-gate-card{min-height:31px;padding:5px 6px}.live-doubt-gate-text{font-size:7px}.live-doubt-gate-foot{padding:7px}.live-doubt-gate-submit{padding:7px;font-size:7.5px}}
-      `}</style>
+    <div
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4"
+      style={{
+        background:
+          "radial-gradient(circle at 15% 15%, rgba(249,115,22,.24), transparent 32%), radial-gradient(circle at 85% 20%, rgba(37,99,235,.22), transparent 34%), radial-gradient(circle at 50% 100%, rgba(124,58,237,.18), transparent 42%), rgba(7,20,45,.62)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="live-doubt-reconciliation-title"
+    >
+      <div
+        className="relative flex w-full max-w-[430px] flex-col overflow-hidden rounded-[24px] border border-white/70 bg-white shadow-[0_24px_80px_rgba(7,20,45,.28)]"
+        style={{
+          maxHeight: "94vh",
+        }}
+      >
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-28 opacity-90"
+          style={{
+            background:
+              "linear-gradient(120deg, #FFF4E8 0%, #EEF5FF 52%, #F6F0FF 100%)",
+          }}
+        />
 
-      <div className={`live-doubt-gate-content ${gateVisible ? "is-blocked" : ""}`}>
-        {children}
-      </div>
+        <div className="relative z-10 flex items-start justify-between gap-3 px-4 pb-2 pt-4 sm:px-5 sm:pt-5">
+          <div className="min-w-0">
+            <p className="text-[8px] font-black uppercase tracking-[0.22em] text-orange-500">
+              Live Learning Check
+            </p>
 
-      {loading && (
-        <div className="live-doubt-gate-backdrop">
-          <div className="live-doubt-gate-loading-card">
-            <div className="live-doubt-gate-kicker">Live Academic Check</div>
-            <div className="live-doubt-gate-loading-title">Checking your unresolved doubts…</div>
-            <div className="live-doubt-gate-loading-copy">Your Talent Passport is being verified against your latest student-side learning evidence.</div>
+            <h2
+              id="live-doubt-reconciliation-title"
+              className="mt-1 text-[17px] font-black leading-5 text-[#07142D] sm:text-[19px]"
+            >
+              Which Doubts Have Been Resolved?
+            </h2>
+
+            <p className="mt-1 max-w-[320px] text-[9px] font-semibold leading-3.5 text-slate-500 sm:text-[10px]">
+              Select the subtopics where your doubt has now been resolved.
+              Leave a topic unselected if the doubt is still unresolved.
+            </p>
           </div>
+
+          <button
+            type="button"
+            disabled
+            aria-label="This required check cannot be closed"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/80 text-base font-black text-slate-300"
+          >
+            ×
+          </button>
         </div>
-      )}
 
-      {!loading && gateVisible && prompt && (
-        <div className="live-doubt-gate-backdrop" role="dialog" aria-modal="true" aria-label="Live unresolved doubt reconciliation">
-          <div className="live-doubt-gate-modal">
-            <div className="live-doubt-gate-head">
-              <div className="live-doubt-gate-kicker">Mandatory · Live Learning Check</div>
-              <div className="live-doubt-gate-title">Which doubts are still unresolved?</div>
-              <div className="live-doubt-gate-copy">Select the subtopics for which your doubts are still unresolved in each subject. <strong>Do not select resolved subtopics.</strong></div>
-              <button className="live-doubt-gate-close" type="button" aria-label="Mandatory check cannot be closed" title="This check is mandatory">×</button>
-            </div>
+        <div className="relative z-10 overflow-y-auto px-3 pb-3 sm:px-4">
+          <div className="mb-2 flex items-center justify-between rounded-xl border border-orange-100 bg-orange-50/70 px-3 py-2">
+            <span className="text-[9px] font-black uppercase tracking-wider text-orange-700">
+              Subjects requiring confirmation
+            </span>
+            <span className="text-[9px] font-black text-[#07142D]">
+              {subjects.length} subjects · {totalDoubts} doubts
+            </span>
+          </div>
 
-            <div className="live-doubt-gate-scroll">
-              {prompt.subjects.map(subject => (
-                <section key={subject.subjectName} className="live-doubt-gate-subject">
-                  <div className="live-doubt-gate-subject-head">
-                    <div className="live-doubt-gate-subject-name">{subject.subjectName}</div>
-                    <div className="live-doubt-gate-count">{subject.unresolvedCount} live doubts</div>
+          <div className="space-y-2.5">
+            {subjects.map((subject) => {
+              const selected =
+                resolvedSelections[subject.subjectName] ?? [];
+
+              return (
+                <section
+                  key={subject.subjectName}
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                >
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/80 px-3 py-2">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-[11px] font-black text-[#07142D]">
+                        {subject.subjectName}
+                      </h3>
+                      <p className="text-[8px] font-semibold text-slate-400">
+                        {subject.doubts.length} unresolved first-loop
+                        {subject.doubts.length === 1 ? " doubt" : " doubts"}
+                      </p>
+                    </div>
+
+                    <span
+                      className="shrink-0 rounded-full border px-2 py-1 text-[8px] font-black"
+                      style={{
+                        borderColor: nothingResolved[subject.subjectName]
+                          ? "#CBD5E1"
+                          : "#BBF7D0",
+                        background: nothingResolved[subject.subjectName]
+                          ? "#F8FAFC"
+                          : "#F0FDF4",
+                        color: nothingResolved[subject.subjectName]
+                          ? "#64748B"
+                          : "#166534",
+                      }}
+                    >
+                      {nothingResolved[subject.subjectName]
+                        ? "Nothing resolved"
+                        : `${selected.length} resolved`}
+                    </span>
                   </div>
-                  <div className="live-doubt-gate-help">Tap a card only if this doubt is still unresolved. Selected cards turn light red.</div>
-                  <div className="live-doubt-gate-doubts">
-                    {subject.unresolvedDoubts.map(doubt => {
-                      const selected = selections[subject.subjectName]?.has(doubt.doubt_concept) ?? false;
+
+                  <div className="space-y-1 px-2.5 py-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleNothingResolved(subject.subjectName)}
+                      disabled={submitting}
+                      className="flex w-full items-start gap-2 rounded-xl border px-2.5 py-2 text-left transition"
+                      style={{
+                        borderColor: nothingResolved[subject.subjectName]
+                          ? "#64748B"
+                          : "#E2E8F0",
+                        background: nothingResolved[subject.subjectName]
+                          ? "#F1F5F9"
+                          : "#FFFFFF",
+                      }}
+                    >
+                      <span
+                        className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[8px] font-black"
+                        style={{
+                          borderColor: nothingResolved[subject.subjectName]
+                            ? "#475569"
+                            : "#CBD5E1",
+                          background: nothingResolved[subject.subjectName]
+                            ? "#475569"
+                            : "#FFFFFF",
+                          color: nothingResolved[subject.subjectName]
+                            ? "#FFFFFF"
+                            : "transparent",
+                        }}
+                      >
+                        ✓
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[9px] font-black leading-3.5 text-[#334155]">
+                          Nothing resolved
+                        </span>
+                        <span className="mt-0.5 block text-[8px] font-semibold leading-3 text-slate-400">
+                          None of these doubts have been resolved yet.
+                        </span>
+                      </span>
+                    </button>
+
+                    {subject.doubts.map((doubt) => {
+                      const checked = selected.includes(doubt.id);
+
                       return (
                         <button
                           key={doubt.id}
                           type="button"
-                          className={`live-doubt-gate-card ${selected ? "is-unresolved" : ""}`}
-                          onClick={() => toggle(subject.subjectName, doubt.doubt_concept)}
+                          onClick={() =>
+                            toggle(
+                              subject.subjectName,
+                              doubt.id
+                            )
+                          }
+                          className="flex w-full items-start gap-2 rounded-xl border px-2.5 py-2 text-left transition"
+                          style={{
+                            borderColor: checked
+                              ? "#86EFAC"
+                              : "#E2E8F0",
+                            background: checked
+                              ? "#F0FDF4"
+                              : "#FFFFFF",
+                          }}
                         >
-                          <span className="live-doubt-gate-dot" />
-                          <span className="live-doubt-gate-text">{doubt.doubt_concept}</span>
+                          <span
+                            className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border text-[9px] font-black"
+                            style={{
+                              borderColor: checked
+                                ? "#16A34A"
+                                : "#CBD5E1",
+                              background: checked
+                                ? "#16A34A"
+                                : "#FFFFFF",
+                              color: checked
+                                ? "#FFFFFF"
+                                : "transparent",
+                            }}
+                          >
+                            ✓
+                          </span>
+
+                          <span
+                            className="min-w-0 flex-1 text-[9px] font-bold leading-3.5"
+                            style={{
+                              color: checked
+                                ? "#166534"
+                                : "#475569",
+                            }}
+                          >
+                            {doubt.doubt_concept}
+                          </span>
                         </button>
                       );
                     })}
                   </div>
                 </section>
-              ))}
-            </div>
-
-            <div className="live-doubt-gate-foot">
-              <div className="live-doubt-gate-live">
-                <span>Live calculation through</span>
-                <strong>{formatLiveDate(prompt.liveCalculatedThrough)}</strong>
-              </div>
-              <button className="live-doubt-gate-submit" type="button" onClick={() => void submit()} disabled={submitting}>
-                {submitting ? "Updating live intelligence…" : "Submit & Open Talent Passport"}
-              </button>
-              {error && <div className="live-doubt-gate-error">{error}</div>}
-            </div>
+              );
+            })}
           </div>
+
+          {error && (
+            <div className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[9px] font-bold leading-3.5 text-red-700">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={submit}
+            disabled={submitting || subjectsWithoutResponse.length > 0}
+            className="mt-3 w-full rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm transition disabled:opacity-60"
+            style={{
+              background:
+                "linear-gradient(135deg,#FF6A00 0%,#F97316 52%,#E85D04 100%)",
+            }}
+          >
+            {submitting
+              ? "Saving Confirmation…"
+              : "Confirm Resolved Doubts & Continue"}
+          </button>
+
+          {subjectsWithoutResponse.length > 0 && (
+            <p className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-center text-[8px] font-black leading-3 text-amber-700">
+              Please answer every subject before continuing. For a subject where
+              nothing has been resolved, choose “Nothing resolved”.
+            </p>
+          )}
+
+          <p className="mt-1.5 text-center text-[7px] font-bold leading-3 text-slate-400">
+            Choose the doubts that are now resolved. If none are resolved, use
+            “Nothing resolved”. Every subject requires one explicit response.
+          </p>
         </div>
-      )}
+      </div>
     </div>
   );
 }

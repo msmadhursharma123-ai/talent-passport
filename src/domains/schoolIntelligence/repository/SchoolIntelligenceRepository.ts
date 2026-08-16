@@ -29,7 +29,7 @@ export async function getSchoolIntelligenceRawData(
 
   if (!schoolUuid) throw new Error("Authenticated school UUID is missing.");
 
-  const [teacherResult, assignmentResult, studentResult] = await Promise.all([
+  const [teacherResult, assignmentResult, studentBySchoolResult] = await Promise.all([
     supabase
       .from("teachers_master")
       .select("teacher_uuid,full_name,school_uuid,subject,is_active")
@@ -40,19 +40,40 @@ export async function getSchoolIntelligenceRawData(
       .select("id,teacher_uuid,school_uuid,academic_year,is_active,class_name,section_name,subject_name")
       .eq("school_uuid", schoolUuid),
 
+    // school_uuid is the canonical school boundary. school_name is used only
+    // as a compatibility fallback for older student rows that pre-date the
+    // canonical UUID backfill.
     supabase
       .from("students_master")
-      .select("student_uuid,student_name,school_name,class_name,section_name")
-      .eq("school_name", schoolName),
+      .select("student_uuid,student_name,school_uuid,school_name,class_name,section_name")
+      .eq("school_uuid", schoolUuid),
   ]);
 
   if (teacherResult.error) throw teacherResult.error;
   if (assignmentResult.error) throw assignmentResult.error;
-  if (studentResult.error) throw studentResult.error;
 
   const teachers = teacherResult.data ?? [];
   const assignments = assignmentResult.data ?? [];
-  const students = studentResult.data ?? [];
+
+  let students = studentBySchoolResult.data ?? [];
+
+  if (studentBySchoolResult.error) {
+    throw studentBySchoolResult.error;
+  }
+
+  if (students.length === 0 && schoolName) {
+    const studentFallbackResult = await supabase
+      .from("students_master")
+      .select("student_uuid,student_name,school_uuid,school_name,class_name,section_name")
+      .eq("school_name", schoolName);
+
+    if (studentFallbackResult.error) {
+      throw studentFallbackResult.error;
+    }
+
+    students = studentFallbackResult.data ?? [];
+  }
+
   const assignmentIds = assignments.map((x: any) => x.id).filter(Boolean);
 
   if (assignmentIds.length === 0) {
@@ -62,9 +83,30 @@ export async function getSchoolIntelligenceRawData(
     };
   }
 
+  /*
+   * IMPORTANT: teacher_daily_logs is the authoritative publication table,
+   * but it stores the assignment UUID rather than duplicating classroom and
+   * subject metadata. Do NOT select class_name / section_name / subject_name
+   * from teacher_daily_logs. Resolve those fields from the exact assignment
+   * row instead. This keeps School Intelligence aligned with the same
+   * teacher_assignment_uuid used by the working Daily Log page.
+   */
   let logsQuery = supabase
     .from("teacher_daily_logs")
-    .select("id,teacher_assignment_uuid,topic_name,log_date,created_at,class_name,section_name,subject_name,concepts_covered,page_from,page_to,homework_given,activity_conducted,teacher_notes")
+    .select(`
+      id,
+      teacher_assignment_uuid,
+      topic_name,
+      concepts_covered,
+      page_from,
+      page_to,
+      homework_given,
+      activity_conducted,
+      teacher_notes,
+      log_date,
+      created_at,
+      updated_at
+    `)
     .in("teacher_assignment_uuid", assignmentIds);
 
   if (startDate) logsQuery = logsQuery.gte("log_date", startDate);
@@ -73,7 +115,34 @@ export async function getSchoolIntelligenceRawData(
   const logResult = await logsQuery;
   if (logResult.error) throw logResult.error;
 
-  const logs = logResult.data ?? [];
+  const rawLogs = logResult.data ?? [];
+  const assignmentById = new Map<string, any>(
+    assignments.map(
+      (assignment: any): [string, any] => [
+        String(assignment.id),
+        assignment,
+      ]
+    )
+  );
+
+  // Enrich in memory only. No existing teacher_daily_logs row is changed.
+  // This gives every school-intelligence consumer the same classroom context
+  // without making the daily-log publication schema responsible for it.
+  const logs = rawLogs.map((log: any) => {
+    const assignment = assignmentById.get(
+      String(log.teacher_assignment_uuid ?? "")
+    );
+
+    return {
+      ...log,
+      teacher_uuid: assignment?.teacher_uuid ?? null,
+      school_uuid: assignment?.school_uuid ?? schoolUuid,
+      class_name: assignment?.class_name ?? "",
+      section_name: assignment?.section_name ?? "",
+      subject_name: assignment?.subject_name ?? "",
+    };
+  });
+
   const logIds = logs.map((x: any) => x.id).filter(Boolean);
 
   let feedback: any[] = [];

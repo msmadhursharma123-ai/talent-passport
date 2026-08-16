@@ -1,4 +1,9 @@
 import { getSupabaseClient } from "../../../supabaseClient";
+import {
+  getLiveDoubtsForTeacherAssignments,
+  mergeFeedbackUnderstandingLevels,
+  mergePendingDoubtsWithLiveLedger,
+} from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 
 import {
 getTeacherAssignmentsByTeacher,
@@ -318,6 +323,16 @@ export async function getOverallClassroomComparison(
     throw doubtError;
   }
 
+  const effectiveDoubtRows =
+    mergePendingDoubtsWithLiveLedger(
+      doubtRows ?? [],
+      (
+        await getLiveDoubtsForTeacherAssignments(
+          assignmentIds
+        )
+      ).filter((row) => row.last_reconciled_at)
+    );
+
   const comparisonData =
     await Promise.all(
       classroomGroups.map(
@@ -357,7 +372,7 @@ export async function getOverallClassroomComparison(
             );
 
           const classroomDoubts =
-            (doubtRows ?? []).filter(
+            effectiveDoubtRows.filter(
               (doubt:any) =>
                 groupIds.includes(
                   doubt.teacher_assignment_uuid
