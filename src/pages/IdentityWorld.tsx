@@ -28,6 +28,7 @@ import ResourcesPage from "./identityWorld/ResourcesPage";
 import BlogsPage from "./identityWorld/BlogsPage";
 import ContactCenterPage from "./identityWorld/ContactCenterPage";
 import PlatformIntelligenceSection from "./identityWorld/PlatformIntelligenceSection";
+import FiveMinuteSchoolImpactPage from "./identityWorld/FiveMinuteSchoolImpactPage";
 import RequestDemoPage from "./identityWorld/RequestDemoPage";
 
 interface Props {
@@ -123,6 +124,7 @@ export default function IdentityWorld({ onContinue }: Props) {
           <>
             <IdentityWorldHome onContinue={onContinue} />
             <PlatformIntelligenceSection />
+            <FiveMinuteSchoolImpactPage />
           </>
         );
       case "academic-intelligence": return <AcademicIntelligencePage />;
