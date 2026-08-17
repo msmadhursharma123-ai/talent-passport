@@ -19,6 +19,14 @@ import {
     RarityRow
 } from "../viewmodels/passportViewModel";
 
+import {
+    getStudentLearningIntelligenceWithLiveLayer
+} from "../services/learningIntelligenceService";
+
+import type {
+    LearningIntelligenceProfile
+} from "../engines/learningIntelligenceEngine";
+
 interface Props {
 
     onStartDNA?: () => void;
@@ -69,6 +77,16 @@ export default function TalentPassport({
 
     ] = useState<PassportViewModel | null>(null);
 
+    /*
+     * The Passport ViewModel remains the authoritative source for the
+     * existing page. Classroom Understanding gets a separate additive live
+     * overlay so the rest of the Passport does not change.
+     */
+    const [
+        liveLearningIntelligence,
+        setLiveLearningIntelligence
+    ] = useState<LearningIntelligenceProfile | null>(null);
+
     const studentName =
         identity.studentName ?? "";
 
@@ -93,6 +111,20 @@ export default function TalentPassport({
 
     };
 
+    async function loadLiveLearningIntelligence() {
+        try {
+            const live =
+                await getStudentLearningIntelligenceWithLiveLayer(30);
+
+            setLiveLearningIntelligence(live);
+        } catch (error) {
+            console.error(
+                "LIVE CLASSROOM LEARNING INTELLIGENCE LOAD FAILED",
+                error
+            );
+        }
+    }
+
     useEffect(() => {
 
         async function loadPassportModel() {
@@ -101,15 +133,47 @@ export default function TalentPassport({
 
                 setLoading(true);
 
-                const model =
-                    await getPassportViewModel();
+                const [
+                    modelResult,
+                    liveLearningResult
+                ] = await Promise.allSettled([
+                    getPassportViewModel(),
+                    getStudentLearningIntelligenceWithLiveLayer(30)
+                ]);
 
-                console.log("====================================");
-                console.log("MODEL RECEIVED BY PAGE");
-                console.log(model);
-                console.log("====================================");
+                if (
+                    modelResult.status === "fulfilled"
+                ) {
+                    const model =
+                        modelResult.value;
 
-                setPassportModel(model);
+                    console.log("====================================");
+                    console.log("MODEL RECEIVED BY PAGE");
+                    console.log(model);
+                    console.log("====================================");
+
+                    setPassportModel(model);
+                } else {
+                    console.error(
+                        "Passport ViewModel",
+                        modelResult.reason
+                    );
+
+                    setPassportModel(null);
+                }
+
+                if (
+                    liveLearningResult.status === "fulfilled"
+                ) {
+                    setLiveLearningIntelligence(
+                        liveLearningResult.value
+                    );
+                } else {
+                    console.error(
+                        "LIVE CLASSROOM LEARNING INTELLIGENCE",
+                        liveLearningResult.reason
+                    );
+                }
 
             }
 
@@ -189,7 +253,17 @@ export default function TalentPassport({
         passportModel?.growthIntelligence ?? null;
 
     const learningIntelligence =
-        passportModel?.learningIntelligence ?? null;
+        liveLearningIntelligence ??
+        passportModel?.learningIntelligence ??
+        null;
+
+    const hasLiveLearningAttention =
+        Boolean(
+            learningIntelligence?.subjectUnderstanding?.some(
+                subject =>
+                    subject.challenges.length > 0
+            )
+        );
 
     const personalGrowthPlan =
         passportModel?.personalGrowthPlan ?? null;
@@ -261,6 +335,67 @@ export default function TalentPassport({
         collaboration: "🤝",
         criticalThinking: "🧠"
     };
+
+    /* ==========================================
+       LIVE ATTENTION TABLE — SUBJECT GROUPING ONLY
+
+       Presentation-only projection. The live learning intelligence source,
+       reconciliation gate, popup, and all Passport calculations remain
+       untouched. One subject is rendered as exactly one table row.
+    ========================================== */
+    const groupedAttentionRows = (() => {
+        const bySubject = new Map<
+            string,
+            { subject: string; challenges: Array<{ concept: string; signals: number }> }
+        >();
+
+        for (const subject of learningIntelligence?.subjectUnderstanding ?? []) {
+            const displaySubject = String(subject.subject ?? "Other").trim() || "Other";
+            const normalizedSubject = displaySubject.toLowerCase().replace(/\s+/g, " " );
+
+            const existing = bySubject.get(normalizedSubject) ?? {
+                subject: displaySubject,
+                challenges: [],
+            };
+
+            for (const challenge of subject.challenges ?? []) {
+                const concept = String(challenge.concept ?? "").trim();
+                if (!concept) continue;
+
+                const normalizedConcept = concept.toLowerCase().replace(/\s+/g, " " );
+                const existingConcept = existing.challenges.find(
+                    item => item.concept.toLowerCase().replace(/\s+/g, " " ) === normalizedConcept
+                );
+
+                if (existingConcept) {
+                    existingConcept.signals += Number(challenge.signals ?? 0);
+                } else {
+                    existing.challenges.push({
+                        concept,
+                        signals: Number(challenge.signals ?? 0),
+                    });
+                }
+            }
+
+            bySubject.set(normalizedSubject, existing);
+        }
+
+        return Array.from(bySubject.values())
+            .filter(row => row.challenges.length > 0)
+            .sort((a, b) => a.subject.localeCompare(b.subject))
+            .map(row => ({
+                ...row,
+                challenges: [...row.challenges].sort(
+                    (a, b) =>
+                        b.signals - a.signals ||
+                        a.concept.localeCompare(b.concept)
+                ),
+                totalSignals: row.challenges.reduce(
+                    (sum, item) => sum + item.signals,
+                    0
+                ),
+            }));
+    })();
 
     /* ==========================================
        Loading
@@ -379,9 +514,155 @@ export default function TalentPassport({
 
         <div className="min-h-screen bg-[#F7F9FC] px-2.5 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-5">
 
-            <LiveDoubtReconciliationGate />
+            <LiveDoubtReconciliationGate
+                onSubmitted={() => {
+                    void loadLiveLearningIntelligence();
+                }}
+            />
 
             <div className="mx-auto max-w-[1600px] space-y-2.5 sm:space-y-3 lg:space-y-3">
+            <style>{`
+                /*
+                 * Responsive learning-intelligence containment:
+                 * the two learning cards must always shrink to the available
+                 * viewport width. Only the Concepts table is allowed to
+                 * become horizontally scrollable.
+                 */
+                .tp-learning-section {
+                    width: 100%;
+                    min-width: 0;
+                    max-width: 100%;
+                    box-sizing: border-box;
+                    overflow-x: clip;
+                }
+
+                .tp-learning-intelligence-grid {
+                    width: 100%;
+                    min-width: 0;
+                    max-width: 100%;
+                }
+
+                .tp-learning-subject-card,
+                .tp-learning-consistency-card {
+                    width: 100%;
+                    min-width: 0;
+                    max-width: 100%;
+                }
+
+                .tp-learning-subject-list {
+                    width: 100%;
+                    min-width: 0;
+                    max-width: 100%;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                .tp-learning-subject-item {
+                    min-width: 0;
+                    max-width: 100%;
+                }
+
+                .tp-learning-attention-scroll {
+                    display: block;
+                    width: 100%;
+                    max-width: 100%;
+                    min-width: 0;
+                    overflow-x: auto !important;
+                    overflow-y: hidden;
+                    -webkit-overflow-scrolling: touch;
+                    overscroll-behavior-x: contain;
+                    touch-action: pan-x;
+                    scrollbar-width: thin;
+                }
+
+                .tp-learning-attention-table {
+                    width: max-content;
+                    min-width: 560px;
+                    border-spacing: 0;
+                }
+
+                .tp-learning-attention-table th:first-child,
+                .tp-learning-attention-table td:first-child {
+                    width: 104px;
+                    min-width: 104px;
+                    max-width: 104px;
+                }
+
+                .tp-learning-attention-table th:nth-child(2),
+                .tp-learning-attention-table td:nth-child(2) {
+                    width: 360px;
+                    min-width: 360px;
+                }
+
+                .tp-learning-attention-table th:nth-child(3),
+                .tp-learning-attention-table td:nth-child(3) {
+                    width: 82px;
+                    min-width: 82px;
+                }
+
+                @media (max-width: 1024px) {
+                    /* Tablet: stack the two learning cards and let each one
+                       fully occupy the available width. */
+                    .tp-learning-intelligence-grid {
+                        grid-template-columns: minmax(0, 1fr) !important;
+                    }
+
+                    .tp-learning-subject-list {
+                        grid-template-columns: minmax(0, 1fr) !important;
+                    }
+
+                    .tp-learning-attention-table { min-width: 560px; }
+                    .tp-learning-attention-table th:first-child,
+                    .tp-learning-attention-table td:first-child {
+                        width: 104px; min-width: 104px; max-width: 104px;
+                    }
+                    .tp-learning-attention-table th:nth-child(2),
+                    .tp-learning-attention-table td:nth-child(2) {
+                        width: 360px; min-width: 360px;
+                    }
+                    .tp-learning-attention-table th:nth-child(3),
+                    .tp-learning-attention-table td:nth-child(3) {
+                        width: 82px; min-width: 82px;
+                    }
+                }
+
+                @media (max-width: 600px) {
+                    /* Mobile: Subject Understanding is intentionally NOT a
+                       scroll region. Every subject row fits the card. */
+                    .tp-learning-subject-card > div:first-child,
+                    .tp-learning-consistency-card > div:first-child {
+                        flex-wrap: wrap;
+                    }
+
+                    .tp-learning-subject-card > div:first-child > div,
+                    .tp-learning-consistency-card > div:first-child > div {
+                        min-width: 0;
+                        flex: 1 1 180px;
+                    }
+
+                    .tp-learning-subject-list {
+                        grid-template-columns: minmax(0, 1fr) !important;
+                    }
+
+                    .tp-learning-attention-scroll {
+                        border-radius: 10px;
+                    }
+                    .tp-learning-attention-table { min-width: 540px; }
+                    .tp-learning-attention-table th:first-child,
+                    .tp-learning-attention-table td:first-child {
+                        width: 92px; min-width: 92px; max-width: 92px;
+                    }
+                    .tp-learning-attention-table th:nth-child(2),
+                    .tp-learning-attention-table td:nth-child(2) {
+                        width: 350px; min-width: 350px;
+                    }
+                    .tp-learning-attention-table th:nth-child(3),
+                    .tp-learning-attention-table td:nth-child(3) {
+                        width: 78px; min-width: 78px;
+                    }
+                }
+            `}</style>
+
+
 
                 {/* =========================================================
                     HERO / TALENT PASSPORT OVERVIEW
@@ -892,9 +1173,9 @@ export default function TalentPassport({
                     LEARNING INTELLIGENCE
                 ========================================================= */}
 
-                <section className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:rounded-[20px] sm:p-4 lg:rounded-[22px] lg:p-5">
+                <section className="tp-learning-section rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm sm:rounded-[20px] sm:p-4 lg:rounded-[22px] lg:p-5">
 
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                         <div>
                             <p className="text-[9px] font-black uppercase tracking-[0.18em] text-cyan-600">
                                 Learning Intelligence
@@ -914,7 +1195,11 @@ export default function TalentPassport({
                         </div>
                     </div>
 
-                    {!learningIntelligence || learningIntelligence.recordedLectures === 0 ? (
+                    {!learningIntelligence ||
+                    (
+                        learningIntelligence.recordedLectures === 0 &&
+                        !hasLiveLearningAttention
+                    ) ? (
                         <div className="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-3">
                             <p className="text-[11px] font-bold text-slate-500">
                                 Learning intelligence will appear after classroom feedback is submitted.
@@ -948,8 +1233,8 @@ export default function TalentPassport({
                                 </div>
                             </div>
 
-                            <div className="mt-2.5 grid gap-2.5 lg:grid-cols-2">
-                                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                            <div className="tp-learning-intelligence-grid mt-2.5 grid min-w-0 max-w-full gap-2.5 lg:grid-cols-2">
+                                <div className="tp-learning-subject-card min-w-0 max-w-full rounded-xl border border-slate-200 bg-slate-50/60 p-3">
                                     <div className="flex items-center justify-between gap-3">
                                         <div>
                                             <p className="text-xs font-black text-[#07142D]">Subject Understanding</p>
@@ -962,9 +1247,9 @@ export default function TalentPassport({
                                         </span>
                                     </div>
 
-                                    <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                                    <div className="tp-learning-subject-list mt-2 grid min-w-0 gap-1.5">
                                         {learningIntelligence.subjectUnderstanding.slice(0, 6).map((subject) => (
-                                            <div key={subject.subject} className="flex items-center justify-between rounded-lg bg-white px-2.5 py-2">
+                                            <div key={subject.subject} className="tp-learning-subject-item flex min-w-0 max-w-full items-center justify-between rounded-lg bg-white px-2.5 py-2">
                                                 <span className="truncate pr-2 text-[10px] font-bold text-slate-600">{subject.subject}</span>
                                                 <span className="shrink-0 text-[10px] font-black text-cyan-700">{subject.understandingScore}%</span>
                                             </div>
@@ -972,7 +1257,7 @@ export default function TalentPassport({
                                     </div>
                                 </div>
 
-                                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                                <div className="tp-learning-consistency-card min-w-0 max-w-full rounded-xl border border-slate-200 bg-slate-50/60 p-3">
                                     <div className="flex items-center justify-between gap-3">
                                         <div>
                                             <p className="text-xs font-black text-[#07142D]">Learning Consistency</p>
@@ -990,26 +1275,77 @@ export default function TalentPassport({
                                         />
                                     </div>
 
-                                    <p className="mt-3 text-xs font-black text-[#07142D]">Concepts Needing Attention</p>
-                                    <p className="mt-0.5 text-[9px] font-medium text-slate-500">
-                                        Concepts repeatedly selected as difficult in student feedback.
+                                    <div className="mt-3 flex items-center justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <p className="text-xs font-black text-[#07142D]">Concepts Needing Attention</p>
+                                            <p className="mt-0.5 text-[9px] font-medium text-slate-500">
+                                                Current unresolved concepts, grouped by subject.
+                                            </p>
+                                        </div>
+
+                                        <span className="shrink-0 rounded-full bg-orange-50 px-2 py-1 text-[7px] font-black uppercase tracking-wider text-orange-700">
+                                            Live
+                                        </span>
+                                    </div>
+
+                                    <p className="mt-1 text-[7px] font-bold text-slate-400">
+                                        Scroll left & right →
                                     </p>
 
-                                    <div className="mt-2 flex flex-wrap gap-1.5">
-                                        {learningIntelligence.persistentChallenges.length === 0 ? (
-                                            <span className="rounded-full bg-green-50 px-2.5 py-1 text-[9px] font-bold text-green-700">
-                                                No repeated challenge identified
-                                            </span>
-                                        ) : (
-                                            learningIntelligence.persistentChallenges.map((challenge) => (
-                                                <span
-                                                    key={challenge.concept}
-                                                    className="rounded-full border border-orange-100 bg-orange-50 px-2.5 py-1 text-[9px] font-bold text-orange-700"
-                                                >
-                                                    {challenge.concept} · {challenge.signals}
-                                                </span>
-                                            ))
-                                        )}
+                                    <div
+                                        data-live-attention-layout="subject-grouped-v3"
+                                        className="tp-learning-attention-scroll mt-1.5 min-w-0 max-w-full overflow-x-auto rounded-lg border border-slate-200 bg-white"
+                                    >
+                                        <table className="tp-learning-attention-table border-collapse text-left">
+                                            <thead>
+                                                <tr className="bg-slate-50">
+                                                    <th className="sticky left-0 z-[3] border-b border-r border-slate-200 bg-slate-50 px-2 py-1.5 text-[7px] font-black uppercase tracking-wider text-slate-400">
+                                                        Subject
+                                                    </th>
+                                                    <th className="border-b border-slate-200 px-2 py-1.5 text-[7px] font-black uppercase tracking-wider text-slate-400">
+                                                        Doubts / Concepts
+                                                    </th>
+                                                    <th className="border-b border-slate-200 px-2 py-1.5 text-right text-[7px] font-black uppercase tracking-wider text-slate-400">
+                                                        Signals
+                                                    </th>
+                                                </tr>
+                                            </thead>
+
+                                            <tbody>
+                                                {groupedAttentionRows.map((row) => (
+                                                    <tr key={row.subject}>
+                                                        <td className="sticky left-0 z-[2] border-b border-r border-slate-100 bg-white px-2 py-1.5 align-top text-[8px] font-black text-[#07142D]">
+                                                            {row.subject}
+                                                        </td>
+                                                        <td className="border-b border-slate-100 px-2 py-1.5 align-top text-[8px] font-semibold leading-3.5 text-slate-600">
+                                                            {row.challenges.map((challenge, index) => (
+                                                                <span key={`${row.subject}-${challenge.concept}`}>
+                                                                    {index > 0 && <span className="px-1 text-slate-300">•</span>}
+                                                                    {challenge.concept}
+                                                                    {challenge.signals > 1 && (
+                                                                        <span className="ml-0.5 font-black text-orange-600">({challenge.signals})</span>
+                                                                    )}
+                                                                </span>
+                                                            ))}
+                                                        </td>
+                                                        <td className="border-b border-slate-100 px-2 py-1.5 text-right align-top text-[8px] font-black text-orange-600">
+                                                            {row.totalSignals}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+
+                                                {groupedAttentionRows.length === 0 && (
+                                                    <tr>
+                                                        <td
+                                                            colSpan={3}
+                                                            className="px-2 py-2 text-center text-[8px] font-bold text-green-700"
+                                                        >
+                                                            No current unresolved concept
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>

@@ -7,560 +7,570 @@ import {
   getStudentExamPreparationIntelligenceWithLiveLayer,
 } from "../../liveDoubtIntelligence/service/LiveStudentExamPreparation";
 
+interface SubjectBreakdown {
+  subject: string;
+  totalUnresolvedDoubts: number;
+  concepts: Array<{
+    concept: string;
+    signals: number;
+  }>;
+  topics: Array<{
+    topic: string;
+    signals: number;
+  }>;
+  highestRiskTopic: string;
+  attentionLevel: string;
+}
+
+interface ExamPreparationData {
+  totalUnresolvedDoubts?: number;
+  topics?: string[];
+  highestRiskTopic?: string;
+  attentionLevel?: string;
+  subjectBreakdown?: SubjectBreakdown[];
+}
+
+const subjectPalette = [
+  { bg: "linear-gradient(135deg, #FFF7ED 0%, #FFFBF5 100%)", ink: "#C2410C" },
+  { bg: "linear-gradient(135deg, #EFF6FF 0%, #F8FBFF 100%)", ink: "#1D4ED8" },
+  { bg: "linear-gradient(135deg, #ECFDF5 0%, #F7FFFB 100%)", ink: "#15803D" },
+  { bg: "linear-gradient(135deg, #F5F3FF 0%, #FBFAFF 100%)", ink: "#7C3AED" },
+  { bg: "linear-gradient(135deg, #FFF1F2 0%, #FFF7F8 100%)", ink: "#BE123C" },
+  { bg: "linear-gradient(135deg, #F0FDFA 0%, #F7FFFD 100%)", ink: "#0F766E" },
+];
+
 export default function StudentExamPreparation() {
-  const [
-    data,
-    setData,
-  ] = useState<any>(null);
+  const [data, setData] = useState<ExamPreparationData | null>(null);
 
   useEffect(() => {
-    loadData();
+    void loadData();
   }, []);
 
   async function loadData() {
-    const response =
-      await getStudentExamPreparationIntelligenceWithLiveLayer();
+    try {
+      const response =
+        await getStudentExamPreparationIntelligenceWithLiveLayer();
 
-    setData(response);
+      setData(response ?? null);
+    } catch (error) {
+      console.error(
+        "STUDENT EXAM PREPARATION LOAD FAILED",
+        error
+      );
+      setData(null);
+    }
   }
 
-  const totalUnresolved =
-    data?.totalUnresolvedDoubts ?? 0;
-
-  const topics: string[] =
-    Array.isArray(data?.topics)
-      ? data.topics.filter(Boolean)
-      : [];
-
-  const highestRisk =
-    data?.highestRiskTopic ?? "-";
-
-  const attention =
-    data?.attentionLevel ?? "-";
-
-  const attentionClass =
-    attention === "HIGH"
-      ? "sep-attention-high"
-      : attention === "MEDIUM"
-      ? "sep-attention-medium"
-      : "sep-attention-low";
+  const subjects = [...(data?.subjectBreakdown ?? [])].sort(
+    (a, b) =>
+      b.totalUnresolvedDoubts - a.totalUnresolvedDoubts ||
+      a.subject.localeCompare(b.subject)
+  );
 
   return (
-    <>
-      <style>{`
-        .sep-root,
-        .sep-root * {
-          box-sizing: border-box;
-        }
+    <div className="student-exam-preparation tp-exam-prep-root">
+      <style>{styles}</style>
 
-        .sep-root {
-          width: 100%;
-          min-width: 0;
-        }
-
-        .sep-topics-scroll {
-          scrollbar-width: thin;
-          scrollbar-color: #CBD5E1 transparent;
-        }
-
-        .sep-topics-scroll::-webkit-scrollbar {
-          height: 6px;
-        }
-
-        .sep-topics-scroll::-webkit-scrollbar-thumb {
-          background: #CBD5E1;
-          border-radius: 999px;
-        }
-
-        .sep-attention-low {
-          color: #15803D;
-          background: #F0FDF4;
-          border-color: #BBF7D0;
-        }
-
-        .sep-attention-medium {
-          color: #B45309;
-          background: #FFFBEB;
-          border-color: #FDE68A;
-        }
-
-        .sep-attention-high {
-          color: #B91C1C;
-          background: #FEF2F2;
-          border-color: #FECACA;
-        }
-
-        @media (max-width: 1024px) {
-          .sep-root {
-            padding: 20px !important;
-            border-radius: 20px !important;
-          }
-
-          .sep-header {
-            gap: 16px !important;
-          }
-
-          .sep-header h2 {
-            font-size: 22px !important;
-            line-height: 1.15 !important;
-          }
-
-          .sep-header-description {
-            max-width: 620px !important;
-            font-size: 13px !important;
-            line-height: 1.5 !important;
-          }
-
-          .sep-summary-grid {
-            margin-top: 18px !important;
-            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-            gap: 10px !important;
-          }
-
-          .sep-summary-card {
-            min-height: 118px !important;
-            padding: 14px !important;
-            border-radius: 15px !important;
-          }
-
-          .sep-summary-card h3 {
-            font-size: 14px !important;
-            line-height: 1.2 !important;
-          }
-
-          .sep-summary-value {
-            margin-top: 12px !important;
-            font-size: 27px !important;
-            line-height: 1 !important;
-          }
-
-          .sep-summary-note {
-            margin-top: 7px !important;
-            font-size: 10px !important;
-            line-height: 1.35 !important;
-          }
-
-          .sep-ledger {
-            margin-top: 18px !important;
-            border-radius: 17px !important;
-          }
-
-          .sep-ledger-header {
-            padding: 15px 16px !important;
-          }
-
-          .sep-ledger-title {
-            font-size: 18px !important;
-          }
-
-          .sep-topic-strip {
-            padding: 14px 16px !important;
-          }
-
-          .sep-topic-chip {
-            padding: 8px 11px !important;
-            font-size: 11px !important;
-          }
-        }
-
-        @media (max-width: 767px) {
-          .sep-root {
-            padding: 13px !important;
-            border-radius: 17px !important;
-            overflow: hidden !important;
-          }
-
-          .sep-header {
-            display: block !important;
-          }
-
-          .sep-eyebrow {
-            font-size: 8px !important;
-            letter-spacing: .16em !important;
-          }
-
-          .sep-header h2 {
-            margin-top: 5px !important;
-            font-size: 18px !important;
-            line-height: 1.12 !important;
-          }
-
-          .sep-header-description {
-            margin-top: 6px !important;
-            font-size: 10.5px !important;
-            line-height: 1.4 !important;
-          }
-
-          .sep-desktop-badge {
-            display: none !important;
-          }
-
-          .sep-summary-grid {
-            margin-top: 13px !important;
-            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-            gap: 5px !important;
-          }
-
-          .sep-summary-card {
-            min-width: 0 !important;
-            min-height: 88px !important;
-            padding: 8px 6px !important;
-            border-radius: 11px !important;
-          }
-
-          .sep-summary-icon {
-            width: 27px !important;
-            height: 27px !important;
-            border-radius: 8px !important;
-            font-size: 13px !important;
-          }
-
-          .sep-summary-label {
-            font-size: 5.8px !important;
-            line-height: 1.15 !important;
-            letter-spacing: .04em !important;
-            overflow-wrap: anywhere !important;
-          }
-
-          .sep-summary-card h3 {
-            margin-top: 5px !important;
-            font-size: 8.5px !important;
-            line-height: 1.12 !important;
-          }
-
-          .sep-summary-value {
-            margin-top: 8px !important;
-            font-size: 19px !important;
-            line-height: 1 !important;
-            overflow-wrap: anywhere !important;
-          }
-
-          .sep-summary-note {
-            display: none !important;
-          }
-
-          .sep-ledger {
-            margin-top: 13px !important;
-            border-radius: 14px !important;
-          }
-
-          .sep-ledger-header {
-            padding: 11px !important;
-          }
-
-          .sep-ledger-header-row {
-            gap: 8px !important;
-          }
-
-          .sep-ledger-title {
-            margin-top: 3px !important;
-            font-size: 14px !important;
-            line-height: 1.15 !important;
-          }
-
-          .sep-ledger-subtitle {
-            margin-top: 4px !important;
-            font-size: 9px !important;
-            line-height: 1.35 !important;
-          }
-
-          .sep-count-pill {
-            padding: 5px 8px !important;
-            font-size: 8px !important;
-          }
-
-          .sep-topic-strip {
-            padding: 10px !important;
-          }
-
-          .sep-topic-strip-heading {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            gap: 8px !important;
-          }
-
-          .sep-topic-strip-heading p {
-            font-size: 8px !important;
-          }
-
-          .sep-swipe-hint {
-            display: inline-flex !important;
-          }
-
-          .sep-topics-scroll {
-            margin-top: 8px !important;
-            display: flex !important;
-            gap: 6px !important;
-            overflow-x: auto !important;
-            overscroll-behavior-x: contain;
-            scroll-snap-type: x proximity;
-            padding-bottom: 5px !important;
-          }
-
-          .sep-topic-chip {
-            flex: 0 0 auto !important;
-            max-width: 190px !important;
-            padding: 7px 9px !important;
-            border-radius: 9px !important;
-            font-size: 9px !important;
-            line-height: 1.2 !important;
-            scroll-snap-align: start;
-          }
-
-          .sep-ledger-footer {
-            padding: 9px 10px !important;
-            gap: 6px !important;
-          }
-
-          .sep-ledger-footer p {
-            font-size: 8.5px !important;
-            line-height: 1.3 !important;
-          }
-
-          .sep-attention-pill {
-            padding: 5px 8px !important;
-            font-size: 8px !important;
-          }
-        }
-      `}</style>
-
-      <section
-        className="sep-root relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-sm"
-        style={{
-          background:
-            "linear-gradient(135deg,#FFFFFF 0%,#FFFFFF 72%,#FFF9F2 100%)",
-        }}
-      >
-        <div className="pointer-events-none absolute -right-14 -top-16 h-48 w-48 rounded-full bg-orange-50" />
-        <div className="pointer-events-none absolute right-24 -top-20 h-32 w-32 rounded-full bg-orange-50/60" />
-
-        <div className="sep-header relative z-10 flex items-start justify-between gap-5">
-          <div className="min-w-0">
-            <p className="sep-eyebrow text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
-              Academic Readiness Intelligence
-            </p>
-
-            <h2 className="mt-2 text-xl font-black text-slate-900">
-              Exam Preparation Intelligence
-            </h2>
-
-            <p className="sep-header-description mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-              Track unresolved classroom doubts and prepare smarter for your
-              upcoming exams by monitoring unresolved topics that still need
-              classroom clarification.
-            </p>
-          </div>
-
-          <div className="sep-desktop-badge hidden shrink-0 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-orange-600 md:block">
-            Academic Risk Ledger
-          </div>
+      <div className="tp-exam-heading-card">
+        <div className="tp-exam-heading-copy">
+          <p className="tp-exam-kicker">EXAM PREPARATION</p>
+          <h2 className="tp-exam-title">
+            EXAM PREPARATION INTELLIGENCE
+          </h2>
+          <p className="tp-exam-description">
+            Current unresolved classroom doubts that need academic attention before exams.
+          </p>
         </div>
 
-        <div className="sep-summary-grid relative z-10 mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <article
-            className="sep-summary-card relative overflow-hidden rounded-2xl border p-5"
-            style={{
-              background: "linear-gradient(135deg,#FFF7ED,#FFFFFF)",
-              borderColor: "#FED7AA",
-            }}
-          >
-            <div className="pointer-events-none absolute -right-5 -top-5 h-16 w-16 rounded-full bg-orange-100/70" />
+        <span className="tp-exam-live-badge">LIVE</span>
+      </div>
 
-            <div className="relative z-10">
-              <div className="flex items-start justify-between gap-2">
-                <p className="sep-summary-label text-[9px] font-black uppercase tracking-[0.14em] text-orange-600">
-                  Doubt Ledger
-                </p>
+      <div className="tp-exam-live-note">
+        LIVE STUDENT VERIFICATION ACTIVE — unresolved values use the latest live doubt reconciliation.
+      </div>
 
-                <div className="sep-summary-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-200 bg-white text-base">
-                  ?
-                </div>
-              </div>
+      <p className="tp-exam-swipe-hint">
+        Scroll left & right →
+      </p>
 
-              <h3 className="mt-3 text-base font-black text-slate-700">
-                Unresolved Doubts
-              </h3>
+      <div className="tp-exam-table-wrap">
+        <table className="tp-exam-table">
+          <thead>
+            <tr>
+              <th className="tp-exam-metric-header">METRICS</th>
 
-              <p className="sep-summary-value mt-5 text-3xl font-black text-orange-500">
-                {totalUnresolved}
-              </p>
+              {subjects.length > 0 ? (
+                subjects.map((subject, index) => {
+                  const palette = subjectPalette[index % subjectPalette.length];
+                  return (
+                    <th
+                      key={subject.subject}
+                      className="tp-exam-subject-header"
+                      style={{
+                        background: palette.bg,
+                        color: palette.ink,
+                      }}
+                    >
+                      {subject.subject}
+                    </th>
+                  );
+                })
+              ) : (
+                <th
+                  className="tp-exam-subject-header"
+                  style={{
+                    background: subjectPalette[0].bg,
+                    color: subjectPalette[0].ink,
+                  }}
+                >
+                  YOU
+                </th>
+              )}
+            </tr>
+          </thead>
 
-              <p className="sep-summary-note mt-2 text-xs font-bold leading-5 text-slate-500">
-                Not yet discussed or resolved
-              </p>
-            </div>
-          </article>
+          <tbody>
+            <ExamRow
+              metric="Students Count who had Doubt"
+              subjects={subjects}
+              getValue={(subject) => String(subject.totalUnresolvedDoubts)}
+              emptyValue={String(data?.totalUnresolvedDoubts ?? 0)}
+              kind="count"
+            />
 
-          <article
-            className="sep-summary-card relative overflow-hidden rounded-2xl border p-5"
-            style={{
-              background: "linear-gradient(135deg,#EFF6FF,#FFFFFF)",
-              borderColor: "#BFDBFE",
-            }}
-          >
-            <div className="pointer-events-none absolute -right-5 -top-5 h-16 w-16 rounded-full bg-blue-100/70" />
+            <ExamRow
+              metric="Topics With Unresolved Doubts"
+              subjects={subjects}
+              getValue={(subject) =>
+                subject.topics.length > 0
+                  ? subject.topics
+                      .map((item) =>
+                        item.signals > 1
+                          ? `${item.topic} (${item.signals})`
+                          : item.topic
+                      )
+                      .join(" • ")
+                  : "-"
+              }
+              emptyValue={
+                data?.topics?.length
+                  ? data.topics.join(" • ")
+                  : "-"
+              }
+              kind="doubt"
+            />
 
-            <div className="relative z-10">
-              <div className="flex items-start justify-between gap-2">
-                <p className="sep-summary-label text-[9px] font-black uppercase tracking-[0.14em] text-blue-600">
-                  Topic Intelligence
-                </p>
+            <ExamRow
+              metric="Most Difficult Concept from that topic"
+              subjects={subjects}
+              getValue={(subject) => {
+                if (subject.concepts.length > 0) {
+                  return subject.concepts
+                    .slice(0, 3)
+                    .map((item) =>
+                      item.signals > 1
+                        ? `${item.concept} (${item.signals})`
+                        : item.concept
+                    )
+                    .join(" • ");
+                }
+                return subject.highestRiskTopic || "-";
+              }}
+              emptyValue={data?.highestRiskTopic || "-"}
+              kind="difficult"
+            />
 
-                <div className="sep-summary-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-blue-200 bg-white text-base">
-                  📚
-                </div>
-              </div>
-
-              <h3 className="mt-3 text-base font-black text-slate-700">
-                Topics With Doubts
-              </h3>
-
-              <p className="sep-summary-value mt-5 text-3xl font-black text-blue-600">
-                {topics.length}
-              </p>
-
-              <p className="sep-summary-note mt-2 text-xs font-bold leading-5 text-slate-500">
-                Topics requiring clarification
-              </p>
-            </div>
-          </article>
-
-          <article
-            className="sep-summary-card relative overflow-hidden rounded-2xl border p-5"
-            style={{
-              background: "linear-gradient(135deg,#FEF2F2,#FFFFFF)",
-              borderColor: "#FECACA",
-            }}
-          >
-            <div className="pointer-events-none absolute -right-5 -top-5 h-16 w-16 rounded-full bg-red-100/70" />
-
-            <div className="relative z-10">
-              <div className="flex items-start justify-between gap-2">
-                <p className="sep-summary-label text-[9px] font-black uppercase tracking-[0.14em] text-red-600">
-                  Risk Intelligence
-                </p>
-
-                <div className="sep-summary-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-white text-base">
-                  ⚠
-                </div>
-              </div>
-
-              <h3 className="mt-3 text-base font-black text-slate-700">
-                Highest Risk Topic
-              </h3>
-
-              <p className="sep-summary-value mt-5 line-clamp-2 text-xl font-black leading-6 text-red-600">
-                {highestRisk}
-              </p>
-
-              <p className="sep-summary-note mt-2 text-xs font-bold leading-5 text-slate-500">
-                Priority topic for revision
-              </p>
-            </div>
-          </article>
-
-          <article
-            className="sep-summary-card relative overflow-hidden rounded-2xl border p-5"
-            style={{
-              background: "linear-gradient(135deg,#FAF5FF,#FFFFFF)",
-              borderColor: "#E9D5FF",
-            }}
-          >
-            <div className="pointer-events-none absolute -right-5 -top-5 h-16 w-16 rounded-full bg-purple-100/70" />
-
-            <div className="relative z-10">
-              <div className="flex items-start justify-between gap-2">
-                <p className="sep-summary-label text-[9px] font-black uppercase tracking-[0.14em] text-purple-600">
-                  Attention Signal
-                </p>
-
-                <div className="sep-summary-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-purple-200 bg-white text-base">
-                  ◎
-                </div>
-              </div>
-
-              <h3 className="mt-3 text-base font-black text-slate-700">
-                Attention Level
-              </h3>
-
-              <p className="sep-summary-value mt-5 text-2xl font-black text-purple-600">
-                {attention}
-              </p>
-
-              <p className="sep-summary-note mt-2 text-xs font-bold leading-5 text-slate-500">
-                Current academic attention requirement
-              </p>
-            </div>
-          </article>
-        </div>
-
-        <div className="sep-ledger relative z-10 mt-7 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          <div className="sep-ledger-header border-b border-slate-200 bg-[#FFFCF8] px-5 py-4">
-            <div className="sep-ledger-header-row flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-[9px] font-black uppercase tracking-[0.16em] text-orange-500">
-                  Student Exam Readiness
-                </p>
-
-                <h3 className="sep-ledger-title mt-1 text-lg font-black text-slate-900">
-                  Doubts Raised But Not Discussed by the Teacher
-                </h3>
-
-                <p className="sep-ledger-subtitle mt-1 text-xs font-medium text-slate-500">
-                  Revision queue built from unresolved classroom feedback.
-                </p>
-              </div>
-
-              <span className="sep-count-pill shrink-0 rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-[10px] font-black text-orange-600">
-                {topics.length} {topics.length === 1 ? "TOPIC" : "TOPICS"}
-              </span>
-            </div>
-          </div>
-
-          <div className="sep-topic-strip px-5 py-4">
-            <div className="sep-topic-strip-heading">
-              <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-500">
-                Revision Intelligence
-              </p>
-
-              <span className="sep-swipe-hint hidden items-center gap-1 text-[8px] font-black uppercase tracking-wider text-orange-500">
-                Swipe topics ↔
-              </span>
-            </div>
-
-            {topics.length > 0 ? (
-              <div className="sep-topics-scroll mt-3 flex flex-wrap gap-2">
-                {topics.map((topic: string, index: number) => (
-                  <span
-                    key={`${topic}-${index}`}
-                    className="sep-topic-chip rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700"
-                  >
-                    {topic}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center text-xs font-bold text-slate-500">
-                No unresolved topics currently recorded.
-              </div>
-            )}
-          </div>
-
-          <div className="sep-ledger-footer flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-3">
-            <p className="text-xs font-bold text-slate-500">
-              Highest priority:{" "}
-              <span className="text-slate-800">{highestRisk}</span>
-            </p>
-
-            <span
-              className={`sep-attention-pill rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-wider ${attentionClass}`}
-            >
-              {attention} attention
-            </span>
-          </div>
-        </div>
-      </section>
-    </>
+            <ExamRow
+              metric="Attention Level"
+              subjects={subjects}
+              getValue={(subject) => subject.attentionLevel || "-"}
+              emptyValue={data?.attentionLevel || "-"}
+              kind="status"
+            />
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
+
+function ExamRow({
+  metric,
+  subjects,
+  getValue,
+  emptyValue,
+  kind,
+}: {
+  metric: string;
+  subjects: SubjectBreakdown[];
+  getValue: (subject: SubjectBreakdown) => string;
+  emptyValue: string;
+  kind: "count" | "doubt" | "difficult" | "status";
+}) {
+  const valueClass =
+    kind === "count"
+      ? "tp-exam-count"
+      : kind === "difficult"
+        ? "tp-exam-difficult"
+        : kind === "status"
+          ? "tp-exam-status"
+          : "tp-exam-doubt";
+
+  return (
+    <tr>
+      <td className="tp-exam-metric-cell">{metric}</td>
+
+      {subjects.length > 0 ? (
+        subjects.map((subject) => (
+          <td
+            key={subject.subject}
+            className={`tp-exam-value-cell ${valueClass}`}
+          >
+            {getValue(subject)}
+          </td>
+        ))
+      ) : (
+        <td className={`tp-exam-value-cell ${valueClass}`}>
+          {emptyValue}
+        </td>
+      )}
+    </tr>
+  );
+}
+
+const styles = `
+.tp-exam-prep-root,
+.tp-exam-prep-root * {
+  box-sizing: border-box;
+}
+
+.tp-exam-prep-root {
+  width: 100%;
+  min-width: 0;
+  padding: 24px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 26px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.tp-exam-heading-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px;
+  margin-bottom: 14px;
+  background: linear-gradient(135deg, #FFF9F2 0%, #FFFFFF 72%, #FFF7ED 100%);
+  border: 1px solid #FED7AA;
+  border-radius: 20px;
+}
+
+.tp-exam-heading-copy {
+  min-width: 0;
+}
+
+.tp-exam-kicker {
+  margin: 0 0 7px;
+  color: #F97316;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+}
+
+.tp-exam-title {
+  margin: 0;
+  color: #0F172A;
+  font-size: 22px;
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.tp-exam-description {
+  margin: 7px 0 0;
+  color: #64748B;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.tp-exam-live-badge {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid #FED7AA;
+  border-radius: 999px;
+  background: #FFF7ED;
+  color: #EA580C;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+}
+
+.tp-exam-live-note {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid #BFDBFE;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #EFF6FF 0%, #F8FBFF 100%);
+  color: #1D4ED8;
+  font-size: 10px;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.tp-exam-swipe-hint {
+  margin: 0 0 6px;
+  color: #94A3B8;
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.tp-exam-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  border: 1px solid #E2E8F0;
+  border-radius: 18px;
+  background: #FFFFFF;
+  scrollbar-width: thin;
+}
+
+.tp-exam-table {
+  width: max-content;
+  min-width: 950px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.tp-exam-table th,
+.tp-exam-table td {
+  border-bottom: 1px solid #EEF2F7;
+  border-right: 1px solid #EEF2F7;
+  vertical-align: middle;
+}
+
+.tp-exam-metric-header {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFFBF5 100%);
+  color: #C2410C;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-align: left;
+}
+
+.tp-exam-subject-header {
+  min-width: 210px;
+  padding: 16px 18px;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  border-bottom: 1px solid #E2E8F0 !important;
+}
+
+.tp-exam-metric-cell {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+  padding: 14px 18px;
+  background: #FFFFFF;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.tp-exam-value-cell {
+  min-width: 210px;
+  padding: 14px 18px;
+  background: #FFFFFF;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.tp-exam-count {
+  color: #EF4444;
+  font-weight: 800;
+}
+
+.tp-exam-doubt {
+  color: #DC2626;
+  font-weight: 700;
+}
+
+.tp-exam-difficult {
+  color: #1E3A8A;
+  font-weight: 700;
+}
+
+.tp-exam-status {
+  color: #F59E0B;
+  font-weight: 800;
+}
+
+@media (max-width: 1024px) {
+  .tp-exam-prep-root {
+    padding: 16px !important;
+    border-radius: 20px !important;
+  }
+
+  .tp-exam-heading-card {
+    padding: 13px 14px !important;
+    margin-bottom: 10px !important;
+    border-radius: 14px !important;
+    gap: 10px !important;
+  }
+
+  .tp-exam-kicker {
+    font-size: 8px !important;
+    letter-spacing: 1.1px !important;
+    margin-bottom: 3px !important;
+  }
+
+  .tp-exam-title {
+    font-size: 18px !important;
+    line-height: 1.12 !important;
+  }
+
+  .tp-exam-description {
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+    margin-top: 4px !important;
+  }
+
+  .tp-exam-live-badge {
+    padding: 5px 8px !important;
+    font-size: 7px !important;
+  }
+
+  .tp-exam-live-note {
+    padding: 8px 10px !important;
+    margin-bottom: 7px !important;
+    border-radius: 11px !important;
+    font-size: 8px !important;
+  }
+
+  .tp-exam-table-wrap {
+    border-radius: 11px !important;
+  }
+
+  .tp-exam-table {
+    min-width: 590px !important;
+  }
+
+  .tp-exam-metric-header,
+  .tp-exam-metric-cell {
+    width: 126px !important;
+    min-width: 126px !important;
+    max-width: 126px !important;
+  }
+
+  .tp-exam-metric-header {
+    z-index: 5;
+    padding: 5px 6px !important;
+    font-size: 8.5px !important;
+    line-height: 1.18 !important;
+  }
+
+  .tp-exam-metric-cell {
+    z-index: 3;
+    padding: 5px 6px !important;
+    font-size: 8.5px !important;
+    line-height: 1.18 !important;
+  }
+
+  .tp-exam-subject-header,
+  .tp-exam-value-cell {
+    min-width: 104px !important;
+  }
+
+  .tp-exam-subject-header {
+    padding: 5px 6px !important;
+    font-size: 9.5px !important;
+    line-height: 1.18 !important;
+  }
+
+  .tp-exam-value-cell {
+    padding: 5px 6px !important;
+    font-size: 8.5px !important;
+    line-height: 1.18 !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .tp-exam-prep-root {
+    padding: 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .tp-exam-heading-card {
+    padding: 10px 11px !important;
+    margin-bottom: 8px !important;
+    border-radius: 12px !important;
+  }
+
+  .tp-exam-title {
+    font-size: 15px !important;
+  }
+
+  .tp-exam-description {
+    font-size: 8.5px !important;
+  }
+
+  .tp-exam-live-badge {
+    padding: 4px 7px !important;
+    font-size: 6px !important;
+  }
+
+  .tp-exam-live-note {
+    padding: 7px 8px !important;
+    font-size: 7px !important;
+    line-height: 1.35 !important;
+  }
+
+  .tp-exam-table {
+    min-width: 560px !important;
+  }
+
+  .tp-exam-metric-header,
+  .tp-exam-metric-cell {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+  }
+
+  .tp-exam-metric-header,
+  .tp-exam-metric-cell,
+  .tp-exam-value-cell {
+    padding: 5px !important;
+    font-size: 8px !important;
+  }
+
+  .tp-exam-subject-header {
+    min-width: 100px !important;
+    padding: 5px !important;
+    font-size: 9px !important;
+  }
+}
+`;

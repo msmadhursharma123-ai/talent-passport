@@ -304,7 +304,7 @@ export async function getOverallClassroomComparison(
       "pending_teacher_doubts"
     )
     .select(
-      "id,status,doubt_resolved,teacher_assignment_uuid,log_date,revision_checked_at"
+      "id,student_uuid,student_name,teacher_assignment_uuid,daily_log_uuid,status,student_response,school_name,class_name,section_name,subject_name,previous_topic_name,previous_difficult_concept,log_date,doubt_resolved,revision_checked_at,created_at"
     )
     .in(
       "teacher_assignment_uuid",
@@ -323,14 +323,31 @@ export async function getOverallClassroomComparison(
     throw doubtError;
   }
 
+  const liveRows = (
+    await getLiveDoubtsForTeacherAssignments(
+      assignmentIds
+    )
+  ).filter((row) => {
+    if (!row.last_reconciled_at) return false;
+    const sourceDate = String(
+      row.latest_source_submitted_at ??
+        row.source_submitted_at ??
+        row.last_seen_at ??
+        ""
+    ).slice(0, 10);
+    return sourceDate >= monthStartDate && sourceDate < nextMonthDate;
+  });
+
   const effectiveDoubtRows =
     mergePendingDoubtsWithLiveLedger(
       doubtRows ?? [],
-      (
-        await getLiveDoubtsForTeacherAssignments(
-          assignmentIds
-        )
-      ).filter((row) => row.last_reconciled_at)
+      liveRows
+    );
+
+  const effectiveFeedback =
+    mergeFeedbackUnderstandingLevels(
+      feedback ?? [],
+      liveRows
     );
 
   const comparisonData =
@@ -364,7 +381,7 @@ export async function getOverallClassroomComparison(
             );
 
           const classroomFeedback =
-            feedback.filter(
+            effectiveFeedback.filter(
               (item:any) =>
                 classroomLogIds.has(
                   item.daily_log_uuid
@@ -727,7 +744,7 @@ export async function getCurrentMonthClassroomMetrics(
       "pending_teacher_doubts"
     )
     .select(
-      "id,status,doubt_resolved,teacher_assignment_uuid,log_date,revision_checked_at"
+      "id,status,doubt_resolved,student_uuid,teacher_assignment_uuid,daily_log_uuid,previous_topic_name,previous_difficult_concept,log_date,revision_checked_at,student_response"
     )
     .in(
       "teacher_assignment_uuid",
@@ -745,6 +762,41 @@ export async function getCurrentMonthClassroomMetrics(
   if (doubtError) {
     throw doubtError;
   }
+
+  /*
+     LIVE DOUBT RECONCILIATION OVERLAY
+     ---------------------------------
+     Keep pending_teacher_doubts as the authoritative Loop-2 ledger,
+     but project the student's verified reconciliation state over it
+     for the analytics layer. This is intentionally additive: the
+     original query and classroom grouping remain unchanged.
+  */
+  const liveRows = (
+    await getLiveDoubtsForTeacherAssignments(
+      assignmentIds
+    )
+  ).filter((row) => {
+    if (!row.last_reconciled_at) return false;
+    const sourceDate = String(
+      row.latest_source_submitted_at ??
+        row.source_submitted_at ??
+        row.last_seen_at ??
+        ""
+    ).slice(0, 10);
+    return sourceDate >= monthStartDate && sourceDate < nextMonthDate;
+  });
+
+  const effectiveDoubtRows =
+    mergePendingDoubtsWithLiveLedger(
+      doubtRows ?? [],
+      liveRows
+    );
+
+  const effectiveFeedback =
+    mergeFeedbackUnderstandingLevels(
+      feedback ?? [],
+      liveRows
+    );
 
   return classroomGroups.map(
     ([classroom, group]) => {
@@ -773,7 +825,7 @@ export async function getCurrentMonthClassroomMetrics(
         );
 
       const classroomFeedback =
-        feedback.filter(
+        effectiveFeedback.filter(
           (item:any) =>
             classroomLogIds.has(
               item.daily_log_uuid
@@ -781,7 +833,7 @@ export async function getCurrentMonthClassroomMetrics(
         );
 
       const classroomDoubts =
-        (doubtRows ?? []).filter(
+        effectiveDoubtRows.filter(
           (doubt:any) =>
             groupIds.includes(
               doubt.teacher_assignment_uuid

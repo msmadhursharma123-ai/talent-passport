@@ -12,11 +12,8 @@ import StudentExamPreparation
 from "../domains/teacherIntelligence/pages/StudentExamPreparation";
 
 import {
-  getStudentProgressTrackerWithLiveLayer,
-} from "../domains/liveDoubtIntelligence/service/LiveStudentProgressTracker";
-
-import type {
-  StudentProgressTracker,
+  getStudentProgressTracker,
+  type StudentProgressTracker,
 } from "../domains/teacherIntelligence/repository/StudentProgressTrackerRepository";
 
 export default function ProgressTracker() {
@@ -116,7 +113,7 @@ export default function ProgressTracker() {
       setLoading(true);
 
       const data =
-        await getStudentProgressTrackerWithLiveLayer(
+        await getStudentProgressTracker(
           selectedSubject,
           selectedMonth
         );
@@ -187,6 +184,30 @@ export default function ProgressTracker() {
   return (
 
     <div className="pt-page space-y-6">
+      <style>{`
+        .pt-page{width:100%;min-width:0}
+        @media(max-width:1024px){
+          .pt-page{gap:16px!important}.pt-hero,.pt-calendar-section,.pt-stats-section,.pt-weekly-section{border-radius:20px!important}
+          .pt-hero{padding:22px!important}.pt-hero-row{gap:18px!important}.pt-hero h1{font-size:27px!important;margin-top:7px!important}
+          .pt-filters{width:100%!important;gap:10px!important}.pt-filters>div:not(:last-child){flex:1 1 0!important;min-width:0!important}.pt-filters select{width:100%!important;min-width:0!important}
+          .pt-calendar-section,.pt-stats-section,.pt-weekly-section{padding:20px!important}.pt-weekdays,.pt-calendar-grid{gap:7px!important}
+          .pt-day-card{min-height:92px!important;padding:10px!important;border-radius:14px!important}.pt-day-status{margin-top:10px!important;min-height:38px!important}
+          .pt-stats-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:9px!important}.pt-stat-card{padding:14px!important;border-radius:14px!important}.pt-stat-card p{margin-top:9px!important;font-size:24px!important}
+          .pt-week-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.pt-week-card{padding:15px!important;border-radius:15px!important}
+        }
+        @media(max-width:767px){
+          .pt-page{gap:11px!important}.pt-hero{width:100%!important;padding:14px!important;border-radius:17px!important}.pt-hero-row{gap:12px!important}
+          .pt-hero h1{margin-top:5px!important;font-size:21px!important;line-height:1.1!important}.pt-hero h1+p{margin-top:6px!important;font-size:10.5px!important;line-height:1.4!important}
+          .pt-filters{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,.82fr) 42px!important;gap:7px!important;align-items:end!important}.pt-filters p{margin-bottom:4px!important;font-size:7px!important}.pt-filters select{height:36px!important;padding:0 8px!important;border-radius:9px!important;font-size:10px!important}.pt-filters>div:last-child{width:42px!important;height:36px!important;border-radius:9px!important;font-size:17px!important}
+          .pt-calendar-section,.pt-stats-section,.pt-weekly-section{width:100%!important;padding:13px!important;border-radius:17px!important}
+          .pt-calendar-section h2,.pt-stats-section h2,.pt-weekly-section h2{margin-top:4px!important;font-size:17px!important;line-height:1.15!important}.pt-calendar-section h2+p,.pt-stats-section h2+p,.pt-weekly-section h2+p{margin-top:5px!important;font-size:10px!important;line-height:1.35!important}
+          .pt-weekdays{margin-top:12px!important;gap:3px!important}.pt-weekdays>div{padding:4px 0!important;font-size:7px!important;letter-spacing:.04em!important}.pt-calendar-grid{margin-top:2px!important;gap:3px!important}
+          .pt-day-card{min-width:0!important;min-height:68px!important;padding:5px 3px!important;border-radius:9px!important}.pt-day-card>.relative.z-10.text-sm{font-size:9px!important;padding-left:2px!important}.pt-day-status{margin-top:5px!important;min-height:38px!important}.pt-day-status span{font-size:10px!important;line-height:1!important}.pt-day-status p{margin-top:3px!important;font-size:6.5px!important;line-height:1.15!important;overflow-wrap:anywhere!important}
+          .pt-stats-grid{margin-top:11px!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:4px!important}.pt-stat-card{min-width:0!important;padding:8px 5px!important;border-radius:10px!important}.pt-stat-card h3{font-size:6px!important;line-height:1.15!important;letter-spacing:0!important;overflow-wrap:anywhere!important}.pt-stat-card p{margin-top:6px!important;font-size:17px!important;line-height:1!important}
+          .pt-week-grid{margin-top:11px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}.pt-week-card{min-width:0!important;padding:10px!important;border-radius:12px!important}.pt-week-card h3{font-size:14px!important}.pt-week-card .h-10.w-10{width:30px!important;height:30px!important;font-size:13px!important}.pt-week-card .mt-5{margin-top:9px!important}.pt-week-card .grid.grid-cols-2{gap:5px!important}.pt-week-card .rounded-xl{padding:7px!important;border-radius:8px!important}.pt-week-card .rounded-xl p:first-child{font-size:6.5px!important;line-height:1.15!important}.pt-week-card .rounded-xl p:last-child{font-size:11px!important}
+        }
+      `}</style>
+
 
      {/* Header */}
 
