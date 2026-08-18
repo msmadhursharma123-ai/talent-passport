@@ -10,3 +10,4 @@ coverage/
 # Temporary account recovery scripts
 recover-admin.mjs
 recover-school-admin.mjs
+.vercel
