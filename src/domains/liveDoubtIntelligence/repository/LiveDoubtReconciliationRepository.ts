@@ -571,6 +571,40 @@ export async function getStudentLiveReconciliationState(): Promise<LiveReconcili
   try {
     await syncStudentLiveDoubtLedger();
 
+    const identity = requireIdentity();
+    const checkDate = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+    }).format(new Date());
+
+    // The reconciliation popup is a once-per-India-calendar-day check.
+    // The previous implementation used last_reconciled_at/source timestamps
+    // to decide eligibility. That prevented the same still-unresolved doubts
+    // from appearing again on the next day. The authoritative daily check
+    // history now controls the once-per-day behavior instead.
+    const { data: todaysCheck, error: todaysCheckError } = await client()
+      .from("student_live_doubt_reconciliation_checks")
+      .select("id")
+      .eq("student_uuid", identity.studentUuid)
+      .eq("check_date", checkDate)
+      .limit(1);
+
+    if (todaysCheckError) {
+      if (isMissingLiveInfrastructure(todaysCheckError)) {
+        return { eligibleSubjects: [], available: false };
+      }
+      throw todaysCheckError;
+    }
+
+    // If today's reconciliation has already been submitted, suppress the
+    // popup for the rest of today. A new India calendar day starts a fresh
+    // eligibility cycle.
+    if ((todaysCheck ?? []).length > 0) {
+      return {
+        eligibleSubjects: [],
+        available: true,
+      };
+    }
+
     const rows = await getStudentLiveDoubtRows();
     const bySubject = new Map<string, LiveDoubtRow[]>();
 
@@ -596,17 +630,11 @@ export async function getStudentLiveReconciliationState(): Promise<LiveReconcili
           )
       );
 
+      // Five or more active unresolved first-loop doubts in the subject makes
+      // that subject eligible for today's mandatory reconciliation. Do not
+      // require a newer source signal here: daily check history above is the
+      // mechanism that makes the same unresolved doubts eligible again tomorrow.
       if (sorted.length < 5) continue;
-
-      const needsReconciliation = sorted.some((row) => {
-        if (!row.last_reconciled_at) return true;
-        return (
-          latestSourceTime(row) >
-          new Date(row.last_reconciled_at).getTime()
-        );
-      });
-
-      if (!needsReconciliation) continue;
 
       eligibleSubjects.push({
         subjectName,

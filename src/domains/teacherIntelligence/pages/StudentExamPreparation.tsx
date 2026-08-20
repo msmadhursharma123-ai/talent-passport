@@ -131,7 +131,7 @@ export default function StudentExamPreparation() {
 
           <tbody>
             <ExamRow
-              metric="Students Count who had Doubt"
+              metric="Total Unresolved Doubts"
               subjects={subjects}
               getValue={(subject) => String(subject.totalUnresolvedDoubts)}
               emptyValue={String(data?.totalUnresolvedDoubts ?? 0)}
@@ -161,7 +161,7 @@ export default function StudentExamPreparation() {
             />
 
             <ExamRow
-              metric="Most Difficult Concept from that topic"
+              metric="Highest Risk Topics"
               subjects={subjects}
               getValue={(subject) => {
                 if (subject.concepts.length > 0) {
