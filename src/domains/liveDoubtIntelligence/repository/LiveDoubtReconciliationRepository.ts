@@ -443,6 +443,7 @@ export function mergePendingDoubtsWithLiveLedger(
         row.topic_name ?? row.doubt_concept,
       previous_difficult_concept: row.doubt_concept,
       log_date:
+        row.first_seen_at?.slice(0, 10) ??
         row.source_submitted_at?.slice(0, 10) ??
         row.latest_source_submitted_at?.slice(0, 10) ??
         null,
@@ -710,6 +711,7 @@ export async function getLiveDoubtRowsForAssignments(
 
   return rows.filter((row) => {
     const raw =
+      row.first_seen_at ??
       row.source_submitted_at ??
       row.latest_source_submitted_at ??
       row.last_seen_at ??

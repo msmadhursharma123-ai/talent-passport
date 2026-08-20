@@ -21,7 +21,12 @@ async function buildSnapshotWithOptionalLiveLayer(
   // installed yet, or if it fails, the original school intelligence stays.
   // In particular, a live-doubt problem must never wipe the Daily Log feed.
   try {
-    const overlaid = await applyLiveSchoolIntelligenceOverlay(raw, base);
+    const overlaid = await applyLiveSchoolIntelligenceOverlay(
+      raw,
+      base,
+      customStartDate,
+      customEndDate
+    );
 
     return {
       ...base,

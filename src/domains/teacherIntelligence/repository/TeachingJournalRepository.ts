@@ -330,7 +330,8 @@ export async function getOverallClassroomComparison(
   ).filter((row) => {
     if (!row.last_reconciled_at) return false;
     const sourceDate = String(
-      row.latest_source_submitted_at ??
+      row.first_seen_at ??
+        row.latest_source_submitted_at ??
         row.source_submitted_at ??
         row.last_seen_at ??
         ""
@@ -778,7 +779,8 @@ export async function getCurrentMonthClassroomMetrics(
   ).filter((row) => {
     if (!row.last_reconciled_at) return false;
     const sourceDate = String(
-      row.latest_source_submitted_at ??
+      row.first_seen_at ??
+        row.latest_source_submitted_at ??
         row.source_submitted_at ??
         row.last_seen_at ??
         ""

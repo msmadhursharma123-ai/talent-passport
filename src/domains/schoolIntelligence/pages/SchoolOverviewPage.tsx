@@ -1159,7 +1159,24 @@ export default function SchoolOverviewPage() {
       </div>
 
       {showPostManager && (
-        <SchoolPostManagerPage onBack={() => setShowPostManager(false)} />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="School posts"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            width: "100%",
+            height: "100dvh",
+            overflowY: "auto",
+            overflowX: "hidden",
+            WebkitOverflowScrolling: "touch",
+            background: "#F5F6FA",
+          }}
+        >
+          <SchoolPostManagerPage onBack={() => setShowPostManager(false)} />
+        </div>
       )}
 
       {showTeacherAccessManager && (

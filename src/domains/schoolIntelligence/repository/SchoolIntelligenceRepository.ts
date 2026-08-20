@@ -1,5 +1,9 @@
 import { getSupabaseClient } from "../../../supabaseClient";
 import { requireSchoolIdentity } from "../../../services/identityService";
+import {
+  getLiveDoubtsForTeacherAssignments,
+  mergeFeedbackUnderstandingLevels,
+} from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 
 export interface SchoolIntelligenceRawData {
   schoolUuid: string;
@@ -262,6 +266,46 @@ export async function getSchoolClassroomSupplementalMetrics(
     endDate
   );
 
+  // Supplemental classroom-health metrics must use the same historical live
+  // date rule as the main school snapshot. This keeps Class Health % aligned
+  // with the selected timeline when an old doubt is resolved later.
+  let effectiveFeedback = raw.feedback;
+  try {
+    const assignmentIds = raw.assignments
+      .map((assignment: any) => String(assignment.id ?? ""))
+      .filter(Boolean);
+    const liveRows = (await getLiveDoubtsForTeacherAssignments(assignmentIds)).filter((row: any) => {
+      if (!row.last_reconciled_at) return false;
+      const value =
+        row.first_seen_at ??
+        row.log_date ??
+        row.source_submitted_at ??
+        row.latest_source_submitted_at ??
+        row.created_at;
+      const parsed = new Date(String(value ?? ""));
+      if (Number.isNaN(parsed.getTime())) return false;
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(parsed);
+      const dateKey = `${parts.find(p => p.type === "year")?.value ?? ""}-${parts.find(p => p.type === "month")?.value ?? ""}-${parts.find(p => p.type === "day")?.value ?? ""}`;
+      if (startDate && dateKey < startDate) return false;
+      if (endDate && dateKey > endDate) return false;
+      return true;
+    });
+    effectiveFeedback = mergeFeedbackUnderstandingLevels(
+      raw.feedback,
+      liveRows
+    );
+  } catch (liveError) {
+    console.error(
+      "SCHOOL SUPPLEMENTAL LIVE OVERLAY FAILED — ORIGINAL METRICS PRESERVED",
+      liveError
+    );
+  }
+
   const classroomKeys = new Map<
     string,
     { className: string; sectionName: string }
@@ -338,7 +382,7 @@ export async function getSchoolClassroomSupplementalMetrics(
       let healthLectureCount = 0;
 
       for (const log of classroomLogs) {
-        const logFeedback = raw.feedback.filter(
+        const logFeedback = effectiveFeedback.filter(
           (feedback: any) =>
             String(feedback.daily_log_uuid ?? "") ===
             String(log.id ?? "")

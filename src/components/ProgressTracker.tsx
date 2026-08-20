@@ -16,6 +16,10 @@ import {
   type StudentProgressTracker,
 } from "../domains/teacherIntelligence/repository/StudentProgressTrackerRepository";
 
+import {
+  getStudentProgressTrackerWithLiveLayer,
+} from "../domains/liveDoubtIntelligence/service/LiveStudentProgressTracker";
+
 export default function ProgressTracker() {
 
   const identity =
@@ -112,14 +116,86 @@ export default function ProgressTracker() {
 
       setLoading(true);
 
-      const data =
+      // ORIGINAL PROGRESS TRACKER IS THE SOURCE OF TRUTH FOR THE
+      // CALENDAR CARDS. The live layer is strictly an overlay.
+      const baseData =
         await getStudentProgressTracker(
           selectedSubject,
           selectedMonth
         );
 
+      let finalData =
+        baseData;
+
+      try {
+
+        const liveData =
+          await getStudentProgressTrackerWithLiveLayer(
+            selectedSubject,
+            selectedMonth
+          );
+
+        // Never replace the original calendar array.
+        // Only overlay understandingLevel for dates that the live layer
+        // actually reconciled.
+        const baseCalendar =
+          baseData?.calendar ?? [];
+
+        const liveCalendarByDate =
+          new Map(
+            (liveData?.calendar ?? []).map(
+              (item: any) => [
+                String(item.date),
+                item,
+              ]
+            )
+          );
+
+        const overlaidCalendar =
+          baseCalendar.map(
+            (item: any) => {
+
+              const liveItem =
+                liveCalendarByDate.get(
+                  String(item.date)
+                );
+
+              if (!liveItem) {
+                return item;
+              }
+
+              return {
+                ...item,
+                understandingLevel:
+                  liveItem.understandingLevel ??
+                  item.understandingLevel,
+              };
+
+            }
+          );
+
+        finalData = {
+          ...baseData,
+          calendar:
+            overlaidCalendar,
+        };
+
+      } catch (liveError) {
+
+        // Live intelligence is optional/fail-open.
+        // The original Progress Tracker remains completely intact.
+        console.error(
+          "Live progress overlay failed; preserving original tracker:",
+          liveError
+        );
+
+        finalData =
+          baseData;
+
+      }
+
       setProgress(
-        data
+        finalData
       );
 
     } catch (error) {
@@ -849,7 +925,11 @@ export default function ProgressTracker() {
 
       {/* Academic Ledger */}
 
-      <StudentExamPreparation />
+      <StudentExamPreparation
+        selectedSubject={selectedSubject}
+        selectedMonth={selectedMonth}
+        availableSubjects={subjects}
+      />
 
     </div>
 

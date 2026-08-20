@@ -39,17 +39,32 @@ const subjectPalette = [
   { bg: "linear-gradient(135deg, #F0FDFA 0%, #F7FFFD 100%)", ink: "#0F766E" },
 ];
 
-export default function StudentExamPreparation() {
+interface StudentExamPreparationProps {
+  selectedSubject?: string;
+  selectedMonth?: string;
+}
+
+export default function StudentExamPreparation({
+  selectedSubject = "",
+  selectedMonth = "",
+}: StudentExamPreparationProps) {
   const [data, setData] = useState<ExamPreparationData | null>(null);
 
   useEffect(() => {
+    if (!selectedSubject || !selectedMonth) {
+      setData(null);
+      return;
+    }
     void loadData();
-  }, []);
+  }, [selectedSubject, selectedMonth]);
 
   async function loadData() {
     try {
       const response =
-        await getStudentExamPreparationIntelligenceWithLiveLayer();
+        await getStudentExamPreparationIntelligenceWithLiveLayer(
+          selectedSubject,
+          selectedMonth
+        );
 
       setData(response ?? null);
     } catch (error) {
@@ -163,19 +178,7 @@ export default function StudentExamPreparation() {
             <ExamRow
               metric="Highest Risk Topics"
               subjects={subjects}
-              getValue={(subject) => {
-                if (subject.concepts.length > 0) {
-                  return subject.concepts
-                    .slice(0, 3)
-                    .map((item) =>
-                      item.signals > 1
-                        ? `${item.concept} (${item.signals})`
-                        : item.concept
-                    )
-                    .join(" • ");
-                }
-                return subject.highestRiskTopic || "-";
-              }}
+              getValue={(subject) => subject.highestRiskTopic || "-"}
               emptyValue={data?.highestRiskTopic || "-"}
               kind="difficult"
             />

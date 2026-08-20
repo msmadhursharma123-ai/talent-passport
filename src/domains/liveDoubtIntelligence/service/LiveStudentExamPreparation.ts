@@ -125,20 +125,19 @@ function buildSubjectBreakdown(rows: any[]): SubjectBreakdown[] {
     );
 }
 
-function isActive(row: any): boolean {
+function isActiveLoop2Row(row: any): boolean {
   if (row?.doubt_resolved === true) return false;
 
   const status = clean(row?.status).toUpperCase();
   if (status === "RESOLVED") return false;
 
-  return (
-    row?._live_only === true ||
-    status === "NOT DISCUSSED" ||
-    row?.doubt_resolved === false
-  );
+  return status === "NOT DISCUSSED" || row?.doubt_resolved === false;
 }
 
-export async function getStudentExamPreparationIntelligenceWithLiveLayer() {
+export async function getStudentExamPreparationIntelligenceWithLiveLayer(
+  selectedSubject?: string,
+  selectedMonth?: string
+) {
   const base = await getStudentExamPreparationIntelligence();
 
   try {
@@ -147,67 +146,113 @@ export async function getStudentExamPreparationIntelligenceWithLiveLayer() {
 
     if (!supabase) return base;
 
-    /*
-     * The sync is additive. It never changes the original feedback or
-     * second-loop tables. It only refreshes the current live ledger.
-     */
-    await syncStudentLiveDoubtLedger();
+    const monthBounds = (() => {
+      const value = String(selectedMonth ?? "").trim();
+      if (!value) return null;
 
-    const liveRows = await getStudentLiveDoubtRows();
+      const match = value.match(/^([A-Za-z]+)\s+(\d{4})$/);
+      if (!match) return null;
 
-    /*
-     * Read the existing second-loop rows as fallback evidence. We then run
-     * the canonical merge exactly once. This prevents a live row from being
-     * counted twice and also allows a live-only unresolved first-loop row to
-     * appear in Student Exam Preparation.
-     */
-    const { data: pendingRows, error } = await (supabase as any)
+      const date = new Date(`${match[1]} 1, ${match[2]} 00:00:00`);
+      if (Number.isNaN(date.getTime())) return null;
+
+      const start = new Date(date.getFullYear(), date.getMonth(), 1);
+      const end = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+
+      const toDate = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+          d.getDate()
+        ).padStart(2, "0")}`;
+
+      return { start: toDate(start), end: toDate(end) };
+    })();
+
+    // LOOP 2 IS THE SOURCE OF TRUTH.
+    // No class-subject list or available-subject list is injected here.
+    let pendingQuery = (supabase as any)
       .from("pending_teacher_doubts")
       .select("*")
       .eq("student_uuid", identity.studentUuid);
 
-    if (error) throw error;
-
-    const merged = mergePendingDoubtsWithLiveLedger(
-      Array.isArray(pendingRows) ? pendingRows : [],
-      liveRows,
-      { includeUnmatchedLive: true }
-    );
-
-    const activeRows = merged.filter(isActive);
-
-    const topics = activeRows
-      .map(topicFor)
-      .filter(Boolean);
-
-    const topicCounts = new Map<string, number>();
-    for (const topic of topics) {
-      const key = normalize(topic);
-      topicCounts.set(key, (topicCounts.get(key) ?? 0) + 1);
+    if (
+      selectedSubject &&
+      selectedSubject !== "ALL_SUBJECTS" &&
+      normalize(selectedSubject) !== "all subjects"
+    ) {
+      pendingQuery = pendingQuery.eq("subject_name", selectedSubject);
     }
 
-    const highestRiskTopic =
-      Array.from(topicCounts.entries())
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ?? "";
+    if (monthBounds) {
+      pendingQuery = pendingQuery
+        .gte("log_date", monthBounds.start)
+        .lt("log_date", monthBounds.end);
+    }
 
-    const subjectBreakdown = buildSubjectBreakdown(activeRows);
+    const { data: pendingRows, error } = await pendingQuery;
+    if (error) throw error;
 
-    return {
-      totalUnresolvedDoubts: activeRows.length,
-      topics,
-      highestRiskTopic,
-      attentionLevel: attentionLevel(activeRows.length),
-      subjectBreakdown,
+    const loop2Rows = Array.isArray(pendingRows) ? pendingRows : [];
+
+    const buildResult = (rows: any[]) => {
+      const topics = rows.map(topicFor).filter(Boolean);
+      const topicCounts = new Map<string, { label: string; count: number }>();
+
+      for (const topic of topics) {
+        const key = normalize(topic);
+        const current = topicCounts.get(key);
+        topicCounts.set(key, {
+          label: current?.label ?? topic,
+          count: (current?.count ?? 0) + 1,
+        });
+      }
+
+      const highestRiskTopic =
+        Array.from(topicCounts.values()).sort(
+          (a, b) => b.count - a.count || a.label.localeCompare(b.label)
+        )[0]?.label ?? "";
+
+      return {
+        totalUnresolvedDoubts: rows.length,
+        topics,
+        highestRiskTopic,
+        attentionLevel: attentionLevel(rows.length),
+        subjectBreakdown: buildSubjectBreakdown(rows),
+      };
     };
+
+    // This is the exact pre-live Loop-2 result.
+    const loop2Result = buildResult(loop2Rows);
+
+    try {
+      // LIVE LAYER: reconcile/upgrade existing Loop-2 rows only.
+      await syncStudentLiveDoubtLedger();
+
+      const liveRows = await getStudentLiveDoubtRows();
+
+      const merged = mergePendingDoubtsWithLiveLedger(
+        loop2Rows,
+        liveRows
+      );
+
+      // Live can resolve/update an existing Loop-2 doubt.
+      // It cannot manufacture a new subject or a new Exam Preparation row.
+      const activeRows = merged.filter(isActiveLoop2Row);
+
+      return buildResult(activeRows);
+    } catch (liveError) {
+      console.error(
+        "LIVE STUDENT EXAM PREPARATION OVERLAY FAILED — LOOP-2 DATA PRESERVED",
+        liveError
+      );
+
+      return loop2Result;
+    }
   } catch (error) {
     console.error(
-      "LIVE STUDENT EXAM PREPARATION OVERLAY FAILED — ORIGINAL DATA PRESERVED",
+      "STUDENT EXAM PREPARATION FILTERED LOAD FAILED — ORIGINAL DATA PRESERVED",
       error
     );
 
-    return {
-      ...(base ?? {}),
-      subjectBreakdown: [],
-    };
+    return base;
   }
 }

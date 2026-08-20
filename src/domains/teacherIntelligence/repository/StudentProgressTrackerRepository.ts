@@ -3,6 +3,10 @@ import { getSupabaseClient } from "../../../supabaseClient";
 import {
   getTableIdentity,
 } from "../../../services/identityService";
+import {
+  getStudentLiveDoubtRows,
+  mergeFeedbackUnderstandingLevels,
+} from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 
 export interface StudentCalendarDay {
 
@@ -68,6 +72,20 @@ export async function getStudentProgressTracker(
 
   const supabase =
     getSupabaseClient();
+  // The Progress Tracker dropdown is also the authoritative period for the
+  // embedded Student Exam Preparation table. This event is additive and does
+  // not alter the existing tracker contract.
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(
+      "talentPassport.progressTracker.selectedMonth",
+      selectedMonth
+    );
+    window.dispatchEvent(
+      new CustomEvent("talentPassport:progressTrackerMonthChanged", {
+        detail: { selectedMonth },
+      })
+    );
+  }
 
   /*
   --------------------------------------
@@ -178,8 +196,36 @@ export async function getStudentProgressTracker(
     throw error;
   }
 
-  const rows =
+  let rows =
     data ?? [];
+
+  try {
+    const liveRows = (await getStudentLiveDoubtRows()).filter((row: any) => {
+      const value =
+        row?.first_seen_at ??
+        row?.log_date ??
+        row?.source_submitted_at ??
+        row?.latest_source_submitted_at ??
+        row?.created_at;
+      const parsed = new Date(String(value ?? ""));
+      if (Number.isNaN(parsed.getTime())) return false;
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(parsed);
+      const dateKey = `${parts.find(p => p.type === "year")?.value ?? ""}-${parts.find(p => p.type === "month")?.value ?? ""}-${parts.find(p => p.type === "day")?.value ?? ""}`;
+      return dateKey >= startDate && dateKey < endDate;
+    });
+
+    rows = mergeFeedbackUnderstandingLevels(rows, liveRows);
+  } catch (liveError) {
+    console.error(
+      "STUDENT PROGRESS LIVE OVERLAY FAILED — ORIGINAL FEEDBACK PRESERVED",
+      liveError
+    );
+  }
 
   console.log(
     "===== STUDENT PROGRESS ====="
