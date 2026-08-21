@@ -71,27 +71,24 @@ const errorMessage =
 result.error ?? "";
 
 if (
+  errorMessage
+    .toLowerCase()
+    .includes("roll number is already registered")
+) {
+  alert(
+    "This school roll number is already registered to a Student Portal account.\n\nThe roll number cannot be used again."
+  );
+  return;
+}
 
-errorMessage
-.toLowerCase()
-.includes("already")
-
-||
-
-errorMessage
-.toLowerCase()
-.includes("exists")
-
-){
-
-alert(
-
-"This email is already registered.\n\nPlease login from the Existing User Login screen."
-
-);
-
-return;
-
+if (
+  errorMessage.toLowerCase().includes("already") ||
+  errorMessage.toLowerCase().includes("exists")
+) {
+  alert(
+    "This email is already registered.\n\nPlease login from the Existing User Login screen."
+  );
+  return;
 }
 
 alert(

@@ -18,6 +18,40 @@ function normalizeRollNumber(value: string): string {
   return value.trim().toUpperCase();
 }
 
+export async function isStudentRollAlreadyRegistered(rollNumber: string): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  if (!supabase || !rollNumber.trim()) return false;
+
+  const { data, error } = await (supabase as any).rpc(
+    "is_student_roll_already_registered",
+    { p_roll_number: normalizeRollNumber(rollNumber) }
+  );
+
+  if (error) {
+    console.error("Student roll duplicate check failed.", error);
+    throw new Error("Unable to verify whether this roll number is already registered.");
+  }
+
+  return data === true;
+}
+
+export async function isStudentEmailAlreadyRegistered(email: string): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  if (!supabase || !email.trim()) return false;
+
+  const { data, error } = await (supabase as any).rpc(
+    "is_student_email_already_registered",
+    { p_email: email.trim().toLowerCase() }
+  );
+
+  if (error) {
+    console.error("Student email duplicate check failed.", error);
+    throw new Error("Unable to verify whether this email is already registered.");
+  }
+
+  return data === true;
+}
+
 export async function isStudentRollAuthorized(rollNumber: string): Promise<boolean> {
   const supabase = getSupabaseClient();
   if (!supabase || !rollNumber.trim()) return false;

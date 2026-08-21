@@ -74,6 +74,18 @@ export default function TeacherRegistrationAuth({
 );
 
 if (!result.success) {
+  const errorMessage = result.error ?? "";
+
+  if (
+    errorMessage.toLowerCase().includes("email is already registered") ||
+    errorMessage.toLowerCase().includes("already") ||
+    errorMessage.toLowerCase().includes("exists")
+  ) {
+    alert(
+      "This email is already registered to a Teacher Portal account.\n\nPlease use the Existing User Login screen."
+    );
+    return;
+  }
 
   alert(
     result.error ??
@@ -81,7 +93,6 @@ if (!result.success) {
   );
 
   return;
-
 }
 
 if (!result.userId) {

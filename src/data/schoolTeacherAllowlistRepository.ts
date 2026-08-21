@@ -16,6 +16,23 @@ export interface SchoolTeacherAllowlistEntry {
 
 function normalizeEmail(email: string): string { return email.trim().toLowerCase(); }
 
+export async function isTeacherEmailAlreadyRegistered(email: string): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  if (!supabase || !email.trim()) return false;
+
+  const { data, error } = await (supabase as any).rpc(
+    "is_teacher_email_already_registered",
+    { p_email: normalizeEmail(email) }
+  );
+
+  if (error) {
+    console.error("Teacher email duplicate check failed.", error);
+    throw new Error("Unable to verify whether this teacher email is already registered.");
+  }
+
+  return data === true;
+}
+
 export async function isTeacherEmailAuthorized(email: string): Promise<boolean> {
   const supabase = getSupabaseClient();
   if (!supabase || !email.trim()) return false;

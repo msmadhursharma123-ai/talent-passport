@@ -59,11 +59,14 @@ import SchoolSubscriptionService
 from "./schoolSubscriptionService";
 
 import {
-    isTeacherEmailAuthorized
+    isTeacherEmailAuthorized,
+    isTeacherEmailAlreadyRegistered
 } from "../data/schoolTeacherAllowlistRepository";
 
 import {
-    isStudentRollAuthorized
+    isStudentRollAuthorized,
+    isStudentRollAlreadyRegistered,
+    isStudentEmailAlreadyRegistered
 } from "../data/schoolStudentAllowlistRepository";
 
 export type AuthRole =
@@ -1590,6 +1593,36 @@ export async function registerStudent(
             };
         }
 
+        /*
+         * STUDENT IDENTITY UNIQUENESS
+         * ---------------------------
+         * One Student Portal account can own one roll number only, and the
+         * same email cannot already belong to a Student profile.
+         * These checks happen before Supabase Auth creation/resume so a
+         * duplicate identity is rejected before a new account is created.
+         */
+        const rollAlreadyRegistered =
+            await isStudentRollAlreadyRegistered(normalizedRollNumber);
+
+        if (rollAlreadyRegistered) {
+            return {
+                success: false,
+                error:
+                    "This school roll number is already registered to a Student Portal account. The roll number cannot be used again."
+            };
+        }
+
+        const emailAlreadyRegistered =
+            await isStudentEmailAlreadyRegistered(email);
+
+        if (emailAlreadyRegistered) {
+            return {
+                success: false,
+                error:
+                    "This email is already registered to a Student Portal account. Please use the Existing User Login screen."
+            };
+        }
+
         const supabase = getClient();
 
         const { data, error } =
@@ -1754,6 +1787,24 @@ export async function registerTeacher(
                 success: false,
                 error:
                     "This email is not authorized for Teacher Portal registration. Please contact your school administrator or Talent Passport support."
+            };
+        }
+
+        /*
+         * TEACHER IDENTITY UNIQUENESS
+         * ---------------------------
+         * A teacher email belongs to one Teacher Portal identity only.
+         * Reject an existing Teacher profile before creating/resuming Auth.
+         * Supabase Auth remains the final email-level protection.
+         */
+        const emailAlreadyRegistered =
+            await isTeacherEmailAlreadyRegistered(normalizedEmail);
+
+        if (emailAlreadyRegistered) {
+            return {
+                success: false,
+                error:
+                    "This email is already registered to a Teacher Portal account. Please use the Existing User Login screen."
             };
         }
 
