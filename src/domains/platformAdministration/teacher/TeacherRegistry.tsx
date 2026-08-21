@@ -50,7 +50,9 @@ export default function TeacherRegistry() {
 
         editSchool,
 
-        removeSchool
+        removeSchool,
+        activateExistingSchool,
+        deleteExistingSchool
 
     } = useTeacherManagementViewModel();
 
@@ -2043,10 +2045,14 @@ setGracePeriodDays(
                             ✏️ Edit
                         </button>
 
-                        {s.isActive && (
+                        {s.isActive ? (
 
                             <button
-                                onClick={() => removeSchool(s.schoolUuid)}
+                                onClick={async () => {
+                                    if (!window.confirm(`Deactivate ${s.schoolName}? This will immediately block Student, Teacher and School Admin portal access for this school.`)) return;
+                                    const ok = await removeSchool(s.schoolUuid);
+                                    if (!ok) alert("Unable to deactivate the school.");
+                                }}
                                 style={{
                                     ...small,
                                     background: "#FFFFFF",
@@ -2057,7 +2063,43 @@ setGracePeriodDays(
                                 Deactivate
                             </button>
 
+                        ) : (
+
+                            <button
+                                onClick={async () => {
+                                    const ok = await activateExistingSchool(s.schoolUuid);
+                                    if (!ok) alert("Unable to activate the school.");
+                                }}
+                                style={{
+                                    ...small,
+                                    background: "#FFFFFF",
+                                    color: "#166534",
+                                    border: "1px solid #16A34A"
+                                }}
+                            >
+                                Activate
+                            </button>
+
                         )}
+
+                        <button
+                            onClick={async () => {
+                                const first = window.confirm(`DELETE ${s.schoolName}? This is permanent and will remove the school's platform data and accounts. This cannot be recovered.`);
+                                if (!first) return;
+                                const second = window.confirm("Final confirmation: permanently delete this school and all of its stored platform data?");
+                                if (!second) return;
+                                const ok = await deleteExistingSchool(s.schoolUuid);
+                                if (!ok) alert("Unable to delete the school. No destructive client-side deletion was performed.");
+                            }}
+                            style={{
+                                ...small,
+                                background: "#DC2626",
+                                color: "#FFFFFF",
+                                border: "1px solid #DC2626"
+                            }}
+                        >
+                            Delete
+                        </button>
 
                     </div>
 

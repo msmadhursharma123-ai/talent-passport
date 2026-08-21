@@ -7,7 +7,9 @@ import {
   getSchools,
   createSchool,
   updateSchool,
-  deactivateSchool
+  deactivateSchool,
+  activateSchool,
+  deleteSchool
 } from "./TeacherManagementRepository";
 
 import {
@@ -173,13 +175,23 @@ export default function useTeacherManagementViewModel() {
       );
 
     if (ok) {
-
       await loadSchools();
-
     }
 
     return ok;
 
+  }
+
+  async function activateExistingSchool(uuid:string) {
+    const ok = await activateSchool(uuid);
+    if (ok) await loadSchools();
+    return ok;
+  }
+
+  async function deleteExistingSchool(uuid:string) {
+    const ok = await deleteSchool(uuid);
+    if (ok) await loadSchools();
+    return ok;
   }
 
   useEffect(() => {
@@ -201,7 +213,9 @@ export default function useTeacherManagementViewModel() {
 
     editSchool,
 
-    removeSchool
+    removeSchool,
+    activateExistingSchool,
+    deleteExistingSchool
 
   };
 

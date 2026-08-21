@@ -285,4 +285,26 @@ if (error) {
     return true;
 
 }
-export async function deactivateSchool(schoolUuid:string):Promise<boolean>{const supabase=getSupabaseClient();if(!supabase)return false;const{error}=await(supabase as any).from("schools_master").update({account_status:"INACTIVE"}).eq("school_uuid",schoolUuid);if(error){console.error(error);return false;}return true;}
+export async function deactivateSchool(schoolUuid:string):Promise<boolean>{
+    const supabase=getSupabaseClient();
+    if(!supabase)return false;
+    const{error}=await(supabase as any).from("schools_master").update({account_status:"INACTIVE"}).eq("school_uuid",schoolUuid);
+    if(error){console.error("DEACTIVATE SCHOOL FAILED",error);return false;}
+    return true;
+}
+
+export async function activateSchool(schoolUuid:string):Promise<boolean>{
+    const supabase=getSupabaseClient();
+    if(!supabase)return false;
+    const{error}=await(supabase as any).from("schools_master").update({account_status:"ACTIVE"}).eq("school_uuid",schoolUuid);
+    if(error){console.error("ACTIVATE SCHOOL FAILED",error);return false;}
+    return true;
+}
+
+export async function deleteSchool(schoolUuid:string):Promise<boolean>{
+    const supabase=getSupabaseClient();
+    if(!supabase)return false;
+    const{error}=await(supabase as any).rpc("platform_delete_school",{p_school_uuid:schoolUuid});
+    if(error){console.error("DELETE SCHOOL FAILED",error);return false;}
+    return true;
+}

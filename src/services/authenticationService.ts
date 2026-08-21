@@ -830,6 +830,36 @@ function createSchoolIdentity(
 
 }
 
+async function isSchoolDeactivated(
+    role: AuthRole,
+    identity: StudentIdentity | TeacherIdentity | SchoolIdentity | PartnerIdentity | AdminIdentity
+): Promise<boolean> {
+    if (role === "admin" || role === "partner") return false;
+
+    const schoolUuid =
+        role === "student"
+            ? (identity as StudentIdentity).schoolUuid
+            : role === "teacher"
+                ? (identity as TeacherIdentity).schoolUuid
+                : (identity as SchoolIdentity).schoolUuid;
+
+    if (!schoolUuid) return false;
+
+    const supabase = getClient();
+    const { data, error } = await (supabase as any)
+        .from("schools_master")
+        .select("account_status")
+        .eq("school_uuid", schoolUuid)
+        .maybeSingle();
+
+    if (error) {
+        console.error("Unable to verify school account status.", error);
+        return false;
+    }
+
+    return String(data?.account_status ?? "").toUpperCase() !== "ACTIVE";
+}
+
 async function isResolvedAccountSuspended(
     role: AuthRole,
     identity: StudentIdentity | TeacherIdentity | SchoolIdentity | PartnerIdentity | AdminIdentity
@@ -1055,6 +1085,21 @@ if (
    SCHOOL SUBSCRIPTION VALIDATION
 ============================================================ */
 
+if (resolved && await isSchoolDeactivated(resolved.role, resolved.identity)) {
+    await supabase.auth.signOut();
+    clearStudentIdentity();
+    clearTeacherIdentity();
+    clearSchoolIdentity();
+    clearPartnerIdentity();
+    clearAdminIdentity();
+    clearAuthSession();
+
+    return {
+        success: false,
+        error: "Account not active. Please contact your school administration."
+    };
+}
+
 if (resolved) {
 
     const subscriptionError =
@@ -1138,7 +1183,8 @@ const admin = schoolAdmin as any;
 
     admin &&
 
-    admin.account_status === "Temporary"
+    admin.account_status === "Temporary" &&
+    authUser.user_metadata?.tp_school_first_password_changed !== true
 
 ) {
 
@@ -1788,6 +1834,21 @@ export async function registerSchool(
         const supabase =
             getClient();
 
+        /*
+         * REGISTER SCHOOL is a Platform Admin operation. Supabase signUp can
+         * temporarily move the browser session to the newly-created school
+         * admin Auth user. Capture the current Platform Admin session first so
+         * the profile row can still be created with Platform Admin authority.
+         *
+         * This is intentionally limited to registerSchool(). Student and
+         * Teacher registration flows continue to use their existing sessions.
+         */
+        const { data: previousSessionData } =
+            await supabase.auth.getSession();
+
+        const previousSession =
+            previousSessionData.session;
+
         const {
             data,
             error
@@ -1825,6 +1886,30 @@ export async function registerSchool(
 
             };
 
+        }
+
+        if (
+            previousSession &&
+            data.session?.user?.id !== previousSession.user.id
+        ) {
+            const { error: restoreError } =
+                await supabase.auth.setSession({
+                    access_token: previousSession.access_token,
+                    refresh_token: previousSession.refresh_token
+                });
+
+            if (restoreError) {
+                console.error(
+                    "Unable to restore Platform Admin session after school Auth creation.",
+                    restoreError
+                );
+
+                return {
+                    success: false,
+                    error:
+                        "School authentication account was created, but the Platform Admin session could not be restored. Please refresh and try again."
+                };
+            }
         }
 
         return {
@@ -1875,36 +1960,13 @@ export async function createSchoolAdmin(
         const supabase = getClient();
 
       const { error } = await (supabase as any)
-    .from("school_admins")
-    .insert({
-
-                school_admin_uuid: crypto.randomUUID(),
-
-                school_admin_id:
-                    "SCHADM-" +
-                    Math.floor(100000 + Math.random() * 900000),
-
-                full_name:
-                    invitation.administratorName,
-
-                email:
-                    invitation.administratorEmail,
-
-                school_uuid:
-                    invitation.schoolUuid,
-
-                school_name:
-                    invitation.schoolName,
-
-                auth_user_id:
-                    authUserId,
-
-                // New school-admin accounts remain Temporary until
-                // the mandatory first-login password change succeeds.
-                account_status:
-                    "Temporary"
-
-            });
+        .rpc("platform_create_school_admin", {
+            p_school_uuid: invitation.schoolUuid,
+            p_school_name: invitation.schoolName,
+            p_full_name: invitation.administratorName,
+            p_email: invitation.administratorEmail,
+            p_auth_user_id: authUserId
+        });
 
         if (error) {
 
@@ -2652,99 +2714,91 @@ export async function updatePassword(
         const authUser = data.user;
 
         if (!authUser) {
-
             return {
-
                 success: false,
-
                 error: "No authenticated user."
-
             };
+        }
 
+        const now = new Date().toISOString();
+        const resolved = await resolveIdentity(authUser.id);
+        const isSchoolAdmin = resolved?.role === "school";
+
+        const updatePayload: any = {
+            password: newPassword
+        };
+
+        if (isSchoolAdmin) {
+            /*
+             * This marker is written only after the first password change.
+             * signIn() uses it to ensure the mandatory reset is shown once.
+             */
+            updatePayload.data = {
+                ...(authUser.user_metadata ?? {}),
+                tp_school_first_password_changed: true,
+                tp_school_first_password_changed_at: now,
+                tp_portal_activated: true,
+                tp_portal_activated_at: now,
+                tp_role: "school"
+            };
         }
 
         const {
-
             error: passwordError
-
-        } = await supabase.auth.updateUser({
-
-            password: newPassword
-
-        });
+        } = await supabase.auth.updateUser(updatePayload);
 
         if (passwordError) {
-
             return {
-
                 success: false,
-
                 error: passwordError.message
-
             };
-
         }
 
-        /*
-         * IMPORTANT: password update itself is already complete at this point.
-         * Do not query school_admins for student / teacher / partner users.
-         * Those roles can be blocked by school-admin RLS, which previously
-         * converted a successful auth password update into a false failure.
-         *
-         * The school-admin post-password status update remains intact, but it
-         * runs only when the central identity kernel confirms that the current
-         * session is a school-admin session. Parent OTP is not involved in this
-         * path and is intentionally untouched.
-         */
-        const currentSchool = getCurrentSchool();
-
-        if (currentSchool?.authUserId === authUser.id) {
-
+        if (isSchoolAdmin) {
+            /*
+             * Keep the existing DB lifecycle state in sync when the current
+             * RLS configuration permits the update. The Auth marker above is
+             * the one-time reset guard, so an RLS no-op/error must not turn a
+             * successful password change into another forced reset.
+             */
             const {
+                data: updatedRows,
                 error: schoolAdminUpdateError
             } = await (supabase as any)
                 .from("school_admins")
                 .update({
                     account_status: "Active",
-                    last_login_at: new Date().toISOString()
+                    last_login_at: now
                 })
-                .eq("auth_user_id", authUser.id);
+                .eq("auth_user_id", authUser.id)
+                .select("auth_user_id");
 
             if (schoolAdminUpdateError) {
-                return {
-                    success: false,
-                    error: schoolAdminUpdateError.message
-                };
+                console.warn(
+                    "School Admin password changed successfully, but the profile status could not be updated through the current RLS policy.",
+                    schoolAdminUpdateError
+                );
+            } else if (!Array.isArray(updatedRows) || updatedRows.length === 0) {
+                console.warn(
+                    "School Admin password changed successfully, but no school_admins row was updated. The Auth first-login marker remains authoritative."
+                );
             }
-
         }
 
         return {
-
             success: true
-
         };
 
     }
-
     catch (error: any) {
-
         return {
-
             success: false,
-
             error:
-
                 error?.message ??
-
                 "Unable to update password."
-
         };
-
     }
 
-
-    
 }
 
 const RECOVERY_TABLES = {
