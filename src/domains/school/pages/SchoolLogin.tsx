@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import ForgotPasswordDialog from "../../../services/auth/ForgotPasswordDialog";
+
 import {
     signIn,
     signOut
@@ -28,6 +30,8 @@ export default function SchoolLogin({
     const [email, setEmail] = useState("");
 
     const [password, setPassword] = useState("");
+
+    const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
 
     async function handleLogin() {
 
@@ -258,11 +262,34 @@ marginBottom: 28
                 />
 
                 <button
+                    className="school-login-submit"
                     onClick={handleLogin}
                     style={buttonStyle}
                 >
                     Login
                 </button>
+
+                <button
+                    type="button"
+                    className="school-forgot-password"
+                    onClick={() => setForgotPasswordOpen(true)}
+                >
+                    Forgot Password?
+                </button>
+
+                <ForgotPasswordDialog
+                    open={forgotPasswordOpen}
+                    role="school"
+                    onClose={() => setForgotPasswordOpen(false)}
+                    onVerified={() => {
+                        /*
+                         * Recovery is completed through the secure Supabase
+                         * email link. The shared dialog stores the recovery
+                         * context and closes itself; this callback remains
+                         * only for compatibility with its public API.
+                         */
+                    }}
+                />
 
             </div>
 
@@ -279,7 +306,30 @@ marginBottom: 28
   .school-login-card h1 { font-size: 28px !important; line-height: 1.1 !important; }
   .school-login-card p { font-size: 14px !important; line-height: 1.45 !important; margin-bottom: 20px !important; }
   .school-login-card input { padding: 13px !important; margin-bottom: 12px !important; font-size: 14px !important; }
-  .school-login-card > button:last-child { padding: 14px !important; font-size: 16px !important; }
+  .school-login-submit { padding: 14px !important; font-size: 16px !important; }
+  .school-forgot-password {
+    min-height: 44px;
+    padding: 10px 0;
+    font-size: 14px;
+  }
+}
+
+.school-forgot-password {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 6px 0;
+  border: none;
+  background: transparent;
+  color: #143B73;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+}
+
+.school-forgot-password:hover {
+  text-decoration: underline;
 }
 `}</style>
 </div>

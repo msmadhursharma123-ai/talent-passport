@@ -166,6 +166,11 @@ serve(async (req) => {
         emailColumn = "email";
         break;
 
+
+      case "school":
+        table = "school_admins";
+        emailColumn = "email";
+        break;
       default:
 
         console.log("INVALID ROLE =", role);

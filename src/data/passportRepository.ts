@@ -225,6 +225,46 @@ export async function savePassport(
     ====================================================== */
 
     console.log(
+      "Reconciling retained Passport identity..."
+    );
+
+    /*
+     * Deleted-school recreation bridge.
+     *
+     * A historical Passport may survive an older school deletion with the
+     * same business student_id but an obsolete student_uuid. Reconcile that
+     * row to the newly recreated canonical student identity BEFORE the normal
+     * Passport upsert. If there is no retained legacy row, this is a no-op.
+     *
+     * The RPC is SECURITY DEFINER and validates the current authenticated
+     * student against students_master, so this does not weaken normal RLS.
+     */
+    const {
+      data: passportIdentityReconciled,
+      error: passportIdentityError
+    } = await (supabase as any).rpc(
+      "reconcile_student_passport_identity",
+      {
+        p_student_uuid: studentUuid,
+        p_student_id: passportStudentId
+      }
+    );
+
+    console.log(
+      "PASSPORT IDENTITY RECONCILIATION =",
+      passportIdentityReconciled
+    );
+
+    if (passportIdentityError) {
+      console.error(
+        "PASSPORT IDENTITY RECONCILIATION FAILED",
+        passportIdentityError
+      );
+
+      throw passportIdentityError;
+    }
+
+    console.log(
       "Saving Passport..."
     );
 

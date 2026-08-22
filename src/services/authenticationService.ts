@@ -328,6 +328,55 @@ function getClient() {
 
 }
 
+/* ============================================================
+   DELETED-SCHOOL AUTH RECREATION SAFETY
+   ------------------------------------------------------------
+   If an older school-delete operation removed the public portal profile
+   rows but left the Supabase Auth user behind, Supabase signUp() will still
+   reject that email. This helper asks a tightly-scoped SECURITY DEFINER RPC
+   to release ONLY an orphan Auth identity.
+
+   Existing portal identities and explicit incomplete-onboarding accounts are
+   never released. If the RPC is unavailable/fails, the existing registration
+   path continues unchanged.
+============================================================ */
+
+async function releaseDeletedSchoolOrphanAuthUser(
+    role: Extract<AuthRole, "student" | "teacher" | "school">,
+    email: string,
+    rollNumber?: string
+): Promise<boolean> {
+    try {
+        const supabase = getClient();
+
+        const { data, error } = await (supabase as any).rpc(
+            "release_orphan_auth_for_re_registration",
+            {
+                p_email: email.trim().toLowerCase(),
+                p_role: role,
+                p_roll_number:
+                    rollNumber?.trim().toUpperCase() ?? null
+            }
+        );
+
+        if (error) {
+            console.warn(
+                "Deleted-school Auth recreation check could not run; existing registration flow will continue.",
+                error
+            );
+            return false;
+        }
+
+        return data === true;
+    } catch (error) {
+        console.warn(
+            "Deleted-school Auth recreation check failed; existing registration flow will continue.",
+            error
+        );
+        return false;
+    }
+}
+
 async function fetchStudentByAuthId(
     authUserId: string
 ): Promise<StudentRow | null> {
@@ -1623,6 +1672,12 @@ export async function registerStudent(
             };
         }
 
+        await releaseDeletedSchoolOrphanAuthUser(
+            "student",
+            email,
+            normalizedRollNumber
+        );
+
         const supabase = getClient();
 
         const { data, error } =
@@ -1808,6 +1863,11 @@ export async function registerTeacher(
             };
         }
 
+        await releaseDeletedSchoolOrphanAuthUser(
+            "teacher",
+            normalizedEmail
+        );
+
         const supabase = getClient();
 
         const { data, error } =
@@ -1884,6 +1944,11 @@ export async function registerSchool(
 
         const supabase =
             getClient();
+
+        await releaseDeletedSchoolOrphanAuthUser(
+            "school",
+            email
+        );
 
         /*
          * REGISTER SCHOOL is a Platform Admin operation. Supabase signUp can
