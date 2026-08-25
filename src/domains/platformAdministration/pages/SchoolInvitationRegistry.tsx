@@ -325,7 +325,7 @@ Please share these credentials securely with the school administrator.`
 
         navigator.clipboard.writeText(
 
-            `${window.location.origin}/school/setup?token=${token}`
+            `${window.location.origin}/#school-setup?token=${encodeURIComponent(token)}`
 
         );
 

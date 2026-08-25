@@ -118,39 +118,94 @@ console.log("Repository createInvitation called");
 
         }
 
+        const normalizedToken = token?.trim();
+
+        if(!normalizedToken){
+
+            return null;
+
+        }
+
+        /*
+         * Invitation validation happens before the School Admin is
+         * authenticated. The invitations table is intentionally not exposed
+         * directly to anonymous users. Use the narrow SECURITY DEFINER RPC
+         * instead; it returns only the invitation fields required by the
+         * public setup checkpoint.
+         */
         const {
 
             data,
 
             error
 
-        } = await (supabase as any)
+        } = await (supabase as any).rpc(
 
-            .from("school_admin_invitations")
+            "get_school_admin_invitation_by_token",
 
-            .select("*")
+            {
+                p_token: normalizedToken
+            }
 
-            .eq(
-
-                "invitation_token",
-
-                token
-
-            )
-
-            .single();
+        );
 
         if(error){
+
+            console.error(
+                "Unable to validate School Admin invitation token.",
+                error
+            );
 
             return null;
 
         }
 
-        return mapInvitationFromDatabase(
+        const row = Array.isArray(data)
+            ? data[0]
+            : data;
 
-            data
+        if(!row){
 
-        );
+            return null;
+
+        }
+
+        return {
+
+            invitationUuid:
+                String(row.invitation_uuid ?? ""),
+
+            schoolUuid:
+                String(row.school_uuid ?? ""),
+
+            schoolName:
+                String(row.school_name ?? ""),
+
+            administratorName:
+                String(row.administrator_name ?? ""),
+
+            administratorEmail:
+                String(row.administrator_email ?? ""),
+
+            invitationToken:
+                String(row.invitation_token ?? normalizedToken),
+
+            status:
+                row.status,
+
+            createdAt:
+                String(row.created_at ?? ""),
+
+            expiresAt:
+                row.expires_at ?? null,
+
+            acceptedAt:
+                row.accepted_at ?? null,
+
+            createdBy:
+                row.created_by ?? null
+
+        } as SchoolAdminInvitation;
 
     }
 
@@ -204,51 +259,7 @@ async validateInvitationToken(
 
 ): Promise<SchoolAdminInvitation | null>{
 
-    const supabase = getSupabaseClient();
-
-    if(!supabase){
-
-        return null;
-
-    }
-
-    const {
-
-        data,
-
-        error
-
-    } = await (supabase as any)
-
-        .from(
-
-            "school_admin_invitations"
-
-        )
-
-        .select("*")
-
-        .eq(
-
-            "invitation_token",
-
-            token
-
-        )
-
-        .single();
-
-    if(error){
-
-        return null;
-
-    }
-
-    return mapInvitationFromDatabase(
-
-        data
-
-    );
+    return this.getInvitationByToken(token);
 
 }
 
@@ -266,37 +277,47 @@ async acceptInvitationToken(
 
     }
 
+    const normalizedToken = token?.trim();
+
+    if(!normalizedToken){
+
+        return false;
+
+    }
+
+    /*
+     * The authenticated School Admin accepts only the invitation represented
+     * by the current Auth user. The RPC owns the update so invitation RLS is
+     * not weakened for the public setup flow.
+     */
     const {
+
+        data,
 
         error
 
-    } = await (supabase as any)
+    } = await (supabase as any).rpc(
 
-        .from(
+        "accept_school_admin_invitation",
 
-            "school_admin_invitations"
+        {
+            p_token: normalizedToken
+        }
 
-        )
+    );
 
-        .update({
+    if(error){
 
-            status:"Accepted",
-
-            accepted_at:
-
-            new Date().toISOString()
-
-        })
-
-        .eq(
-
-            "invitation_token",
-
-            token
-
+        console.error(
+            "Unable to accept School Admin invitation.",
+            error
         );
 
-    return !error;
+        return false;
+
+    }
+
+    return data === true || data === "true";
 
 }
 

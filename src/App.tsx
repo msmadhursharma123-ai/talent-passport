@@ -104,6 +104,9 @@ from "./pages/teacher/TeacherPortal";
 import SchoolLogin
 from "./domains/school/pages/SchoolLogin";
 
+import SchoolInvitationValidation
+from "./domains/platformAdministration/pages/SchoolInvitationValidation";
+
 import SchoolDashboard
 from "./domains/school/pages/SchoolDashboard";
 
@@ -176,7 +179,25 @@ const [studentSchoolName, setStudentSchoolName] =
 const [teacherSchoolName, setTeacherSchoolName] =
   useState<string | null>(null);
 
+const [schoolLoginEmail, setSchoolLoginEmail] =
+  useState<string>(
+    () => sessionStorage.getItem("schoolLoginEmail") ?? ""
+  );
+
+const [schoolInvitationToken, setSchoolInvitationToken] =
+  useState<string>(
+    () => sessionStorage.getItem("schoolInvitationToken") ?? ""
+  );
+
 const adminIdentity = getCurrentAdmin();
+
+const clearSchoolHashRoute = () => {
+  window.history.replaceState(
+    null,
+    document.title,
+    window.location.pathname + window.location.search
+  );
+};
 
 /*
  * Portal activation is the boundary between onboarding and Existing User.
@@ -506,6 +527,39 @@ useEffect(() => {
   async function initializeApplication() {
 
     try {
+
+      /*
+       * School invitation links are public SPA hash routes. Handle them
+       * before restoring any existing session so a Platform Admin session in
+       * the same browser cannot hijack the School Admin onboarding screen.
+       */
+      const hash = window.location.hash || "";
+      const isLegacySchoolSetupPath =
+        window.location.pathname === "/school/setup" &&
+        new URLSearchParams(window.location.search).has("token");
+
+      if (hash.startsWith("#school-setup") || isLegacySchoolSetupPath) {
+        setSelectedRole("school");
+        setUserType("existing");
+        setActiveTab("school-setup");
+        return;
+      }
+
+      if (hash.startsWith("#school-login")) {
+        const hashQuery = hash.includes("?")
+          ? hash.slice(hash.indexOf("?") + 1)
+          : "";
+        const params = new URLSearchParams(hashQuery);
+        const email = params.get("email")?.trim() || "";
+        if (email) {
+          setSchoolLoginEmail(email);
+          sessionStorage.setItem("schoolLoginEmail", email);
+        }
+        setSelectedRole("school");
+        setUserType("existing");
+        setActiveTab("school-login");
+        return;
+      }
 
       await initializeAuth();
 
@@ -1092,20 +1146,59 @@ onForgotPasswordVerified={(email: string) => {
 
 )}
 
+{activeTab === "school-setup" && (
+
+    <SchoolInvitationValidation
+        onContinue={(email, token) => {
+            setSchoolLoginEmail(email);
+            setSchoolInvitationToken(token);
+            sessionStorage.setItem("schoolLoginEmail", email);
+            sessionStorage.setItem("schoolInvitationToken", token);
+            window.history.replaceState(null, document.title, "#school-login");
+            setSelectedRole("school");
+            setUserType("existing");
+            setActiveTab("school-login");
+        }}
+        onBack={() => {
+            setSchoolLoginEmail("");
+            setSchoolInvitationToken("");
+            sessionStorage.removeItem("schoolLoginEmail");
+            sessionStorage.removeItem("schoolInvitationToken");
+            clearSchoolHashRoute();
+            setSelectedRole("");
+            setUserType(null);
+            setActiveTab("identity");
+        }}
+    />
+
+)}
+
 {activeTab === "school-login" && (
 
     <SchoolLogin
+        initialEmail={schoolLoginEmail}
 
-        onBack={()=>
-            setActiveTab("role-selection")
-        }
+        onBack={() => {
+            setSchoolLoginEmail("");
+            sessionStorage.removeItem("schoolLoginEmail");
+            clearSchoolHashRoute();
+            setActiveTab("role-selection");
+        }}
 
-        onSuccess={()=>
-            setActiveTab("school-dashboard")
-        }
+        onSuccess={(result) => {
+            if (result.requiresPasswordReset) {
+                setActiveTab("school-reset-password");
+                return;
+            }
 
-        onResetPassword={()=>
-            setActiveTab("school-reset-password")
+            setSchoolInvitationToken("");
+            sessionStorage.removeItem("schoolInvitationToken");
+            clearSchoolHashRoute();
+            setActiveTab("school-dashboard");
+        }}
+
+        onResetPassword={() =>
+            setActiveTab("reset-password")
         }
 
     />
@@ -1283,17 +1376,15 @@ setActiveTab("identity");
 {activeTab === "school-reset-password" && (
 
     <SchoolResetPassword
-
-        onSuccess={()=>
-
-            setActiveTab(
-
-                "school-dashboard"
-
-            )
-
-        }
-
+        invitationToken={schoolInvitationToken}
+        onSuccess={() => {
+            setSchoolLoginEmail("");
+            setSchoolInvitationToken("");
+            sessionStorage.removeItem("schoolLoginEmail");
+            sessionStorage.removeItem("schoolInvitationToken");
+            clearSchoolHashRoute();
+            setActiveTab("school-dashboard");
+        }}
     />
 
 )}
