@@ -1,11 +1,13 @@
 interface Props {
   activePage: string;
   onNavigate: (page: string) => void;
+  enabledPages?: string[] | null;
 }
 
 export default function TeacherSidebar({
   activePage,
   onNavigate,
+  enabledPages,
 }: Props) {
   const items = [
     {
@@ -32,6 +34,21 @@ export default function TeacherSidebar({
       id: "exam-preparation",
       label: "Exam Prep",
       icon: "☆",
+    },
+    {
+      id: "planners",
+      label: "Planners",
+      icon: "▣",
+    },
+    {
+      id: "unit-test-planner",
+      label: "Unit Test",
+      icon: "▤",
+    },
+    {
+      id: "exam-paper-planner",
+      label: "Exam Paper",
+      icon: "✦",
     },
   ];
 
@@ -136,7 +153,7 @@ export default function TeacherSidebar({
           gap: 7,
         }}
       >
-        {items.map((item) => {
+        {items.filter(item => !enabledPages || enabledPages.includes(item.id)).map((item) => {
           const isActive = activePage === item.id;
 
           return (
@@ -175,13 +192,13 @@ export default function TeacherSidebar({
 
                 transition: "all 0.18s ease",
               }}
-              onMouseEnter={(event) => {
+              onMouseEnter={(event: any) => {
                 if (!isActive) {
                   event.currentTarget.style.background = "#F8FAFC";
                   event.currentTarget.style.borderColor = "#E2E8F0";
                 }
               }}
-              onMouseLeave={(event) => {
+              onMouseLeave={(event: any) => {
                 if (!isActive) {
                   event.currentTarget.style.background = "transparent";
                   event.currentTarget.style.borderColor = "transparent";

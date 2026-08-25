@@ -12,6 +12,9 @@ import TeachingJournalPage from "../../domains/teacherIntelligence/pages/Teachin
 import MyClassroomPage from "../../domains/teacherIntelligence/pages/MyClassroomPage";
 
 import ExamPreparationPage from "../../domains/teacherIntelligence/pages/ExamPreparationPage";
+import PlannersPage from "../../domains/planners/pages/PlannersPage";
+import UnitTestPlannerPage from "../../domains/planners/pages/UnitTestPlannerPage";
+import ExamPaperPlannerPage from "../../domains/planners/pages/ExamPaperPlannerPage";
 
 import SchoolPostFeed from "../../domains/schoolIntelligence/components/SchoolPostFeed";
 
@@ -33,11 +36,12 @@ export default function TeacherLayout({ onLogout }: Props) {
   const [enabledTabs, setEnabledTabs] = useState<string[] | null>(null);
 
   useEffect(() => {
+    const plannerKeys = ["planners", "unit-test-planner", "exam-paper-planner"];
     void (async () => {
       const identity = getCurrentTeacher();
 
       if (!identity?.schoolUuid) {
-        setEnabledTabs(TEACHER_FEATURES.map(feature => feature.key));
+        setEnabledTabs(Array.from(new Set([...TEACHER_FEATURES.map(feature => feature.key), ...plannerKeys])));
         return;
       }
 
@@ -46,7 +50,7 @@ export default function TeacherLayout({ onLogout }: Props) {
         "teacher"
       );
 
-      setEnabledTabs(keys);
+      setEnabledTabs(Array.from(new Set([...keys, ...plannerKeys])));
 
       if (keys.length > 0 && !keys.includes(activePage)) {
         setActivePage(keys[0]);
@@ -182,6 +186,9 @@ export default function TeacherLayout({ onLogout }: Props) {
                 {activePage === "teaching-journal" && <TeachingJournalPage />}
                 {activePage === "my-classroom" && <MyClassroomPage />}
                 {activePage === "exam-preparation" && <ExamPreparationPage />}
+                {activePage === "planners" && <PlannersPage />}
+                {activePage === "unit-test-planner" && <UnitTestPlannerPage />}
+                {activePage === "exam-paper-planner" && <ExamPaperPlannerPage />}
               </>
             )}
           </main>
