@@ -6,10 +6,11 @@ import SchoolAcademicIntelligencePage from "../../schoolIntelligence/pages/Schoo
 import SchoolLessonPlannerAuditPage from "../../planners/pages/SchoolLessonPlannerAuditPage";
 import SchoolUnitTestPlannerAuditPage from "../../planners/pages/SchoolUnitTestPlannerAuditPage";
 import SchoolExamPaperPlannerAuditPage from "../../planners/pages/SchoolExamPaperPlannerAuditPage";
+import SchoolWorksheetPlannerAuditPage from "../../planners/pages/SchoolWorksheetPlannerAuditPage";
 import "../../schoolIntelligence/pages/schoolIntelligence.css";
 
 interface Props { onLogout: () => void; }
-type Tab = "overview" | "teachers" | "classrooms" | "academic" | "lesson-plans" | "unit-tests" | "exam-papers";
+type Tab = "overview" | "teachers" | "classrooms" | "academic" | "lesson-plans" | "unit-tests" | "exam-papers" | "worksheets";
 
 const tabs: {key:Tab;label:string;short:string}[] = [
   {key:"overview",label:"School Health",short:"Overview"},
@@ -19,6 +20,7 @@ const tabs: {key:Tab;label:string;short:string}[] = [
   {key:"lesson-plans",label:"Lesson Planner Audit",short:"Lessons"},
   {key:"unit-tests",label:"Unit Test Audit",short:"Unit Test"},
   {key:"exam-papers",label:"Exam Paper Audit",short:"Papers"},
+  {key:"worksheets",label:"Worksheet Audit",short:"Worksheets"},
 ];
 
 export default function SchoolDashboard({ onLogout }: Props) {
@@ -39,6 +41,7 @@ export default function SchoolDashboard({ onLogout }: Props) {
       {tab==="lesson-plans"&&<SchoolLessonPlannerAuditPage/>}
       {tab==="unit-tests"&&<SchoolUnitTestPlannerAuditPage/>}
       {tab==="exam-papers"&&<SchoolExamPaperPlannerAuditPage/>}
+      {tab==="worksheets"&&<SchoolWorksheetPlannerAuditPage/>}
     </div>
 
     <style>{`

@@ -50,6 +50,11 @@ export default function TeacherSidebar({
       label: "Exam Paper",
       icon: "✦",
     },
+    {
+      id: "worksheet-maker",
+      label: "Worksheet",
+      icon: "▧",
+    },
   ];
 
   return (

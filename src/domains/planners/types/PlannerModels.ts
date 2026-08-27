@@ -1,4 +1,4 @@
-export type PlannerType = "lesson" | "unit_test" | "exam_paper";
+export type PlannerType = "lesson" | "unit_test" | "exam_paper" | "worksheet";
 export type PlannerStatus = "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED";
 
 export interface TeacherAssignmentOption {

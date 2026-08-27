@@ -15,6 +15,7 @@ import ExamPreparationPage from "../../domains/teacherIntelligence/pages/ExamPre
 import PlannersPage from "../../domains/planners/pages/PlannersPage";
 import UnitTestPlannerPage from "../../domains/planners/pages/UnitTestPlannerPage";
 import ExamPaperPlannerPage from "../../domains/planners/pages/ExamPaperPlannerPage";
+import WorksheetMakerPage from "../../domains/planners/pages/WorksheetMakerPage";
 
 import SchoolPostFeed from "../../domains/schoolIntelligence/components/SchoolPostFeed";
 
@@ -36,7 +37,7 @@ export default function TeacherLayout({ onLogout }: Props) {
   const [enabledTabs, setEnabledTabs] = useState<string[] | null>(null);
 
   useEffect(() => {
-    const plannerKeys = ["planners", "unit-test-planner", "exam-paper-planner"];
+    const plannerKeys = ["planners", "unit-test-planner", "exam-paper-planner", "worksheet-maker"];
     void (async () => {
       const identity = getCurrentTeacher();
 
@@ -189,6 +190,7 @@ export default function TeacherLayout({ onLogout }: Props) {
                 {activePage === "planners" && <PlannersPage />}
                 {activePage === "unit-test-planner" && <UnitTestPlannerPage />}
                 {activePage === "exam-paper-planner" && <ExamPaperPlannerPage />}
+                {activePage === "worksheet-maker" && <WorksheetMakerPage />}
               </>
             )}
           </main>
