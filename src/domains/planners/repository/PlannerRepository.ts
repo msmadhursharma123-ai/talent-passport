@@ -8,6 +8,7 @@ import type {
   QuestionPaperPayload,
   TeacherAssignmentOption,
   PlannerStatus,
+  PlannerRecommendation,
 } from "../types/PlannerModels";
 
 const TABLE = "academic_planner_documents";
@@ -57,6 +58,30 @@ export async function getPlannerAssignments(): Promise<TeacherAssignmentOption[]
     }));
 }
 
+export async function getPlannerRecommendations(input: { plannerType: PlannerType; className: string; chapterName?: string; chapterNames?: string[] }): Promise<PlannerRecommendation[]> {
+  const classValue = input.className;
+  if (!classValue) return [];
+  const singleChapter = input.chapterName ?? "";
+  const multipleChapters = (input.chapterNames ?? []).filter(Boolean);
+  if (input.plannerType === "lesson" || input.plannerType === "worksheet") {
+    if (!singleChapter) return [];
+  } else if (!multipleChapters.length) {
+    return [];
+  }
+  const { data, error } = await client().rpc("get_planner_recommendations", {
+    p_planner_type: input.plannerType,
+    p_class_name: classValue,
+    p_chapter_name: singleChapter || null,
+    p_chapter_names: multipleChapters.length ? multipleChapters : null,
+  });
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    ...mapRow(row),
+    matchCount: row.match_count == null ? undefined : Number(row.match_count),
+    matchPercent: row.match_percent == null ? undefined : Number(row.match_percent),
+  }));
+}
+
 export async function getTeacherPlanners(plannerType: PlannerType): Promise<PlannerRecord[]> {
   const teacher = getCurrentTeacher();
   if (!teacher?.teacherUuid) return [];
@@ -95,6 +120,9 @@ export async function savePlanner(input: {
   startDate: string;
   endDate: string;
   payload: LessonPlannerPayload | QuestionPaperPayload;
+  /** Exact chapter key(s) used by the recommendation engine. */
+  chapterName?: string;
+  chapterNames?: string[];
   submit?: boolean;
 }): Promise<PlannerRecord> {
   const teacher = getCurrentTeacher();
@@ -113,6 +141,8 @@ export async function savePlanner(input: {
     start_date: input.startDate || null,
     end_date: input.endDate || null,
     payload: input.payload,
+    chapter_name: input.chapterName ?? ((input.payload as any).chapter ?? null),
+    chapter_names: input.chapterNames ?? (((input.payload as any).chapters ?? null) as string[] | null),
     status: input.submit ? "SUBMITTED" : "DRAFT",
     submitted_at: input.submit ? new Date().toISOString() : null,
   };
@@ -149,7 +179,12 @@ export async function updateSchoolPlanner(id: string, patch: Partial<Pick<Planne
   if (patch.subjectName !== undefined) row.subject_name = patch.subjectName;
   if (patch.startDate !== undefined) row.start_date = patch.startDate || null;
   if (patch.endDate !== undefined) row.end_date = patch.endDate || null;
-  if (patch.payload !== undefined) row.payload = patch.payload;
+  if (patch.payload !== undefined) {
+    row.payload = patch.payload;
+    const payload = patch.payload as any;
+    if (Object.prototype.hasOwnProperty.call(payload, "chapter")) row.chapter_name = payload.chapter || null;
+    if (Object.prototype.hasOwnProperty.call(payload, "chapters")) row.chapter_names = Array.isArray(payload.chapters) ? payload.chapters : null;
+  }
   const { data, error } = await client().from(TABLE).update(row).eq("id", id).eq("school_uuid", identity.schoolUuid).select("*").single();
   if (error) throw error;
   return mapRow(data);

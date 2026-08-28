@@ -59,6 +59,8 @@ export interface QuestionItem {
 }
 
 export interface LessonPlannerPayload {
+  /** Exact case-sensitive chapter used for cross-school recommendations. */
+  chapter?: string;
   blocks: LessonBlock[];
 }
 
@@ -66,7 +68,16 @@ export interface QuestionPaperPayload {
   schoolName: string;
   totalMarks: number;
   timeAllowed: string;
+  /** Single chapter for worksheets; retained optional for backward compatibility. */
+  chapter?: string;
+  /** Multiple exact case-sensitive chapters for unit tests and exam papers. */
+  chapters?: string[];
   questions: QuestionItem[];
+}
+
+export interface PlannerRecommendation extends PlannerRecord {
+  matchCount?: number;
+  matchPercent?: number;
 }
 
 export interface PlannerRecord {
