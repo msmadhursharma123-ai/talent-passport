@@ -8,6 +8,10 @@ import {
   getTeacherAssignmentsByTeacher,
 } from "../repository/TeacherAssignmentRepository";
 
+import {
+  getPreviousTeacherDailyLogByAssignment,
+} from "../repository/TeacherDailyLogRepository";
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -61,6 +65,12 @@ export default function TeacherDailyLogDialog({
     setConceptsCovered,
   ] = useState<string[]>([]);
 
+  const [previousLog, setPreviousLog] =
+    useState<any | null>(null);
+
+  const [previousLogLoading, setPreviousLogLoading] =
+    useState(false);
+
   useEffect(() => {
     loadTeacherAssignments();
   }, []);
@@ -70,6 +80,45 @@ export default function TeacherDailyLogDialog({
       resetForm();
     }
   }, [open]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!selectedAssignmentId) {
+      setPreviousLog(null);
+      setPreviousLogLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setPreviousLog(null);
+    setPreviousLogLoading(true);
+
+    void getPreviousTeacherDailyLogByAssignment(
+      selectedAssignmentId
+    )
+      .then((log) => {
+        if (!active) return;
+        setPreviousLog(log);
+      })
+      .catch((error) => {
+        // Reference loading is intentionally non-blocking.
+        // A failure here must never affect Daily Log publishing.
+        console.error(
+          "PREVIOUS DAILY LOG REFERENCE LOAD FAILED",
+          error
+        );
+        if (active) setPreviousLog(null);
+      })
+      .finally(() => {
+        if (active) setPreviousLogLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedAssignmentId]);
 
   function resetForm() {
     setSelectedAssignmentId("");
@@ -81,6 +130,8 @@ export default function TeacherDailyLogDialog({
     setTeacherNotes("");
     setConceptInput("");
     setConceptsCovered([]);
+    setPreviousLog(null);
+    setPreviousLogLoading(false);
   }
 
   async function loadTeacherAssignments() {
@@ -120,6 +171,62 @@ export default function TeacherDailyLogDialog({
     }
 
     setConceptInput("");
+  }
+
+  function usePreviousTopic() {
+    if (!previousLog?.topicName) return;
+    setTopicName(String(previousLog.topicName));
+  }
+
+  function usePreviousConcept(concept: string) {
+    const value = String(concept ?? "").trim();
+    if (!value) return;
+
+    const alreadyExists = conceptsCovered.some(
+      (item) =>
+        item.trim().toLowerCase() === value.toLowerCase()
+    );
+
+    if (!alreadyExists) {
+      setConceptsCovered([
+        ...conceptsCovered,
+        value,
+      ]);
+    }
+  }
+
+  function usePreviousLessonReference() {
+    if (!previousLog) return;
+
+    if (previousLog.topicName) {
+      setTopicName(String(previousLog.topicName));
+    }
+
+    const previousConcepts = Array.isArray(
+      previousLog.conceptsCovered
+    )
+      ? previousLog.conceptsCovered
+          .map((item: unknown) => String(item ?? "").trim())
+          .filter(Boolean)
+      : [];
+
+    if (previousConcepts.length > 0) {
+      const merged = [
+        ...conceptsCovered,
+        ...previousConcepts,
+      ];
+
+      setConceptsCovered(
+        Array.from(
+          new Map(
+            merged.map((item) => [
+              item.toLowerCase(),
+              item,
+            ])
+          ).values()
+        )
+      );
+    }
   }
 
   function removeConcept(
@@ -593,6 +700,75 @@ export default function TeacherDailyLogDialog({
                 )
               }
             />
+            {selectedAssignmentId && previousLogLoading && (
+              <div
+                className="tp-log-previous-reference tp-log-previous-reference-loading"
+                style={{
+                  marginTop: "10px",
+                  padding: "8px 9px",
+                  borderRadius: "10px",
+                  background: "linear-gradient(135deg, #FFF7ED 0%, #FFFAF5 100%)",
+                  border: "1px solid #FED7AA",
+                }}
+              >
+                <div
+                  style={{
+                    color: "#9A3412",
+                    fontSize: "9px",
+                    fontWeight: 700,
+                  }}
+                >
+                  Checking your last class reference…
+                </div>
+              </div>
+            )}
+
+            {selectedAssignmentId && previousLog && previousLog.topicName && (
+              <div
+                className="tp-log-previous-reference tp-log-previous-topic-reference"
+                style={{
+                  marginTop: "10px",
+                  padding: "8px 9px",
+                  borderRadius: "10px",
+                  background: "linear-gradient(135deg, #FFF7ED 0%, #FFFAF5 100%)",
+                  border: "1px solid #FED7AA",
+                }}
+              >
+                <div
+                  style={{
+                    color: "#9A3412",
+                    fontSize: "9.6px",
+                    fontWeight: 800,
+                    letterSpacing: "0.7px",
+                    textTransform: "uppercase",
+                    marginBottom: "5px",
+                  }}
+                >
+                  Last class topic · {previousLog.logDate || "Previous class"}
+                </div>
+                <button
+                  type="button"
+                  onClick={usePreviousTopic}
+                  title="Use this previous topic"
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    padding: "5px 7px",
+                    border: "1px solid #FED7AA",
+                    borderRadius: "8px",
+                    background: "rgba(255,255,255,0.78)",
+                    color: "#7C2D12",
+                    textAlign: "left",
+                    fontSize: "10.8px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                >
+                  {String(previousLog.topicName)}
+                </button>
+              </div>
+            )}
+
           </div>
 
           {/* =========================================
@@ -830,6 +1006,122 @@ export default function TeacherDailyLogDialog({
                     </div>
                   )
                 )}
+              </div>
+            )}
+
+            {selectedAssignmentId && previousLog && (
+              <div
+                className="tp-log-previous-reference tp-log-previous-concepts-reference"
+                style={{
+                  marginTop: "10px",
+                  padding: "8px 9px",
+                  borderRadius: "10px",
+                  background: "linear-gradient(135deg, #FFF7ED 0%, #FFFAF5 100%)",
+                  border: "1px solid #FED7AA",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "7px",
+                    marginBottom: "5px",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: "#9A3412",
+                      fontSize: "9.6px",
+                      fontWeight: 800,
+                      letterSpacing: "0.7px",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Last class subtopics · {previousLog.logDate || "Previous class"}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={usePreviousLessonReference}
+                    style={{
+                      border: "1px solid #FB923C",
+                      borderRadius: "999px",
+                      background: "#FFFFFF",
+                      color: "#9A3412",
+                      padding: "3px 7px",
+                      fontSize: "8px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Use all
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "4px",
+                  }}
+                >
+                  {Array.isArray(previousLog.conceptsCovered) &&
+                    previousLog.conceptsCovered.map((concept: unknown, index: number) => {
+                      const value = String(concept ?? "").trim();
+                      if (!value) return null;
+                      return (
+                        <button
+                          type="button"
+                          key={`${value}-${index}`}
+                          onClick={() => usePreviousConcept(value)}
+                          title="Add this previous concept"
+                          style={{
+                            border: "1px solid #FED7AA",
+                            borderRadius: "999px",
+                            background: "rgba(255,255,255,0.82)",
+                            color: "#9A3412",
+                            padding: "3px 6px",
+                            fontSize: "8px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            maxWidth: "100%",
+                          }}
+                        >
+                          {value}
+                        </button>
+                      );
+                    })}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "5px",
+                    color: "#C2410C",
+                    fontSize: "8.4px",
+                    fontWeight: 600,
+                  }}
+                >
+                  Click a subtopic to reuse it. You can edit today's fields normally.
+                </div>
+              </div>
+            )}
+
+            {selectedAssignmentId && !previousLogLoading && !previousLog && (
+              <div
+                className="tp-log-previous-reference"
+                style={{
+                  marginTop: "10px",
+                  padding: "8px 9px",
+                  borderRadius: "10px",
+                  background: "linear-gradient(135deg, #FFF7ED 0%, #FFFAF5 100%)",
+                  border: "1px solid #FED7AA",
+                  color: "#C2410C",
+                  fontSize: "8px",
+                  fontWeight: 700,
+                }}
+              >
+                No previous class reference found for this classroom yet.
               </div>
             )}
           </div>
@@ -1214,7 +1506,16 @@ export default function TeacherDailyLogDialog({
  .tp-log-dialog h3{font-size:14px !important}
  .tp-log-dialog p{font-size:11px !important;line-height:1.4 !important}
  .tp-log-dialog input,.tp-log-dialog select,.tp-log-dialog textarea,.tp-log-dialog button{font-size:12px !important}
+ .tp-log-previous-reference{padding:6px 7px !important;margin-top:7px !important}
+ .tp-log-previous-reference button{font-size:9px !important}
+ .tp-log-previous-reference .tp-log-previous-topic-reference{}
+ .tp-log-previous-reference-loading div,.tp-log-previous-reference>div{font-size:9px !important}
 }
+ .tp-log-previous-reference{padding:7px 8px !important;margin-top:8px !important}
+ .tp-log-previous-topic-reference>div:first-child,.tp-log-previous-concepts-reference>div:first-child{font-size:8.4px !important}
+ .tp-log-previous-topic-reference button{font-size:9.6px !important}
+ .tp-log-previous-concepts-reference button{font-size:9px !important}
+ .tp-log-previous-concepts-reference>div:last-child{font-size:8.4px !important}
 @media (max-width:600px){
  .tp-log-dialog-overlay{padding:6px !important;align-items:flex-end !important}
  .tp-log-dialog{max-width:none !important;max-height:96dvh !important;border-radius:18px 18px 10px 10px !important}
@@ -1223,6 +1524,12 @@ export default function TeacherDailyLogDialog({
  .tp-log-dialog h3{font-size:13px !important}
  .tp-log-dialog p{font-size:10px !important}
  .tp-log-dialog input,.tp-log-dialog select,.tp-log-dialog textarea,.tp-log-dialog button{font-size:11px !important}
+ .tp-log-previous-reference{padding:5px 6px !important;margin-top:6px !important}
+ .tp-log-previous-topic-reference>div:first-child,.tp-log-previous-concepts-reference>div:first-child{font-size:7.8px !important}
+ .tp-log-previous-topic-reference button{font-size:8.4px !important}
+ .tp-log-previous-concepts-reference button{font-size:7.8px !important}
+ .tp-log-previous-concepts-reference>div:last-child{font-size:7.8px !important}
+ .tp-log-previous-reference-loading div,.tp-log-previous-reference>div{font-size:7.8px !important}
 }
 `}</style>
 </div>

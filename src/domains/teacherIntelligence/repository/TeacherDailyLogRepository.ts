@@ -141,6 +141,40 @@ export async function getTeacherDailyLogsByAssignments(
 }
 
 /*
+  =========================================================
+  PREVIOUS CLASS REFERENCE FOR ONE ASSIGNMENT
+
+  This is a read-only helper for the Daily Log composer.
+  It always returns the latest submitted log for this exact
+  teacher assignment, including today's newly submitted log.
+  =========================================================
+*/
+
+export async function getPreviousTeacherDailyLogByAssignment(
+  teacherAssignmentUuid: string
+): Promise<TeacherDailyLog | null> {
+  const supabase = getSupabaseClient();
+
+  if (!supabase || !teacherAssignmentUuid) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select("*")
+    .eq("teacher_assignment_uuid", teacherAssignmentUuid)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (error) {
+    throw error;
+  }
+
+  const row = Array.isArray(data) ? data[0] : null;
+  return row ? mapTeacherDailyLog(row) : null;
+}
+
+/*
  =========================================================
  TODAY'S LOGS FOR ONE ASSIGNMENT
  =========================================================
