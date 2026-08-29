@@ -13,6 +13,7 @@ import SchoolPostManagerPage from "./SchoolPostManagerPage";
 import SchoolTeacherAccessManager from "./SchoolTeacherAccessManager";
 import SchoolStudentAccessManager from "./SchoolStudentAccessManager";
 import SchoolMorningBrief from "../components/SchoolMorningBrief";
+import SchoolWeeklyMeetingInsights from "../components/weeklyMeetingInsights/SchoolWeeklyMeetingInsights";
 
 type RangeValue = "30" | "60" | "90" | "custom";
 type SortKey =
@@ -1160,6 +1161,8 @@ export default function SchoolOverviewPage() {
       </div>
 
       <SchoolMorningBrief />
+
+      <SchoolWeeklyMeetingInsights />
 
       {showPostManager && (
         <div
