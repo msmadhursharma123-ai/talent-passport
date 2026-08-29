@@ -12,6 +12,7 @@ import type {
 import SchoolPostManagerPage from "./SchoolPostManagerPage";
 import SchoolTeacherAccessManager from "./SchoolTeacherAccessManager";
 import SchoolStudentAccessManager from "./SchoolStudentAccessManager";
+import SchoolMorningBrief from "../components/SchoolMorningBrief";
 
 type RangeValue = "30" | "60" | "90" | "custom";
 type SortKey =
@@ -1157,6 +1158,8 @@ export default function SchoolOverviewPage() {
           </div>
         </section>
       </div>
+
+      <SchoolMorningBrief />
 
       {showPostManager && (
         <div
