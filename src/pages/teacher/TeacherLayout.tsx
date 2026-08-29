@@ -42,7 +42,9 @@ export default function TeacherLayout({ onLogout }: Props) {
       const identity = getCurrentTeacher();
 
       if (!identity?.schoolUuid) {
-        setEnabledTabs(TEACHER_FEATURES.map(feature => feature.key));
+        setEnabledTabs(
+          TEACHER_FEATURES.map(feature => feature.key)
+        );
         return;
       }
 
@@ -51,7 +53,20 @@ export default function TeacherLayout({ onLogout }: Props) {
         "teacher"
       );
 
-      setEnabledTabs(keys);
+      /*
+       * IMPORTANT ACCESS-CONTROL RULE:
+       * The school's Teacher Portal configuration is the source of truth.
+       *
+       * Do NOT append hard-coded planner/PTM keys here.
+       *
+       * This changes only which modules are visible/accessible.
+       * The existing Teacher Portal layout, responsive CSS, components,
+       * header, sidebar, content structure and page implementations
+       * remain unchanged.
+       */
+      setEnabledTabs(
+        Array.from(new Set(keys))
+      );
 
       if (keys.length > 0 && !keys.includes(activePage)) {
         setActivePage(keys[0]);
