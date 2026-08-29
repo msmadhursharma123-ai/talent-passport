@@ -12,3 +12,6 @@ verify_jwt = false
 
 [functions.consume-otp]
 verify_jwt = false
+
+[functions.send-ptm-report]
+verify_jwt = false

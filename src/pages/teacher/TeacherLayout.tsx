@@ -16,6 +16,7 @@ import PlannersPage from "../../domains/planners/pages/PlannersPage";
 import UnitTestPlannerPage from "../../domains/planners/pages/UnitTestPlannerPage";
 import ExamPaperPlannerPage from "../../domains/planners/pages/ExamPaperPlannerPage";
 import WorksheetMakerPage from "../../domains/planners/pages/WorksheetMakerPage";
+import ParentsTeacherMeetingPage from "../../domains/parentTeacherMeeting/pages/ParentsTeacherMeetingPage";
 
 import SchoolPostFeed from "../../domains/schoolIntelligence/components/SchoolPostFeed";
 
@@ -37,7 +38,7 @@ export default function TeacherLayout({ onLogout }: Props) {
   const [enabledTabs, setEnabledTabs] = useState<string[] | null>(null);
 
   useEffect(() => {
-    const plannerKeys = ["planners", "unit-test-planner", "exam-paper-planner", "worksheet-maker"];
+    const plannerKeys = ["planners", "unit-test-planner", "exam-paper-planner", "worksheet-maker", "parents-teacher-meeting"];
     void (async () => {
       const identity = getCurrentTeacher();
 
@@ -191,6 +192,7 @@ export default function TeacherLayout({ onLogout }: Props) {
                 {activePage === "unit-test-planner" && <UnitTestPlannerPage />}
                 {activePage === "exam-paper-planner" && <ExamPaperPlannerPage />}
                 {activePage === "worksheet-maker" && <WorksheetMakerPage />}
+                {activePage === "parents-teacher-meeting" && <ParentsTeacherMeetingPage />}
               </>
             )}
           </main>

@@ -31,6 +31,11 @@ export default function TeacherSidebar({
       icon: "△",
     },
     {
+      id: "parents-teacher-meeting",
+      label: "Parents Teacher Meeting",
+      icon: "♡",
+    },
+    {
       id: "exam-preparation",
       label: "Exam Prep",
       icon: "☆",
