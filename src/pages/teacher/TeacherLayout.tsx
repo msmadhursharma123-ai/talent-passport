@@ -38,12 +38,11 @@ export default function TeacherLayout({ onLogout }: Props) {
   const [enabledTabs, setEnabledTabs] = useState<string[] | null>(null);
 
   useEffect(() => {
-    const plannerKeys = ["planners", "unit-test-planner", "exam-paper-planner", "worksheet-maker", "parents-teacher-meeting"];
     void (async () => {
       const identity = getCurrentTeacher();
 
       if (!identity?.schoolUuid) {
-        setEnabledTabs(Array.from(new Set([...TEACHER_FEATURES.map(feature => feature.key), ...plannerKeys])));
+        setEnabledTabs(TEACHER_FEATURES.map(feature => feature.key));
         return;
       }
 
@@ -52,7 +51,7 @@ export default function TeacherLayout({ onLogout }: Props) {
         "teacher"
       );
 
-      setEnabledTabs(Array.from(new Set([...keys, ...plannerKeys])));
+      setEnabledTabs(keys);
 
       if (keys.length > 0 && !keys.includes(activePage)) {
         setActivePage(keys[0]);

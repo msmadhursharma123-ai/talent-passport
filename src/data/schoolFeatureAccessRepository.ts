@@ -20,6 +20,11 @@ export const TEACHER_FEATURES = [
   { key: "teaching-journal", label: "Teaching Journal" },
   { key: "my-classroom", label: "My Classroom" },
   { key: "exam-preparation", label: "Exam Prep" },
+  { key: "planners", label: "Planners" },
+  { key: "unit-test-planner", label: "Unit Test" },
+  { key: "exam-paper-planner", label: "Exam Paper" },
+  { key: "worksheet-maker", label: "Worksheet" },
+  { key: "parents-teacher-meeting", label: "PTM" },
 ] as const;
 
 const defaultsFor = (role: PortalRole) =>
@@ -51,9 +56,20 @@ export async function getSchoolFeatureKeys(
   // migration/backfill is run. Treat that state as legacy = all enabled.
   if (!data || data.length === 0) return defaultsFor(role);
 
-  return data
-    .filter((row: any) => row.enabled)
-    .map((row: any) => String(row.feature_key));
+  // A feature row that predates a newly-added module is treated as
+  // enabled until the school's configuration is explicitly saved again.
+  // This preserves existing schools while making newly-added modules
+  // immediately available and fully controllable from Teacher Registry.
+  const configured = new Map(
+    data.map((row: any) => [
+      String(row.feature_key),
+      Boolean(row.enabled),
+    ])
+  );
+
+  return TEACHER_FEATURES
+    .filter((feature) => configured.get(feature.key) ?? true)
+    .map((feature) => feature.key);
 }
 
 export async function getSchoolFeatureConfiguration(schoolUuid: string) {

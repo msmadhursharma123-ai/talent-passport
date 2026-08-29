@@ -32,7 +32,7 @@ export default function TeacherSidebar({
     },
     {
       id: "parents-teacher-meeting",
-      label: "Parents Teacher Meeting",
+      label: "PTM",
       icon: "♡",
     },
     {
