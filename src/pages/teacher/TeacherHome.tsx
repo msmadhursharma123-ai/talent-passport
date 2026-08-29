@@ -24,6 +24,8 @@ import {
   getLectureFeedbackRadarFast,
 } from "../../domains/teacherIntelligence/repository/TeacherFeedbackAnalyticsRepository";
 
+import TeacherDailyDoubtAcknowledgement from "../../domains/teacherIntelligence/components/TeacherDailyDoubtAcknowledgement";
+
 
 
 interface ClassroomDashboardData {
@@ -550,6 +552,7 @@ const classroomColumns =
         `,
       }}
     >
+      <TeacherDailyDoubtAcknowledgement />
       <style>{`
         /* MOBILE/TABLET ONLY. Desktop remains exactly as existing inline styles. */
         .teacher-home-swipe-cue { display: none; }
