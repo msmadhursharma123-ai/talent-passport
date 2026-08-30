@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -7,22 +8,97 @@ import {
   getTeacherExamAttentionIntelligenceWithLiveLayer,
 } from "../../liveDoubtIntelligence/service/LiveTeacherExamPreparation";
 
+type FilterYear = "ALL" | "2026" | "2027" | "2028";
+type FilterMonth = "ALL" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12";
+type FilterPeriod = "ALL" | "7" | "14" | "30" | "CUSTOM";
+
+const examMonthOptions = [
+  ["1", "January"], ["2", "February"], ["3", "March"], ["4", "April"],
+  ["5", "May"], ["6", "June"], ["7", "July"], ["8", "August"],
+  ["9", "September"], ["10", "October"], ["11", "November"], ["12", "December"],
+] as const;
+
+function examDateKey(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(date);
+  return `${parts.find(p => p.type === "year")?.value ?? ""}-${parts.find(p => p.type === "month")?.value ?? ""}-${parts.find(p => p.type === "day")?.value ?? ""}`;
+}
+
+function examFilterRange(year: FilterYear, month: FilterMonth, period: FilterPeriod, from: string, to: string) {
+  const now = new Date();
+  let start: string | undefined;
+  let end: string | undefined;
+
+  if (period === "7" || period === "14" || period === "30") {
+    end = examDateKey(now);
+    const d = new Date(now);
+    d.setDate(d.getDate() - (Number(period) - 1));
+    start = examDateKey(d);
+  }
+  if (period === "CUSTOM") {
+    if (!from || !to || from > to) return null;
+    start = from; end = to;
+  }
+  if (year !== "ALL") {
+    const ys = `${year}-01-01`, ye = `${year}-12-31`;
+    start = start ? (start > ys ? start : ys) : ys;
+    end = end ? (end < ye ? end : ye) : ye;
+  }
+  if (month !== "ALL") {
+    // Month is intentionally combined with a selected year.
+    const y = year === "ALL" ? now.getFullYear() : Number(year);
+    const m = Number(month);
+    const ms = examDateKey(new Date(y, m - 1, 1));
+    const me = examDateKey(new Date(y, m, 0));
+    start = start ? (start > ms ? start : ms) : ms;
+    end = end ? (end < me ? end : me) : me;
+  }
+  if (start && end && start > end) return null;
+  return { start, end };
+}
+
 export default function ExamPreparationPage() {
-  const [tables, setTables] =
-    useState<any[]>([]);
+  const [tables, setTables] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [year, setYear] = useState<FilterYear>("ALL");
+  const [month, setMonth] = useState<FilterMonth>("ALL");
+  const [period, setPeriod] = useState<FilterPeriod>("ALL");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   useEffect(() => {
-    loadData();
-  }, []);
+    void loadData();
+  }, [year, month, period, from, to]);
 
   async function loadData() {
-    const data =
-      await getTeacherExamAttentionIntelligenceWithLiveLayer();
-
-    setTables(data);
-
-    console.log(data);
+    const range = examFilterRange(year, month, period, from, to);
+    if (!range) { setTables([]); setLoading(false); return; }
+    setLoading(true);
+    try {
+      const data = await getTeacherExamAttentionIntelligenceWithLiveLayer(range.start, range.end);
+      setTables(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("EXAM PREPARATION FILTER LOAD FAILED — ORIGINAL PAGE SAFETY PRESERVED", error);
+      setTables([]);
+    } finally {
+      setLoading(false);
+    }
   }
+
+  const visibleTables = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return tables;
+    return tables
+      .map((table: any) => ({
+        ...table,
+        students: (table.students ?? []).filter((student: any) =>
+          String(student.studentName ?? "").toLowerCase().includes(q)
+        ),
+      }))
+      .filter((table: any) => table.students.length > 0);
+  }, [tables, search]);
 
   return (
     <div
@@ -38,7 +114,28 @@ export default function ExamPreparationPage() {
       <style>{`
         .exam-prep-swipe-cue { display: none; }
 
+        .exam-prep-filter-bar {
+          display: grid;
+          grid-template-columns: minmax(120px,1.5fr) minmax(72px,.8fr) minmax(82px,.9fr) minmax(120px,1.15fr);
+          gap: 8px;
+          margin: 0 0 12px;
+          padding: 9px;
+          border: 1px solid #E2E8F0;
+          border-radius: 13px;
+          background: #FFFFFF;
+          box-sizing: border-box;
+          align-items: end;
+        }
+        .exam-prep-filter { min-width: 0; }
+        .exam-prep-filter label { display:block; margin-bottom:4px; color:#64748B; font-size:8px; font-weight:850; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .exam-prep-filter select,.exam-prep-filter input { width:100%; min-width:0; box-sizing:border-box; border:1px solid #E2E8F0; border-radius:9px; background:#FFF; color:#0F172A; padding:8px 9px; font-size:10px; font-weight:750; }
+        .exam-prep-filter select:disabled { background:#F8FAFC; color:#94A3B8; }
+        .exam-prep-custom-dates { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:4px; }
+
         @media (max-width: 1024px) {
+          .exam-prep-filter-bar { grid-template-columns:minmax(105px,1.45fr) minmax(62px,.8fr) minmax(72px,.9fr) minmax(105px,1.15fr); gap:6px; margin-bottom:10px; }
+          .exam-prep-filter label { font-size:7px; }
+          .exam-prep-filter select,.exam-prep-filter input { padding:7px 7px; font-size:9px; }
           .tp-compact-page { padding: 10px !important; box-sizing: border-box !important; overflow-x: hidden !important; }
 
           .tp-compact-page .exam-prep-hero { padding: 16px 18px !important; margin-bottom: 10px !important; border-radius: 18px !important; }
@@ -88,6 +185,10 @@ export default function ExamPreparationPage() {
         }
 
         @media (max-width: 600px) {
+          .exam-prep-filter-bar { grid-template-columns:minmax(86px,1.35fr) minmax(54px,.72fr) minmax(60px,.8fr) minmax(94px,1.1fr); gap:4px; padding:6px; margin-bottom:7px; }
+          .exam-prep-filter label { font-size:6px; margin-bottom:3px; }
+          .exam-prep-filter select,.exam-prep-filter input { padding:6px 5px; border-radius:7px; font-size:8px; }
+          .exam-prep-custom-dates { gap:2px; margin-top:3px; }
           .tp-compact-page { padding: 7px !important; }
 
           .tp-compact-page .exam-prep-hero { padding: 12px 13px !important; margin-bottom: 8px !important; border-radius: 14px !important; }
@@ -232,10 +333,47 @@ export default function ExamPreparationPage() {
 </div>
 
     {/* =====================================================
+    EXAM PREPARATION FILTER CONTROL
+   ===================================================== */}
+
+    <div className="exam-prep-filter-bar">
+      <div className="exam-prep-filter">
+        <label>Search Student</label>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Student name" aria-label="Search student by name" />
+      </div>
+      <div className="exam-prep-filter">
+        <label>Year</label>
+        <select value={year} onChange={e => { setYear(e.target.value as FilterYear); if (e.target.value === "ALL") setMonth("ALL"); }}>
+          <option value="ALL">All years</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option>
+        </select>
+      </div>
+      <div className="exam-prep-filter">
+        <label>Month</label>
+        <select value={month} disabled={year === "ALL"} onChange={e => setMonth(e.target.value as FilterMonth)}>
+          <option value="ALL">{year === "ALL" ? "Select year" : "All months"}</option>
+          {examMonthOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </div>
+      <div className="exam-prep-filter">
+        <label>Time Period</label>
+        <select value={period} onChange={e => setPeriod(e.target.value as FilterPeriod)}>
+          <option value="ALL">All time</option><option value="7">Last 1 Week</option><option value="14">Last 2 Weeks</option><option value="30">Last 30 Days</option><option value="CUSTOM">Custom Date</option>
+        </select>
+        {period === "CUSTOM" && <div className="exam-prep-custom-dates"><input type="date" value={from} onChange={e => setFrom(e.target.value)} aria-label="From date" /><input type="date" value={to} onChange={e => setTo(e.target.value)} aria-label="To date" /></div>}
+      </div>
+    </div>
+
+    {loading && (
+      <div className="exam-prep-section" style={sectionCardStyle}>
+        <div style={{ color: "#64748B", fontSize: "13px", fontWeight: 700 }}>Loading exam preparation intelligence…</div>
+      </div>
+    )}
+
+    {/* =====================================================
     EMPTY STATE
    ===================================================== */}
 
-{tables.length === 0 && (
+{!loading && visibleTables.length === 0 && (
   <div className="exam-prep-section" style={sectionCardStyle}>
     <div
       style={{
@@ -255,8 +393,7 @@ export default function ExamPreparationPage() {
         </h2>
 
         <p style={sectionDescriptionStyle}>
-          Students will start appearing here after they
-          report unresolved classroom doubts.
+          {search.trim() ? "No student matching this name exists in the selected timeline." : "Students will start appearing here after they report unresolved classroom doubts."}
         </p>
       </div>
 
@@ -335,7 +472,7 @@ export default function ExamPreparationPage() {
     CLASSROOM INTELLIGENCE
    ===================================================== */}
 
-{tables.map(
+{!loading && visibleTables.map(
   (table: any, tableIndex: number) => (
     <div
       key={table.classroom}

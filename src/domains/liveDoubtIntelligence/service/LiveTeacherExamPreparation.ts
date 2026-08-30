@@ -6,8 +6,11 @@ import {
   mergePendingDoubtsWithLiveLedger,
 } from "../repository/LiveDoubtReconciliationRepository";
 
-export async function getTeacherExamAttentionIntelligenceWithLiveLayer() {
-  const base = await getTeacherExamAttentionIntelligence();
+export async function getTeacherExamAttentionIntelligenceWithLiveLayer(
+  startDate?: string,
+  endDate?: string
+) {
+  const base = await getTeacherExamAttentionIntelligence(startDate, endDate);
 
   try {
     const teacher = getCurrentTeacher();
@@ -25,7 +28,14 @@ export async function getTeacherExamAttentionIntelligenceWithLiveLayer() {
 
     const liveRows = (
       await getLiveDoubtsForTeacherAssignments(assignmentIds)
-    ).filter((row) => Boolean(row.last_reconciled_at));
+    ).filter((row) => {
+      if (!row.last_reconciled_at) return false;
+      const value = String(row.log_date ?? row.first_seen_at ?? row.source_submitted_at ?? row.created_at ?? "").slice(0, 10);
+      if (!value) return false;
+      if (startDate && value < startDate) return false;
+      if (endDate && value > endDate) return false;
+      return true;
+    });
 
     if (!liveRows.length) return base;
 
@@ -41,11 +51,16 @@ export async function getTeacherExamAttentionIntelligenceWithLiveLayer() {
       const supabase = getSupabaseClient();
       if (!supabase) return [];
 
-      const { data, error } = await (supabase as any)
+      let query = (supabase as any)
         .from("pending_teacher_doubts")
         .select("*")
         .in("teacher_assignment_uuid", assignmentIds)
         .eq("status", "NOT DISCUSSED");
+
+      if (startDate) query = query.gte("log_date", startDate);
+      if (endDate) query = query.lte("log_date", endDate);
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data ?? [];

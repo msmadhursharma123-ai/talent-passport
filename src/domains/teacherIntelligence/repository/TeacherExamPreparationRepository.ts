@@ -54,7 +54,10 @@ function getAttentionLevel(
 
 
 export async function
-getTeacherExamAttentionIntelligence() {
+getTeacherExamAttentionIntelligence(
+  startDate?: string,
+  endDate?: string
+) {
 
   const teacher =
     getCurrentTeacher();
@@ -89,26 +92,32 @@ getTeacherExamAttentionIntelligence() {
     getSupabaseClient();
 
 
-  const {
-    data,
-    error,
-  } = await (supabase as any)
-
+  let query = (supabase as any)
     .from(
       "pending_teacher_doubts"
     )
-
     .select("*")
-
     .in(
       "teacher_assignment_uuid",
       assignmentIds
     )
-
     .eq(
       "status",
       "NOT DISCUSSED"
     );
+
+  if (startDate) {
+    query = query.gte("log_date", startDate);
+  }
+
+  if (endDate) {
+    query = query.lte("log_date", endDate);
+  }
+
+  const {
+    data,
+    error,
+  } = await query;
 
 
   if (error) {
