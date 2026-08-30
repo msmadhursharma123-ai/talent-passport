@@ -20,14 +20,20 @@ export default function TeacherSidebar({
       label: "Daily Log",
       icon: "○",
     },
+    
     {
       id: "teaching-journal",
-      label: "Teaching Journal",
+      label: "Class Health",
       icon: "□",
+    },
+     {
+      id: "exam-preparation",
+      label: "Pending Doubts",
+      icon: "☆",
     },
     {
       id: "my-classroom",
-      label: "My Classroom",
+      label: "Learning History",
       icon: "△",
     },
     {
@@ -36,29 +42,29 @@ export default function TeacherSidebar({
       icon: "♡",
     },
     {
-      id: "exam-preparation",
-      label: "Exam Prep",
-      icon: "☆",
-    },
-    {
       id: "planners",
-      label: "Planners",
+      label: "Lesson Planner",
       icon: "▣",
+    },
+     {
+      id: "worksheet-maker",
+      label: "Worksheet Planner",
+      icon: "▧",
     },
     {
       id: "unit-test-planner",
-      label: "Unit Test",
+      label: "Unit Test Planner",
       icon: "▤",
     },
     {
       id: "exam-paper-planner",
-      label: "Exam Paper",
+      label: "Exam Paper Planner",
       icon: "✦",
     },
     {
-      id: "worksheet-maker",
-      label: "Worksheet",
-      icon: "▧",
+      id: "star-performers",
+      label: "Star Performers",
+      icon: "★",
     },
   ];
 

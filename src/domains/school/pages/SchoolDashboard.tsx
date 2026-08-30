@@ -7,10 +7,11 @@ import SchoolLessonPlannerAuditPage from "../../planners/pages/SchoolLessonPlann
 import SchoolUnitTestPlannerAuditPage from "../../planners/pages/SchoolUnitTestPlannerAuditPage";
 import SchoolExamPaperPlannerAuditPage from "../../planners/pages/SchoolExamPaperPlannerAuditPage";
 import SchoolWorksheetPlannerAuditPage from "../../planners/pages/SchoolWorksheetPlannerAuditPage";
+import SchoolStarPerformersPage from "../../starPerformers/pages/SchoolStarPerformersPage";
 import "../../schoolIntelligence/pages/schoolIntelligence.css";
 
 interface Props { onLogout: () => void; }
-type Tab = "overview" | "teachers" | "classrooms" | "academic" | "lesson-plans" | "unit-tests" | "exam-papers" | "worksheets";
+type Tab = "overview" | "teachers" | "classrooms" | "academic" | "lesson-plans" | "unit-tests" | "exam-papers" | "worksheets" | "star-performers";
 
 const tabs: {key:Tab;label:string;short:string}[] = [
   {key:"overview",label:"School Health",short:"Overview"},
@@ -21,6 +22,7 @@ const tabs: {key:Tab;label:string;short:string}[] = [
   {key:"unit-tests",label:"Unit Test Audit",short:"Unit Test"},
   {key:"exam-papers",label:"Exam Paper Audit",short:"Papers"},
   {key:"worksheets",label:"Worksheet Audit",short:"Worksheets"},
+  {key:"star-performers",label:"Star Performers",short:"Stars"},
 ];
 
 export default function SchoolDashboard({ onLogout }: Props) {
@@ -42,6 +44,7 @@ export default function SchoolDashboard({ onLogout }: Props) {
       {tab==="unit-tests"&&<SchoolUnitTestPlannerAuditPage/>}
       {tab==="exam-papers"&&<SchoolExamPaperPlannerAuditPage/>}
       {tab==="worksheets"&&<SchoolWorksheetPlannerAuditPage/>}
+      {tab==="star-performers"&&<SchoolStarPerformersPage/>}
     </div>
 
     <style>{`

@@ -12,6 +12,7 @@ import TeachingJournalPage from "../../domains/teacherIntelligence/pages/Teachin
 import MyClassroomPage from "../../domains/teacherIntelligence/pages/MyClassroomPage";
 
 import ExamPreparationPage from "../../domains/teacherIntelligence/pages/ExamPreparationPage";
+import TeacherStarPerformersPage from "../../domains/starPerformers/pages/TeacherStarPerformersPage";
 import PlannersPage from "../../domains/planners/pages/PlannersPage";
 import UnitTestPlannerPage from "../../domains/planners/pages/UnitTestPlannerPage";
 import ExamPaperPlannerPage from "../../domains/planners/pages/ExamPaperPlannerPage";
@@ -43,7 +44,10 @@ export default function TeacherLayout({ onLogout }: Props) {
 
       if (!identity?.schoolUuid) {
         setEnabledTabs(
-          TEACHER_FEATURES.map(feature => feature.key)
+          Array.from(new Set([
+            ...TEACHER_FEATURES.map(feature => feature.key),
+            "star-performers",
+          ]))
         );
         return;
       }
@@ -64,8 +68,14 @@ export default function TeacherLayout({ onLogout }: Props) {
        * header, sidebar, content structure and page implementations
        * remain unchanged.
        */
+      // Star Performers is a school-wide recognition surface. It is therefore
+      // available to every teacher of the authenticated school. Existing
+      // school-controlled feature visibility remains unchanged.
       setEnabledTabs(
-        Array.from(new Set(keys))
+        Array.from(new Set([
+          ...keys,
+          "star-performers",
+        ]))
       );
 
       if (keys.length > 0 && !keys.includes(activePage)) {
@@ -202,6 +212,7 @@ export default function TeacherLayout({ onLogout }: Props) {
                 {activePage === "teaching-journal" && <TeachingJournalPage />}
                 {activePage === "my-classroom" && <MyClassroomPage />}
                 {activePage === "exam-preparation" && <ExamPreparationPage />}
+                {activePage === "star-performers" && <TeacherStarPerformersPage />}
                 {activePage === "planners" && <PlannersPage />}
                 {activePage === "unit-test-planner" && <UnitTestPlannerPage />}
                 {activePage === "exam-paper-planner" && <ExamPaperPlannerPage />}
