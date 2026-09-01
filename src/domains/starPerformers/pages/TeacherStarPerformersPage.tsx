@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { loadStarPerformerViewModel } from "../viewmodels/StarPerformerViewModel";
 import type { StarPerformerPeriod, StarPerformerRow } from "../types/StarPerformerModels";
 
+import StudentStarPerformersPanel from "../components/StudentStarPerformersPanel";
+
 const todayKey = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Asia/Kolkata",
   year: "numeric",
@@ -463,12 +465,12 @@ export default function TeacherStarPerformersPage() {
         </div>
 
         <p className="tp-star-note">
-          Combined Score = average of Understanding %, Doubt Closure %, Class Health %
-          and Student Feedback %. The teacher score averages the score of every active
-          class/section that teacher teaches. Historical understanding can update when
-          the live reconciliation layer verifies a previously unresolved learning gap.
+          Combined Score = average of Understanding %, Doubt Closure %, Class Health %, and Student Feedback % of all classes taught by that teacher.
+
         </p>
       </section>
+
+      <StudentStarPerformersPanel portalTheme="teacher" />
     </div>
   );
 }

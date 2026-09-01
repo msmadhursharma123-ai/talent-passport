@@ -5,6 +5,8 @@ import type {
   StarPerformerRow,
 } from "../types/StarPerformerModels";
 
+import StudentStarPerformersPanel from "../components/StudentStarPerformersPanel";
+
 const TODAY = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Asia/Kolkata",
   year: "numeric",
@@ -231,6 +233,7 @@ export default function SchoolStarPerformersPage() {
         .sp-future { color:#94a3b8;font-weight:800; }
         .sp-status { display:inline-flex;border-radius:999px;padding:4px 8px;background:#f1f5f9;color:#64748b;font-size:9px;font-weight:900; }
         .sp-status.complete { background:#ecfdf3;color:#15803d; }
+        .sp-school-page .so-table-status { font-size:11px !important; line-height:1.45; }
 
         @media(max-width:1024px){
           .sp-school-page { padding:16px 0 22px !important; }
@@ -274,6 +277,7 @@ export default function SchoolStarPerformersPage() {
           .sp-score { min-width:52px;padding:5px 7px;font-size:11px;border-radius:8px; }
           .sp-breakdown { font-size:7px; }
           .sp-status { font-size:7px;padding:3px 6px; }
+           .sp-school-page .so-table-status { font-size:8px !important; line-height:1.35; }
           .sp-empty { padding:18px;font-size:9px; }
         }
       `}</style>
@@ -442,13 +446,12 @@ export default function SchoolStarPerformersPage() {
           </div>
 
           <div className="so-table-status" style={{ marginTop: 12 }}>
-            Combined Score = average of the four classroom-level percentages:
-            Understanding %, Doubt Closure %, Class Health %, and Student Feedback %.
-            Each teacher's classroom scores are averaged across all active classes/sections
-            that teacher teaches. Resolved live-layer doubts can move historical feedback
-            into the understood bucket without rewriting the original feedback record.
+             Combined Score = average of Understanding %, Doubt Closure %, Class Health %, and Student Feedback % of all classes taught by that teacher.
+
           </div>
         </section>
+
+        <StudentStarPerformersPanel portalTheme="school" />
       </div>
     </main>
   );
