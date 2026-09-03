@@ -15,6 +15,7 @@ import {
 import {
   saveSchoolFeatures
 } from "../../../data/schoolFeatureAccessRepository";
+import { saveStudentOnboardingConfiguration } from "../../../data/studentOnboardingConfigurationRepository";
 
 export default function useTeacherManagementViewModel() {
 
@@ -57,7 +58,11 @@ export default function useTeacherManagementViewModel() {
 
     studentFeatures: string[],
 
-    teacherFeatures: string[]
+    teacherFeatures: string[],
+
+    studentParentOtpEnabled: boolean = true,
+
+    studentQuestionnaireEnabled: boolean = true
 
   ) {
 
@@ -95,6 +100,21 @@ export default function useTeacherManagementViewModel() {
       return false;
     }
 
+    const onboardingOk =
+      await saveStudentOnboardingConfiguration(
+        uuid,
+        {
+          parentOtpEnabled: studentParentOtpEnabled,
+          questionnaireEnabled: studentQuestionnaireEnabled
+        }
+      );
+
+    if (!onboardingOk) {
+      console.warn(
+        "Student onboarding configuration could not be saved; existing school creation remains successful."
+      );
+    }
+
     await loadSchools();
     return true;
 
@@ -116,7 +136,11 @@ export default function useTeacherManagementViewModel() {
 
     studentFeatures: string[],
 
-    teacherFeatures: string[]
+    teacherFeatures: string[],
+
+    studentParentOtpEnabled: boolean = true,
+
+    studentQuestionnaireEnabled: boolean = true
 
 ) {
 
@@ -158,6 +182,21 @@ export default function useTeacherManagementViewModel() {
 
     if (!featuresOk) {
       return false;
+    }
+
+    const onboardingOk =
+      await saveStudentOnboardingConfiguration(
+        uuid,
+        {
+          parentOtpEnabled: studentParentOtpEnabled,
+          questionnaireEnabled: studentQuestionnaireEnabled
+        }
+      );
+
+    if (!onboardingOk) {
+      console.warn(
+        "Student onboarding configuration could not be saved; existing school edit remains successful."
+      );
     }
 
     await loadSchools();

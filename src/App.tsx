@@ -68,6 +68,8 @@ import {
 import { getSupabaseClient }
 from "./supabaseClient";
 
+import { getStudentOnboardingConfiguration } from "./data/studentOnboardingConfigurationRepository";
+
 import {
     getCurrentTeacher,
 } from "./services/identityService";
@@ -301,6 +303,41 @@ const routeTeacherAfterLogin = async (
   setActiveTab("teacher");
 };
 
+async function routeStudentOnboardingBySchoolConfiguration(schoolUuid: string) {
+
+  const configuration =
+    await getStudentOnboardingConfiguration(
+      schoolUuid
+    );
+
+  if (configuration.parentOtpEnabled) {
+
+    const consent =
+      await getParentalConsentStatus();
+
+    if (consent.verified) {
+      if (configuration.questionnaireEnabled) {
+        setActiveTab("wizard");
+      } else {
+        await activatePortal("student");
+        setActiveTab("passport");
+      }
+      return;
+    }
+
+    setActiveTab("parental-otp");
+    return;
+  }
+
+  if (configuration.questionnaireEnabled) {
+    setActiveTab("wizard");
+    return;
+  }
+
+  await activatePortal("student");
+  setActiveTab("passport");
+}
+
 const routeStudentAfterLogin =
 async (
   options: { existingLogin?: boolean } = {}
@@ -383,30 +420,21 @@ async (
     return;
   }
 
-  /*
-   * STUDENT-ONLY OTP CHECK
-   *
-   * This branch is retained for the NEW-USER onboarding flow.
-   * Existing User Login never reaches it.
-   */
   try {
 
-    const consent =
-      await getParentalConsentStatus();
-
-    setActiveTab(
-      consent.verified
-        ? "wizard"
-        : "parental-otp"
+    await routeStudentOnboardingBySchoolConfiguration(
+      studentIdentity?.schoolUuid ?? ""
     );
 
   } catch (error) {
 
     console.error(
-      "STUDENT ONBOARDING STATUS CHECK FAILED",
+      "STUDENT ONBOARDING CONFIGURATION CHECK FAILED",
       error
     );
 
+    // Preserve the existing onboarding path if the new optional
+    // school-level configuration cannot be read.
     setActiveTab("parental-otp");
 
   }
@@ -1042,9 +1070,23 @@ if (selectedRole === "teacher") {
         "user-type"
       )
     }
-    onContinue={() => {
+    onContinue={async () => {
       setParentalConsentTermsAccepted(false);
-      setActiveTab("parental-otp");
+
+      try {
+        const currentIdentity =
+          await getCurrentIdentity();
+
+        await routeStudentOnboardingBySchoolConfiguration(
+          String((currentIdentity as any)?.schoolUuid ?? "")
+        );
+      } catch (error) {
+        console.error(
+          "STUDENT ONBOARDING CONFIGURATION AFTER PROFILE FAILED",
+          error
+        );
+        setActiveTab("parental-otp");
+      }
     }}
   />
 )}
@@ -1232,9 +1274,31 @@ onForgotPasswordVerified={(email: string) => {
     onBack={() =>
       setActiveTab("student-profile")
     }
-    onVerified={() => {
+    onVerified={async () => {
       setParentalConsentTermsAccepted(true);
-      setActiveTab("wizard");
+
+      try {
+        const currentIdentity =
+          await getCurrentIdentity();
+
+        const configuration =
+          await getStudentOnboardingConfiguration(
+            String((currentIdentity as any)?.schoolUuid ?? "")
+          );
+
+        if (configuration.questionnaireEnabled) {
+          setActiveTab("wizard");
+        } else {
+          await activatePortal("student");
+          setActiveTab("passport");
+        }
+      } catch (error) {
+        console.error(
+          "STUDENT ONBOARDING CONFIGURATION AFTER OTP FAILED",
+          error
+        );
+        setActiveTab("wizard");
+      }
     }}
   />
 )}

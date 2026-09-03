@@ -19,6 +19,10 @@ import {
 } from "../../../data/schoolFeatureAccessRepository";
 
 import {
+    getStudentOnboardingConfiguration
+} from "../../../data/studentOnboardingConfigurationRepository";
+
+import {
 
     PlatformAccount,
 
@@ -191,6 +195,22 @@ const [
         )
 
     );
+
+    const [
+
+        studentParentOtpEnabled,
+
+        setStudentParentOtpEnabled
+
+    ] = useState(true);
+
+    const [
+
+        studentQuestionnaireEnabled,
+
+        setStudentQuestionnaireEnabled
+
+    ] = useState(true);
 
     const [
 
@@ -553,6 +573,10 @@ const reset = () => {
     );
 
 
+
+
+    setStudentParentOtpEnabled(true);
+    setStudentQuestionnaireEnabled(true);
 };
 
 function calculateEndDate(
@@ -729,7 +753,9 @@ console.log({
     limits,
     subscription,
     studentFeatures,
-    teacherFeatures
+    teacherFeatures,
+    studentParentOtpEnabled,
+    studentQuestionnaireEnabled
 
               )
 
@@ -747,7 +773,9 @@ console.log({
 
       studentFeatures,
 
-      teacherFeatures
+      teacherFeatures,
+      studentParentOtpEnabled,
+      studentQuestionnaireEnabled
 
   );
 
@@ -850,6 +878,19 @@ setGracePeriodDays(
 
         setTeacherFeatures(
             f.teacher
+        );
+
+        const onboardingConfig =
+            await getStudentOnboardingConfiguration(
+                s.schoolUuid
+            );
+
+        setStudentParentOtpEnabled(
+            onboardingConfig.parentOtpEnabled
+        );
+
+        setStudentQuestionnaireEnabled(
+            onboardingConfig.questionnaireEnabled
         );
 
         window.scrollTo({
@@ -1471,6 +1512,37 @@ setGracePeriodDays(
 
     </div>
 
+</div>
+
+<div
+    style={{
+        background: "#F8FAFC",
+        border: "1px solid #E2E8F0",
+        borderRadius: 14,
+        padding: 20,
+        marginTop: 18,
+        marginBottom: 10
+    }}
+>
+    <div style={{ fontSize: 18, fontWeight: 700, color: "#143B73", marginBottom: 8 }}>
+        🎓 Student Onboarding
+    </div>
+    <div style={{ color: "#64748B", fontSize: 12, lineHeight: 1.5, marginBottom: 14 }}>
+        Select which onboarding steps new Student Portal accounts complete after the student profile. Teacher onboarding remains unchanged.
+    </div>
+    <div style={checks}>
+        <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "white", border: "1px solid #E2E8F0", borderRadius: 10, cursor: "pointer" }}>
+            <input type="checkbox" checked={studentParentOtpEnabled} onChange={() => setStudentParentOtpEnabled(value => !value)} />
+            <span style={{ fontWeight: 600, color: "#334155" }}>Parent OTP verification</span>
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "white", border: "1px solid #E2E8F0", borderRadius: 10, cursor: "pointer" }}>
+            <input type="checkbox" checked={studentQuestionnaireEnabled} onChange={() => setStudentQuestionnaireEnabled(value => !value)} />
+            <span style={{ fontWeight: 600, color: "#334155" }}>Student questionnaire</span>
+        </label>
+    </div>
+    <div style={{ color: "#94A3B8", fontSize: 11, lineHeight: 1.45, marginTop: 8 }}>
+        Both: Profile → Parent OTP → Questionnaire → Portal. OTP only: Profile → Parent OTP → Portal. Questionnaire only: Profile → Questionnaire → Portal. Neither: Profile → Portal.
+    </div>
 </div>
 
 <h4
