@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getPlannerAssignments, getPlannerRecommendations, getTeacherPlanners, savePlanner } from "../repository/PlannerRepository";
 import type { PlannerRecord, PlannerRecommendation, PlannerType, QuestionItem, QuestionPaperPayload, TeacherAssignmentOption } from "../types/PlannerModels";
 import { AssignmentFields, PlannerHistoryTable, PlannerPageFrame, PlannerRecommendations, QuestionEditor, preparePlannerRecommendation } from "../components/PlannerUI";
+import { getTeacherPublishedWorksheetIds, publishWorksheetToStudents } from "../repository/WorksheetPublicationRepository";
 
 type WorksheetPayload = QuestionPaperPayload & {
   chapter?: string;
@@ -232,6 +233,35 @@ export function WorksheetPreview({ record, onClose, editable=false, onSaveEdit }
   return <div className="planner-modal"><div className="planner-modal-card"><div className="planner-modal-head"><div><div className="planner-eyebrow">WORKSHEET PREVIEW</div><strong>{record.title || "Worksheet"} · A4</strong></div><div className="planner-actions"><button className="planner-btn" onClick={onClose}>Close</button><button className="planner-btn" onClick={()=>printWorksheetRecord({...record,payload:currentPayload})}>Download / Save PDF</button>{editable&&onSaveEdit&&<button className="planner-btn primary" onClick={()=>onSaveEdit(currentPayload)}>Save edits</button>}</div></div><div className="planner-modal-body"><div className="worksheet-preview-wrap"><WorksheetPaper record={{...record,payload:currentPayload}} questions={questions}/></div>{editable&&<><div className="planner-grid" style={{marginTop:12}}><div className="planner-field"><label>School name</label><input value={schoolName} onChange={e=>setSchoolName(e.target.value)} placeholder="Enter your school name"/></div><div className="planner-field"><label>Chapter name</label><input value={chapter} onChange={e=>setChapter(e.target.value)} placeholder="Chapter name"/></div></div><div className="worksheet-editor" style={{marginTop:12}}><QuestionEditor questions={questions} onChange={setQuestions}/></div></>}</div></div></div>;
 }
 
+
+function WorksheetHistoryTable({ records, publishedWorksheetIds, publishingId, onView, onEdit, onDownload, onPublish }: {
+  records: PlannerRecord[];
+  publishedWorksheetIds: Set<string>;
+  publishingId: string | null;
+  onView: (record: PlannerRecord) => void;
+  onEdit: (record: PlannerRecord) => void;
+  onDownload: (record: PlannerRecord) => void;
+  onPublish: (record: PlannerRecord) => void | Promise<void>;
+}) {
+  return <div className="planner-table-scroll"><table className="planner-table"><thead><tr><th>Publish Date</th><th>Class</th><th>Section</th><th>Subject</th><th>Status</th><th>Review note</th><th>View</th><th>PDF</th><th>Edit</th><th>Students</th></tr></thead><tbody>{records.length===0?<tr><td colSpan={10} style={{textAlign:"center",color:"#94A3B8",padding:18}}>No planners submitted yet.</td></tr>:records.map(record=>{
+    const isPublished=publishedWorksheetIds.has(record.id);
+    const canPublish=record.status==="APPROVED";
+    const busy=publishingId===record.id;
+    return <tr key={record.id}>
+      <td>{fmtDate(record.submittedAt||record.createdAt)}</td>
+      <td>{record.className}</td>
+      <td>{record.sectionName}</td>
+      <td>{record.subjectName}</td>
+      <td><span className={`planner-status status-${record.status}`}>{record.status}</span></td>
+      <td>{record.reviewNote || "—"}</td>
+      <td><button className="planner-btn" onClick={()=>onView(record)}>View</button></td>
+      <td><button className="planner-btn" onClick={()=>onDownload(record)}>PDF</button></td>
+      <td><button className="planner-btn" onClick={()=>onEdit(record)}>Edit</button></td>
+      <td><button className={`planner-btn ${isPublished?"success":"primary"}`} disabled={!canPublish || busy} title={!canPublish?"Approve the worksheet before publishing to students.":""} onClick={()=>onPublish(record)}>{busy?"Publishing…":isPublished?"Republish":"Publish"}</button></td>
+    </tr>;
+  })}</tbody></table></div>;
+}
+
 export default function WorksheetMakerPage() {
   const [assignments,setAssignments]=useState<TeacherAssignmentOption[]>([]);
   const [records,setRecords]=useState<PlannerRecord[]>([]);
@@ -248,8 +278,28 @@ export default function WorksheetMakerPage() {
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState("");
   const [recommendations,setRecommendations]=useState<PlannerRecommendation[]>([]); const [recommendationLoading,setRecommendationLoading]=useState(false); const [recommendationError,setRecommendationError]=useState(""); const recommendationRequest=useRef(0);
+  const [publishedWorksheetIds,setPublishedWorksheetIds]=useState<Set<string>>(new Set());
+  const [publishingId,setPublishingId]=useState<string | null>(null);
 
-  async function load(){try{const [a,r]=await Promise.all([getPlannerAssignments(),getTeacherPlanners(WORKSHEET_PLANNER_TYPE as PlannerType)]);setAssignments(a);setRecords(r);}catch(e:any){setError(e?.message??"Unable to load worksheet planners.")}}
+  async function load(){
+    try{
+      const [a,r]=await Promise.all([getPlannerAssignments(),getTeacherPlanners(WORKSHEET_PLANNER_TYPE as PlannerType)]);
+      setAssignments(a);
+      setRecords(r);
+      // Publication state is auxiliary. Let the original two-query planner load
+      // render immediately, then reconcile the Publish column without blocking it.
+      if(r.length){ void loadPublishedState(r); }
+    }catch(e:any){setError(e?.message??"Unable to load worksheet planners.")}
+  }
+
+  async function loadPublishedState(planners: PlannerRecord[]) {
+    try {
+      const ids = await getTeacherPublishedWorksheetIds(planners.map(item => item.id).filter(Boolean));
+      setPublishedWorksheetIds(new Set(ids));
+    } catch (publicationError) {
+      console.warn("Worksheet publication state could not be loaded.", publicationError);
+    }
+  }
   useEffect(()=>{void load()},[]);
   useEffect(()=>{
     const requestId=++recommendationRequest.current;
@@ -279,12 +329,28 @@ export default function WorksheetMakerPage() {
   function useRecommendation(r:PlannerRecommendation){const prepared=preparePlannerRecommendation(r);const payload=prepared.payload as WorksheetPayload;setEditing({...prepared,className:className||prepared.className,sectionName:sectionName||prepared.sectionName,subjectName:subjectName||prepared.subjectName,startDate:date||prepared.startDate,endDate:date||prepared.endDate,title:title||prepared.title,payload:{...payload,schoolName:"",chapter:chapter.trim()||payload.chapter}});}
   function newPreview(){if(valid())setPreview(makeRecord())}
   function download(r:PlannerRecord){printWorksheetRecord(r)}
+  async function publishToStudents(r:PlannerRecord){
+    if(r.status!=="APPROVED"){
+      setError("Only approved worksheets can be published to students.");
+      return;
+    }
+    setPublishingId(r.id);
+    setError("");
+    try{
+      await publishWorksheetToStudents(r.id);
+      setPublishedWorksheetIds(current=>new Set([...current,r.id]));
+    }catch(e:any){
+      setError(e?.message??"Unable to publish worksheet to students.");
+    }finally{
+      setPublishingId(null);
+    }
+  }
 
   return <main className="worksheet-maker"><style>{worksheetStyles}</style><PlannerPageFrame title="Worksheet Maker" eyebrow="WORKSHEET PLANNING WORKSPACE" copy="Create a clean practice worksheet using the same question-building experience already used by the Question Paper planner, with worksheet-specific chapter and preview formatting.">
     {error&&<div className="planner-section" style={{background:"#FEF2F2",borderColor:"#FECACA",color:"#B91C1C",fontSize:10,fontWeight:800}}>{error}</div>}
     <section className="planner-section"><div className="planner-section-head"><div><div className="planner-eyebrow">01 · Worksheet setup</div><h2 className="planner-section-title">Save the worksheet details</h2><p className="planner-section-copy">Enter one chapter for this worksheet, then choose the assigned classroom.</p></div></div><div className="planner-grid"><div className="planner-field"><label>School name</label><input value={schoolName} onChange={(e:any)=>setSchoolName(e.target.value)} placeholder="School name"/></div><div className="planner-field"><label>Worksheet title</label><input value={title} onChange={(e:any)=>setTitle(e.target.value)} placeholder="Worksheet"/></div><div className="planner-field"><label>Chapter name</label><input value={chapter} onChange={(e:any)=>setChapter(e.target.value)} placeholder="Chapter 1 · Jingle Bell"/></div><div className="planner-field"><label>Date</label><input type="date" value={date} onChange={(e:any)=>setDate(e.target.value)}/></div></div><AssignmentFields assignments={assignments} className={className} sectionName={sectionName} subjectName={subjectName} onSelect={choose}/><div className="planner-grid"><div className="planner-field"><label>Day</label><input value={date?new Date(date).toLocaleDateString("en-IN",{weekday:"long"}):""} readOnly placeholder="Auto from date"/></div></div><PlannerRecommendations recommendations={recommendations} loading={recommendationLoading} error={recommendationError} onPreview={previewRecommendation} onUse={useRecommendation}/></section>
     <section className="planner-section"><div className="planner-section-head"><div><div className="planner-eyebrow">02 · Questions</div><h2 className="planner-section-title">Build the worksheet</h2><p className="planner-section-copy">Question type, question text and all existing question-specific options use the same editor as the Question Paper planner. Marks are not used for worksheets.</p></div></div><div className="worksheet-editor"><QuestionEditor questions={questions} onChange={setQuestions}/></div><div className="planner-actions" style={{marginTop:12}}><button className="planner-btn" onClick={newPreview}>Preview A4</button><button className="planner-btn primary" disabled={saving} onClick={submit}>{saving?"Submitting…":"Save & Submit"}</button></div></section>
-    <section className="planner-section"><div className="planner-section-head"><div><div className="planner-eyebrow">03 · History</div><h2 className="planner-section-title">Published worksheet history</h2><p className="planner-section-copy">View, edit and download worksheets using the same worksheet-only layout.</p></div></div><PlannerHistoryTable records={records} onView={setPreview} onEdit={setEditing} onDownload={download}/></section>
+    <section className="planner-section"><div className="planner-section-head"><div><div className="planner-eyebrow">03 · History</div><h2 className="planner-section-title">Published worksheet history</h2><p className="planner-section-copy">View, edit, download and publish worksheets to the selected student classroom.</p></div></div><WorksheetHistoryTable records={records} publishedWorksheetIds={publishedWorksheetIds} publishingId={publishingId} onView={setPreview} onEdit={setEditing} onDownload={download} onPublish={publishToStudents}/></section>
     {preview&&<WorksheetPreview record={preview} onClose={()=>setPreview(null)}/>} {editing&&<WorksheetPreview record={editing} editable onClose={()=>setEditing(null)} onSaveEdit={saveEdited}/>} 
   </PlannerPageFrame></main>;
 }

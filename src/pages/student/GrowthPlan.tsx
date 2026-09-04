@@ -3,8 +3,9 @@ import { useState } from "react";
 import DailyLectureFeedback from "../../components/DailyLectureFeedback";
 import ProgressTracker from "../../components/ProgressTracker";
 import ContinuousCalendar from "../../components/ContinuousCalendar";
+import StudyMaterial from "../../components/StudyMaterial";
 
-type TabType = "daily" | "progress" | "calendar";
+type TabType = "daily" | "progress" | "calendar" | "study-material";
 
 export default function GrowthPlan() {
   const [activeTab, setActiveTab] = useState<TabType>("daily");
@@ -442,6 +443,37 @@ export default function GrowthPlan() {
               TOPIC CALENDAR
             </button>
 
+            {/* STUDY MATERIAL */}
+
+            <button
+              onClick={() => setActiveTab("study-material")}
+              style={{
+                flex: 1,
+                border: "none",
+                borderRadius: 10,
+                padding: "12px 18px",
+                cursor: "pointer",
+                background:
+                  activeTab === "study-material"
+                    ? "#F97316"
+                    : "transparent",
+                color:
+                  activeTab === "study-material"
+                    ? "#FFFFFF"
+                    : "#475569",
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: 0.4,
+                transition: "all .2s ease",
+                boxShadow:
+                  activeTab === "study-material"
+                    ? "0 5px 14px rgba(249,115,22,.18)"
+                    : "none"
+              }}
+            >
+              STUDY MATERIAL
+            </button>
+
           </div>
 
         </div>
@@ -464,6 +496,10 @@ export default function GrowthPlan() {
 
         {activeTab === "calendar" && (
           <ContinuousCalendar />
+        )}
+
+        {activeTab === "study-material" && (
+          <StudyMaterial />
         )}
 
       </div>
