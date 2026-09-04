@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   getCurrentTeacher,
@@ -11,6 +11,10 @@ import {
 import {
   getPreviousTeacherDailyLogByAssignment,
 } from "../repository/TeacherDailyLogRepository";
+
+import {
+  getLessonPlannerDailyLogReference,
+} from "../repository/LessonPlannerDailyLogBridgeRepository";
 
 interface Props {
   open: boolean;
@@ -71,6 +75,11 @@ export default function TeacherDailyLogDialog({
   const [previousLogLoading, setPreviousLogLoading] =
     useState(false);
 
+  // Additive lesson-planner bridge state. This does not alter the existing UI.
+  const [dailyLogBusinessDate, setDailyLogBusinessDate] =
+    useState("");
+  const lessonPlannerAutoFillRef = useRef(false);
+
   useEffect(() => {
     loadTeacherAssignments();
   }, []);
@@ -78,6 +87,8 @@ export default function TeacherDailyLogDialog({
   useEffect(() => {
     if (open) {
       resetForm();
+      // Capture the India classroom business date each time the dialog opens.
+      setDailyLogBusinessDate(getIndiaCalendarDateKey());
     }
   }, [open]);
 
@@ -120,6 +131,66 @@ export default function TeacherDailyLogDialog({
     };
   }, [selectedAssignmentId]);
 
+  // =========================================================
+  // LESSON PLANNER -> DAILY LOG AUTO-FILL BRIDGE
+  // =========================================================
+  useEffect(() => {
+    let active = true;
+
+    if (!selectedAssignmentId || !dailyLogBusinessDate) {
+      return () => {
+        active = false;
+      };
+    }
+
+    const selectedAssignment = assignments.find(
+      (item) => String(item.id) === selectedAssignmentId
+    );
+
+    if (!selectedAssignment) {
+      return () => {
+        active = false;
+      };
+    }
+
+    // If the previous classroom was auto-filled from its planner, clear only
+    // those automation-provided fields before resolving the newly selected
+    // classroom. Manual Daily Log behavior remains unchanged when no planner
+    // record is found.
+    if (lessonPlannerAutoFillRef.current) {
+      setTopicName("");
+      setConceptsCovered([]);
+      lessonPlannerAutoFillRef.current = false;
+    }
+
+    void getLessonPlannerDailyLogReference({
+      teacherUuid: String(getCurrentTeacher()?.teacherUuid ?? ""),
+      className: String(selectedAssignment.className ?? ""),
+      sectionName: String(selectedAssignment.sectionName ?? ""),
+      subjectName: String(selectedAssignment.subjectName ?? ""),
+      businessDate: dailyLogBusinessDate,
+    })
+      .then((reference) => {
+        if (!active || !reference) return;
+
+        setTopicName(reference.topicName);
+        setConceptsCovered(reference.conceptsCovered);
+        lessonPlannerAutoFillRef.current = true;
+      })
+      .catch((error) => {
+        // Planner automation is supplementary. A planner lookup failure must
+        // never block or alter the existing Daily Log publication path.
+        console.warn(
+          "LESSON PLANNER DAILY LOG AUTO-FILL LOOKUP FAILED",
+          error
+        );
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedAssignmentId, assignments, dailyLogBusinessDate]);
+
   function resetForm() {
     setSelectedAssignmentId("");
     setTopicName("");
@@ -132,6 +203,8 @@ export default function TeacherDailyLogDialog({
     setConceptsCovered([]);
     setPreviousLog(null);
     setPreviousLogLoading(false);
+    setDailyLogBusinessDate("");
+    lessonPlannerAutoFillRef.current = false;
   }
 
   async function loadTeacherAssignments() {
