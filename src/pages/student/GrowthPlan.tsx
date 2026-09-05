@@ -4,8 +4,9 @@ import DailyLectureFeedback from "../../components/DailyLectureFeedback";
 import ProgressTracker from "../../components/ProgressTracker";
 import ContinuousCalendar from "../../components/ContinuousCalendar";
 import StudyMaterial from "../../components/StudyMaterial";
+import StudyBuddy from "../../components/StudyBuddy";
 
-type TabType = "daily" | "progress" | "calendar" | "study-material";
+type TabType = "daily" | "progress" | "calendar" | "study-material" | "study-buddy";
 
 export default function GrowthPlan() {
   const [activeTab, setActiveTab] = useState<TabType>("daily");
@@ -52,6 +53,16 @@ export default function GrowthPlan() {
 
           .gp-tabs {
             margin-top: 20px !important;
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: thin !important;
+          }
+
+          .gp-tabs button {
+            flex: 0 0 auto !important;
+            min-width: 154px !important;
           }
 
           .gp-tabs button {
@@ -120,6 +131,10 @@ export default function GrowthPlan() {
           .gp-tabs {
             width: 100% !important;
             max-width: none !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important;
             gap: 4px !important;
             margin-top: 13px !important;
             padding: 4px !important;
@@ -127,7 +142,8 @@ export default function GrowthPlan() {
           }
 
           .gp-tabs button {
-            min-width: 0 !important;
+            flex: 0 0 auto !important;
+            min-width: 132px !important;
             padding: 8px 4px !important;
             border-radius: 8px !important;
             font-size: 8px !important;
@@ -163,6 +179,7 @@ export default function GrowthPlan() {
           }
 
           .gp-tabs button {
+            min-width: 118px !important;
             font-size: 7.5px !important;
           }
         }
@@ -471,7 +488,38 @@ export default function GrowthPlan() {
                     : "none"
               }}
             >
-              STUDY MATERIAL
+              WORKSHEETS
+            </button>
+
+            {/* STUDY BUDDY */}
+
+            <button
+              onClick={() => setActiveTab("study-buddy")}
+              style={{
+                flex: 1,
+                border: "none",
+                borderRadius: 10,
+                padding: "12px 18px",
+                cursor: "pointer",
+                background:
+                  activeTab === "study-buddy"
+                    ? "#F97316"
+                    : "transparent",
+                color:
+                  activeTab === "study-buddy"
+                    ? "#FFFFFF"
+                    : "#475569",
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: 0.4,
+                transition: "all .2s ease",
+                boxShadow:
+                  activeTab === "study-buddy"
+                    ? "0 5px 14px rgba(249,115,22,.18)"
+                    : "none"
+              }}
+            >
+              STUDY BUDDY
             </button>
 
           </div>
@@ -500,6 +548,10 @@ export default function GrowthPlan() {
 
         {activeTab === "study-material" && (
           <StudyMaterial />
+        )}
+
+        {activeTab === "study-buddy" && (
+          <StudyBuddy />
         )}
 
       </div>
