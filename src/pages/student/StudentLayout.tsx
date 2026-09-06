@@ -1,5 +1,6 @@
 import React from "react";
 import SchoolPostFeed from "../../domains/schoolIntelligence/components/SchoolPostFeed";
+import { AcademicYearProvider } from "../../domains/academicYear/context/AcademicYearContext";
 
 export type StudentTab =
   | "dna-radar"
@@ -44,7 +45,8 @@ export default function StudentLayout({
     : tabs;
 
   return (
-    <div className="portal-shell student-portal-shell">
+    <AcademicYearProvider showSelector={false}>
+      <div className="portal-shell student-portal-shell">
       <div className="portal-shell-inner">
         <div className="portal-nav-card student-portal-nav">
           <div className="portal-nav-row">
@@ -90,5 +92,6 @@ export default function StudentLayout({
         <main className="portal-page-content">{children}</main>
       </div>
     </div>
+    </AcademicYearProvider>
   );
 }

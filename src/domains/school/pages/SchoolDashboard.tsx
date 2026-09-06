@@ -9,6 +9,8 @@ import SchoolExamPaperPlannerAuditPage from "../../planners/pages/SchoolExamPape
 import SchoolWorksheetPlannerAuditPage from "../../planners/pages/SchoolWorksheetPlannerAuditPage";
 import SchoolStarPerformersPage from "../../starPerformers/pages/SchoolStarPerformersPage";
 import "../../schoolIntelligence/pages/schoolIntelligence.css";
+import { AcademicYearProvider, useAcademicYearContext } from "../../academicYear/context/AcademicYearContext";
+import AcademicYearSelector from "../../academicYear/components/AcademicYearSelector";
 
 interface Props { onLogout: () => void; }
 type Tab = "overview" | "teachers" | "classrooms" | "academic" | "lesson-plans" | "unit-tests" | "exam-papers" | "worksheets" | "star-performers";
@@ -26,7 +28,16 @@ const tabs: {key:Tab;label:string;short:string}[] = [
 ];
 
 export default function SchoolDashboard({ onLogout }: Props) {
+  return (
+    <AcademicYearProvider showSelector={false}>
+      <SchoolDashboardContent onLogout={onLogout} />
+    </AcademicYearProvider>
+  );
+}
+
+function SchoolDashboardContent({ onLogout }: Props) {
   const [tab,setTab]=useState<Tab>("overview");
+  const { academicYear, years, selectAcademicYear } = useAcademicYearContext();
 
   return <div className="school-shell">
     <header className="school-nav">
@@ -36,6 +47,9 @@ export default function SchoolDashboard({ onLogout }: Props) {
     </header>
 
     <div className="school-content">
+      {years.length > 1 && academicYear ? <div className="school-academic-year-control" style={{display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"7px 18px",minHeight:30,boxSizing:"border-box"}}>
+        <AcademicYearSelector years={years} value={academicYear.id} onChange={(id)=>void selectAcademicYear(id)} />
+      </div> : null}
       {tab==="overview"&&<SchoolOverviewPage/>}
       {tab==="teachers"&&<TeacherIntelligencePage/>}
       {tab==="classrooms"&&<ClassroomIntelligencePage/>}
@@ -53,6 +67,8 @@ export default function SchoolDashboard({ onLogout }: Props) {
       .school-brand{display:flex;align-items:center;gap:9px;min-width:max-content}.school-brand-mark{display:grid;place-items:center;width:30px;height:30px;border:1px solid #ffb57d;border-radius:9px;color:#ff6508;background:#fff8f2;font-weight:900}.school-brand b{display:block;font-size:12px}.school-brand span{display:block;margin-top:2px;color:#6b7d96;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
       .school-nav-tabs{display:flex;justify-content:center;gap:7px;min-width:0;overflow-x:auto;scrollbar-width:none}.school-nav-tabs::-webkit-scrollbar{display:none}.school-nav-tabs button{border:0;border-radius:10px;background:#f0f3f7;color:#3d506c;padding:9px 12px;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}.school-nav-tabs button.active{background:#ff6508;color:#fff}.school-nav-short{display:none}
       .school-logout{border:0;border-radius:10px;background:#d92d2d;color:#fff;padding:9px 16px;font-size:11px;font-weight:900;cursor:pointer}.school-content{width:100%;max-width:1500px;margin:0 auto}
+      .school-academic-year-control{min-height:30px}
+      @media(max-width:1024px){.school-academic-year-control{justify-content:flex-start;padding:6px 14px}.school-academic-year-control select{max-width:58vw !important;min-width:100px !important}}
       @media(max-width:1024px){.school-nav{grid-template-columns:auto 1fr auto;padding:10px 14px}.school-brand span{display:none}.school-nav-long{display:none}.school-nav-short{display:inline}.school-nav-tabs{justify-content:flex-start;overflow-x:auto;padding-bottom:2px}.school-nav-tabs button{padding:8px 10px;font-size:9px}.school-logout{padding:8px 11px;font-size:9px}}
       @media(max-width:600px){.school-nav{gap:7px;padding:7px 9px}.school-brand b{font-size:9px}.school-brand-mark{width:25px;height:25px;border-radius:7px}.school-nav-tabs{gap:5px}.school-nav-tabs button{padding:7px 8px;border-radius:8px;font-size:7px}.school-logout{padding:7px 9px;border-radius:8px;font-size:7px}}
     `}</style>

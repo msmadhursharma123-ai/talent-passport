@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { AcademicYearProvider } from "../../domains/academicYear/context/AcademicYearContext";
+
 import TeacherHeader from "./TeacherHeader";
 import TeacherSidebar from "./TeacherSidebar";
 
@@ -96,7 +98,8 @@ export default function TeacherLayout({ onLogout }: Props) {
     enabledTabs.includes(activePage);
 
   return (
-    <>
+    <AcademicYearProvider showSelector={false}>
+      <>
       <style>{`
         /*
          * TEACHER PORTAL RESPONSIVE SHELL
@@ -223,6 +226,7 @@ export default function TeacherLayout({ onLogout }: Props) {
           </main>
         </div>
       </div>
-    </>
+      </>
+    </AcademicYearProvider>
   );
 }

@@ -4,6 +4,9 @@ import {
   getCurrentTeacher,
 } from "../../services/identityService";
 
+import { useAcademicYearContext } from "../../domains/academicYear/context/AcademicYearContext";
+import AcademicYearSelector from "../../domains/academicYear/components/AcademicYearSelector";
+
 import {
   getTeacherAssignmentsByTeacher,
 } from "../../domains/teacherIntelligence/repository/TeacherAssignmentRepository";
@@ -61,6 +64,7 @@ interface ClassroomDashboardData {
 
 
 export default function TeacherHome() {
+  const { academicYear, years, selectAcademicYear } = useAcademicYearContext();
 
   const [dashboardData, setDashboardData] =
     useState<ClassroomDashboardData[]>([]);
@@ -552,6 +556,25 @@ const classroomColumns =
         `,
       }}
     >
+      {years.length > 1 && academicYear ? <div
+        className="teacher-home-academic-year-control"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          gap: 8,
+          marginBottom: 10,
+          minWidth: 0,
+          minHeight: 30,
+        }}
+      >
+        <AcademicYearSelector
+          years={years}
+          value={academicYear?.id ?? ""}
+          onChange={(id) => void selectAcademicYear(id)}
+        />
+      </div> : null}
+
       <TeacherDailyDoubtAcknowledgement />
       <style>{`
         /* MOBILE/TABLET ONLY. Desktop remains exactly as existing inline styles. */
@@ -914,6 +937,7 @@ const classroomColumns =
           }
         }
       `}</style>
+      <style>{`\n        .teacher-home-academic-year-control { min-height: 30px; }\n        @media (max-width: 600px) {\n          .teacher-home-academic-year-control { justify-content: flex-start; margin-bottom: 8px; }\n          .teacher-home-academic-year-control select { max-width: 58vw !important; min-width: 100px !important; }\n        }\n      `}</style>
 
       {/* ======================================================
           CLASSROOM INTELLIGENCE HERO

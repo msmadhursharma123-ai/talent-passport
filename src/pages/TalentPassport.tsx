@@ -27,6 +27,10 @@ import type {
     LearningIntelligenceProfile
 } from "../engines/learningIntelligenceEngine";
 
+import { useAcademicYearContext } from "../domains/academicYear/context/AcademicYearContext";
+import AcademicYearSelector from "../domains/academicYear/components/AcademicYearSelector";
+import { getStudentAcademicYearSnapshot, captureStudentAcademicYearSnapshot } from "../domains/academicYear/repositories/AcademicYearRepository";
+
 interface Props {
 
     onStartDNA?: () => void;
@@ -90,6 +94,8 @@ export default function TalentPassport({
     const studentName =
         identity.studentName ?? "";
 
+    const { academicYear, isHistorical, years, selectAcademicYear } = useAcademicYearContext();
+
 
     /* ==========================================
        Logout
@@ -133,6 +139,14 @@ export default function TalentPassport({
 
                 setLoading(true);
 
+                if (isHistorical && academicYear) {
+                    const snapshot = await getStudentAcademicYearSnapshot(academicYear.id);
+                    const historicalModel = snapshot?.passport_view_model as PassportViewModel | null | undefined;
+                    setPassportModel(historicalModel ?? null);
+                    setLiveLearningIntelligence(null);
+                    return;
+                }
+
                 const [
                     modelResult,
                     liveLearningResult
@@ -153,6 +167,14 @@ export default function TalentPassport({
                     console.log("====================================");
 
                     setPassportModel(model);
+
+                    // Once the target year is current, retain the complete
+                    // existing Passport ViewModel as that year's historical chapter.
+                    if (academicYear?.isCurrent && model) {
+                        void captureStudentAcademicYearSnapshot(studentId, academicYear.id, model).catch((error) => {
+                            console.error("CURRENT ACADEMIC YEAR PASSPORT SNAPSHOT CAPTURE FAILED", error);
+                        });
+                    }
                 } else {
                     console.error(
                         "Passport ViewModel",
@@ -189,16 +211,14 @@ export default function TalentPassport({
             }
 
             finally {
-
                 setLoading(false);
-
             }
 
         }
 
         loadPassportModel();
 
-    }, []);
+    }, [academicYear?.id, isHistorical]);
 
     /* ==========================================
        ViewModel Data
@@ -469,6 +489,8 @@ export default function TalentPassport({
 
                             onClick={() => {
 
+                                if (isHistorical) return;
+
                                 localStorage.removeItem(
                                     "studentPassport"
                                 );
@@ -489,7 +511,8 @@ export default function TalentPassport({
 
                             }}
 
-                            className="mt-6 rounded-xl bg-orange-500 px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-orange-600"
+                            disabled={isHistorical}
+                            className="mt-6 rounded-xl bg-orange-500 px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
                         >
 
                             Complete DNA Assessment
@@ -521,7 +544,16 @@ export default function TalentPassport({
             />
 
             <div className="mx-auto max-w-[1600px] space-y-2.5 sm:space-y-3 lg:space-y-3">
+                {years.length > 1 && academicYear ? <div className="tp-academic-year-control" style={{display:"flex",alignItems:"center",justifyContent:"flex-end",minHeight:30,minWidth:0}}>
+                    <AcademicYearSelector years={years} value={academicYear.id} onChange={(id)=>void selectAcademicYear(id)} />
+                </div> : null}
             <style>{`
+                .tp-academic-year-control { min-height: 30px; }
+                @media (max-width: 600px) {
+                    .tp-academic-year-control { justify-content: flex-start; }
+                    .tp-academic-year-control select { max-width: 58vw !important; min-width: 100px !important; }
+                }
+
                 /*
                  * Responsive learning-intelligence containment:
                  * the two learning cards must always shrink to the available

@@ -1,0 +1,2 @@
+import { useAcademicYearContext } from "../context/AcademicYearContext";
+export default function HistoricalModeBanner(){const{academicYear,isHistorical}=useAcademicYearContext();if(!isHistorical||!academicYear)return null;return <div style={{margin:"8px 12px",padding:"8px 10px",border:"1px solid #FED7AA",borderRadius:10,background:"#FFF7ED",color:"#9A3412",fontSize:10,fontWeight:800}}>Viewing {academicYear.academicYearName} · Historical / read-only mode. Current-year actions remain protected by the database.</div>}

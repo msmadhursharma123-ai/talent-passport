@@ -103,6 +103,17 @@ from "./pages/teacher/auth/TeacherAcademicQuestionnaire";
 import TeacherPortal
 from "./pages/teacher/TeacherPortal";
 
+import AcademicYearStudentOnboarding
+from "./domains/academicYear/pages/AcademicYearStudentOnboarding";
+
+import AcademicYearOnboardingComplete
+from "./domains/academicYear/pages/AcademicYearOnboardingComplete";
+
+import {
+  getPendingAcademicYearOnboardingForRole,
+  prepareTeacherAcademicYearOnboarding
+} from "./domains/academicYear/services/AcademicYearOnboardingService";
+
 import SchoolLogin
 from "./domains/school/pages/SchoolLogin";
 
@@ -268,6 +279,29 @@ const routeTeacherAfterLogin = async (
     teacher.schoolName?.trim() || null
   );
 
+  let pendingAcademicYear: any = null;
+  try {
+    pendingAcademicYear = await getPendingAcademicYearOnboardingForRole("teacher");
+  } catch (error) {
+    console.error("ACADEMIC YEAR CHECK FAILED; PRESERVING EXISTING TEACHER LOGIN", error);
+  }
+
+  if (pendingAcademicYear) {
+    try {
+      const targetYear = await prepareTeacherAcademicYearOnboarding(
+        pendingAcademicYear.school_academic_year_id
+      );
+      setAcademicYearOnboardingTarget(targetYear);
+      setTeacherStage("academic");
+      setActiveTab("teacher");
+      return;
+    } catch (error) {
+      console.error("TEACHER ACADEMIC YEAR ONBOARDING PREPARATION FAILED", error);
+      alert("Your new academic-year setup could not be started. Please try logging in again.");
+      return;
+    }
+  }
+
   if (existingLogin) {
     setTeacherStage("portal");
     setActiveTab("teacher");
@@ -379,6 +413,19 @@ async (
     studentIdentity.schoolName?.trim() || null
   );
 
+  let pendingAcademicYear: any = null;
+  try {
+    pendingAcademicYear = await getPendingAcademicYearOnboardingForRole("student");
+  } catch (error) {
+    console.error("ACADEMIC YEAR CHECK FAILED; PRESERVING EXISTING STUDENT LOGIN", error);
+  }
+
+  if (pendingAcademicYear) {
+    setAcademicYearOnboardingTarget(pendingAcademicYear.year);
+    setActiveTab("academic-year-student-onboarding");
+    return;
+  }
+
   /*
    * EXISTING USER LOGIN IS NEVER ONBOARDING.
    *
@@ -455,6 +502,9 @@ useState<
 
 const [teacherEmail, setTeacherEmail] =
 useState("");
+
+const [academicYearOnboardingTarget, setAcademicYearOnboardingTarget] =
+useState<any>(null);
 
 const handleLogout = async () => {
 
@@ -785,6 +835,18 @@ if (
 
     try {
 
+      let pendingAcademicYear: any = null;
+      try {
+        pendingAcademicYear = await getPendingAcademicYearOnboardingForRole("student");
+      } catch (error) {
+        console.error("ACADEMIC YEAR CHECK FAILED; PRESERVING EXISTING SAVED-STUDENT ROUTE", error);
+      }
+
+      if (pendingAcademicYear) {
+        await routeStudentAfterLogin();
+        return;
+      }
+
       if (forceDNA === "true") {
 
         console.log(
@@ -1089,6 +1151,41 @@ if (selectedRole === "teacher") {
       }
     }}
   />
+)}
+
+{activeTab === "academic-year-student-onboarding" &&
+  selectedRole === "student" &&
+  academicYearOnboardingTarget && (
+    <AcademicYearStudentOnboarding
+      academicYear={academicYearOnboardingTarget}
+      onCurrentYearComplete={() => {
+        setAcademicYearOnboardingTarget(null);
+        window.location.reload();
+      }}
+      onLogout={async () => {
+        setAcademicYearOnboardingTarget(null);
+        await signOut();
+        setSelectedRole("");
+        setUserType(null);
+        setActiveTab("identity");
+      }}
+    />
+)}
+
+{activeTab === "academic-year-waiting" &&
+  academicYearOnboardingTarget && (
+    <AcademicYearOnboardingComplete
+      academicYear={academicYearOnboardingTarget}
+      role={selectedRole === "teacher" ? "teacher" : "student"}
+      onLogout={async () => {
+        setAcademicYearOnboardingTarget(null);
+        await signOut();
+        setSelectedRole("");
+        setUserType(null);
+        setTeacherStage("login");
+        setActiveTab("identity");
+      }}
+    />
 )}
 
 {activeTab ===
@@ -1564,7 +1661,8 @@ case "academic":
 return (
 
 <TeacherAcademicQuestionnaire
-
+academicYearId={academicYearOnboardingTarget?.id}
+academicYearCode={academicYearOnboardingTarget?.academicYearCode}
 onContinue={async () => {
 
   /*
@@ -1581,6 +1679,12 @@ onContinue={async () => {
     teacher?.schoolName?.trim() || null
   );
 
+  if (academicYearOnboardingTarget && !academicYearOnboardingTarget.isCurrent) {
+    setActiveTab("academic-year-waiting");
+    return;
+  }
+
+  setAcademicYearOnboardingTarget(null);
   await activatePortal("teacher");
 
   setTeacherStage("portal");

@@ -32,6 +32,8 @@ import {
 
 } from "../../../data/platformAccountControlRepository";
 
+import AcademicYearManagementPanel from "../../academicYear/pages/AcademicYearManagementPanel";
+
 import {
     CompetitionAnnouncement,
     CompetitionClassOption,
@@ -2185,6 +2187,8 @@ setGracePeriodDays(
 
 </section>
 
+            <AcademicYearRegistrySection schools={schools} />
+
                         <section style={card}>
 
                 <h3>
@@ -3131,6 +3135,32 @@ setGracePeriodDays(
 
     );
 
+}
+
+
+function AcademicYearRegistrySection({ schools }: { schools: SchoolRecord[] }) {
+    const [schoolUuid, setSchoolUuid] = useState("");
+    const selected = schools.find(school => school.schoolUuid === schoolUuid);
+
+    useEffect(() => {
+        if (!schoolUuid && schools.length > 0) setSchoolUuid(schools[0].schoolUuid);
+    }, [schools, schoolUuid]);
+
+    return (
+        <section style={card}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+                <div>
+                    <h3 style={{ margin: 0 }}>Academic Year Control</h3>
+                    <p style={{ margin: "5px 0 0", color: "#64748B", fontSize: 12 }}>School-specific academic-year lifecycle. Existing teacher identity, authentication and school controls remain unchanged.</p>
+                </div>
+                <select value={schoolUuid} onChange={event => setSchoolUuid(event.target.value)} style={{ minWidth: 210, maxWidth: "100%", padding: 9, border: "1px solid #CBD5E1", borderRadius: 8, background: "white", fontWeight: 700 }}>
+                    <option value="">Select school</option>
+                    {schools.map(school => <option key={school.schoolUuid} value={school.schoolUuid}>{school.schoolName}</option>)}
+                </select>
+            </div>
+            {selected ? <AcademicYearManagementPanel schoolUuid={selected.schoolUuid} schoolName={selected.schoolName} /> : <div style={{ padding: 12, borderRadius: 10, background: "#F8FAFC", color: "#64748B", fontSize: 11 }}>Select a school to manage its academic years.</div>}
+        </section>
+    );
 }
 
 const card: React.CSSProperties = {
