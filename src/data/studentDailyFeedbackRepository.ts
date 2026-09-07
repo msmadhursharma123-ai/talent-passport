@@ -1,6 +1,8 @@
 import { getSupabaseClient } from "../supabaseClient";
 
 import { requireIdentity } from "../services/identityService";
+
+const ABSENT_FEEDBACK_OPTION = "I was absent.";
 import {
   syncStudentLiveDoubtLedger,
 } from "../domains/liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
@@ -40,7 +42,20 @@ export async function submitStudentDailyFeedback(
 
   const supabase = getSupabaseClient();
   const identity = requireIdentity();
-  const hasDoubt = conceptsNotUnderstood.length > 0;
+
+  const isAbsent =
+    String(understandingLevel ?? "").trim() === ABSENT_FEEDBACK_OPTION;
+
+  // Absence is intentionally a neutral attendance outcome. Keep the existing
+  // table/schema and public function contract, but prevent an absent response
+  // from creating a doubt or carrying learning-gap notes into intelligence.
+  const normalizedConceptsNotUnderstood = isAbsent
+    ? []
+    : conceptsNotUnderstood;
+  const normalizedAdditionalNote = isAbsent
+    ? null
+    : additionalNote;
+  const hasDoubt = normalizedConceptsNotUnderstood.length > 0;
 
   const { data, error } = await (supabase as any)
     .from("student_daily_feedback")
@@ -54,9 +69,9 @@ export async function submitStudentDailyFeedback(
       subject_name: subjectName,
       topic_name: topicName,
       understanding_level: understandingLevel,
-      concepts_not_understood: conceptsNotUnderstood,
+      concepts_not_understood: normalizedConceptsNotUnderstood,
       has_doubt: hasDoubt,
-      additional_note: additionalNote,
+      additional_note: normalizedAdditionalNote,
     });
 
   if (error) {

@@ -262,3 +262,86 @@ teacherUuid
 );
 
 }
+
+/*
+=========================================================
+CREATE MULTIPLE ASSIGNMENTS — ADDITIVE MULTI-SUBJECT PATH
+---------------------------------------------------------
+The existing createTeacherAssignment() function is intentionally untouched.
+This helper is used only when a teacher selects more than one subject during
+onboarding. Each row remains an independent assignment keyed by:
+school + academic year + subject + class + section.
+=========================================================
+*/
+
+export async function createTeacherAssignments(
+  assignments: Array<Partial<TeacherAssignment>>
+) {
+  const supabase: any = getSupabaseClient();
+
+  if (!supabase) {
+    throw new Error("Supabase not configured.");
+  }
+
+  if (!assignments.length) {
+    return true;
+  }
+
+  const payload = assignments.map((assignment) => ({
+    teacher_uuid: assignment.teacherUuid,
+    school_uuid: assignment.schoolUuid,
+    class_name: assignment.className,
+    section_name: assignment.sectionName,
+    subject_name: assignment.subjectName,
+    academic_year: assignment.academicYear,
+    is_active: assignment.isActive,
+  }));
+
+  const { error } = await supabase
+    .from(TABLE_NAME)
+    .insert(payload);
+
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error(
+        "This classroom has already been assigned to another teacher."
+      );
+    }
+
+    throw error;
+  }
+
+  return true;
+}
+
+/*
+=========================================================
+GET ASSIGNMENTS BY TEACHER + SUBJECT
+---------------------------------------------------------
+Optional additive helper for subject-aware teacher portal consumers.
+Existing getTeacherAssignmentsByTeacher() remains unchanged.
+=========================================================
+*/
+
+export async function getTeacherAssignmentsByTeacherAndSubject(
+  teacherUuid: string,
+  subjectName: string
+): Promise<TeacherAssignment[]> {
+  const supabase: any = getSupabaseClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select("*")
+    .eq("teacher_uuid", teacherUuid)
+    .eq("subject_name", subjectName);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map(mapTeacherAssignment);
+}

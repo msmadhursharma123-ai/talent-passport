@@ -10,6 +10,7 @@ import {
 
 import {
   UNDERSTANDING_OPTIONS,
+  ABSENT_FEEDBACK_OPTION,
 } from "../data/studentUnderstandingOptions";
 
 import {
@@ -109,6 +110,10 @@ function getResponseLabel(value: string | null | undefined) {
 
   if (value === "I didn't understand.") {
     return "I didn't understand";
+  }
+
+  if (value === ABSENT_FEEDBACK_OPTION) {
+    return "I was absent";
   }
 
   return value.replace(/\.$/, "");
@@ -285,6 +290,7 @@ export default function DailyLectureFeedback() {
 
     if (
       understandingLevel !== "I completely understood." &&
+      understandingLevel !== ABSENT_FEEDBACK_OPTION &&
       conceptsNotUnderstood.length === 0 &&
       !somethingElse
     ) {
@@ -292,9 +298,11 @@ export default function DailyLectureFeedback() {
       return;
     }
 
-    let finalAdditionalNote = additionalNote;
+    const isAbsent = understandingLevel === ABSENT_FEEDBACK_OPTION;
+    const submissionConcepts = isAbsent ? [] : conceptsNotUnderstood;
+    let finalAdditionalNote = isAbsent ? null : additionalNote;
 
-    if (somethingElse && somethingElseText.trim()) {
+    if (!isAbsent && somethingElse && somethingElseText.trim()) {
       finalAdditionalNote = `${additionalNote}${
         additionalNote.trim() ? "\n\n" : ""
       }Additional Learning Gap:\n${somethingElseText}`;
@@ -313,8 +321,8 @@ export default function DailyLectureFeedback() {
         log.subject_name,
         log.topic_name,
         understandingLevel,
-        conceptsNotUnderstood,
-        finalAdditionalNote.trim().length > 0
+        submissionConcepts,
+        finalAdditionalNote && finalAdditionalNote.trim().length > 0
           ? finalAdditionalNote
           : null
       );
@@ -332,10 +340,10 @@ export default function DailyLectureFeedback() {
         subject_name: log.subject_name,
         topic_name: log.topic_name,
         understanding_level: understandingLevel,
-        concepts_not_understood: [...conceptsNotUnderstood],
-        has_doubt: conceptsNotUnderstood.length > 0,
+        concepts_not_understood: [...submissionConcepts],
+        has_doubt: submissionConcepts.length > 0,
         additional_note:
-          finalAdditionalNote.trim().length > 0
+          finalAdditionalNote && finalAdditionalNote.trim().length > 0
             ? finalAdditionalNote
             : null,
         submitted_at: new Date().toISOString(),
@@ -346,10 +354,13 @@ export default function DailyLectureFeedback() {
         [log.id]: localSubmittedFeedback,
       }));
 
-      // The submission itself has succeeded, so reflect the +1 locally.
+      // Absence is deliberately neutral: it records the lecture as handled
+      // for attendance purposes but earns neither +1 nor incurs -10.
       // Do not re-fetch the complete credit history here.
-      setDailyFeedbackEarnedCredits((value) => value + 1);
-      setDailyFeedbackTotalCredits((value) => value + 1);
+      if (!isAbsent) {
+        setDailyFeedbackEarnedCredits((value) => value + 1);
+        setDailyFeedbackTotalCredits((value) => value + 1);
+      }
 
       resetFeedbackForm();
     } catch (error) {
@@ -423,7 +434,10 @@ export default function DailyLectureFeedback() {
           let creditChange = 0;
           let creditLabel = "Pending — not submitted";
 
-          if (feedbackRecord) {
+          if (feedbackRecord?.understanding_level === ABSENT_FEEDBACK_OPTION) {
+            creditChange = 0;
+            creditLabel = "0 — absent";
+          } else if (feedbackRecord) {
             creditChange = 1;
             creditLabel = "+1 credit";
           } else if (isCompletedDay) {
@@ -3606,11 +3620,16 @@ return (
                                 understandingLevel ===
                                 option
                               }
-                              onChange={() =>
-                                setUnderstandingLevel(
-                                  option
-                                )
-                              }
+                              onChange={() => {
+                                setUnderstandingLevel(option);
+
+                                if (option === ABSENT_FEEDBACK_OPTION) {
+                                  setConceptsNotUnderstood([]);
+                                  setSomethingElse(false);
+                                  setSomethingElseText("");
+                                  setAdditionalNote("");
+                                }
+                              }}
                             />
 
                             <span>
@@ -3631,7 +3650,8 @@ return (
 
                     {understandingLevel !== "" &&
                       understandingLevel !==
-                        "I completely understood." && (
+                        "I completely understood." &&
+                      understandingLevel !== ABSENT_FEEDBACK_OPTION && (
 
                       <>
 

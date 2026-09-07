@@ -6,6 +6,16 @@ export const CLASSES = [
   "8",
   "9",
   "10",
+  "11",
+  "12",
+];
+
+export const UPPER_CLASS_SECTIONS = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
 ];
 
 export const SECTIONS = [
@@ -36,5 +46,17 @@ export const SUBJECTS = [
   "Biology",
   "Chemistry",
   "Physics",
+  "Information Practices",
+  "Information Technology",
+  "Biotechnology",
+  "Engineering Graphics",
+  "Accountancy",
+  "Applied Mathematics",
+  "Political Science",
+  "Sociology",
+  "Psychology",
+  "Philosophy",
+  "legal Studies",
+  "Home Science",
   "Business Studies",
 ];

@@ -1064,7 +1064,8 @@ console.log(teacher.teacherUuid);
                 const riskData =
                   await getStudentsAtRisk(
                     assignment.className,
-                    assignment.sectionName
+                    assignment.sectionName,
+                    assignment.subjectName
                   );
 
                 setStudentsAtRisk(riskData);
@@ -1083,7 +1084,7 @@ console.log(teacher.teacherUuid);
                 value={assignment.id}
               >
                 Class {assignment.className} - Section{" "}
-                {assignment.sectionName}
+                {assignment.sectionName} - {assignment.subjectName}
               </option>
             ))}
           </select>

@@ -157,6 +157,7 @@ export interface DailyFeedbackLectureLog {
 
 export interface DailyFeedbackRecord {
   daily_log_uuid?: string | null;
+  understanding_level?: string | null;
 }
 
 /**
@@ -223,8 +224,35 @@ export function calculateDailyFeedbackCreditSummaryFromLogs(
    * Set() also protects the wallet calculation from duplicate
    * feedback rows for the same lecture.
    */
+  // An absence is a recorded attendance exception, not a learning response.
+  // It must therefore be excluded from BOTH credit earning and missed-feedback
+  // penalty calculations. This is deliberately based on the existing
+  // understanding_level field so no schema change is required.
+  const absentLogIds = new Set(
+    (feedbackHistory ?? [])
+      .filter(
+        (feedback) =>
+          String(feedback?.understanding_level ?? "").trim() ===
+          "I was absent."
+      )
+      .map((feedback) =>
+        typeof feedback?.daily_log_uuid === "string"
+          ? feedback.daily_log_uuid
+          : null
+      )
+      .filter(
+        (logId): logId is string =>
+          !!logId && receivedLogIds.has(logId)
+      )
+  );
+
   const submittedLogIds = new Set(
     (feedbackHistory ?? [])
+      .filter(
+        (feedback) =>
+          String(feedback?.understanding_level ?? "").trim() !==
+          "I was absent."
+      )
       .map((feedback) =>
         typeof feedback?.daily_log_uuid === "string"
           ? feedback.daily_log_uuid
@@ -240,7 +268,8 @@ export function calculateDailyFeedbackCreditSummaryFromLogs(
     (log) =>
       typeof log.log_date === "string" &&
       log.log_date < asOfDate &&
-      !submittedLogIds.has(String(log.id))
+      !submittedLogIds.has(String(log.id)) &&
+      !absentLogIds.has(String(log.id))
   ).length;
 
   const earnedCredits =

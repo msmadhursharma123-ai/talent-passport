@@ -6,6 +6,8 @@ TopicLearningHistory,
 
 } from "../types/TeacherAcademicHistoryModels";
 
+import { getCurrentTeacher } from "../../../services/identityService";
+
 
 export async function getTeacherLectureHistory(){
 
@@ -19,32 +21,62 @@ export async function getStudentLearningHistory(){
 
 export async function getTopicLearningHistory(
 
-topicName:string
+topicName:string,
+
+subjectName?:string
 
 ):Promise<TopicLearningHistory>{
 
 const supabase = getSupabaseClient();
 
+let assignmentIds:string[] = [];
 
-const { data : teacherLogs } =
+if (subjectName) {
+  const teacher = getCurrentTeacher();
+  if (!teacher?.teacherUuid) {
+    return {
+      topicName,
+      timesTaught: 0,
+      totalStudentsFacedDifficulty: 0,
+      difficultyPercentage: 0,
+      mostDifficultConcepts: [],
+    };
+  }
 
-await (supabase as any)
+  const { data: subjectAssignments } = await (supabase as any)
+    .from("teacher_classroom_assignments")
+    .select("id")
+    .eq("teacher_uuid", teacher.teacherUuid)
+    .eq("subject_name", subjectName);
 
-.from("teacher_daily_logs")
+  assignmentIds = (subjectAssignments ?? [])
+    .map((assignment:any) => assignment.id)
+    .filter(Boolean);
 
-.select(
+  if (assignmentIds.length === 0) {
+    return {
+      topicName,
+      timesTaught: 0,
+      totalStudentsFacedDifficulty: 0,
+      difficultyPercentage: 0,
+      mostDifficultConcepts: [],
+    };
+  }
+}
 
-"id"
+let teacherLogsQuery = (supabase as any)
+  .from("teacher_daily_logs")
+  .select("id")
+  .eq("topic_name", topicName);
 
-)
+if (subjectName) {
+  teacherLogsQuery = teacherLogsQuery.in(
+    "teacher_assignment_uuid",
+    assignmentIds
+  );
+}
 
-.eq(
-
-"topic_name",
-
-topicName
-
-);
+const { data : teacherLogs } = await teacherLogsQuery;
 
 const timesTaught =
 

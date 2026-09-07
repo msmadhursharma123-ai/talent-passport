@@ -750,6 +750,9 @@ export default function TeacherDailyLogDialog({
                     - Section{" "}
                     {
                       assignment.sectionName
+                    }{" "} -{" "}
+                    {
+                      assignment.subjectName
                     }
                   </option>
                 )

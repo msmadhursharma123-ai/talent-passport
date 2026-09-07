@@ -3,208 +3,277 @@ import React, { useState } from "react";
 import {
   CLASSES,
   SECTIONS,
+  UPPER_CLASS_SECTIONS,
   SUBJECTS,
 } from "../../../domains/teacherIntelligence/constants/TeacherMasterData";
 
 import {
   createTeacherAssignment,
+  createTeacherAssignments,
 } from "../../../domains/teacherIntelligence/repository/TeacherAssignmentRepository";
 
 import {
   getCurrentTeacher,
 } from "../../../services/identityService";
 
+import {
+  saveAnnualTeacherAssignments,
+} from "../../../domains/academicYear/services/AnnualTeacherAssignmentService";
+
+import {
+  getSchoolCurrentAcademicYear,
+} from "../../../domains/academicYear/repositories/AcademicYearRepository";
+
+import {
+  finishTeacherAcademicYearOnboarding,
+} from "../../../domains/academicYear/services/AcademicYearOnboardingService";
+
 interface Props {
   onContinue: () => void;
   onBack: () => void;
+  academicYearId?: string;
+  academicYearCode?: string;
 }
 
 export default function TeacherAcademicQuestionnaire({
   onContinue,
   onBack,
+  academicYearId,
+  academicYearCode,
 }: Props) {
 
   const [currentStep, setCurrentStep] =
     useState(1);
 
-  const [
-    selectedSubject,
-    setSelectedSubject,
-  ] = useState("");
+  /*
+   * ONE SUBJECT = existing onboarding behaviour.
+   * MULTIPLE SUBJECTS = each subject owns its own classroom selection.
+   *
+   * The assignment identity remains the existing school + academic year +
+   * subject + class + section boundary.
+   */
+  const [selectedSubjects, setSelectedSubjects] =
+    useState<string[]>([]);
 
-  const [
-    selectedClassSections,
-    setSelectedClassSections,
-  ] = useState<string[]>([]);
+  const [classSectionsBySubject, setClassSectionsBySubject] =
+    useState<Record<string, string[]>>({});
 
   const [loading, setLoading] =
     useState(false);
 
+  const [resolvedAcademicYearId, setResolvedAcademicYearId] =
+    useState(academicYearId ?? "");
+
+  const [resolvedAcademicYearCode, setResolvedAcademicYearCode] =
+    useState(academicYearCode ?? "");
+
+  React.useEffect(() => {
+    if (academicYearId && academicYearCode) return;
+    const teacher = getCurrentTeacher();
+    if (!teacher?.schoolUuid) return;
+    void getSchoolCurrentAcademicYear(teacher.schoolUuid)
+      .then((year) => {
+        if (!year) return;
+        setResolvedAcademicYearId(academicYearId ?? year.id);
+        setResolvedAcademicYearCode(academicYearCode ?? year.academicYearCode);
+      })
+      .catch((error) => {
+        // Never invent an academic-year code. The database guard requires the
+        // assignment year to match an actual school_academic_years record.
+        console.error("ACADEMIC YEAR RESOLUTION FAILED", error);
+      });
+  }, [academicYearId, academicYearCode]);
+
+
+  // ======================================
+  // SUBJECT / CLASSROOM STEP HELPERS
+  // ======================================
+
+  const totalSteps = 1 + selectedSubjects.length;
+
+  const currentSubject =
+    currentStep > 1
+      ? selectedSubjects[currentStep - 2] ?? ""
+      : "";
+
+  const currentClassSections = currentSubject
+    ? classSectionsBySubject[currentSubject] ?? []
+    : [];
+
+  function toggleSubject(subject: string) {
+    setSelectedSubjects((previous) => {
+      if (previous.includes(subject)) {
+        setClassSectionsBySubject((current) => {
+          const next = { ...current };
+          delete next[subject];
+          return next;
+        });
+        return previous.filter((item) => item !== subject);
+      }
+
+      return [...previous, subject];
+    });
+  }
+
+  function toggleClassSection(classroom: string) {
+    if (!currentSubject) return;
+
+    setClassSectionsBySubject((previous) => {
+      const selected = previous[currentSubject] ?? [];
+
+      return {
+        ...previous,
+        [currentSubject]: selected.includes(classroom)
+          ? selected.filter((item) => item !== classroom)
+          : [...selected, classroom],
+      };
+    });
+  }
 
   // ======================================
   // NEXT STEP
   // ======================================
 
   function goToNextStep() {
+    if (currentStep === 1) {
+      if (selectedSubjects.length === 0) {
+        alert("Please select the subject you teach.");
+        return;
+      }
 
-    /*
-     * STEP 1 is now SUBJECT.
-     *
-     * A teacher must choose the subject
-     * before choosing classrooms.
-     */
-    if (
-      currentStep === 1 &&
-      !selectedSubject
-    ) {
-
-      alert(
-        "Please select the subject you teach."
-      );
-
+      setCurrentStep(2);
       return;
-
     }
 
-    setCurrentStep(
-      currentStep + 1
-    );
+    if (!currentSubject) return;
 
+    if (currentClassSections.length === 0) {
+      alert(
+        `Please select at least one Class & Section for ${currentSubject}.`
+      );
+      return;
+    }
+
+    if (currentStep < totalSteps) {
+      setCurrentStep((step) => step + 1);
+    }
   }
-
 
   // ======================================
   // PREVIOUS STEP
   // ======================================
 
   function goToPreviousStep() {
-
     if (currentStep === 1) {
       return;
     }
 
-    setCurrentStep(
-      currentStep - 1
-    );
-
+    setCurrentStep((step) => step - 1);
   }
-
 
   // ======================================
   // COMPLETE QUESTIONNAIRE
   // ======================================
 
   async function handleComplete() {
-
-    if (!selectedSubject) {
-
-      alert(
-        "Please select your subject."
-      );
-
+    if (selectedSubjects.length === 0) {
+      alert("Please select your subject.");
       return;
-
     }
 
-    if (
-      selectedClassSections.length === 0
-    ) {
+    const incompleteSubject = selectedSubjects.find(
+      (subject) =>
+        (classSectionsBySubject[subject] ?? []).length === 0
+    );
 
+    if (incompleteSubject) {
       alert(
-        "Please select at least one Class & Section."
+        `Please select at least one Class & Section for ${incompleteSubject}.`
       );
-
       return;
-
     }
 
-    const teacher =
-      getCurrentTeacher();
+    const teacher = getCurrentTeacher();
 
     if (!teacher) {
-
-      alert(
-        "Teacher identity not found."
-      );
-
+      alert("Teacher identity not found.");
       return;
-
     }
+
+    const assignments = selectedSubjects.flatMap((subjectName) =>
+      (classSectionsBySubject[subjectName] ?? []).map((classroom) => {
+        const [className, sectionName] = classroom.split("-");
+        return {
+          className: className ?? "",
+          sectionName: sectionName ?? "",
+          subjectName,
+        };
+      })
+    );
 
     setLoading(true);
 
     try {
+      if (academicYearId && resolvedAcademicYearId) {
+        await saveAnnualTeacherAssignments({
+          academicYearId: resolvedAcademicYearId,
+          assignments,
+        });
+        await finishTeacherAcademicYearOnboarding(resolvedAcademicYearId);
+        onContinue();
+        return;
+      }
 
       /*
-       * IMPORTANT:
-       *
-       * Assignment identity is:
-       *
-       * SCHOOL
-       * + SUBJECT
-       * + CLASS
-       * + SECTION
-       * + ACADEMIC YEAR
-       *
-       * createTeacherAssignment() remains
-       * responsible for enforcing whether
-       * that assignment is already occupied.
+       * Initial teacher registration is not annual re-onboarding.
+       * Resolve the school's CURRENT year directly from the database and use
+       * its exact stored code. Never invent a year value.
        */
+      const currentSchoolYear = teacher.schoolUuid
+        ? await getSchoolCurrentAcademicYear(teacher.schoolUuid)
+        : null;
 
-      for (
-        const classroom of
-        selectedClassSections
-      ) {
+      if (!currentSchoolYear?.id || !currentSchoolYear.academicYearCode) {
+        throw new Error(
+          "The school's current academic year could not be resolved. Please try again."
+        );
+      }
 
-        const [
-          className,
-          sectionName,
-        ] = classroom.split("-");
+      setResolvedAcademicYearId(currentSchoolYear.id);
+      setResolvedAcademicYearCode(currentSchoolYear.academicYearCode);
 
-        await createTeacherAssignment({
+      /*
+       * Save the COMPLETE assignment set in one database statement for
+       * multi-subject onboarding. The existing single-assignment writer
+       * remains unchanged for the original single-subject path.
+       */
+      const persistedAssignments = assignments.map((assignment) => ({
+        teacherUuid: teacher.teacherUuid,
+        schoolUuid: teacher.schoolUuid,
+        className: assignment.className,
+        sectionName: assignment.sectionName,
+        subjectName: assignment.subjectName,
+        academicYear: currentSchoolYear.academicYearCode,
+        isActive: true,
+      }));
 
-          teacherUuid:
-            teacher.teacherUuid,
-
-          schoolUuid:
-            teacher.schoolUuid,
-
-          className,
-
-          sectionName,
-
-          subjectName:
-            selectedSubject,
-
-          academicYear:
-            "2026-2027",
-
-          isActive:
-            true,
-
-        });
-
+      if (selectedSubjects.length === 1) {
+        for (const assignment of persistedAssignments) {
+          await createTeacherAssignment(assignment);
+        }
+      } else {
+        await createTeacherAssignments(persistedAssignments);
       }
 
       onContinue();
-
-    }
-
-    catch (error: any) {
-
+    } catch (error: any) {
       alert(
         error?.message ??
-        "Unable to save teacher assignments."
+          "Unable to save teacher assignments."
       );
-
-    }
-
-    finally {
-
+    } finally {
       setLoading(false);
-
     }
-
   }
 
 
@@ -421,7 +490,7 @@ export default function TeacherAcademicQuestionnaire({
           <div
             style={{
               width:
-                `${(currentStep / 2) * 100}%`,
+                `${(currentStep / Math.max(totalSteps, 1)) * 100}%`,
 
               height: "100%",
 
@@ -438,7 +507,7 @@ export default function TeacherAcademicQuestionnaire({
             color: "#F59E0B",
           }}
         >
-          STEP {currentStep} OF 2
+          STEP {currentStep} OF {totalSteps}
         </h3>
 
 
@@ -466,9 +535,9 @@ export default function TeacherAcademicQuestionnaire({
                 marginTop: 8,
               }}
             >
-              Select your teaching subject first.
-              Your classroom assignment will be
-              created for this subject.
+              Select one or more subjects.
+              If you teach more than one subject,
+              you will choose its Class & Sections separately.
             </p>
 
 
@@ -498,9 +567,7 @@ export default function TeacherAcademicQuestionnaire({
                        * classroom selection there
                        * is nothing else to reset.
                        */
-                      setSelectedSubject(
-                        item
-                      );
+                      toggleSubject(item);
 
                     }}
 
@@ -512,7 +579,7 @@ export default function TeacherAcademicQuestionnaire({
                         16,
 
                       border:
-                        selectedSubject === item
+                        selectedSubjects.includes(item)
                           ? "2px solid #F59E0B"
                           : "2px solid transparent",
 
@@ -526,12 +593,12 @@ export default function TeacherAcademicQuestionnaire({
                         600,
 
                       background:
-                        selectedSubject === item
+                        selectedSubjects.includes(item)
                           ? "#F59E0B"
                           : "#F1F5F9",
 
                       color:
-                        selectedSubject === item
+                        selectedSubjects.includes(item)
                           ? "white"
                           : "#0F172A",
 
@@ -550,7 +617,7 @@ export default function TeacherAcademicQuestionnaire({
             </div>
 
 
-            {selectedSubject && (
+            {selectedSubjects.length > 0 && (
 
               <div
                 style={{
@@ -579,10 +646,10 @@ export default function TeacherAcademicQuestionnaire({
                 }}
               >
 
-                Selected Subject:{" "}
+                Selected Subject{selectedSubjects.length > 1 ? "s" : ""}:{" "}
 
                 <strong>
-                  {selectedSubject}
+                  {selectedSubjects.join(", ")}
                 </strong>
 
               </div>
@@ -598,7 +665,7 @@ export default function TeacherAcademicQuestionnaire({
             STEP 2 — CLASS + SECTION
         ====================================== */}
 
-        {currentStep === 2 && (
+        {currentStep > 1 && currentSubject && (
 
           <>
 
@@ -642,8 +709,7 @@ export default function TeacherAcademicQuestionnaire({
                       "0 0 8px",
                   }}
                 >
-                  Select the classrooms where you
-                  teach {selectedSubject}.
+                  Choose the Class & Section for this subject that you teach.
                 </p>
 
               </div>
@@ -679,7 +745,7 @@ export default function TeacherAcademicQuestionnaire({
 
                 SUBJECT:{" "}
 
-                {selectedSubject}
+                {currentSubject}
 
               </div>
 
@@ -747,14 +813,17 @@ export default function TeacherAcademicQuestionnaire({
                       }}
                     >
 
-                      {SECTIONS.map(
+                      {(className === "11" || className === "12"
+                        ? UPPER_CLASS_SECTIONS
+                        : SECTIONS
+                      ).map(
                         (sectionName) => {
 
                           const item =
                             `${className}-${sectionName}`;
 
                           const selected =
-                            selectedClassSections.includes(
+                            currentClassSections.includes(
                               item
                             );
 
@@ -764,28 +833,10 @@ export default function TeacherAcademicQuestionnaire({
                               key={item}
 
                               onClick={() => {
-
-                                if (selected) {
-
-                                  setSelectedClassSections(
-                                    selectedClassSections.filter(
-                                      (x) =>
-                                        x !== item
-                                    )
-                                  );
-
-                                }
-
-                                else {
-
-                                  setSelectedClassSections([
-                                    ...selectedClassSections,
-                                    item,
-                                  ]);
-
-                                }
-
+                                toggleClassSection(item);
                               }}
+
+                              aria-pressed={selected}
 
                               style={{
                                 padding:
@@ -842,7 +893,7 @@ export default function TeacherAcademicQuestionnaire({
             </div>
 
 
-            {selectedClassSections.length > 0 && (
+            {currentClassSections.length > 0 && (
 
               <div
                 style={{
@@ -872,19 +923,19 @@ export default function TeacherAcademicQuestionnaire({
               >
 
                 <strong>
-                  {selectedClassSections.length}
+                  {currentClassSections.length}
                 </strong>
 
                 {" "}
 
-                {selectedClassSections.length === 1
+                {currentClassSections.length === 1
                   ? "classroom selected"
                   : "classrooms selected"}
 
                 {" "}for{" "}
 
                 <strong>
-                  {selectedSubject}
+                  {currentSubject}
                 </strong>
 
               </div>
@@ -942,7 +993,7 @@ export default function TeacherAcademicQuestionnaire({
           </button>
 
 
-          {currentStep !== 2 ? (
+          {currentStep < totalSteps ? (
 
             <button
               onClick={

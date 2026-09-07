@@ -1,4 +1,5 @@
 import { getSupabaseClient } from "../../../supabaseClient";
+import { getCurrentTeacher } from "../../../services/identityService";
 
 import {
 
@@ -16,24 +17,62 @@ from "../types/TeacherAcademicMemoryModels";
 export async function getTeacherAcademicMemory(
 
 className:string,
-sectionName:string
+sectionName:string,
+
+subjectName?:string
 
 ):Promise<TeacherAcademicMemory>{
 
 const supabase = getSupabaseClient();
 
 
-const { data : feedback } =
+let feedback: any[] = [];
 
-await (supabase as any)
+if (subjectName) {
+  const teacher = getCurrentTeacher();
+  const assignments = teacher?.teacherUuid
+    ? await (supabase as any)
+        .from("teacher_classroom_assignments")
+        .select("id")
+        .eq("teacher_uuid", teacher.teacherUuid)
+        .eq("class_name", className)
+        .eq("section_name", sectionName)
+        .eq("subject_name", subjectName)
+    : { data: [] };
 
-.from("student_daily_feedback")
+  const assignmentIds = (assignments.data ?? [])
+    .map((row: any) => String(row.id ?? ""))
+    .filter(Boolean);
 
-.select("*")
+  if (assignmentIds.length > 0) {
+    const { data: logs } = await (supabase as any)
+      .from("teacher_daily_logs")
+      .select("id")
+      .in("teacher_assignment_uuid", assignmentIds);
 
-.eq("class_name",className)
+    const logIds = (logs ?? [])
+      .map((row: any) => String(row.id ?? ""))
+      .filter(Boolean);
 
-.eq("section_name",sectionName);
+    if (logIds.length > 0) {
+      const { data } = await (supabase as any)
+        .from("student_daily_feedback")
+        .select("*")
+        .in("daily_log_uuid", logIds)
+        .eq("class_name", className)
+        .eq("section_name", sectionName)
+        .eq("subject_name", subjectName);
+      feedback = data ?? [];
+    }
+  }
+} else {
+  const { data } = await (supabase as any)
+    .from("student_daily_feedback")
+    .select("*")
+    .eq("class_name", className)
+    .eq("section_name", sectionName);
+  feedback = data ?? [];
+}
 
 
 if(!feedback){

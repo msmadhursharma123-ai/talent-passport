@@ -1,4 +1,5 @@
 import { getSupabaseClient } from "../../../supabaseClient";
+import { getCurrentTeacher } from "../../../services/identityService";
 import {
   getLiveDoubtsForTeacherAssignments,
   mergeFeedbackUnderstandingLevels,
@@ -1093,7 +1094,8 @@ export async function getLectureFeedbackRadarFast(
 
 export async function getStudentsAtRisk(
   className: string,
-  sectionName: string
+  sectionName: string,
+  subjectName?: string
 ) {
 
   const supabase =
@@ -1106,24 +1108,72 @@ export async function getStudentsAtRisk(
   =========================================================
   */
 
-  const {
-    data: feedbacks,
-    error: feedbackError,
-  } = await (supabase as any)
+  let feedbacks: any[] = [];
+  let feedbackError: any = null;
+  let assignmentIdsForRisk: string[] = [];
 
-    .from("student_daily_feedback")
+  if (subjectName) {
+    /*
+     * Subject-scoped path: resolve the exact teacher assignment UUID first.
+     * This prevents a class/section/subject match from crossing into another
+     * subject assignment for the same classroom.
+     */
+    const teacher = getCurrentTeacher();
 
-    .select("*")
+    if (teacher?.teacherUuid) {
+      const assignments = await getTeacherAssignmentsByTeacher(
+        teacher.teacherUuid
+      );
 
-    .eq(
-      "class_name",
-      className
-    )
+      assignmentIdsForRisk = assignments
+        .filter(
+          (assignment) =>
+            assignment.isActive !== false &&
+            String(assignment.className ?? "") === String(className ?? "") &&
+            String(assignment.sectionName ?? "") === String(sectionName ?? "") &&
+            String(assignment.subjectName ?? "") === String(subjectName ?? "")
+        )
+        .map((assignment) => String(assignment.id ?? ""))
+        .filter(Boolean);
+    }
 
-    .eq(
-      "section_name",
-      sectionName
-    );
+    if (assignmentIdsForRisk.length > 0) {
+      const { data: logs, error: logsError } = await (supabase as any)
+        .from("teacher_daily_logs")
+        .select("id")
+        .in("teacher_assignment_uuid", assignmentIdsForRisk);
+
+      if (logsError) {
+        feedbackError = logsError;
+      } else {
+        const logIds = (logs ?? [])
+          .map((row: any) => String(row.id ?? ""))
+          .filter(Boolean);
+
+        if (logIds.length > 0) {
+          const result = await (supabase as any)
+            .from("student_daily_feedback")
+            .select("*")
+            .in("daily_log_uuid", logIds)
+            .eq("class_name", className)
+            .eq("section_name", sectionName)
+            .eq("subject_name", subjectName);
+
+          feedbacks = result.data ?? [];
+          feedbackError = result.error ?? null;
+        }
+      }
+    }
+  } else {
+    const result = await (supabase as any)
+      .from("student_daily_feedback")
+      .select("*")
+      .eq("class_name", className)
+      .eq("section_name", sectionName);
+
+    feedbacks = result.data ?? [];
+    feedbackError = result.error ?? null;
+  }
 
 
   if (feedbackError) {
@@ -1165,15 +1215,19 @@ export async function getStudentsAtRisk(
   let effectiveFeedbacks = feedbacks;
 
   try {
-    const { data: assignments } = await (supabase as any)
-      .from("teacher_classroom_assignments")
-      .select("id")
-      .eq("class_name", className)
-      .eq("section_name", sectionName);
+    let assignmentIds = assignmentIdsForRisk;
 
-    const assignmentIds = (assignments ?? [])
-      .map((assignment: any) => assignment.id)
-      .filter(Boolean);
+    if (assignmentIds.length === 0 && !subjectName) {
+      const { data: assignments } = await (supabase as any)
+        .from("teacher_classroom_assignments")
+        .select("id")
+        .eq("class_name", className)
+        .eq("section_name", sectionName);
+
+      assignmentIds = (assignments ?? [])
+        .map((assignment: any) => assignment.id)
+        .filter(Boolean);
+    }
 
     const liveRows =
       await getLiveDoubtsForTeacherAssignments(

@@ -2143,7 +2143,8 @@ return (
                   Class{" "}
                   {assignment.className} -
                   Section{" "}
-                  {assignment.sectionName}
+                  {assignment.sectionName} -{" "}
+                  {assignment.subjectName}
                 </option>
               )
             )}
