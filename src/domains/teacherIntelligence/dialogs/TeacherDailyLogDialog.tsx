@@ -1581,7 +1581,8 @@ export default function TeacherDailyLogDialog({
  .tp-log-dialog h1{font-size:23px !important}
  .tp-log-dialog h3{font-size:14px !important}
  .tp-log-dialog p{font-size:11px !important;line-height:1.4 !important}
- .tp-log-dialog input,.tp-log-dialog select,.tp-log-dialog textarea,.tp-log-dialog button{font-size:12px !important}
+ .tp-log-dialog input,.tp-log-dialog select,.tp-log-dialog textarea{font-size:16px !important}
+ .tp-log-dialog button{font-size:12px !important}
  .tp-log-previous-reference{padding:6px 7px !important;margin-top:7px !important}
  .tp-log-previous-reference button{font-size:9px !important}
  .tp-log-previous-reference .tp-log-previous-topic-reference{}
@@ -1599,7 +1600,8 @@ export default function TeacherDailyLogDialog({
  .tp-log-dialog h1{font-size:19px !important;line-height:1.15 !important}
  .tp-log-dialog h3{font-size:13px !important}
  .tp-log-dialog p{font-size:10px !important}
- .tp-log-dialog input,.tp-log-dialog select,.tp-log-dialog textarea,.tp-log-dialog button{font-size:11px !important}
+ .tp-log-dialog input,.tp-log-dialog select,.tp-log-dialog textarea{font-size:16px !important}
+ .tp-log-dialog button{font-size:11px !important}
  .tp-log-previous-reference{padding:5px 6px !important;margin-top:6px !important}
  .tp-log-previous-topic-reference>div:first-child,.tp-log-previous-concepts-reference>div:first-child{font-size:7.8px !important}
  .tp-log-previous-topic-reference button{font-size:8.4px !important}
