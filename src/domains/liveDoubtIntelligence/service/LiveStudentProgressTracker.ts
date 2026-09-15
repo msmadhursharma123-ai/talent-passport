@@ -99,7 +99,7 @@ export async function getStudentProgressTrackerWithLiveLayer(
     let query = (supabase as any)
       .from("student_daily_feedback")
       .select(
-        "id,subject_name,understanding_level,concepts_not_understood,submitted_at,created_at"
+        "id,subject_name,understanding_level,concepts_not_understood,submitted_at"
       )
       .eq("student_uuid", identity.studentUuid)
       .order("submitted_at", { ascending: true });

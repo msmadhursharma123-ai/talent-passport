@@ -34,12 +34,14 @@ import { getStudentAcademicYearSnapshot, captureStudentAcademicYearSnapshot } fr
 interface Props {
 
     onStartDNA?: () => void;
+    liveGateManagedByStudentPortal?: boolean;
 
 }
 
 export default function TalentPassport({
 
-    onStartDNA
+    onStartDNA,
+    liveGateManagedByStudentPortal = false
 
 }: Props) {
 
@@ -219,6 +221,26 @@ export default function TalentPassport({
         loadPassportModel();
 
     }, [academicYear?.id, isHistorical]);
+
+    useEffect(() => {
+        if (!liveGateManagedByStudentPortal) return;
+
+        const handleLiveReconciliationSubmitted = () => {
+            void loadLiveLearningIntelligence();
+        };
+
+        window.addEventListener(
+            "student-live-doubt-reconciliation-submitted",
+            handleLiveReconciliationSubmitted
+        );
+
+        return () => {
+            window.removeEventListener(
+                "student-live-doubt-reconciliation-submitted",
+                handleLiveReconciliationSubmitted
+            );
+        };
+    }, [liveGateManagedByStudentPortal]);
 
     /* ==========================================
        ViewModel Data
@@ -537,11 +559,13 @@ export default function TalentPassport({
 
         <div className="min-h-screen bg-[#F7F9FC] px-2.5 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-5">
 
-            <LiveDoubtReconciliationGate
-                onSubmitted={() => {
-                    void loadLiveLearningIntelligence();
-                }}
-            />
+            {!liveGateManagedByStudentPortal ? (
+                <LiveDoubtReconciliationGate
+                    onSubmitted={() => {
+                        void loadLiveLearningIntelligence();
+                    }}
+                />
+            ) : null}
 
             <div className="mx-auto max-w-[1600px] space-y-2.5 sm:space-y-3 lg:space-y-3">
                 {years.length > 1 && academicYear ? <div className="tp-academic-year-control" style={{display:"flex",alignItems:"center",justifyContent:"flex-end",minHeight:30,minWidth:0}}>
