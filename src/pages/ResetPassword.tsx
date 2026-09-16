@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
+import { getSupabaseClient } from "../supabaseClient";
 import {
     getCurrentSession,
     updatePasswordWithRecoverySession,
@@ -31,7 +33,44 @@ const [checkingRecovery, setCheckingRecovery] = useState(true);
                  */
                 let session = null;
 
-                for (let attempt = 0; attempt < 20; attempt += 1) {
+                /*
+                 * Android deep links arrive through Capacitor's app URL bridge.
+                 * The native bootstrap imports the recovery token pair into
+                 * the existing application Supabase client before this page is
+                 * navigated to. Keep this small fallback for the case where a
+                 * token-bearing URL reaches the page directly. Web and iOS do
+                 * not enter this branch.
+                 */
+                if (Capacitor.getPlatform() === "android") {
+                    const searchParams = new URLSearchParams(
+                        window.location.search
+                    );
+                    const hashParams = new URLSearchParams(
+                        window.location.hash.startsWith("#")
+                            ? window.location.hash.slice(1)
+                            : window.location.hash
+                    );
+
+                    const accessToken =
+                        hashParams.get("access_token") ??
+                        searchParams.get("access_token");
+                    const refreshToken =
+                        hashParams.get("refresh_token") ??
+                        searchParams.get("refresh_token");
+
+                    if (accessToken && refreshToken) {
+                        const supabase = getSupabaseClient();
+
+                        if (supabase) {
+                            await supabase.auth.setSession({
+                                access_token: accessToken,
+                                refresh_token: refreshToken,
+                            });
+                        }
+                    }
+                }
+
+                for (let attempt = 0; attempt < (Capacitor.getPlatform() === "android" ? 30 : 20); attempt += 1) {
                     session = await getCurrentSession();
 
                     if (session || !mounted) {

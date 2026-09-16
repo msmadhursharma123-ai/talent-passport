@@ -80,10 +80,9 @@ function normalizeIncomingAppUrl(rawUrl: string): string | null {
     const search = parsed.search || "";
     const hash = parsed.hash || "";
 
-    // Supabase recovery links are delivered to the custom scheme. Re-enter
-    // them into the existing SPA URL so the current recovery/session logic
-    // can consume the original query/hash without changing its semantics.
-    const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
+    const hashParams = new URLSearchParams(
+      hash.startsWith("#") ? hash.slice(1) : hash
+    );
     const isRecovery =
       search.includes("reset-password=1") ||
       hashParams.get("type") === "recovery" ||
@@ -97,7 +96,10 @@ function normalizeIncomingAppUrl(rawUrl: string): string | null {
     }
 
     // School invitation deep links can be handed to the existing hash route.
-    if (parsed.hostname === "school-setup" || parsed.pathname.includes("school-setup")) {
+    if (
+      parsed.hostname === "school-setup" ||
+      parsed.pathname.includes("school-setup")
+    ) {
       const token = new URLSearchParams(parsed.search).get("token");
       return token
         ? `/#school-setup?token=${encodeURIComponent(token)}`
@@ -110,30 +112,63 @@ function normalizeIncomingAppUrl(rawUrl: string): string | null {
   return null;
 }
 
-function applyIncomingUrl(rawUrl: string | undefined): void {
+
+async function applyIncomingUrl(rawUrl: string | undefined): Promise<void> {
   if (!rawUrl) return;
 
-  /*
-   * Capacitor can expose the original launch URL again when the WebView is
-   * reloaded. That is harmless for ordinary routes but fatal for a Supabase
-   * recovery URL: the one-time recovery token has already been consumed, so
-   * replaying it sends the user back to ResetPasswordPage with no session and
-   * produces the misleading "Invalid Recovery Session" screen.
-   *
-   * Mark the exact native URL as consumed BEFORE navigating. This also makes
-   * the launch-url and appUrlOpen callbacks idempotent when iOS delivers both.
-   */
   if (hasConsumedDeepLink(rawUrl)) return;
 
   const normalized = normalizeIncomingAppUrl(rawUrl);
   if (!normalized) return;
 
-  markDeepLinkConsumed(rawUrl);
+  if (Capacitor.getPlatform() === "android") {
+    try {
+      const parsed = new URL(rawUrl);
+      const searchParams = new URLSearchParams(parsed.search);
+      const hashParams = new URLSearchParams(
+        parsed.hash.startsWith("#") ? parsed.hash.slice(1) : parsed.hash
+      );
 
-  // Let Supabase/Auth JS consume the original recovery hash after the local
-  // SPA document is restored. A full local navigation is intentional here.
+      const accessToken =
+        hashParams.get("access_token") ?? searchParams.get("access_token");
+      const refreshToken =
+        hashParams.get("refresh_token") ?? searchParams.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        const { importAndroidPasswordRecoveryTokens } =
+          await import("../services/platform/androidPasswordRecoveryService");
+        const result = await importAndroidPasswordRecoveryTokens(
+          accessToken,
+          refreshToken
+        );
+
+        if (!result.success) {
+          console.error(
+            "ANDROID PASSWORD RECOVERY TOKEN IMPORT FAILED",
+            result.error
+          );
+          // Do not mark a failed recovery URL as consumed. This allows the
+          // normal Capacitor callback path to retry instead of permanently
+          // discarding a valid one-time recovery URL.
+          return;
+        }
+
+        // The token pair has now been imported into the existing application
+        // Supabase client. Do not expose the tokens to the React URL anymore.
+        markDeepLinkConsumed(rawUrl);
+        window.location.replace("/?reset-password=1");
+        return;
+      }
+    } catch (error) {
+      console.error("ANDROID PASSWORD RECOVERY CALLBACK FAILED", error);
+      return;
+    }
+  }
+
+  markDeepLinkConsumed(rawUrl);
   window.location.replace(normalized);
 }
+
 
 export function initializeNativeAppBootstrap(): void {
   if (!Capacitor.isNativePlatform()) return;
@@ -141,11 +176,11 @@ export function initializeNativeAppBootstrap(): void {
   void import("@capacitor/app")
     .then(({ App }) => {
       void App.getLaunchUrl()
-        .then(({ url }) => applyIncomingUrl(url))
+        .then(({ url }) => void applyIncomingUrl(url))
         .catch((error) => console.warn("Unable to read app launch URL.", error));
 
       void App.addListener("appUrlOpen", ({ url }) => {
-        applyIncomingUrl(url);
+        void applyIncomingUrl(url);
       });
     })
     .catch((error) => console.warn("Unable to initialize native app URL handling.", error));

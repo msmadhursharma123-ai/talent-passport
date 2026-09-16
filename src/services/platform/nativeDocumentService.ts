@@ -1,6 +1,14 @@
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+
+interface AndroidPdfSaverPlugin {
+  savePdf(options: { fileName: string; data: string }): Promise<{ uri?: string }>;
+}
+
+// Android-only native download bridge. It is registered as a native Capacitor
+// plugin in the Android project and is never invoked on Web or iOS.
+const AndroidPdfSaver = registerPlugin<AndroidPdfSaverPlugin>("AndroidPdfSaver");
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -29,16 +37,32 @@ async function saveAndShareNativeBlob(
   fileName: string,
   title: string,
 ): Promise<void> {
+  /*
+   * Android PDF actions must be a real download, not a generic ACTION_SEND
+   * chooser. The previous Capacitor Filesystem + Share path could hand the
+   * generated PDF to Chrome/Samsung handlers that opened without exposing a
+   * usable saved document. The Android bridge writes the PDF through
+   * MediaStore.Downloads, so Android owns the file as a normal user download.
+   *
+   * iOS deliberately retains the already-verified Filesystem + Share path.
+   */
+  if (Capacitor.getPlatform() === "android") {
+    const base64 = await blobToBase64(blob);
+    await AndroidPdfSaver.savePdf({
+      fileName: safeFileName(fileName),
+      data: base64,
+    });
+    return;
+  }
+
   const [{ Directory, Filesystem }, { Share }] = await Promise.all([
     import("@capacitor/filesystem"),
     import("@capacitor/share"),
   ]);
 
   const base64 = await blobToBase64(blob);
-  // Keep a user-accessible copy in Documents. This makes a native PDF action
-  // behave like a download even if the OS share sheet is dismissed or has no
-  // target. iOS exposes this folder through the Files app via the native plist
-  // patch, while Web/PWA never reaches this branch.
+
+  // iOS: keep the exact verified native behaviour unchanged.
   const documentPath = `Talent Passport/${safeFileName(fileName)}`;
   const written = await Filesystem.writeFile({
     path: documentPath,
