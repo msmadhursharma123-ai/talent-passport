@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Capacitor } from "@capacitor/core";
+import { printHtmlAsPdf } from "../../../services/platform/nativeDocumentService";
 import { getPlannerAssignments, getPlannerRecommendations, getTeacherPlanners, savePlanner } from "../repository/PlannerRepository";
 import type { PlannerRecord, PlannerRecommendation, PlannerType, QuestionItem, QuestionPaperPayload, TeacherAssignmentOption } from "../types/PlannerModels";
 import { AssignmentFields, PlannerHistoryTable, PlannerPageFrame, PlannerRecommendations, QuestionEditor, preparePlannerRecommendation } from "../components/PlannerUI";
@@ -142,12 +144,6 @@ export function printWorksheetRecord(record: PlannerRecord) {
   const payload = getWorksheetPayload(record);
   const questions = normalizeWorksheetQuestions(payload.questions ?? []);
   const chapter = getChapter(record, payload, questions);
-  const printWindow = window.open("", "_blank", "width=1000,height=800");
-  if (!printWindow) {
-    window.alert("Please allow pop-ups for Talent Passport to print or save this worksheet as PDF.");
-    return;
-  }
-
   const sections = getWorksheetSections(questions);
   let globalNumber = 1;
   const sectionsHtml = sections.map(section => {
@@ -157,6 +153,23 @@ export function printWorksheetRecord(record: PlannerRecord) {
   const body = `<div class="worksheet-print-page"><header><div class="worksheet-kicker">${escapeHtml(payload.schoolName || "School")} · WORKSHEET</div><h1 class="worksheet-title">${escapeHtml(record.title || "Worksheet")}</h1><div class="worksheet-subject">${escapeHtml(record.subjectName)}</div></header><div class="worksheet-meta"><span><strong>School:</strong> ${escapeHtml(payload.schoolName)}</span><span><strong>Worksheet Date:</strong> ${escapeHtml(fmtDate(record.startDate))}</span><span><strong>Class:</strong> ${escapeHtml(record.className)} · Section ${escapeHtml(record.sectionName)}</span><span><strong>Day:</strong> ${escapeHtml(record.startDate ? new Date(record.startDate).toLocaleDateString("en-IN", { weekday:"long" }) : "")}</span></div><div class="worksheet-instruction"><strong>Practice Worksheet:</strong> Complete all activities carefully.</div><div class="worksheet-chapter-heading">${escapeHtml(chapter)}</div>${sectionsHtml}</div>`;
 
   const css = `@page{size:A4;margin:0}html,body{margin:0;padding:0;background:#fff;color:#111827}body{font-family:Arial,sans-serif}.worksheet-print-page{width:210mm;min-height:297mm;margin:0 auto;padding:12mm;box-sizing:border-box}.worksheet-kicker{margin-bottom:7px;text-align:center;color:#9A3412;font-size:10pt;font-weight:800;letter-spacing:1.2pt}.worksheet-title{margin:0 0 5pt;text-align:center;font-size:24pt;font-weight:800}.worksheet-subject{text-align:center;font-size:11pt;font-weight:800}.worksheet-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4pt 16pt;margin:18pt 0;font-size:9pt}.worksheet-instruction{margin-bottom:14pt;padding:6pt 8pt;border-left:3pt solid #F97316;background:#FFF7ED;font-size:8pt;line-height:1.45}.worksheet-chapter-heading{margin:16pt 0 9pt;padding:6pt 8pt;border-top:1pt solid #CBD5E1;border-bottom:1pt solid #E2E8F0;background:#F8FAFC;font-size:9.5pt;font-weight:800;letter-spacing:.5pt;text-transform:uppercase;break-after:avoid}.worksheet-section{margin:0 0 10pt;break-inside:auto}.worksheet-section-heading{padding:6pt 8pt;background:#F8FAFC;border-top:1.5pt solid #CBD5E1;border-bottom:.7pt solid #E2E8F0;font-size:9pt;font-weight:800;text-transform:uppercase;break-after:avoid}.worksheet-section-description{margin:5pt 0 7pt;color:#64748B;font-size:8pt;font-style:italic}.worksheet-question{margin:0 0 9pt;font-size:9.5pt;line-height:1.48;break-inside:avoid}.worksheet-options{margin:4pt 0 0 17pt}.worksheet-options>div{margin:2pt 0}.worksheet-fill-statement{margin:4pt 0 0 18pt}.worksheet-blank{display:inline-block;min-width:58pt;height:10pt;margin:0 2pt;border-bottom:1pt solid #111827}.worksheet-match{display:grid;grid-template-columns:1fr 1fr;gap:24pt;margin:6pt 0 0 18pt}.worksheet-match-row{display:grid;grid-template-columns:20pt 1fr;gap:5pt;margin:3pt 0}.worksheet-tf-list{margin:5pt 0 0 18pt}.worksheet-tf-row{display:grid;grid-template-columns:18pt 1fr 55pt;gap:5pt;margin:4pt 0}.worksheet-tf-answer{white-space:nowrap}.worksheet-image{display:block;max-width:120mm;max-height:70mm;margin:7pt auto;object-fit:contain}.worksheet-passage{white-space:pre-wrap;line-height:1.5;margin:6pt 0 8pt;padding:8pt;border:1pt solid #CBD5E1;background:#FAFAFA;border-radius:4pt}.worksheet-passage-q{margin:4pt 0 0 18pt}`;
+
+
+  if (Capacitor.isNativePlatform()) {
+    void printHtmlAsPdf({
+      bodyHtml: body,
+      css,
+      fileName: `${record.title || "Talent Passport Worksheet"}.pdf`,
+      title: record.title || "Talent Passport Worksheet PDF",
+      popupBlockedMessage: "Please allow pop-ups for Talent Passport to print or save this worksheet as PDF.",
+    });
+    return;
+  }
+  const printWindow = window.open("", "_blank", "width=1000,height=800");
+  if (!printWindow) {
+    window.alert("Please allow pop-ups for Talent Passport to print or save this worksheet as PDF.");
+    return;
+  }
 
   printWindow.document.open();
   printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(record.title || "Worksheet")}</title><style>${css}</style></head><body>${body}<script>(function(){function ready(){var imgs=[].slice.call(document.images);if(!imgs.length){setTimeout(function(){window.focus();window.print()},180);return;}var left=imgs.length;function done(){left-=1;if(left<=0)setTimeout(function(){window.focus();window.print()},180)}imgs.forEach(function(img){if(img.complete)done();else{img.addEventListener('load',done,{once:true});img.addEventListener('error',done,{once:true});}});setTimeout(function(){window.focus();window.print()},2500)}if(document.readyState==='complete')ready();else window.addEventListener('load',ready);window.onafterprint=function(){setTimeout(function(){window.close()},150)};})();<\/script></body></html>`);

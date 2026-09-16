@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { downloadOrShareBlob } from "./platform/nativeDocumentService";
 
 export type AccessImportKind = "email" | "roll";
 
@@ -92,19 +93,16 @@ export async function parseAccessFile(
   return Array.from(new Set(cleaned));
 }
 
-export function downloadAccessTemplate(kind: AccessImportKind): void {
+export async function downloadAccessTemplate(kind: AccessImportKind): Promise<void> {
   const header = kind === "email" ? "email" : "roll_number";
   const example = kind === "email" ? "teacher@example.com" : "STU-001";
   const blob = new Blob([`${header}\n${example}\n`], {
     type: "text/csv;charset=utf-8",
   });
 
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = kind === "email" ? "teacher_email_template.csv" : "student_roll_number_template.csv";
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
+  await downloadOrShareBlob(
+    blob,
+    kind === "email" ? "teacher_email_template.csv" : "student_roll_number_template.csv",
+    "Talent Passport — Access Template"
+  );
 }

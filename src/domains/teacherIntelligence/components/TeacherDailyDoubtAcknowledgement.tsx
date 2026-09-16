@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { Capacitor } from "@capacitor/core";
+import { printHtmlAsPdf } from "../../../services/platform/nativeDocumentService";
+
 
 import { getCurrentTeacher } from "../../../services/identityService";
 import {
@@ -205,7 +208,7 @@ export default function TeacherDailyDoubtAcknowledgement() {
     setOpen(false);
   }
 
-  function downloadPdf() {
+  async function downloadPdf() {
     const printable = classrooms
       .map(
         (item) => `
@@ -224,6 +227,29 @@ export default function TeacherDailyDoubtAcknowledgement() {
         `
       )
       .join("");
+
+    if (Capacitor.isNativePlatform()) {
+      const css = `
+        * { box-sizing: border-box; }
+        body { margin:0; padding:28px; font-family:Arial,sans-serif; color:#0F172A; background:#FFF; }
+        h1 { margin:0 0 6px; font-size:22px; }
+        .date { color:#64748B; font-size:12px; margin-bottom:18px; }
+        .classroom { break-inside:avoid; border:1px solid #FED7AA; background:#FFF7ED; border-radius:14px; padding:14px; margin-bottom:12px; }
+        h2 { margin:0; font-size:16px; }
+        .count { margin-top:4px; color:#9A3412; font-size:11px; font-weight:700; }
+        ul { margin:10px 0 0; padding:0; list-style:none; }
+        li { display:flex; justify-content:space-between; gap:14px; padding:7px 0; border-top:1px solid #FED7AA; font-size:12px; }
+        strong { color:#C2410C; }
+      `;
+      await printHtmlAsPdf({
+        bodyHtml: `<h1>Unresolved Doubt Bank</h1><div class="date">${getIndiaDateKey()}</div>${printable}`,
+        css,
+        fileName: `Teacher-Unresolved-Doubts-${getIndiaDateKey()}.pdf`,
+        title: "Teacher Unresolved Doubts PDF",
+        popupBlockedMessage: "Please allow pop-ups for Talent Passport to print or save this doubt bank as PDF.",
+      });
+      return;
+    }
 
     // Print through a hidden iframe instead of window.open(). This keeps the
     // print action inside the teacher's click gesture and avoids browser popup

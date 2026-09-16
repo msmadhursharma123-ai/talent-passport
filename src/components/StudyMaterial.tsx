@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getStudentPublishedWorksheets, type PublishedWorksheet } from "../data/studentStudyMaterialRepository";
 import { getStudentSubjects } from "../data/studentGrowthPlanRepository";
+import { printHtmlAsPdf } from "../services/platform/nativeDocumentService";
 
 interface MatchColumnItem { id: string; text: string; }
 interface PassageQuestion { id: string; question: string; marks: number; }
@@ -119,22 +120,22 @@ const SECTION_DEFS: { title: string; types: QuestionItem["type"][]; description:
   { title: "Section H — Unseen Passage / Comprehension", description: "Read the passage carefully and answer the questions that follow.", types: ["UNSEEN_PASSAGE"] },
 ];
 
-function printWorksheet(record: PublishedWorksheet) {
+async function printWorksheet(record: PublishedWorksheet) {
   const payload = getPayload(record);
   const questions = normalizeQuestions(payload.questions ?? []);
   const sections = SECTION_DEFS.map(def => ({ ...def, questions: questions.filter(question => def.types.includes(question.type)) })).filter(section => section.questions.length);
-  const popup = window.open("", "_blank", "width=1000,height=800");
-  if (!popup) {
-    window.alert("Please allow pop-ups for Talent Passport to download this worksheet as PDF.");
-    return;
-  }
   let number = 1;
   const sectionsHtml = sections.map(section => `<section class="sm-section"><div class="sm-section-title">${escapeHtml(section.title)}</div><div class="sm-section-copy">${escapeHtml(section.description)}</div>${section.questions.map(question => renderQuestionHtml(question, number++)).join("")}</section>`).join("");
   const body = `<article class="sm-paper"><div class="sm-kicker">${escapeHtml(payload.schoolName || "School")} · WORKSHEET</div><h1>${escapeHtml(record.title || "Worksheet")}</h1><div class="sm-subject">${escapeHtml(record.subjectName)}</div><div class="sm-meta"><span><strong>Date:</strong> ${escapeHtml(fmtDate(record.publishedAt))}</span><span><strong>Class:</strong> ${escapeHtml(record.className)} · Section ${escapeHtml(record.sectionName)}</span><span><strong>Teacher:</strong> ${escapeHtml(record.teacherName)}</span><span><strong>Chapter:</strong> ${escapeHtml(getChapter(record))}</span></div><div class="sm-instruction"><strong>Practice Worksheet:</strong> Complete all activities carefully.</div>${sectionsHtml}</article>`;
   const css = `@page{size:A4;margin:0}html,body{margin:0;padding:0;background:#fff;color:#111827}body{font-family:Arial,sans-serif}.sm-paper{width:210mm;min-height:297mm;margin:0 auto;padding:12mm;box-sizing:border-box}.sm-kicker{margin-bottom:7px;text-align:center;color:#9A3412;font-size:10pt;font-weight:800;letter-spacing:1.2pt}.sm-paper h1{margin:0 0 5pt;text-align:center;font-size:24pt}.sm-subject{text-align:center;font-size:11pt;font-weight:800}.sm-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:4pt 16pt;margin:18pt 0;font-size:9pt}.sm-instruction{margin-bottom:14pt;padding:6pt 8pt;border-left:3pt solid #F97316;background:#FFF7ED;font-size:8pt;line-height:1.45}.sm-section{margin:0 0 10pt}.sm-section-title{padding:6pt 8pt;background:#F8FAFC;border-top:1.5pt solid #CBD5E1;border-bottom:.7pt solid #E2E8F0;font-size:9pt;font-weight:800;text-transform:uppercase}.sm-section-copy{margin:5pt 0 7pt;color:#64748B;font-size:8pt;font-style:italic}.sm-question{margin:0 0 9pt;font-size:9.5pt;line-height:1.48;break-inside:avoid}.sm-options{margin:4pt 0 0 17pt}.sm-options>div{margin:2pt 0}.sm-fill{margin:4pt 0 0 18pt}.sm-blank{display:inline-block;min-width:58pt;height:10pt;border-bottom:1pt solid #111827;margin:0 2pt}.sm-match{display:grid;grid-template-columns:1fr 1fr;gap:24pt;margin:6pt 0 0 18pt}.sm-match-row{display:grid;grid-template-columns:20pt 1fr;gap:5pt;margin:3pt 0}.sm-tf-list{margin:5pt 0 0 18pt}.sm-tf-row{display:grid;grid-template-columns:18pt 1fr 55pt;gap:5pt;margin:4pt 0}.sm-tf-row span:last-child{white-space:nowrap}.sm-image{display:block;max-width:120mm;max-height:70mm;margin:7pt auto;object-fit:contain}.sm-passage{white-space:pre-wrap;line-height:1.5;margin:6pt 0 8pt;padding:8pt;border:1pt solid #CBD5E1;background:#FAFAFA;border-radius:4pt}.sm-passage-q{margin:4pt 0 0 18pt}`;
-  popup.document.open();
-  popup.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(record.title || "Worksheet")}</title><style>${css}</style></head><body>${body}<script>(function(){function ready(){var imgs=[].slice.call(document.images);if(!imgs.length){setTimeout(function(){window.focus();window.print()},180);return;}var left=imgs.length;function done(){left-=1;if(left<=0)setTimeout(function(){window.focus();window.print()},180)}imgs.forEach(function(img){if(img.complete)done();else{img.addEventListener('load',done,{once:true});img.addEventListener('error',done,{once:true});}});setTimeout(function(){window.focus();window.print()},2500)}if(document.readyState==='complete')ready();else window.addEventListener('load',ready);window.onafterprint=function(){setTimeout(function(){window.close()},150)};})();<\/script></body></html>`);
-  popup.document.close();
+  await printHtmlAsPdf({
+    bodyHtml: body,
+    css,
+    fileName: `${String(record.title || "Worksheet").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "Worksheet"}.pdf`,
+    title: `Talent Passport — ${record.title || "Worksheet"}`,
+    selector: ".sm-paper",
+    popupBlockedMessage: "Please allow pop-ups for Talent Passport to download this worksheet as PDF.",
+  });
 }
 
 function WorksheetPreview({ record, onClose }: { record: PublishedWorksheet; onClose: () => void }) {

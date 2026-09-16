@@ -16,6 +16,7 @@ import {
   loadSchoolWeeklyMeetingInsights,
 } from "./SchoolWeeklyMeetingInsightsViewModel";
 import "./SchoolWeeklyMeetingInsights.css";
+import { downloadOrSharePdfBlob } from "../../../../services/platform/nativeDocumentService";
 
 const MORNING_BRIEF_KEY_PREFIX = "schoolAdminMorningBriefAcknowledgement";
 const WEEKLY_CLOSE_KEY_PREFIX = "schoolAdminWeeklyMeetingInsightsClosedAt";
@@ -435,7 +436,11 @@ export default function SchoolWeeklyMeetingInsights() {
       }
 
       const safeSchool = report.schoolName.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "School";
-      pdf.save(`Weekly-Meeting-Analysis-${safeSchool}-${report.startDate}-to-${report.endDate}.pdf`);
+      await downloadOrSharePdfBlob(
+        pdf.output("blob"),
+        `Weekly-Meeting-Analysis-${safeSchool}-${report.startDate}-to-${report.endDate}.pdf`,
+        "Talent Passport — Weekly Meeting Analysis"
+      );
     } catch (e) {
       console.error("SCHOOL WEEKLY MEETING PDF DOWNLOAD FAILED", e);
     } finally {

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Talent Passport</string>
+    <string name="title_activity_main">Talent Passport</string>
+    <string name="package_name">in.talentpassport.app</string>
+    <string name="custom_url_scheme">in.talentpassport.app</string>
+</resources>

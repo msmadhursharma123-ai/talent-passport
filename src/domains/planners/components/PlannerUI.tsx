@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
+import { Capacitor } from "@capacitor/core";
+import { printHtmlAsPdf } from "../../../services/platform/nativeDocumentService";
 import type { LessonBlock, LessonPlannerPayload, PlannerRecord, QuestionItem, QuestionPaperPayload, QuestionType, TeacherAssignmentOption, PassageQuestion, PlannerRecommendation } from "../types/PlannerModels";
 
 export const plannerStyles = `
@@ -258,11 +260,6 @@ function printPaperHtml(record: PlannerRecord) {
 }
 
 export function printPlannerRecord(record: PlannerRecord) {
-  const printWindow = window.open("", "_blank", "width=1100,height=900");
-  if (!printWindow) {
-    window.alert("Please allow pop-ups for Talent Passport to print or save this planner as PDF.");
-    return;
-  }
   const body = record.plannerType === "lesson" ? printLessonHtml(record) : printPaperHtml(record);
   const css = `
     @page{size:A4;margin:0}
@@ -276,6 +273,22 @@ export function printPlannerRecord(record: PlannerRecord) {
     .print-paper-section{margin:0 0 12pt;break-inside:auto}.print-section-heading{display:flex;justify-content:space-between;gap:10pt;align-items:center;padding:6pt 8pt;background:#F8FAFC;border-top:1.5pt solid #CBD5E1;border-bottom:.7pt solid #E2E8F0;font-size:9.5pt;font-weight:800;text-transform:uppercase}.print-section-description{margin:5pt 0 7pt;color:#64748B;font-size:8pt;font-style:italic}.print-question{position:relative;margin:0 0 9pt;font-size:9.5pt;line-height:1.48;break-inside:avoid}.print-q-marks{float:right;font-weight:800}.print-options{margin:4pt 0 0 17pt}.print-options div{margin:2pt 0}.print-blank{display:inline-block;min-width:58pt;border-bottom:1pt solid #111827;margin:0 2pt;height:10pt}.print-fill-statement{margin:4pt 0 0 18pt;line-height:1.55}.print-sub-number{font-weight:700;display:inline-block;min-width:15pt}.print-match{display:grid;grid-template-columns:1fr 1fr;gap:24pt;margin:6pt 0 0 18pt}.print-match-title{font-size:8pt;font-weight:800;text-transform:uppercase;color:#64748B;margin-bottom:3pt}.print-match-row{display:grid;grid-template-columns:20pt 1fr;gap:5pt;margin:3pt 0}.print-tf-list{margin:5pt 0 0 18pt}.print-tf-row{display:grid;grid-template-columns:18pt 1fr 55pt;gap:5pt;margin:4pt 0}.print-tf-row span:last-child{white-space:nowrap}.print-image{display:block;max-width:120mm;max-height:70mm;margin:7pt auto;border-radius:4pt;object-fit:contain}.print-image-prompt{font-weight:600;margin-top:5pt}.print-passage{white-space:pre-wrap;line-height:1.5;margin:6pt 0 8pt;padding:8pt;border:1pt solid #CBD5E1;background:#FAFAFA;border-radius:4pt}.print-passage-q{margin:4pt 0 0 18pt}.print-table{width:100%;border-collapse:collapse;font-size:8pt}.print-table th{background:#FFF7ED;color:#9A3412}.print-table th,.print-table td{border:1pt solid #CBD5E1;padding:5pt;text-align:left;vertical-align:top}.print-table tr{break-inside:avoid}.print-lesson-page .print-header{text-align:left}
     @media print{body{background:#fff!important}.planner-print-window{width:100%}.print-page{margin:0}.print-paper-section{break-inside:auto}.print-section-heading{break-after:avoid}.print-question{break-inside:avoid}.print-table tr{break-inside:avoid}}
   `;
+
+  if (Capacitor.isNativePlatform()) {
+    void printHtmlAsPdf({
+      bodyHtml: `<div class="planner-print-window">${body}</div>`,
+      css,
+      fileName: `${record.title || "Talent Passport Planner"}.pdf`,
+      title: record.title || "Talent Passport Planner PDF",
+      popupBlockedMessage: "Please allow pop-ups for Talent Passport to print or save this planner as PDF.",
+    });
+    return;
+  }
+  const printWindow = window.open("", "_blank", "width=1100,height=900");
+  if (!printWindow) {
+    window.alert("Please allow pop-ups for Talent Passport to print or save this planner as PDF.");
+    return;
+  }
   printWindow.document.open();
   printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(record.title)}</title><style>${css}</style></head><body><div class="planner-print-window">${body}</div><script>(function(){function ready(){var imgs=[].slice.call(document.images);if(!imgs.length){setTimeout(function(){window.focus();window.print()},180);return;}var left=imgs.length;function done(){left-=1;if(left<=0)setTimeout(function(){window.focus();window.print()},180)}imgs.forEach(function(img){if(img.complete)done();else{img.addEventListener('load',done,{once:true});img.addEventListener('error',done,{once:true});}});setTimeout(function(){window.focus();window.print()},2500)}if(document.readyState==='complete')ready();else window.addEventListener('load',ready);window.onafterprint=function(){setTimeout(function(){window.close()},150)};})();<\/script></body></html>`);
   printWindow.document.close();

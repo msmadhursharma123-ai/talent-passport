@@ -12,6 +12,10 @@ import {
 } from "../data/passportRepository";
 
 import {
+    getPasswordResetRedirectUrl
+} from "./platform/platformEnvironment";
+
+import {
     StudentIdentity,
     TeacherIdentity,
     SchoolIdentity,
@@ -3187,11 +3191,13 @@ export async function sendPasswordResetEmail(
          * reset link from accidentally pointing to a different deployment.
          * The corresponding redirect URLs must be allow-listed in Supabase.
          */
-        const appUrl =
-            window.location.origin.replace(/\/$/, "");
-
         const redirectTo =
-            `${appUrl}/?reset-password=1`;
+            getPasswordResetRedirectUrl();
+
+        console.info("PASSWORD RESET REQUEST", {
+            native: typeof window !== "undefined" && /in\.talentpassport\.app:/.test(redirectTo),
+            redirectTo,
+        });
 
         const { error } =
             await supabase.auth.resetPasswordForEmail(

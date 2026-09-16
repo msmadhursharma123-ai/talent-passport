@@ -50,15 +50,18 @@ const [checkingRecovery, setCheckingRecovery] = useState(true);
                 setValidRecovery(Boolean(session));
 
                 /*
-                 * Only remove the recovery hash after the session has been
+                 * Only remove recovery URL state after the session has been
                  * established. Removing it earlier can destroy the token
-                 * before Supabase has consumed it.
+                 * before Supabase has consumed it. Once the session exists,
+                 * clear BOTH the recovery hash and the native bridge's
+                 * ?reset-password=1 query so a later auth-state transition
+                 * cannot re-enter this page as an invalid recovery flow.
                  */
-                if (session && window.location.hash) {
+                if (session && (window.location.hash || window.location.search)) {
                     window.history.replaceState(
                         {},
                         document.title,
-                        `${window.location.pathname}${window.location.search}`
+                        window.location.pathname || "/"
                     );
                 }
             } catch (error) {
@@ -143,13 +146,27 @@ const [checkingRecovery, setCheckingRecovery] = useState(true);
                 "true"
             );
 
+            /*
+             * The native iOS recovery bridge intentionally enters the SPA with
+             * ?reset-password=1 plus the Supabase recovery hash. Once the
+             * password has been changed, that recovery URL must be cleared
+             * BEFORE signing out. Otherwise a native auth-state transition can
+             * briefly re-enter the recovery screen with no recovery session,
+             * producing the misleading "Invalid Recovery Session" state.
+             */
+            window.history.replaceState(
+                {},
+                document.title,
+                window.location.pathname || "/"
+            );
+
             await signOut();
 
             alert(
                 "Password updated successfully.\n\nPlease login using your new password."
             );
 
-            window.location.href = "/";
+            window.location.replace("/");
         } catch (error: any) {
             setError(
                 error?.message ??

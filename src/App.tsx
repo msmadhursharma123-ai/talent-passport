@@ -562,16 +562,18 @@ useEffect(() => {
   let authSubscription:
     { unsubscribe(): void } | null = null;
 
+  const recoveryHashParams = new URLSearchParams(
+    window.location.hash.startsWith("#")
+      ? window.location.hash.slice(1)
+      : window.location.hash
+  );
+
   let recoveryFlow =
-    window.location.search.includes(
-      "reset-password=1"
-    ) ||
-    window.location.hash.includes(
-      "type=recovery"
-    ) ||
-    new URLSearchParams(window.location.search).has(
-      "code"
-    );
+    window.location.search.includes("reset-password=1") ||
+    recoveryHashParams.get("type") === "recovery" ||
+    recoveryHashParams.has("access_token") ||
+    recoveryHashParams.has("refresh_token") ||
+    new URLSearchParams(window.location.search).has("code");
 
   if (supabase) {
 

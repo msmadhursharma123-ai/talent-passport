@@ -10,6 +10,7 @@ import {
 } from "../services/PTMService";
 import { blobToBase64, buildPTMPdf } from "../services/PTMPdfService";
 import { sendPTMReportEmail } from "../services/PTMEmailService";
+import { downloadOrSharePdfBlob } from "../../../services/platform/nativeDocumentService";
 import type {
   PTMFeedback,
   PTMLog,
@@ -230,14 +231,11 @@ export default function ParentsTeacherMeetingPage() {
 
   async function downloadReport(report: PTMReport) {
     const blob = buildPTMPdf(report);
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = reportFileName(report);
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    await downloadOrSharePdfBlob(
+      blob,
+      reportFileName(report),
+      "Talent Passport — PTM Report"
+    );
   }
 
   async function emailReport(report: PTMReport) {

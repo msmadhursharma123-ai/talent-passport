@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { useEffect, useState } from "react";
+import { downloadOrSharePdfBlob } from "../services/platform/nativeDocumentService";
 
 import {
   getStudentDailyLectureLogs,
@@ -644,8 +645,10 @@ export default function DailyLectureFeedback() {
         pageHeight - 5
       );
 
-      doc.save(
-        `Daily-Lecture-Feedback-${statementStartDate}-to-${statementEndDate}.pdf`
+      await downloadOrSharePdfBlob(
+        doc.output("blob"),
+        `Daily-Lecture-Feedback-${statementStartDate}-to-${statementEndDate}.pdf`,
+        "Talent Passport — Daily Lecture Feedback"
       );
     } catch (error) {
       console.error("DAILY FEEDBACK PDF GENERATION FAILED", error);

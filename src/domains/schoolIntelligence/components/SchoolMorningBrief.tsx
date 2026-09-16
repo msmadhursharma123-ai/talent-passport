@@ -5,6 +5,7 @@ import { requireSchoolIdentity } from "../../../services/identityService";
 import { getSchoolMorningBriefRawData } from "../repository/SchoolMorningBriefRepository";
 import { buildSchoolMorningBrief, getMorningBriefPeriod, getTodayIndiaDateKey } from "../analytics/SchoolMorningBriefEngine";
 import type { SchoolMorningBrief as SchoolMorningBriefModel, SchoolMorningBriefClassroomMetric } from "../types/SchoolMorningBriefModels";
+import { downloadOrSharePdfBlob } from "../../../services/platform/nativeDocumentService";
 
 const STORAGE_PREFIX = "schoolAdminMorningBriefAcknowledgement";
 
@@ -222,7 +223,11 @@ export default function SchoolMorningBrief() {
       const safeSchool = brief.schoolName
         .replace(/[^a-z0-9]+/gi, "-")
         .replace(/^-+|-+$/g, "") || "School";
-      pdf.save(`Morning-Brief-${safeSchool}-${getTodayIndiaDateKey()}.pdf`);
+      await downloadOrSharePdfBlob(
+        pdf.output("blob"),
+        `Morning-Brief-${safeSchool}-${getTodayIndiaDateKey()}.pdf`,
+        "Talent Passport — School Morning Brief"
+      );
     } catch (error) {
       console.error("SCHOOL MORNING BRIEF PDF DOWNLOAD FAILED", error);
     } finally {

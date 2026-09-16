@@ -61,6 +61,35 @@ body {
 
 
 /* ================================================================
+   NATIVE iOS / ANDROID WEBVIEW SAFETY
+
+   Web remains unchanged. Native Capacitor shells may render the WebView
+   edge-to-edge under the device status area. Keep the existing page layout
+   intact and only consume the OS-provided safe-area inset on native builds.
+
+   iOS also auto-zooms focused form controls whose computed font size is
+   below 16px. Native-only focus sizing prevents the login/password focus
+   zoom from becoming a persistent zoomed WebView state.
+   ================================================================ */
+
+html.tp-native-app,
+html.tp-native-app body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body.tp-native-app {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+html.tp-native-app input:focus,
+html.tp-native-app select:focus,
+html.tp-native-app textarea:focus {
+  font-size: 16px !important;
+}
+
+/* ================================================================
    3. MEDIA SAFETY
    ================================================================ */
 

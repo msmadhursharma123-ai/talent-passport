@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { repairQuestionStructure, type MatchedStudyBuddyQuestion } from "../domains/studyBuddy/StudyBuddyMatcher";
 import type { StudyBuddyHistoryPaper } from "../data/studyBuddyRepository";
+import { printHtmlAsPdf } from "../services/platform/nativeDocumentService";
 
 type QuestionItem = MatchedStudyBuddyQuestion;
 
@@ -206,13 +207,7 @@ function printHtml(paper: StudyBuddyHistoryPaper) {
   return `<div class="sb-print-page"><header class="sb-print-header"><div class="sb-print-kicker">ACADEMIC GROWTH JOURNEY · STUDY BUDDY</div><h1>${escapeHtml(paper.title || "Study Buddy Paper")}</h1><div class="sb-print-subject">${escapeHtml(paper.subjectName)}</div></header><div class="sb-print-meta"><span><strong>School:</strong> ${escapeHtml(schoolName)}</span><span><strong>Questions:</strong> ${escapeHtml(paper.questionCount)}</span><span><strong>Generated:</strong> ${escapeHtml(fmtDate(paper.generatedAt))}</span><span><strong>Class:</strong> ${escapeHtml(paper.className)} · Section ${escapeHtml(paper.sectionName)}</span>${totalMarks > 0 ? `<span><strong>Total Marks:</strong> ${escapeHtml(totalMarks)}</span>` : `<span><strong>Mode:</strong> Targeted Practice</span>`}<span><strong>Subject:</strong> ${escapeHtml(paper.subjectName)}</span></div><div class="sb-print-instructions"><strong>General Instructions:</strong> Read all questions carefully. Answer all questions as instructed in each section.</div><div class="sb-print-focus"><strong>Targeted focus:</strong> ${escapeHtml(doubts.join(" · ") || "Current unresolved doubts")}</div>${sectionsHtml}</div>`;
 }
 
-export function printStudyBuddyPaper(paper: StudyBuddyHistoryPaper) {
-  const printWindow = window.open("", "_blank", "width=1100,height=900");
-  if (!printWindow) {
-    window.alert("Please allow pop-ups for Talent Passport to print or save this paper as PDF.");
-    return;
-  }
-
+export async function printStudyBuddyPaper(paper: StudyBuddyHistoryPaper) {
   const css = `
     @page{size:A4;margin:0}
     *{box-sizing:border-box}
@@ -226,9 +221,14 @@ export function printStudyBuddyPaper(paper: StudyBuddyHistoryPaper) {
     @media print{body{background:#fff!important}.sb-print-page{margin:0}.sb-print-paper-section{break-inside:auto}.sb-print-section-heading{break-after:avoid}.sb-print-question{break-inside:avoid}}
   `;
 
-  printWindow.document.open();
-  printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(paper.title)}</title><style>${css}</style></head><body>${printHtml(paper)}<script>(function(){function ready(){var imgs=[].slice.call(document.images);if(!imgs.length){setTimeout(function(){window.focus();window.print()},180);return;}var left=imgs.length;function done(){left-=1;if(left<=0)setTimeout(function(){window.focus();window.print()},180)}imgs.forEach(function(img){if(img.complete)done();else{img.addEventListener('load',done,{once:true});img.addEventListener('error',done,{once:true});}});setTimeout(function(){window.focus();window.print()},2500)}if(document.readyState==='complete')ready();else window.addEventListener('load',ready);window.onafterprint=function(){setTimeout(function(){window.close()},150)};})();<\/script></body></html>`);
-  printWindow.document.close();
+  await printHtmlAsPdf({
+    bodyHtml: printHtml(paper),
+    css,
+    fileName: `${String(paper.title || "Study-Buddy-Paper").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "Study-Buddy-Paper"}.pdf`,
+    title: `Talent Passport — ${paper.title || "Study Buddy Paper"}`,
+    selector: ".sb-print-page",
+    popupBlockedMessage: "Please allow pop-ups for Talent Passport to print or save this paper as PDF.",
+  });
 }
 
 export function StudyBuddyPaperPreview({ paper, onClose }: { paper: StudyBuddyHistoryPaper; onClose: () => void }) {

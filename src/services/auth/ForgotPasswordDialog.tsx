@@ -117,7 +117,7 @@ export default function ForgotPasswordDialog({
             setEmail("");
 
             alert(
-                "Password reset link sent successfully.\n\nPlease check your email and open the secure reset link to create your new password."
+                "Password reset request submitted successfully.\n\nIf this email is registered, Supabase will send the secure reset link. Please check Inbox and Spam/Junk, then open the link to create your new password."
             );
 
             /*
