@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core";
+import { handleAndroidBackButton } from "./androidBackNavigation";
 import { NATIVE_APP_SCHEME } from "../services/platform/platformEnvironment";
 
 const NATIVE_SCHEME = `${NATIVE_APP_SCHEME}:`;
@@ -170,11 +171,22 @@ async function applyIncomingUrl(rawUrl: string | undefined): Promise<void> {
 }
 
 
+let nativeBootstrapInitialization: Promise<void> | null = null;
+
 export function initializeNativeAppBootstrap(): void {
   if (!Capacitor.isNativePlatform()) return;
+  if (nativeBootstrapInitialization) return;
 
-  void import("@capacitor/app")
+  nativeBootstrapInitialization = import("@capacitor/app")
     .then(({ App }) => {
+      if (Capacitor.getPlatform() === "android") {
+        void App.addListener("backButton", () => {
+          if (!handleAndroidBackButton()) {
+            void App.exitApp();
+          }
+        });
+      }
+
       void App.getLaunchUrl()
         .then(({ url }) => void applyIncomingUrl(url))
         .catch((error) => console.warn("Unable to read app launch URL.", error));
@@ -183,5 +195,8 @@ export function initializeNativeAppBootstrap(): void {
         void applyIncomingUrl(url);
       });
     })
-    .catch((error) => console.warn("Unable to initialize native app URL handling.", error));
+    .catch((error) => {
+      nativeBootstrapInitialization = null;
+      console.warn("Unable to initialize native app URL handling.", error);
+    });
 }

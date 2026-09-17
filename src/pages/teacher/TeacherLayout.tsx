@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { registerAndroidBackHandler } from "../../mobile/androidBackNavigation";
 
 import { AcademicYearProvider } from "../../domains/academicYear/context/AcademicYearContext";
 
@@ -37,8 +38,44 @@ interface Props {
 }
 
 export default function TeacherLayout({ onLogout }: Props) {
-  const [activePage, setActivePage] = useState("dashboard");
+  const [activePage, rawSetActivePage] = useState("dashboard");
   const [enabledTabs, setEnabledTabs] = useState<string[] | null>(null);
+  const activePageRef = useRef(activePage);
+  const historyRef = useRef<string[]>([]);
+  const pendingRef = useRef(false);
+  const restoringRef = useRef(false);
+
+  const setActivePage = (next: string) => {
+    const current = activePageRef.current;
+
+    if (next === current) return;
+
+    if (!restoringRef.current && !pendingRef.current) {
+      historyRef.current.push(current);
+      pendingRef.current = true;
+      queueMicrotask(() => {
+        pendingRef.current = false;
+      });
+    }
+
+    activePageRef.current = next;
+    rawSetActivePage(next);
+  };
+
+  useEffect(() =>
+    registerAndroidBackHandler(() => {
+      const previous = historyRef.current.pop();
+
+      if (previous === undefined) return false;
+
+      restoringRef.current = true;
+      activePageRef.current = previous;
+      rawSetActivePage(previous);
+      restoringRef.current = false;
+
+      return true;
+    }, 10),
+  []);
 
   useEffect(() => {
     void (async () => {
@@ -81,7 +118,8 @@ export default function TeacherLayout({ onLogout }: Props) {
       );
 
       if (keys.length > 0 && !keys.includes(activePage)) {
-        setActivePage(keys[0]);
+        activePageRef.current = keys[0];
+      rawSetActivePage(keys[0]);
       }
     })();
   }, []);

@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { registerAndroidBackHandler } from "./mobile/androidBackNavigation";
 import { 
   fetchAllSubmissions, 
   submitCompetitionEntry, 
@@ -180,7 +181,7 @@ export default function App() {
   const [userType, setUserType] =
 useState<"new" | "existing" | null>(null);
 
-const [activeTab, setActiveTab] =
+const [activeTab, rawSetActiveTab] =
   useState<string>("identity");
 
 const [parentalConsentTermsAccepted, setParentalConsentTermsAccepted] =
@@ -488,7 +489,7 @@ async (
 
 };
 
-const [teacherStage, setTeacherStage] =
+const [teacherStage, rawSetTeacherStage] =
 useState<
     | "register"
     | "verify"
@@ -502,6 +503,100 @@ useState<
 
 const [teacherEmail, setTeacherEmail] =
 useState("");
+
+type AppNavigationState = {
+  activeTab: string;
+  teacherStage: typeof teacherStage;
+};
+
+const appNavigationStackRef = useRef<AppNavigationState[]>([]);
+const appNavigationCurrentRef = useRef<AppNavigationState>({
+  activeTab,
+  teacherStage,
+});
+const appNavigationPendingRef = useRef(false);
+const appNavigationRestoringRef = useRef(false);
+const appNavigationSuppressionDepthRef = useRef(0);
+
+const navigateApp = (patch: Partial<AppNavigationState>) => {
+  const current = appNavigationCurrentRef.current;
+  const next = { ...current, ...patch };
+
+  if (
+    next.activeTab === current.activeTab &&
+    next.teacherStage === current.teacherStage
+  ) {
+    return;
+  }
+
+  if (
+    appNavigationSuppressionDepthRef.current === 0 &&
+    !appNavigationRestoringRef.current &&
+    !appNavigationPendingRef.current
+  ) {
+    appNavigationStackRef.current.push({ ...current });
+    appNavigationPendingRef.current = true;
+    queueMicrotask(() => {
+      appNavigationPendingRef.current = false;
+    });
+  }
+
+  appNavigationCurrentRef.current = next;
+  rawSetActiveTab(next.activeTab);
+  rawSetTeacherStage(next.teacherStage);
+};
+
+const setActiveTab = (next: string) => {
+  navigateApp({ activeTab: next });
+};
+
+const setTeacherStage = (next: typeof teacherStage) => {
+  navigateApp({ teacherStage: next });
+};
+
+const resetAppNavigation = (next: Partial<AppNavigationState>) => {
+  const current = appNavigationCurrentRef.current;
+  const resolved = { ...current, ...next };
+
+  appNavigationStackRef.current = [];
+  appNavigationPendingRef.current = false;
+  appNavigationCurrentRef.current = resolved;
+  rawSetActiveTab(resolved.activeTab);
+  rawSetTeacherStage(resolved.teacherStage);
+};
+
+const handleAppAndroidBack = () => {
+  const previous = appNavigationStackRef.current.pop();
+
+  if (!previous) return false;
+
+  appNavigationRestoringRef.current = true;
+  appNavigationCurrentRef.current = previous;
+  rawSetActiveTab(previous.activeTab);
+  rawSetTeacherStage(previous.teacherStage);
+  appNavigationRestoringRef.current = false;
+
+  return true;
+};
+
+useEffect(() => {
+  return registerAndroidBackHandler(handleAppAndroidBack, 0);
+}, []);
+
+const suppressAppNavigationHistory = async (
+  operation: () => Promise<void>
+) => {
+  appNavigationSuppressionDepthRef.current += 1;
+
+  try {
+    await operation();
+  } finally {
+    appNavigationSuppressionDepthRef.current = Math.max(
+      0,
+      appNavigationSuppressionDepthRef.current - 1
+    );
+  }
+};
 
 const [academicYearOnboardingTarget, setAcademicYearOnboardingTarget] =
 useState<any>(null);
@@ -544,7 +639,7 @@ setStudentSchoolName(null);
 
 await signOut();
 
-setActiveTab("identity");
+resetAppNavigation({ activeTab: "identity" });
 };
 
 useEffect(() => {
@@ -605,6 +700,8 @@ useEffect(() => {
   }
 
   async function initializeApplication() {
+
+    appNavigationSuppressionDepthRef.current += 1;
 
     try {
 
@@ -765,6 +862,13 @@ break;
         error
       );
 
+    } finally {
+
+      appNavigationSuppressionDepthRef.current = Math.max(
+        0,
+        appNavigationSuppressionDepthRef.current - 1
+      );
+
     }
 
   }
@@ -886,7 +990,7 @@ if (
 
   };
 
-  routeSavedStudent();
+  void suppressAppNavigationHistory(routeSavedStudent);
 
 }
 
@@ -1169,7 +1273,7 @@ if (selectedRole === "teacher") {
         await signOut();
         setSelectedRole("");
         setUserType(null);
-        setActiveTab("identity");
+        resetAppNavigation({ activeTab: "identity" });
       }}
     />
 )}
@@ -1467,7 +1571,7 @@ onForgotPasswordVerified={(email: string) => {
 
            await signOut();
 
-setActiveTab("identity");
+resetAppNavigation({ activeTab: "identity" });
 
         }}
       />
@@ -1528,7 +1632,7 @@ setActiveTab("identity");
 
   await signOut();
 
-setActiveTab("identity");
+resetAppNavigation({ activeTab: "identity" });
 
     }}
 
@@ -1569,7 +1673,7 @@ setActiveTab("identity");
 
         setUserType(null);
 
-        setActiveTab("identity");
+        resetAppNavigation({ activeTab: "identity" });
 
     }}
 />
@@ -1771,7 +1875,7 @@ onForgotPasswordVerified={(email: string) => {
 
         setTeacherEmail("");
 
-        setActiveTab("identity");
+        resetAppNavigation({ activeTab: "identity", teacherStage: "login" });
 
       }}
 
