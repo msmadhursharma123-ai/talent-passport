@@ -17,6 +17,7 @@ interface SubjectBreakdown {
   topics: Array<{
     topic: string;
     signals: number;
+    subtopics: string[];
   }>;
   highestRiskTopic: string;
   attentionLevel: string;
@@ -176,6 +177,23 @@ export default function StudentExamPreparation({
             />
 
             <ExamRow
+              metric="Subtopics with Unresolved Doubts"
+              subjects={subjects}
+              getValue={(subject) =>
+                subject.topics.length > 0
+                  ? subject.topics
+                      .map((item) => {
+                        const subtopics = (item.subtopics ?? []).join(", ");
+                        return `${item.topic} → ${subtopics || "-"}`;
+                      })
+                      .join(" • ")
+                  : "-"
+              }
+              emptyValue="-"
+              kind="subtopic"
+            />
+
+            <ExamRow
               metric="Highest Risk Topics"
               subjects={subjects}
               getValue={(subject) => subject.highestRiskTopic || "-"}
@@ -208,12 +226,14 @@ function ExamRow({
   subjects: SubjectBreakdown[];
   getValue: (subject: SubjectBreakdown) => string;
   emptyValue: string;
-  kind: "count" | "doubt" | "difficult" | "status";
+  kind: "count" | "doubt" | "subtopic" | "difficult" | "status";
 }) {
   const valueClass =
     kind === "count"
       ? "tp-exam-count"
-      : kind === "difficult"
+      : kind === "subtopic"
+        ? "tp-exam-subtopic"
+        : kind === "difficult"
         ? "tp-exam-difficult"
         : kind === "status"
           ? "tp-exam-status"
@@ -419,6 +439,11 @@ const styles = `
 
 .tp-exam-doubt {
   color: #DC2626;
+  font-weight: 700;
+}
+
+.tp-exam-subtopic {
+  color: #B91C1C;
   font-weight: 700;
 }
 

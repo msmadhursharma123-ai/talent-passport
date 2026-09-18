@@ -778,6 +778,18 @@ export default function ExamPreparationPage() {
               )}
 
               {renderExamPreparationRow(
+                "Pending Doubts: Unresolved Subtopics",
+                table.students.map(
+                  (student: any) =>
+                    (student.topics ?? [])
+                      .map((topic: string, index: number) =>
+                        `${topic} → ${String(student.subtopics?.[index] ?? "").trim() || "-"}`
+                      )
+                      .join(" • ")
+                )
+              )}
+
+              {renderExamPreparationRow(
                 "Highest Risk Topic",
                 table.students.map(
                   (student: any) =>

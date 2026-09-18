@@ -53,20 +53,36 @@ function originalDoubtDate(row: any) {
 }
 
 function buildSignals(rows: any[]) {
-  const topicMap = new Map<string, number>();
+  const topicMap = new Map<string, { label: string; signals: number; subtopics: string[] }>();
   const conceptMap = new Map<string, number>();
 
   for (const row of rows) {
     const topic = String(row?.previous_topic_name ?? "").trim();
-    if (topic) topicMap.set(topic, (topicMap.get(topic) ?? 0) + 1);
+    const subtopic = String(row?.previous_difficult_concept ?? "").trim();
+    if (topic) {
+      const existing = topicMap.get(topic);
+      topicMap.set(topic, {
+        label: existing?.label ?? topic,
+        signals: (existing?.signals ?? 0) + 1,
+        subtopics: existing?.subtopics ?? [],
+      });
+      if (subtopic) {
+        const current = topicMap.get(topic)!;
+        current.subtopics.push(subtopic);
+      }
+    }
 
     const concept = String(row?.previous_difficult_concept ?? "").trim();
     if (concept) conceptMap.set(concept, (conceptMap.get(concept) ?? 0) + 1);
   }
 
-  const topics = Array.from(topicMap.entries())
-    .map(([topic, signals]) => ({ topic, signals }))
-    .sort((a, b) => b.signals - a.signals || a.topic.localeCompare(b.topic));
+  const topics = Array.from(topicMap.values())
+    .sort((a, b) => b.signals - a.signals || a.label.localeCompare(b.label))
+    .map((item) => ({
+      topic: item.label,
+      signals: item.signals,
+      subtopics: item.subtopics,
+    }));
 
   const concepts = Array.from(conceptMap.entries())
     .map(([concept, signals]) => ({ concept, signals }))
@@ -127,7 +143,8 @@ export async function getStudentExamPreparationIntelligence(
       return {
         subject,
         totalUnresolvedDoubts: rows.length,
-        // Row 2: every Loop-2 unresolved subtopic, with repetition count.
+        // Row 2: every Loop-2 unresolved topic, with its selected unresolved
+        // subtopics retained in the same topic order for the exam-prep UI.
         topics,
         // Kept as a compatibility field for existing consumers.
         concepts,

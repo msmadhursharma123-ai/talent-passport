@@ -273,9 +273,9 @@ function buildSchoolExamPreparation(raw:SchoolIntelligenceRawData):SchoolExamPre
     const sm=new Map<string,any>();
     for(const r of records){
       const id=String(r.student_uuid??"");
-      if(!sm.has(id))sm.set(id,{studentUuid:id,studentName:String(r.student_name??"").trim()||studentNames.get(id)||"Student",totalUnresolvedDoubts:0,topics:[]});
+      if(!sm.has(id))sm.set(id,{studentUuid:id,studentName:String(r.student_name??"").trim()||studentNames.get(id)||"Student",totalUnresolvedDoubts:0,topics:[],subtopics:[]});
       const s=sm.get(id);s.totalUnresolvedDoubts++;
-      const topic=String(r.previous_topic_name??r.previous_difficult_concept??"").trim();if(topic)s.topics.push(topic);
+      const topic=String(r.previous_topic_name??r.previous_difficult_concept??"").trim();if(topic){s.topics.push(topic);s.subtopics.push(String(r.previous_difficult_concept??r.doubt_concept??"").trim());}
     }
     const students=Array.from(sm.values()).map((s:any)=>{
       const m=new Map<string,number>();s.topics.forEach((t:string)=>m.set(t,(m.get(t)??0)+1));

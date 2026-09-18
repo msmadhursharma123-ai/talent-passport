@@ -263,6 +263,7 @@ if (records.length === 0) {
               0,
 
             topics: [],
+            subtopics: [],
 
           }
 
@@ -282,9 +283,14 @@ if (records.length === 0) {
       student.totalUnresolvedDoubts += 1;
 
 
-      student.topics.push(
-        row.previous_topic_name
-      );
+      if (row.previous_topic_name) {
+        student.topics.push(
+          row.previous_topic_name
+        );
+        student.subtopics.push(
+          row.previous_difficult_concept ?? ""
+        );
+      }
 
     }
 
@@ -314,6 +320,9 @@ if (records.length === 0) {
 
             topics:
               student.topics,
+
+            subtopics:
+              student.subtopics,
 
             highestRiskTopic:
               getHighestRiskTopic(

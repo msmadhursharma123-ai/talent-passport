@@ -11,7 +11,7 @@ interface SubjectBreakdown {
   subject: string;
   totalUnresolvedDoubts: number;
   concepts: Array<{ concept: string; signals: number }>;
-  topics: Array<{ topic: string; signals: number }>;
+  topics: Array<{ topic: string; signals: number; subtopics: string[] }>;
   highestRiskTopic: string;
   attentionLevel: string;
 }
@@ -46,6 +46,13 @@ function topicFor(row: any): string {
   );
 }
 
+function subtopicFor(row: any): string {
+  return clean(
+    row?.previous_difficult_concept ??
+      row?.doubt_concept
+  );
+}
+
 function attentionLevel(count: number): string {
   if (count >= 6) return "HIGH";
   if (count >= 3) return "MEDIUM";
@@ -58,7 +65,7 @@ function buildSubjectBreakdown(rows: any[]): SubjectBreakdown[] {
     {
       subject: string;
       concepts: Map<string, { label: string; signals: number }>;
-      topics: Map<string, { label: string; signals: number }>;
+      topics: Map<string, { label: string; signals: number; subtopics: string[] }>;
     }
   >();
 
@@ -83,13 +90,18 @@ function buildSubjectBreakdown(rows: any[]): SubjectBreakdown[] {
     }
 
     const topic = topicFor(row);
+    const subtopic = subtopicFor(row);
     if (topic) {
       const key = normalize(topic);
       const existing = current.topics.get(key);
       current.topics.set(key, {
         label: existing?.label ?? topic,
         signals: (existing?.signals ?? 0) + 1,
+        subtopics: existing?.subtopics ?? [],
       });
+      if (subtopic) {
+        current.topics.get(key)!.subtopics.push(subtopic);
+      }
     }
 
     bySubject.set(subjectKey, current);
@@ -103,7 +115,11 @@ function buildSubjectBreakdown(rows: any[]): SubjectBreakdown[] {
 
       const topics = Array.from(entry.topics.values())
         .sort((a, b) => b.signals - a.signals || a.label.localeCompare(b.label))
-        .map((item) => ({ topic: item.label, signals: item.signals }));
+        .map((item) => ({
+          topic: item.label,
+          signals: item.signals,
+          subtopics: item.subtopics,
+        }));
 
       const totalUnresolvedDoubts = rows.filter(
         (row) => normalize(subjectFor(row)) === normalize(entry.subject)
@@ -194,22 +210,32 @@ export async function getStudentExamPreparationIntelligenceWithLiveLayer(
     const loop2Rows = Array.isArray(pendingRows) ? pendingRows : [];
 
     const buildResult = (rows: any[]) => {
-      const topics = rows.map(topicFor).filter(Boolean);
-      const topicCounts = new Map<string, { label: string; count: number }>();
+      const topicCounts = new Map<string, { label: string; count: number; subtopics: string[] }>();
 
-      for (const topic of topics) {
+      for (const row of rows) {
+        const topic = topicFor(row);
+        if (!topic) continue;
         const key = normalize(topic);
         const current = topicCounts.get(key);
         topicCounts.set(key, {
           label: current?.label ?? topic,
           count: (current?.count ?? 0) + 1,
+          subtopics: current?.subtopics ?? [],
         });
+        const subtopic = subtopicFor(row);
+        if (subtopic) topicCounts.get(key)!.subtopics.push(subtopic);
       }
 
-      const highestRiskTopic =
-        Array.from(topicCounts.values()).sort(
-          (a, b) => b.count - a.count || a.label.localeCompare(b.label)
-        )[0]?.label ?? "";
+      const sortedTopics = Array.from(topicCounts.values()).sort(
+        (a, b) => b.count - a.count || a.label.localeCompare(b.label)
+      );
+      const topics = sortedTopics.map((item) => ({
+        topic: item.label,
+        signals: item.count,
+        subtopics: item.subtopics,
+      }));
+
+      const highestRiskTopic = sortedTopics[0]?.label ?? "";
 
       return {
         totalUnresolvedDoubts: rows.length,

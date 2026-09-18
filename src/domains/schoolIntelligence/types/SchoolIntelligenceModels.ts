@@ -109,7 +109,7 @@ export interface SchoolIntelligenceSnapshot {
 
 export interface SchoolExamPreparationStudent {
   studentUuid:string; studentName:string; totalUnresolvedDoubts:number;
-  topics:string[]; highestRiskTopic:string; attentionLevel:"HIGH"|"MEDIUM"|"LOW";
+  topics:string[]; subtopics:string[]; highestRiskTopic:string; attentionLevel:"HIGH"|"MEDIUM"|"LOW";
 }
 export interface SchoolExamPreparationSubject {
   assignmentUuid:string; subjectName:string; teacherUuid:string; teacherName:string;

@@ -96,6 +96,7 @@ export async function getTeacherExamAttentionIntelligenceWithLiveLayer(
               studentName: row.student_name ?? "Student",
               totalUnresolvedDoubts: 0,
               topics: [],
+              subtopics: [],
             };
 
           student.totalUnresolvedDoubts += 1;
@@ -106,7 +107,16 @@ export async function getTeacherExamAttentionIntelligenceWithLiveLayer(
               ""
           ).trim();
 
-          if (topic) student.topics.push(topic);
+          if (topic) {
+            student.topics.push(topic);
+            student.subtopics.push(
+              String(
+                row.previous_difficult_concept ??
+                  row.doubt_concept ??
+                  ""
+              ).trim()
+            );
+          }
           students.set(studentKey, student);
         }
 
