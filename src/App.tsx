@@ -338,14 +338,17 @@ const routeTeacherAfterLogin = async (
   setActiveTab("teacher");
 };
 
-async function routeStudentOnboardingBySchoolConfiguration(schoolUuid: string) {
+async function routeStudentOnboardingBySchoolConfiguration(
+  schoolUuid: string,
+  options: { skipParentalOtp?: boolean } = {},
+) {
 
   const configuration =
     await getStudentOnboardingConfiguration(
       schoolUuid
     );
 
-  if (configuration.parentOtpEnabled) {
+  if (configuration.parentOtpEnabled && !options.skipParentalOtp) {
 
     const consent =
       await getParentalConsentStatus();
@@ -471,7 +474,11 @@ async (
   try {
 
     await routeStudentOnboardingBySchoolConfiguration(
-      studentIdentity?.schoolUuid ?? ""
+      studentIdentity?.schoolUuid ?? "",
+      {
+        skipParentalOtp:
+          user.user_metadata?.tp_school_assigned_account === true,
+      },
     );
 
   } catch (error) {
@@ -1245,8 +1252,14 @@ if (selectedRole === "teacher") {
         const currentIdentity =
           await getCurrentIdentity();
 
+        const currentUser = await getCurrentUser();
+
         await routeStudentOnboardingBySchoolConfiguration(
-          String((currentIdentity as any)?.schoolUuid ?? "")
+          String((currentIdentity as any)?.schoolUuid ?? ""),
+          {
+            skipParentalOtp:
+              currentUser?.user_metadata?.tp_school_assigned_account === true,
+          },
         );
       } catch (error) {
         console.error(

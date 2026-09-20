@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getCurrentSchool } from "../../../services/identityService";
 import { parseAccessFile, downloadAccessTemplate } from "../../../services/bulkAccessFileParser";
+import SchoolStudentAccountAssignment from "./SchoolStudentAccountAssignment";
 import {
   getSchoolStudentRosterForSchoolAdmin,
   replaceSchoolStudentAllowlistForSchoolAdmin,
@@ -20,6 +21,7 @@ export default function SchoolStudentAccessManager({ onClose }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showAssignAccounts, setShowAssignAccounts] = useState(false);
 
   async function load() {
     setLoading(true); setError("");
@@ -62,6 +64,8 @@ export default function SchoolStudentAccessManager({ onClose }: Props) {
   const activeCount = roster.filter(r => String(r.accessStatus ?? "ACTIVE").toUpperCase() === "ACTIVE").length;
   const registeredCount = roster.filter(r => r.registered).length;
 
+  if (showAssignAccounts) return <SchoolStudentAccountAssignment onBack={() => setShowAssignAccounts(false)} />;
+
   return <div className="school-access-overlay"><style>{css}</style><div className="school-access-panel">
     <header className="school-access-head"><div><div className="school-access-eyebrow">Student Access Control</div><h2>Approve Student Accounts</h2><p>{schoolName} controls which roll numbers can create and use Student Portal accounts.</p></div><button className="access-close" onClick={onClose}>Close</button></header>
     <main className="school-access-body">
@@ -71,7 +75,7 @@ export default function SchoolStudentAccessManager({ onClose }: Props) {
         <div className="access-grid"><section className="access-card"><h3>Approved Roll Numbers</h3><p>Add one roll number per row, or import CSV/XLS/XLSX. Saving keeps old entries in history instead of deleting them.</p>
           {rolls.map((roll,index)=><div className="access-input-row" key={index}><span>{index+1}</span><input value={roll} onChange={e=>updateRoll(index,e.target.value)} placeholder="101"/><button onClick={()=>removeRow(index)} aria-label="Remove">×</button></div>)}
           <div className="access-toolbar"><button className="access-secondary" onClick={addRow}>+ Add Roll Number</button><label className="access-secondary file-label">Import CSV / Excel<input type="file" accept=".csv,.xls,.xlsx" onChange={e=>e.target.files?.[0]&&void importFile(e.target.files[0])}/></label><button className="access-secondary" onClick={()=>downloadAccessTemplate("roll")}>Template</button></div>
-          <div className="access-actions"><button className="access-primary" disabled={saving} onClick={()=>void save()}>{saving?"Saving…":"Save Approved Students"}</button></div>
+          <div className="access-actions"><button className="access-secondary" onClick={() => setShowAssignAccounts(true)}>Assign Accounts</button><button className="access-primary" disabled={saving} onClick={()=>void save()}>{saving?"Saving…":"Save Approved Students"}</button></div>
         </section>
         <section className="access-card"><h3>Student Account History</h3><p>Search by roll number. Revoke/deactivate access when a student leaves; restore later without losing history.</p><input className="access-search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by roll number…"/>
           <div className="access-table-wrap"><table><thead><tr><th>Roll No.</th><th>Student</th><th>Registration</th><th>Access</th><th>Action</th></tr></thead><tbody>{filteredRoster.length?filteredRoster.map(row=>{const active=String(row.accessStatus??"ACTIVE").toUpperCase()==="ACTIVE";return <tr key={row.id??row.rollNumber}><td><b>{row.rollNumber}</b></td><td>{row.studentName||"—"}</td><td>{row.registered?"Registered":"Pending"}</td><td><span className={`status ${active?"active":"revoked"}`}>{active?"ACTIVE":"REVOKED"}</span></td><td><button className={`row-action ${active?"danger":"restore"}`} onClick={()=>void toggle(row)}>{active?"Revoke":"Restore"}</button></td></tr>}) : <tr><td colSpan={5}>No student access records found.</td></tr>}</tbody></table></div>
