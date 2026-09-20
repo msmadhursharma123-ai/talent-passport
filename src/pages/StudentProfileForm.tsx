@@ -80,6 +80,8 @@ useState<any[]>([]);
   const [className, setClassName] =
     useState("");
 
+  const [section, setSection] =
+    useState("");
 
     
   const [studentMobile, setStudentMobile] =
@@ -171,6 +173,7 @@ const handleContinue = async () => {
       !schoolName ||
       !schoolUuid ||
       !className ||
+      !section ||
       !studentAge ||
       !gender ||
       !favouriteActivity ||
@@ -259,6 +262,9 @@ const handleContinue = async () => {
 
               class_name:
                   className,
+
+              section_name:
+                  section,
 
               student_age:
                   Number(studentAge),
@@ -594,6 +600,30 @@ value={school.school_uuid}
           }
           style={inputStyle}
         />
+
+        <select
+          value={section}
+          onChange={(e) =>
+            setSection(e.target.value)
+          }
+          style={inputStyle}
+          aria-label="Section"
+          required
+        >
+          <option value="">
+            Select Section
+          </option>
+          {["A", "B", "C", "D", "E", "F", "G"].map(
+            (sectionOption) => (
+              <option
+                key={sectionOption}
+                value={sectionOption}
+              >
+                {sectionOption}
+              </option>
+            )
+          )}
+        </select>
 
         <input
           type="number"

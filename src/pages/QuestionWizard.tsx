@@ -7,8 +7,7 @@ from "../data/passportRepository";
 import {
 
 saveAssessment,
-saveStudentDNA,
-updateStudentSection
+saveStudentDNA
 
 }
 from "../data/studentRepository";
@@ -791,10 +790,6 @@ catch (error) {
 }
 
 console.log("CALLING savePassport");
-
-await updateStudentSection(
-  answers[2]
-);
 
 try {
 

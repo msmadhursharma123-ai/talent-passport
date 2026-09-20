@@ -54,22 +54,6 @@ ReadonlyArray<StudentQuestion> = [
   },
 
   {
-    id: 2,
-    type: "single",
-    title: "Which section is the student currently studying in?",
-    options: [
-      "A",
-      "B",
-      "C",
-      "D",
-      "E",
-      "F",
-      "G",
-      "H"
-    ]
-  },
-
-  {
     id: 3,
     type: "multi",
     minSelect: 5,

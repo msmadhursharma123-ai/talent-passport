@@ -92,6 +92,16 @@ export async function createStudent(
     student.roll_number ?? ""
   ).trim().toUpperCase();
 
+  const normalizedSection = String(
+    student.section_name ?? ""
+  ).trim().toUpperCase();
+
+  if (!/^[A-G]$/.test(normalizedSection)) {
+    throw new Error(
+      "Student section must be a single letter from A to G."
+    );
+  }
+
   if (!normalizedRollNumber) {
     throw new Error(
       "A school-approved roll number is required."
@@ -149,6 +159,7 @@ export async function createStudent(
   const {
     school_uuid: _schoolUuid,
     roll_number: _rollNumber,
+    section_name: _sectionName,
     ...legacyStudentFields
   } = student;
 
@@ -298,6 +309,9 @@ export async function createStudent(
       normalizeClassName(
         student.class_name
       ),
+
+    section_name:
+      normalizedSection,
 
     student_mobile:
       studentMobile,
