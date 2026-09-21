@@ -18,6 +18,8 @@ import {
   submitStudentDailyFeedback,
   getStudentFeedbackForLectures,
   getStudentFeedbackHistory,
+  getStudentLoop2FeedbackHistory,
+  getStudentFeedbackCreditStartDate,
 } from "../data/studentDailyFeedbackRepository";
 
 import {
@@ -31,10 +33,13 @@ import {
 
 import {
   calculateDailyFeedbackCreditSummaryFromLogs,
+  isStudentLoop2Response,
 } from "../data/creditEngine";
 
 interface FeedbackStatementRow {
   id: string;
+  loop: "Loop 1" | "Loop 2";
+  subjectName: string;
   date: string;
   topic: string;
   subtopics: string[];
@@ -44,6 +49,9 @@ interface FeedbackStatementRow {
   creditLabel: string;
   balance: number;
 }
+
+const ALL_SUBJECTS_VALUE = "__ALL_SUBJECTS__";
+const ALL_SUBJECTS_LABEL = "All Subjects";
 
 function getIndiaTodayKey() {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -235,17 +243,54 @@ export default function DailyLectureFeedback() {
     setIsLoadingCreditSummary(true);
 
     try {
-      const [allLectureLogs, feedbackHistory] = await Promise.all([
+      const [
+        logsResult,
+        feedbackResult,
+        loop2Result,
+        creditStartResult,
+      ] = await Promise.allSettled([
         getStudentDailyLectureLogs(),
         getStudentFeedbackHistory(),
+        getStudentLoop2FeedbackHistory(),
+        getStudentFeedbackCreditStartDate(),
       ]);
+
+      if (
+        logsResult.status === "rejected" ||
+        feedbackResult.status === "rejected" ||
+        creditStartResult.status === "rejected"
+      ) {
+        throw (
+          logsResult.status === "rejected"
+            ? logsResult.reason
+            : feedbackResult.status === "rejected"
+              ? feedbackResult.reason
+              : creditStartResult.reason
+        );
+      }
+
+      const allLectureLogs = logsResult.value ?? [];
+      const feedbackHistory = feedbackResult.value ?? [];
+      const loop2History =
+        loop2Result.status === "fulfilled" ? loop2Result.value ?? [] : [];
+
+      if (loop2Result.status === "rejected") {
+        console.error(
+          "LOOP-2 CREDIT HISTORY LOAD FAILED — LOOP-1 CREDIT PRESERVED",
+          loop2Result.reason
+        );
+      }
 
       const today = getIndiaTodayKey();
 
       const summary = calculateDailyFeedbackCreditSummaryFromLogs(
-        allLectureLogs ?? [],
-        feedbackHistory ?? [],
-        today
+        allLectureLogs,
+        feedbackHistory,
+        today,
+        {
+          studentCreatedAt: creditStartResult.value,
+          loop2History,
+        }
       );
 
       setDailyFeedbackEarnedCredits(summary.earnedCredits);
@@ -384,6 +429,9 @@ export default function DailyLectureFeedback() {
 
     await submitStudentPendingDoubtResponse(doubt.id, response);
     await loadPendingDoubts();
+    // Recalculate the shared credit ledger so the successful Loop-2 response
+    // receives the same +1 treatment as a Loop-1 feedback submission.
+    await loadDailyFeedbackCreditSummary();
   }
 
   async function fetchFeedbackStatement() {
@@ -408,11 +456,52 @@ export default function DailyLectureFeedback() {
     setHasFetchedStatement(true);
 
     try {
-      const { logs, feedback } = await getStudentFeedbackStatementData(
-        statementStartDate,
-        statementEndDate,
-        statementSubject
-      );
+      const isAllSubjects = statementSubject === ALL_SUBJECTS_VALUE;
+
+      // Keep the existing dedicated statement query for normal subject
+      // selection. All Subjects is intentionally assembled from the same
+      // student-scoped sources already used by the credit ledger so no new
+      // database path or teacher-side functionality is introduced.
+      const statementSource = isAllSubjects
+        ? Promise.all([
+            getStudentDailyLectureLogs(true),
+            getStudentFeedbackHistory(),
+          ]).then(([logs, feedback]) => ({ logs, feedback }))
+        : getStudentFeedbackStatementData(
+            statementStartDate,
+            statementEndDate,
+            statementSubject
+          );
+
+      const [statementResult, loop2Result, creditStartResult] =
+        await Promise.allSettled([
+          statementSource,
+          getStudentLoop2FeedbackHistory(),
+          getStudentFeedbackCreditStartDate(),
+        ]);
+
+      if (statementResult.status === "rejected") {
+        throw statementResult.reason;
+      }
+
+      const { logs, feedback } = statementResult.value;
+      const loop2History =
+        loop2Result.status === "fulfilled" ? loop2Result.value ?? [] : [];
+      const creditStartDate =
+        creditStartResult.status === "fulfilled"
+          ? creditStartResult.value
+          : "";
+
+      if (loop2Result.status === "rejected") {
+        console.error(
+          "LOOP-2 STATEMENT FETCH FAILED — LOOP-1 RECORDS PRESERVED",
+          loop2Result.reason
+        );
+      }
+
+      if (creditStartResult.status === "rejected") {
+        throw creditStartResult.reason;
+      }
 
       const feedbackMap = new Map<string, any>();
 
@@ -422,10 +511,23 @@ export default function DailyLectureFeedback() {
         }
       }
 
+      const studentCreatedDate = toDateKey(creditStartDate);
       const today = getIndiaTodayKey();
-      let runningBalance = 0;
 
-      const rows = (logs ?? [])
+      const loop1Rows = (logs ?? [])
+        .filter((log: any) => {
+          const dateKey = toDateKey(log.log_date || log.created_at);
+          const inSelectedRange =
+            dateKey >= statementStartDate && dateKey <= statementEndDate;
+          const fromStudentAccountDate =
+            !studentCreatedDate || dateKey >= studentCreatedDate;
+          const matchesSubject =
+            isAllSubjects ||
+            String(log.subject_name ?? "").trim() ===
+              String(statementSubject).trim();
+
+          return inSelectedRange && fromStudentAccountDate && matchesSubject;
+        })
         .map((log: any) => {
           const logId = String(log.id);
           const feedbackRecord = feedbackMap.get(logId);
@@ -448,10 +550,12 @@ export default function DailyLectureFeedback() {
             creditLabel = "Pending — no debit yet";
           }
 
-          runningBalance += creditChange;
-
           return {
             id: logId,
+            loop: "Loop 1",
+            subjectName:
+              String(log.subject_name ?? "Subject not available").trim() ||
+              "Subject not available",
             date: dateKey,
             topic: log.topic_name ?? "Topic not available",
             subtopics: Array.isArray(log.concepts_covered)
@@ -465,15 +569,100 @@ export default function DailyLectureFeedback() {
               : [],
             creditChange,
             creditLabel,
-            balance: runningBalance,
+            balance: 0,
           } satisfies FeedbackStatementRow;
-        })
-        .sort((a, b) => {
-          if (a.date !== b.date) return a.date.localeCompare(b.date);
-          return a.topic.localeCompare(b.topic);
         });
 
-      // Recalculate balance after the chronological sort.
+      const loop2Rows = (loop2History ?? [])
+        .filter((row: any) => {
+          const subject = String(row.subject_name ?? "").trim();
+          const eventDate = toDateKey(
+            row.revision_checked_at || row.created_at || row.log_date
+          );
+          const matchesSubject =
+            isAllSubjects || subject === String(statementSubject).trim();
+
+          return (
+            matchesSubject &&
+            eventDate >= statementStartDate &&
+            eventDate <= statementEndDate &&
+            (!studentCreatedDate || eventDate >= studentCreatedDate)
+          );
+        })
+        .map((row: any) => {
+          const response = String(row.student_response ?? "").trim();
+          const isSubmitted = isStudentLoop2Response(row);
+          const dueDate = toDateKey(
+            row.created_at || row.revision_checked_at || row.log_date
+          );
+          const isCompletedDueDate = dueDate < today;
+
+          const status = String(row.status ?? "").trim().toUpperCase();
+          const isTeacherResolved =
+            status === "RESOLVED" &&
+            response === "DISCUSSED" &&
+            !isSubmitted;
+
+          let creditChange = 0;
+          let creditLabel = "Pending — not submitted";
+
+          if (isSubmitted) {
+            creditChange = 1;
+            creditLabel = "+1 credit — Loop 2 response";
+          } else if (isTeacherResolved) {
+            creditLabel = "0 — resolved by teacher";
+          } else if (
+            status === "PENDING" &&
+            isCompletedDueDate
+          ) {
+            creditChange = -10;
+            creditLabel = "−10 debit — Loop 2 response missed";
+          } else {
+            creditLabel = "Pending — no debit yet";
+          }
+
+          const responseLabel = isSubmitted
+            ? response === "DISCUSSED"
+              ? "Yes, discussed today"
+              : "Not discussed yet"
+            : isTeacherResolved
+              ? "Resolved by teacher"
+              : null;
+
+          return {
+            id: `loop2-${String(row.id)}`,
+            loop: "Loop 2",
+            subjectName:
+              String(row.subject_name ?? "Subject not available").trim() ||
+              "Subject not available",
+            date: toDateKey(
+              row.revision_checked_at || row.created_at || row.log_date
+            ),
+            topic: row.previous_topic_name
+              ? `Student-raised: ${row.previous_topic_name}`
+              : "Student-raised topic not available",
+            subtopics: row.previous_difficult_concept
+              ? [String(row.previous_difficult_concept)]
+              : [],
+            response: responseLabel,
+            difficultConcepts: row.previous_difficult_concept
+              ? [String(row.previous_difficult_concept)]
+              : [],
+            creditChange,
+            creditLabel,
+            balance: 0,
+          } satisfies FeedbackStatementRow;
+        });
+
+      const rows = [...loop1Rows, ...loop2Rows].sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        if (a.loop !== b.loop) return a.loop.localeCompare(b.loop);
+        if (a.subjectName !== b.subjectName) {
+          return a.subjectName.localeCompare(b.subjectName);
+        }
+        return a.topic.localeCompare(b.topic);
+      });
+
       let balance = 0;
       const chronologicalRows = rows.map((row) => {
         balance += row.creditChange;
@@ -509,25 +698,52 @@ export default function DailyLectureFeedback() {
       const margin = 8;
       const usableWidth = pageWidth - margin * 2;
 
-      const columnWidths = [
-        17, // Date
-        32, // Topic
-        57, // Subtopics
-        42, // Response
-        48, // Not understood
-        25, // Credit
-        25, // Balance
-      ];
+      const isAllSubjects = statementSubject === ALL_SUBJECTS_VALUE;
+      const columnWidths = isAllSubjects
+        ? [
+            17, // Date
+            30, // Subject
+            27, // Feedback type
+            31, // Topic
+            46, // Subtopics
+            38, // Response
+            43, // Not understood
+            24, // Credit
+            24, // Balance
+          ]
+        : [
+            17, // Date
+            27, // Feedback type
+            32, // Topic
+            52, // Subtopics
+            42, // Response
+            48, // Not understood
+            25, // Credit
+            25, // Balance
+          ];
 
-      const headers = [
-        "Date",
-        "Topic",
-        "Teacher subtopics",
-        "Response",
-        "Not understood",
-        "Credits",
-        "Balance",
-      ];
+      const headers = isAllSubjects
+        ? [
+            "Date",
+            "Subject",
+            "Feedback Type",
+            "Topic",
+            "Teacher / difficult concepts",
+            "Response",
+            "Not understood",
+            "Credits",
+            "Balance",
+          ]
+        : [
+            "Date",
+            "Feedback Type",
+            "Topic",
+            "Teacher / difficult concepts",
+            "Response",
+            "Not understood",
+            "Credits",
+            "Balance",
+          ];
 
       const wrap = (text: string, width: number, fontSize = 6.5) => {
         doc.setFontSize(fontSize);
@@ -567,7 +783,7 @@ export default function DailyLectureFeedback() {
       doc.setFontSize(7.5);
       doc.setTextColor(100, 116, 139);
       doc.text(
-        `Subject: ${statementSubject}   |   Period: ${formatStatementDate(
+        `Subject: ${isAllSubjects ? ALL_SUBJECTS_LABEL : statementSubject}   |   Period: ${formatStatementDate(
           statementStartDate
         )} to ${formatStatementDate(statementEndDate)}`,
         margin,
@@ -578,23 +794,44 @@ export default function DailyLectureFeedback() {
       drawHeader();
 
       statementRows.forEach((row) => {
-        const cells = [
-          formatStatementDate(row.date),
-          row.topic,
-          row.subtopics.join(", "),
-          getResponseLabel(row.response),
-          row.difficultConcepts.length
-            ? row.difficultConcepts.join(", ")
-            : row.response
-              ? "—"
-              : "—",
-          row.creditChange > 0
-            ? "+1"
-            : row.creditChange < 0
-              ? "−10"
-              : "0",
-          String(row.balance),
-        ];
+        const cells = isAllSubjects
+          ? [
+              formatStatementDate(row.date),
+              row.subjectName,
+              row.loop === "Loop 1"
+                ? "Daily lecture feedback"
+                : "Doubt discussion feedback",
+              row.topic,
+              row.subtopics.join(", "),
+              getResponseLabel(row.response),
+              row.difficultConcepts.length
+                ? row.difficultConcepts.join(", ")
+                : "—",
+              row.creditChange > 0
+                ? "+1"
+                : row.creditChange < 0
+                  ? "−10"
+                  : "0",
+              String(row.balance),
+            ]
+          : [
+              formatStatementDate(row.date),
+              row.loop === "Loop 1"
+                ? "Daily lecture feedback"
+                : "Doubt discussion feedback",
+              row.topic,
+              row.subtopics.join(", "),
+              getResponseLabel(row.response),
+              row.difficultConcepts.length
+                ? row.difficultConcepts.join(", ")
+                : "—",
+              row.creditChange > 0
+                ? "+1"
+                : row.creditChange < 0
+                  ? "−10"
+                  : "0",
+              String(row.balance),
+            ];
 
         const wrapped = cells.map((cell, index) =>
           wrap(String(cell), columnWidths[index])
@@ -2637,6 +2874,14 @@ return (
         font-size: 10px;
       }
 
+      .dlf-statement-scroll-all-subjects {
+        overflow-x: auto;
+      }
+
+      .dlf-statement-table-all-subjects {
+        min-width: 1080px;
+      }
+
       .dlf-statement-table th,
       .dlf-statement-table td {
         padding: 7px 6px;
@@ -3051,8 +3296,8 @@ return (
             <div className="dlf-eyebrow">DAILY FEEDBACK CREDITS</div>
             <h2 className="dlf-title">Academic Feedback Credit Ledger</h2>
             <p className="dlf-copy">
-              Earn 1 credit for every submitted teacher-log feedback.
-              Lose 10 credits for every missed teacher-log feedback.
+              Earn 1 credit for every submitted Loop 1 or Loop 2 feedback.
+              Lose 10 credits for every missed eligible feedback.
             </p>
           </div>
           <div className="dlf-ledger-count">
@@ -3068,7 +3313,7 @@ return (
                 {isLoadingCreditSummary ? "—" : dailyFeedbackEarnedCredits}
               </div>
               <div className="dlf-credit-copy">
-                +1 for every feedback submitted on a received teacher log
+                +1 for every submitted Loop 1 or Loop 2 feedback
               </div>
             </div>
           </div>
@@ -3080,7 +3325,7 @@ return (
                 {isLoadingCreditSummary ? "—" : dailyFeedbackLostCredits}
               </div>
               <div className="dlf-credit-copy">
-                -10 only for a received teacher log whose feedback was missed
+                -10 for every eligible Loop 1 or Loop 2 feedback that was missed
               </div>
             </div>
           </div>
@@ -3882,8 +4127,8 @@ return (
             <div className="dlf-eyebrow">FEEDBACK STATEMENT</div>
             <h2 className="dlf-title">Daily Feedback Records</h2>
             <p className="dlf-copy">
-              Choose a subject and date range to view your classroom feedback,
-              credit calculation, and running balance like a bank statement.
+              Choose a subject and date range to view daily lecture feedback,
+              doubt discussion responses, credit calculation, and running balance like a bank statement.
             </p>
           </div>
         </div>
@@ -3902,6 +4147,7 @@ return (
               className="dlf-statement-control"
             >
               <option value="">Choose subject</option>
+              <option value={ALL_SUBJECTS_VALUE}>{ALL_SUBJECTS_LABEL}</option>
               {subjectOptions.length === 0 ? (
                 <option value="" disabled>
                   No teacher subjects available
@@ -4005,13 +4251,27 @@ return (
                   Scroll left and right to see the full records.
                 </div>
 
-                <div className="dlf-statement-scroll">
-                  <table className="dlf-statement-table">
+                <div
+                  className={
+                    statementSubject === ALL_SUBJECTS_VALUE
+                      ? "dlf-statement-scroll dlf-statement-scroll-all-subjects"
+                      : "dlf-statement-scroll"
+                  }
+                >
+                  <table
+                    className={
+                      statementSubject === ALL_SUBJECTS_VALUE
+                        ? "dlf-statement-table dlf-statement-table-all-subjects"
+                        : "dlf-statement-table"
+                    }
+                  >
                     <thead>
                       <tr>
                         <th>Date</th>
+                        {statementSubject === ALL_SUBJECTS_VALUE && <th>Subject</th>}
+                        <th>Feedback Type</th>
                         <th>Topic</th>
-                        <th>Teacher subtopics</th>
+                        <th>Teacher / difficult concepts</th>
                         <th>Response</th>
                         <th>Not understood</th>
                         <th>Talent Credits</th>
@@ -4023,6 +4283,18 @@ return (
                         <tr key={row.id}>
                           <td className="dlf-statement-date">
                             {formatStatementDate(row.date)}
+                          </td>
+                          {statementSubject === ALL_SUBJECTS_VALUE && (
+                            <td className="dlf-statement-topic">
+                              {row.subjectName}
+                            </td>
+                          )}
+                          <td>
+                            <span className="dlf-statement-response dlf-statement-response-selected">
+                              {row.loop === "Loop 1"
+                                ? "Daily lecture feedback"
+                                : "Doubt discussion feedback"}
+                            </span>
                           </td>
                           <td className="dlf-statement-topic">
                             {row.topic}

@@ -21,7 +21,9 @@ import {
 } from "../../data/studentGrowthPlanRepository";
 
 import {
-  getStudentFeedbackHistory
+  getStudentFeedbackHistory,
+  getStudentLoop2FeedbackHistory,
+  getStudentFeedbackCreditStartDate,
 } from "../../data/studentDailyFeedbackRepository";
 
 import {
@@ -409,11 +411,33 @@ const submissionCount =
   const skills =
     await getStudentSkills();
 
-  const [dailyLectureLogs, feedbackHistory] =
-    await Promise.all([
-      getStudentDailyLectureLogs(),
-      getStudentFeedbackHistory()
-    ]);
+  const [
+    dailyLectureLogs,
+    feedbackHistory,
+    loop2Result,
+    creditStartResult,
+  ] = await Promise.all([
+    getStudentDailyLectureLogs(),
+    getStudentFeedbackHistory(),
+    getStudentLoop2FeedbackHistory().then(
+      (value) => ({ status: "fulfilled" as const, value }),
+      (reason) => ({ status: "rejected" as const, reason })
+    ),
+    getStudentFeedbackCreditStartDate().then(
+      (value) => ({ status: "fulfilled" as const, value }),
+      (reason) => ({ status: "rejected" as const, reason })
+    ),
+  ]);
+
+  const loop2History =
+    loop2Result.status === "fulfilled" ? loop2Result.value ?? [] : [];
+
+  if (loop2Result.status === "rejected") {
+    console.error(
+      "LOOP-2 CREDIT HISTORY LOAD FAILED — LOOP-1 CREDIT PRESERVED",
+      loop2Result.reason
+    );
+  }
 
   const now = new Date();
 
@@ -426,20 +450,45 @@ const submissionCount =
   /*
    * DAILY FEEDBACK CREDIT CALCULATION
    *
-   * A penalty is only possible for a teacher log that actually
-   * exists for the student.
-   *
-   * Therefore:
-   * - holiday / no teacher log = 0 penalty
-   * - teacher log + feedback = +1
-   * - teacher log + no feedback after the day = -10
+   * The shared engine now evaluates both feedback loops and starts
+   * eligibility from the student's own account/profile creation date.
+   * Teacher logs that predate the student account are therefore never
+   * converted into a student penalty.
    */
   const dailyFeedback =
-    calculateDailyFeedbackCreditSummaryFromLogs(
-      dailyLectureLogs ?? [],
-      feedbackHistory ?? [],
-      today
+    creditStartResult.status === "fulfilled"
+      ? calculateDailyFeedbackCreditSummaryFromLogs(
+          dailyLectureLogs ?? [],
+          feedbackHistory ?? [],
+          today,
+          {
+            studentCreatedAt: creditStartResult.value,
+            loop2History: loop2History ?? [],
+          }
+        )
+      : {
+          earnedCredits: 0,
+          lostCredits: 0,
+          totalCredits: 0,
+          earnedLoop1Credits: 0,
+          lostLoop1Credits: 0,
+          earnedLoop2Credits: 0,
+          lostLoop2Credits: 0,
+          receivedLogCount: 0,
+          submittedFeedbackCount: 0,
+          submittedLoop2ResponseCount: 0,
+          completedLogCount: 0,
+          missedFeedbackCount: 0,
+          missedLoop2ResponseCount: 0,
+          studentCreatedDate: "",
+        };
+
+  if (creditStartResult.status === "rejected") {
+    console.error(
+      "STUDENT CREDIT START DATE LOAD FAILED — DAILY FEEDBACK CREDIT HELD AT ZERO",
+      creditStartResult.reason
     );
+  }
 
   const verifiedCount =
     achievements.filter(

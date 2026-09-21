@@ -326,3 +326,75 @@ export async function getStudentFeedbackHistory() {
   return data ?? [];
 
 }
+/* =========================================================
+   LOOP-2 CREDIT / HISTORY SUPPORT
+
+   Read-only additions for the Daily Feedback credit ledger.
+   Existing Loop-1 submission/history functions remain unchanged.
+========================================================= */
+
+export interface StudentLoop2FeedbackRecord {
+  id?: string | null;
+  student_uuid?: string | null;
+  subject_name?: string | null;
+  previous_topic_name?: string | null;
+  previous_difficult_concept?: string | null;
+  log_date?: string | null;
+  status?: string | null;
+  student_response?: string | null;
+  revision_checked_at?: string | null;
+  created_at?: string | null;
+}
+
+export async function getStudentLoop2FeedbackHistory(): Promise<StudentLoop2FeedbackRecord[]> {
+  const supabase = getSupabaseClient();
+  const identity = requireIdentity();
+
+  if (!supabase) return [];
+
+  const { data, error } = await (supabase as any)
+    .from("pending_teacher_doubts")
+    .select(
+      "id,student_uuid,subject_name,previous_topic_name,previous_difficult_concept,log_date,status,student_response,revision_checked_at,created_at"
+    )
+    .eq("student_uuid", identity.studentUuid)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("LOOP-2 FEEDBACK HISTORY FETCH ERROR", error);
+    throw error;
+  }
+
+  return (data ?? []) as StudentLoop2FeedbackRecord[];
+}
+
+export async function getStudentFeedbackCreditStartDate(): Promise<string> {
+  const supabase = getSupabaseClient();
+  const identity = requireIdentity();
+
+  if (!supabase) {
+    throw new Error("Supabase client not initialized");
+  }
+
+  const { data, error } = await (supabase as any)
+    .from("students_master")
+    .select("created_at")
+    .eq("student_uuid", identity.studentUuid)
+    .single();
+
+  if (data?.created_at) {
+    return String(data.created_at);
+  }
+
+  // Safe fallback for a transient students_master read problem. The
+  // authenticated account creation timestamp is still preferable to
+  // reverting to teacher-log history, which could create an invalid
+  // negative starting balance.
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authData?.user?.created_at) {
+    return String(authData.user.created_at);
+  }
+
+  console.error("STUDENT CREDIT START DATE FETCH ERROR", error ?? authError);
+  throw error ?? authError ?? new Error("Student account creation date is unavailable.");
+}

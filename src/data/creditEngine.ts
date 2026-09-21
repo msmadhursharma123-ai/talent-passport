@@ -160,6 +160,72 @@ export interface DailyFeedbackRecord {
   understanding_level?: string | null;
 }
 
+export interface DailyFeedbackLoop2Record {
+  id?: string | null;
+  subject_name?: string | null;
+  previous_topic_name?: string | null;
+  previous_difficult_concept?: string | null;
+  log_date?: string | null;
+  status?: string | null;
+  student_response?: string | null;
+  revision_checked_at?: string | null;
+  created_at?: string | null;
+}
+
+export interface DailyFeedbackCreditOptions {
+  studentCreatedAt?: string | null;
+  loop2History?: DailyFeedbackLoop2Record[];
+}
+
+function dateKey(value: unknown) {
+  if (value === null || value === undefined) return "";
+  const raw = String(value).trim();
+  if (!raw) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return raw.slice(0, 10);
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(parsed);
+
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+  return `${year}-${month}-${day}`;
+}
+
+export function isStudentLoop2Response(row: DailyFeedbackLoop2Record) {
+  const response = String(row?.student_response ?? "").trim().toUpperCase();
+
+  if (response === "NOT DISCUSSED") return true;
+  if (response !== "DISCUSSED") return false;
+
+  /*
+   * A teacher-covered Loop-2 doubt is auto-written as RESOLVED/DISCUSSED
+   * in the existing engine at the same moment the ledger row is created.
+   * A genuine student response is recorded later through the student action.
+   * Keep those existing semantics intact while preventing an auto-resolution
+   * from being mistaken for a student-earned +1.
+   */
+  const createdAt = Date.parse(String(row?.created_at ?? ""));
+  const checkedAt = Date.parse(String(row?.revision_checked_at ?? ""));
+
+  if (Number.isNaN(createdAt) || Number.isNaN(checkedAt)) return false;
+
+  return checkedAt - createdAt > 1000;
+}
+
+function loop2DueDate(row: DailyFeedbackLoop2Record) {
+  // The pending-doubt creation day is the day Loop 2 becomes available.
+  // The original lecture date is historical context, not the due date.
+  return dateKey(row?.created_at ?? row?.revision_checked_at ?? row?.log_date);
+}
+
 /**
  * Legacy pure calculator.
  *
@@ -205,12 +271,21 @@ export function calculateDailyFeedbackCreditSummary(
 export function calculateDailyFeedbackCreditSummaryFromLogs(
   lectureLogs: DailyFeedbackLectureLog[],
   feedbackHistory: DailyFeedbackRecord[],
-  asOfDate: string
+  asOfDate: string,
+  options: DailyFeedbackCreditOptions = {}
 ) {
+  const studentCreatedDate = dateKey(options.studentCreatedAt);
+  const isAfterStudentCreation = (value: unknown) => {
+    const key = dateKey(value);
+    if (!key) return false;
+    return !studentCreatedDate || key >= studentCreatedDate;
+  };
+
   const validLogs = (lectureLogs ?? []).filter(
     (log) =>
       typeof log?.id === "string" &&
-      log.id.trim().length > 0
+      log.id.trim().length > 0 &&
+      isAfterStudentCreation(log.log_date)
   );
 
   const receivedLogIds = new Set(
@@ -267,32 +342,71 @@ export function calculateDailyFeedbackCreditSummaryFromLogs(
   const missedFeedbackCount = validLogs.filter(
     (log) =>
       typeof log.log_date === "string" &&
-      log.log_date < asOfDate &&
+      dateKey(log.log_date) < asOfDate &&
       !submittedLogIds.has(String(log.id)) &&
       !absentLogIds.has(String(log.id))
   ).length;
 
+  const earnedLoop1Credits =
+    submittedLogIds.size * DAILY_FEEDBACK_CREDIT;
+
+  const lostLoop1Credits =
+    missedFeedbackCount * DAILY_FEEDBACK_MISSED_PENALTY;
+
+  const validLoop2 = (options.loop2History ?? []).filter((row) => {
+    const id = String(row?.id ?? "").trim();
+    return !!id && isAfterStudentCreation(loop2DueDate(row));
+  });
+
+  const submittedLoop2Ids = new Set(
+    validLoop2
+      .filter(isStudentLoop2Response)
+      .map((row) => String(row.id))
+  );
+
+  const missedLoop2ResponseCount = validLoop2.filter((row) => {
+    const dueDate = loop2DueDate(row);
+    return (
+      !!dueDate &&
+      dueDate < asOfDate &&
+      String(row?.status ?? "").trim().toUpperCase() === "PENDING" &&
+      !submittedLoop2Ids.has(String(row.id))
+    );
+  }).length;
+
+  const earnedLoop2Credits =
+    submittedLoop2Ids.size * DAILY_FEEDBACK_CREDIT;
+
+  const lostLoop2Credits =
+    missedLoop2ResponseCount * DAILY_FEEDBACK_MISSED_PENALTY;
+
   const earnedCredits =
-    submittedLogIds.size *
-    DAILY_FEEDBACK_CREDIT;
+    earnedLoop1Credits + earnedLoop2Credits;
 
   const lostCredits =
-    missedFeedbackCount *
-    DAILY_FEEDBACK_MISSED_PENALTY;
+    lostLoop1Credits + lostLoop2Credits;
 
   return {
     earnedCredits,
     lostCredits,
     totalCredits: earnedCredits - lostCredits,
 
+    earnedLoop1Credits,
+    lostLoop1Credits,
+    earnedLoop2Credits,
+    lostLoop2Credits,
+
     /* Useful for validation / future analytics */
     receivedLogCount: validLogs.length,
     submittedFeedbackCount: submittedLogIds.size,
+    submittedLoop2ResponseCount: submittedLoop2Ids.size,
     completedLogCount: validLogs.filter(
       (log) =>
         typeof log.log_date === "string" &&
-        log.log_date < asOfDate
+        dateKey(log.log_date) < asOfDate
     ).length,
     missedFeedbackCount,
+    missedLoop2ResponseCount,
+    studentCreatedDate,
   };
 }
