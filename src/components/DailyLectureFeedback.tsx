@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { Capacitor } from "@capacitor/core";
 import { useEffect, useState } from "react";
 import { downloadOrSharePdfBlob } from "../services/platform/nativeDocumentService";
 
@@ -686,6 +687,18 @@ export default function DailyLectureFeedback() {
 
     setIsGeneratingStatementPdf(true);
 
+    // Mobile/tablet browsers can block a download initiated only after the
+    // asynchronous PDF build has completed. Open a user-initiated tab first
+    // so the generated Blob URL can be displayed even when the browser does
+    // not support a direct programmatic download. Native Capacitor builds
+    // continue using the existing verified native PDF delivery path.
+    const isNativePdfPlatform = Capacitor.isNativePlatform();
+    const isTouchWeb =
+      !isNativePdfPlatform &&
+      (navigator.maxTouchPoints > 0 ||
+        window.matchMedia?.("(pointer: coarse)").matches === true);
+    const mobilePdfWindow = isTouchWeb ? window.open("about:blank", "_blank") : null;
+
     try {
       const doc = new jsPDF({
         orientation: "landscape",
@@ -882,12 +895,32 @@ export default function DailyLectureFeedback() {
         pageHeight - 5
       );
 
-      await downloadOrSharePdfBlob(
-        doc.output("blob"),
-        `Daily-Lecture-Feedback-${statementStartDate}-to-${statementEndDate}.pdf`,
-        "Talent Passport — Daily Lecture Feedback"
-      );
+      const pdfBlob = doc.output("blob");
+      if (!(pdfBlob instanceof Blob) || pdfBlob.size <= 0) {
+        throw new Error("Generated PDF blob was empty.");
+      }
+
+      const fileName =
+        `Daily-Lecture-Feedback-${statementStartDate}-to-${statementEndDate}.pdf`;
+
+      if (mobilePdfWindow && !mobilePdfWindow.closed) {
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        mobilePdfWindow.location.href = pdfUrl;
+        // Keep the object URL alive long enough for mobile PDF viewers to
+        // finish loading it; this is intentionally longer than the initial
+        // navigation and does not affect desktop/native behaviour.
+        window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
+      } else {
+        await downloadOrSharePdfBlob(
+          pdfBlob,
+          fileName,
+          "Talent Passport — Daily Lecture Feedback"
+        );
+      }
     } catch (error) {
+      if (mobilePdfWindow && !mobilePdfWindow.closed) {
+        mobilePdfWindow.close();
+      }
       console.error("DAILY FEEDBACK PDF GENERATION FAILED", error);
       alert("The PDF could not be generated. Please try again.");
     } finally {
