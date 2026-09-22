@@ -1,6 +1,8 @@
 import "./schoolIntelligence.css";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
+import { getCurrentSchool } from "../../../services/identityService";
+import { readSchoolPageCache, writeSchoolPageCache } from "../schoolPageCache";
 import {
   getSchoolClassroomSupplementalMetrics,
   type SchoolClassroomSupplementalMetric,
@@ -14,6 +16,7 @@ import SchoolTeacherAccessManager from "./SchoolTeacherAccessManager";
 import SchoolStudentAccessManager from "./SchoolStudentAccessManager";
 import SchoolMorningBrief from "../components/SchoolMorningBrief";
 import SchoolWeeklyMeetingInsights from "../components/weeklyMeetingInsights/SchoolWeeklyMeetingInsights";
+import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
 
 type RangeValue = "30" | "60" | "90" | "custom";
 type SortKey =
@@ -110,8 +113,20 @@ export default function SchoolOverviewPage() {
 
         try {
           let supplemental: SchoolClassroomSupplementalMetric[];
+          const schoolUuid = getCurrentSchool()?.schoolUuid;
+          const supplementalKey = schoolUuid
+            ? (range === "custom"
+              ? `overview-supplemental-v1|${schoolUuid}|${customStart}|${customEnd}`
+              : `overview-supplemental-v1|${schoolUuid}|${range}`)
+            : undefined;
 
-          if (range === "custom") {
+          const cachedSupplemental = supplementalKey
+            ? readSchoolPageCache<SchoolClassroomSupplementalMetric[]>(supplementalKey)
+            : undefined;
+
+          if (cachedSupplemental) {
+            supplemental = cachedSupplemental;
+          } else if (range === "custom") {
             supplemental =
               await getSchoolClassroomSupplementalMetrics(
                 customStart,
@@ -129,6 +144,10 @@ export default function SchoolOverviewPage() {
                 start.toISOString().slice(0, 10),
                 end.toISOString().slice(0, 10)
               );
+          }
+
+          if (!cachedSupplemental && supplementalKey) {
+            writeSchoolPageCache(supplementalKey, supplemental);
           }
 
           if (!cancelled) {
@@ -340,6 +359,7 @@ export default function SchoolOverviewPage() {
   if (!data && loading) {
     return (
       <div className="school-page">
+        <SchoolAnalyticsLoadingPopup active={loading} page="overview" />
         <div className="school-section school-empty">
           Loading school intelligence…
         </div>

@@ -1,6 +1,9 @@
 import { getSchoolIntelligenceRawData } from "../repository/SchoolIntelligenceRepository";
 import { buildSchoolIntelligenceSnapshot } from "../analytics/SchoolIntelligenceEngine";
 import { applyLiveSchoolIntelligenceOverlay } from "../../liveDoubtIntelligence/service/LiveSchoolIntelligenceOverlay";
+import type { SchoolIntelligenceSnapshot } from "../types/SchoolIntelligenceModels";
+import { getCurrentSchool } from "../../../services/identityService";
+import { readSchoolPageCache, writeSchoolPageCache } from "../schoolPageCache";
 
 function isoDate(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -52,25 +55,36 @@ async function buildSnapshotWithOptionalLiveLayer(
 export async function loadSchoolIntelligence(
   days?: 7 | 14 | 21 | 30 | 60 | 90,
   customStartDate?: string,
-  customEndDate?: string
+  customEndDate?: string,
+  options?: { forceRefresh?: boolean }
 ) {
-  if (customStartDate || customEndDate) {
-    return buildSnapshotWithOptionalLiveLayer(
-      customStartDate,
-      customEndDate
-    );
+  let startDate = customStartDate;
+  let endDate = customEndDate;
+
+  if (!startDate && !endDate && days) {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - (days - 1));
+    startDate = isoDate(start);
+    endDate = isoDate(end);
   }
 
-  if (!days) {
-    return buildSnapshotWithOptionalLiveLayer();
+  const schoolUuid = getCurrentSchool()?.schoolUuid;
+  const cacheKey = schoolUuid
+    ? [
+        "school-intelligence-v1",
+        schoolUuid,
+        startDate ?? "default",
+        endDate ?? "default",
+      ].join("|")
+    : undefined;
+
+  if (!options?.forceRefresh && cacheKey) {
+    const cached = readSchoolPageCache<SchoolIntelligenceSnapshot>(cacheKey);
+    if (cached) return cached;
   }
 
-  const end = new Date();
-  const start = new Date();
-  start.setDate(end.getDate() - (days - 1));
-
-  return buildSnapshotWithOptionalLiveLayer(
-    isoDate(start),
-    isoDate(end)
-  );
+  const snapshot = await buildSnapshotWithOptionalLiveLayer(startDate, endDate);
+  if (cacheKey) writeSchoolPageCache(cacheKey, snapshot);
+  return snapshot;
 }

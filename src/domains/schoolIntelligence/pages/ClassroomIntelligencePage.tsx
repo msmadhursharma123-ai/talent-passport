@@ -2,6 +2,7 @@ import "./schoolIntelligence.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
 import type { SchoolIntelligenceSnapshot, SchoolTeacherDailyIntelligence } from "../types/SchoolIntelligenceModels";
+import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
 
 const tones=[
   ["#FFF7ED","#FFFBF5","#FED7AA","#C2410C"],
@@ -44,7 +45,7 @@ export default function ClassroomIntelligencePage(){
 
   const toggle=(id:string)=>setSelected(x=>x.includes(id)?x.filter(v=>v!==id):[...x,id]);
 
-  if(loading&&!data)return <main className="school-page"><div className="school-section school-empty">Loading daily classroom intelligence…</div></main>;
+  if(loading&&!data)return <main className="school-page"><SchoolAnalyticsLoadingPopup active={loading} page="classroom" /><div className="school-section school-empty">Loading daily classroom intelligence…</div></main>;
   if(error)return <main className="school-page"><div className="school-section school-empty">{error}</div></main>;
   if(!data)return null;
 

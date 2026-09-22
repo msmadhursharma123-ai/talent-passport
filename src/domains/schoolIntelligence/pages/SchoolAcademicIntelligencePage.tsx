@@ -2,6 +2,7 @@ import "./schoolIntelligence.css";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
 import type { SchoolExamPreparationClassroom, SchoolExamPreparationStudent } from "../types/SchoolIntelligenceModels";
+import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
 
 type Period="ALL"|"7"|"14"|"CUSTOM";
 type FilterYear="ALL"|"2026"|"2027"|"2028";
@@ -104,7 +105,7 @@ export default function SchoolAcademicIntelligencePage(){
     <F label="Month"><select value={month} disabled={year==="ALL"} onChange={e=>setMonth(e.target.value as FilterMonth)}><option value="ALL">{year==="ALL"?"Select year first":"All months"}</option>{monthOptions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></F>
     <F label="Time Period"><div className="sa-period-control"><select value={period} onChange={e=>setPeriod(e.target.value as Period)}><option value="ALL">All time</option><option value="7">Last 1 Week</option><option value="14">Last 2 Weeks</option><option value="30">Last 30 Days</option><option value="CUSTOM">Custom Date</option></select>{period==="CUSTOM"&&<div className="sa-custom-inline"><input aria-label="From date" type="date" value={from} onChange={e=>setFrom(e.target.value)}/><input aria-label="To date" type="date" value={to} onChange={e=>setTo(e.target.value)}/></div>}</div></F>
    </div>
-   {loading?<div className="school-empty">Loading exam preparation intelligence…</div>:visible.length===0?<div className="school-empty">{search.trim()?"No student matching this name exists in the selected timeline.":"No unresolved not-discussed doubt data exists for the selected filters."}</div>:visible.map(c=><Board key={c.classroomKey} c={c}/>)}
+   {loading?<><SchoolAnalyticsLoadingPopup active={loading} page="academic" /><div className="school-empty">Loading exam preparation intelligence…</div></>:visible.length===0?<div className="school-empty">{search.trim()?"No student matching this name exists in the selected timeline.":"No unresolved not-discussed doubt data exists for the selected filters."}</div>:visible.map(c=><Board key={c.classroomKey} c={c}/>)}
   </section>
  </div></main>
 }

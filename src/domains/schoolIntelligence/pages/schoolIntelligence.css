@@ -42,3 +42,19 @@
 .school-range{display:flex;gap:7px;flex-wrap:wrap}.school-range button{border:1px solid #dce4ee;border-radius:10px;background:#f4f7fb;color:#52647f;padding:8px 11px;font-weight:800;cursor:pointer}.school-range button.active{border-color:#ffb277;background:#fff3e8;color:#e95700}
 @media(max-width:1024px){.school-page{padding:16px}.school-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-title{font-size:29px}}
 @media(max-width:600px){.school-page{padding:12px}.school-stack{gap:12px}.school-hero{padding:20px 17px;border-radius:18px}.school-title{font-size:25px}.school-copy{font-size:13px}.school-section{padding:15px;border-radius:18px}.school-section-head{align-items:flex-start;flex-direction:column}.school-section-title{font-size:18px}.school-metric-grid{grid-template-columns:1fr 1fr;gap:8px}.school-card{padding:13px;border-radius:14px}.school-card-value{font-size:23px}.school-row-top{flex-direction:column}.school-row-metrics{grid-template-columns:1fr 1fr}.school-table{min-width:760px}}
+
+/* School Intelligence loading experience — presentation only. */
+.tp-school-loading-backdrop{position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(7,18,36,.46);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.tp-school-loading-card{width:min(440px,calc(100vw - 32px));padding:30px 30px 26px;border:1px solid rgba(255,255,255,.16);border-radius:22px;background:linear-gradient(145deg,rgba(16,39,70,.98),rgba(8,25,48,.98));box-shadow:0 24px 70px rgba(2,10,24,.38),inset 0 1px 0 rgba(255,255,255,.10);text-align:center;color:#fff}
+.tp-school-loading-mark{height:34px;display:flex;align-items:flex-end;justify-content:center;gap:5px;margin-bottom:18px}
+.tp-school-loading-mark span{display:block;width:5px;border-radius:999px;background:#d9b56d;animation:tpSchoolLoadingBars 900ms ease-in-out infinite}
+.tp-school-loading-mark span:nth-child(1){height:15px;animation-delay:-.25s}.tp-school-loading-mark span:nth-child(2){height:28px}.tp-school-loading-mark span:nth-child(3){height:21px;animation-delay:-.12s}
+.tp-school-loading-eyebrow{font-size:10px;letter-spacing:.22em;font-weight:700;opacity:.62;margin-bottom:8px}
+.tp-school-loading-title{font-size:22px;line-height:1.2;font-weight:700;letter-spacing:-.02em}
+.tp-school-loading-message{min-height:48px;display:flex;align-items:center;justify-content:center;margin:11px auto 16px;font-size:14px;line-height:1.55;color:rgba(255,255,255,.82);animation:tpSchoolLoadingMessage .32s ease-out}
+.tp-school-loading-progress{height:2px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.10)}
+.tp-school-loading-progress span{display:block;width:42%;height:100%;border-radius:inherit;background:#d9b56d;animation:tpSchoolLoadingProgress 1.15s ease-in-out infinite}
+@keyframes tpSchoolLoadingBars{0%,100%{transform:scaleY(.65);opacity:.55}50%{transform:scaleY(1);opacity:1}}
+@keyframes tpSchoolLoadingMessage{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes tpSchoolLoadingProgress{0%{transform:translateX(-120%)}100%{transform:translateX(280%)}}
+@media(max-width:600px){.tp-school-loading-backdrop{padding:16px}.tp-school-loading-card{padding:26px 22px 23px;border-radius:18px}.tp-school-loading-title{font-size:20px}.tp-school-loading-message{font-size:13px;min-height:54px}}

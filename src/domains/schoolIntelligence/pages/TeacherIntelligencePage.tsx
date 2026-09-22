@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
 import type { SchoolTeacherLiveStatus } from "../types/SchoolIntelligenceModels";
 import { downloadOrSharePdfBlob } from "../../../services/platform/nativeDocumentService";
+import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
 import {
   getTeacherTeachingHistory,
   type TeacherTeachingHistoryData,
@@ -49,8 +50,8 @@ export default function TeacherIntelligencePage(){
  const [historyLoading,setHistoryLoading]=useState(false);
  const [historyError,setHistoryError]=useState<string|null>(null);
  const [historyPdfLoading,setHistoryPdfLoading]=useState(false);
- async function load(){setLoading(true);try{const x=await loadSchoolIntelligence();const next=x.teacherLiveStatus??[];setTeachers(next);setSelectedId(old=>next.some(t=>t.teacherUuid===old)?old:(next.find(t=>t.isPresentToday)?.teacherUuid??next[0]?.teacherUuid??""));}finally{setLoading(false)}}
- useEffect(()=>{void load();const id=window.setInterval(()=>void load(),60000);return()=>window.clearInterval(id)},[]);
+ async function load(forceRefresh=false){setLoading(true);try{const x=await loadSchoolIntelligence(undefined,undefined,undefined,{forceRefresh});const next=x.teacherLiveStatus??[];setTeachers(next);setSelectedId(old=>next.some(t=>t.teacherUuid===old)?old:(next.find(t=>t.isPresentToday)?.teacherUuid??next[0]?.teacherUuid??""));}finally{setLoading(false)}}
+ useEffect(()=>{void load(false);const id=window.setInterval(()=>void load(true),60000);return()=>window.clearInterval(id)},[]);
  const selected=useMemo(()=>teachers.find(t=>t.teacherUuid===selectedId)??teachers[0],[teachers,selectedId]);
  const active=teachers.filter(t=>t.isPresentToday).length;
  const historyRows=useMemo(()=>buildHistoryRows(historyData,historyStartDate,historyEndDate,historyTeacherUuid),[historyData,historyStartDate,historyEndDate,historyTeacherUuid]);
@@ -61,7 +62,7 @@ export default function TeacherIntelligencePage(){
   <section className="school-hero"><p className="school-eyebrow">Live Teaching Intelligence</p><h1 className="school-title">Teacher Intelligence</h1><p className="school-copy">Today's teacher activity and classroom coverage, built directly from published Daily Logs in the authenticated school.</p></section>
   <section className="ti-audit">
    <div className="ti-head"><div><span>TEACHER ATTENDANCE & DAILY LOG ACTIVITY</span><h2>Principal's School Live Teaching Audit</h2><p>A Daily Log published today is verified evidence of today's teaching activity.</p></div><div className="ti-totals"><b>● {active} ACTIVE TODAY</b><b className="off">● {teachers.length-active} NO LOG TODAY</b></div></div>
-   {loading&&!teachers.length?<div className="ti-empty-dark">Loading teacher activity…</div>:<>
+   {loading&&!teachers.length?<><SchoolAnalyticsLoadingPopup active={loading} page="teacher" /><div className="ti-empty-dark">Loading teacher activity…</div></>:<>
     <div className="ti-cue">← Scroll left or right to view every teacher →</div>
     <div className="ti-scroll"><div className="ti-track">{teachers.map((t,i)=><button type="button" key={t.teacherUuid} onClick={()=>setSelectedId(t.teacherUuid)} className={`ti-card ${selected?.teacherUuid===t.teacherUuid?"selected":""}`}>
      <div className="ti-card-id"><span>ID: TCH{String(i+1).padStart(3,"0")}</span><i className={t.isPresentToday?"live":"offline"}/></div>
