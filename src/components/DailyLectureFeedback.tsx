@@ -54,6 +54,27 @@ interface FeedbackStatementRow {
 const ALL_SUBJECTS_VALUE = "__ALL_SUBJECTS__";
 const ALL_SUBJECTS_LABEL = "All Subjects";
 
+async function downloadPdfBlobOnWeb(blob: Blob, fileName: string) {
+  const pdfUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = pdfUrl;
+  anchor.download = fileName;
+  anchor.rel = "noopener";
+  anchor.style.display = "none";
+
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+
+  // Do not revoke immediately. Mobile/tablet browsers can start the
+  // download asynchronously after the synthetic anchor click. Keeping the
+  // Blob URL alive gives those browsers time to begin the file transfer.
+  window.setTimeout(() => {
+    URL.revokeObjectURL(pdfUrl);
+  }, 60_000);
+}
+
 function getIndiaTodayKey() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kolkata",
@@ -687,18 +708,6 @@ export default function DailyLectureFeedback() {
 
     setIsGeneratingStatementPdf(true);
 
-    // Mobile/tablet browsers can block a download initiated only after the
-    // asynchronous PDF build has completed. Open a user-initiated tab first
-    // so the generated Blob URL can be displayed even when the browser does
-    // not support a direct programmatic download. Native Capacitor builds
-    // continue using the existing verified native PDF delivery path.
-    const isNativePdfPlatform = Capacitor.isNativePlatform();
-    const isTouchWeb =
-      !isNativePdfPlatform &&
-      (navigator.maxTouchPoints > 0 ||
-        window.matchMedia?.("(pointer: coarse)").matches === true);
-    const mobilePdfWindow = isTouchWeb ? window.open("about:blank", "_blank") : null;
-
     try {
       const doc = new jsPDF({
         orientation: "landscape",
@@ -903,24 +912,16 @@ export default function DailyLectureFeedback() {
       const fileName =
         `Daily-Lecture-Feedback-${statementStartDate}-to-${statementEndDate}.pdf`;
 
-      if (mobilePdfWindow && !mobilePdfWindow.closed) {
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        mobilePdfWindow.location.href = pdfUrl;
-        // Keep the object URL alive long enough for mobile PDF viewers to
-        // finish loading it; this is intentionally longer than the initial
-        // navigation and does not affect desktop/native behaviour.
-        window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
-      } else {
+      if (Capacitor.isNativePlatform()) {
         await downloadOrSharePdfBlob(
           pdfBlob,
           fileName,
           "Talent Passport — Daily Lecture Feedback"
         );
+      } else {
+        await downloadPdfBlobOnWeb(pdfBlob, fileName);
       }
     } catch (error) {
-      if (mobilePdfWindow && !mobilePdfWindow.closed) {
-        mobilePdfWindow.close();
-      }
       console.error("DAILY FEEDBACK PDF GENERATION FAILED", error);
       alert("The PDF could not be generated. Please try again.");
     } finally {
