@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import LoginWelcomePopup from "../../../components/common/LoginWelcomePopup";
 import ForgotPasswordDialog from "../../../services/auth/ForgotPasswordDialog";
 import {
     signIn,
@@ -172,6 +173,8 @@ export default function SchoolLogin({
 
                
             </div>
+
+            <LoginWelcomePopup active={loading} portal="School" />
 
             <ForgotPasswordDialog
                 open={forgotPasswordOpen}

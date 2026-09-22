@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import LoginWelcomePopup from "../components/common/LoginWelcomePopup";
 
 import {
     signIn,
@@ -417,6 +418,8 @@ Forgot Password?
 </div>
 
             </div>
+
+<LoginWelcomePopup active={loading} portal="Partner" />
 
 <ForgotPasswordDialog
     open={forgotPasswordOpen}

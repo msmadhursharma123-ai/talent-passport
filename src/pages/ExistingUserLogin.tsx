@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import LoginWelcomePopup from "../components/common/LoginWelcomePopup";
 import ForgotPasswordDialog from "../services/auth/ForgotPasswordDialog";
 import {
     signIn,
@@ -369,6 +370,8 @@ export default function ExistingUserLogin({
                 </button>
 
             </div>
+
+<LoginWelcomePopup active={loading} portal="Student" />
 
 <ForgotPasswordDialog
     open={forgotPasswordOpen}
