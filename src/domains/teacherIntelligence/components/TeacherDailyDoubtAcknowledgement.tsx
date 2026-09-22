@@ -27,6 +27,8 @@ interface TeacherDoubtReferenceClassroom {
   doubts: Array<{ topic: string; count: number }>;
 }
 
+type DoubtFilterPeriod = "ALL" | "30" | "60" | "90" | "CUSTOM";
+
 const STORAGE_PREFIX = "teacherDailyDoubtAcknowledgement";
 
 function getIndiaDateKey() {
@@ -46,6 +48,47 @@ function getIndiaDateKey() {
 
 function storageKey(teacherUuid: string, dateKey: string) {
   return `${STORAGE_PREFIX}:${teacherUuid}:${dateKey}`;
+}
+
+function shiftIndiaDateKey(dateKey: string, days: number) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  if (![year, month, day].every(Number.isFinite)) return "";
+
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+
+  return [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function getDoubtFilterRange(
+  period: DoubtFilterPeriod,
+  customStartDate: string,
+  customEndDate: string
+) {
+  const end = getIndiaDateKey();
+
+  if (period === "ALL") {
+    return { start: undefined, end: undefined };
+  }
+
+  if (period === "CUSTOM") {
+    if (!customStartDate || !customEndDate || customStartDate > customEndDate) {
+      return null;
+    }
+    return { start: customStartDate, end: customEndDate };
+  }
+
+  const days = Number(period);
+  if (!Number.isFinite(days) || days <= 0) return null;
+
+  return {
+    start: shiftIndiaDateKey(end, -(days - 1)),
+    end,
+  };
 }
 
 function buildClassroomReferences(
@@ -121,6 +164,11 @@ export default function TeacherDailyDoubtAcknowledgement() {
   const [open, setOpen] = useState(false);
   const [classrooms, setClassrooms] = useState<TeacherDoubtReferenceClassroom[]>([]);
   const [acknowledged, setAcknowledged] = useState<Record<string, boolean>>({});
+  const [filterPeriod, setFilterPeriod] = useState<DoubtFilterPeriod>("ALL");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [filterLoading, setFilterLoading] = useState(false);
+  const [filterError, setFilterError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -133,21 +181,44 @@ export default function TeacherDailyDoubtAcknowledgement() {
       const today = getIndiaDateKey();
       const key = storageKey(teacherUuid, today);
 
-      try {
-        if (localStorage.getItem(key) === "completed") return;
-      } catch (error) {
-        console.error("TEACHER DAILY DOUBT ACKNOWLEDGEMENT STORAGE READ FAILED", error);
+      if (filterPeriod === "ALL") {
+        try {
+          if (localStorage.getItem(key) === "completed") return;
+        } catch (error) {
+          console.error("TEACHER DAILY DOUBT ACKNOWLEDGEMENT STORAGE READ FAILED", error);
+        }
       }
 
+      const range = getDoubtFilterRange(
+        filterPeriod,
+        customStartDate,
+        customEndDate
+      );
+
+      if (!range) {
+        setFilterError("Select a valid custom start and end date.");
+        setClassrooms([]);
+        setAcknowledged({});
+        setFilterLoading(false);
+        if (!cancelled) setOpen(true);
+        return;
+      }
+
+      setFilterError("");
+      setFilterLoading(true);
+
       try {
-        const data = await getTeacherExamAttentionIntelligenceWithLiveLayer();
+        const data = await getTeacherExamAttentionIntelligenceWithLiveLayer(
+          range.start,
+          range.end
+        );
         if (cancelled) return;
 
         const nextClassrooms = buildClassroomReferences(
           Array.isArray(data) ? data : []
         );
 
-        if (nextClassrooms.length === 0) {
+        if (filterPeriod === "ALL" && nextClassrooms.length === 0) {
           // Nothing unresolved is currently present in the same live source
           // used by Exam Preparation, so there is nothing to acknowledge.
           try {
@@ -155,6 +226,7 @@ export default function TeacherDailyDoubtAcknowledgement() {
           } catch (error) {
             console.error("TEACHER DAILY DOUBT ACKNOWLEDGEMENT STORAGE WRITE FAILED", error);
           }
+          setOpen(false);
           return;
         }
 
@@ -162,8 +234,15 @@ export default function TeacherDailyDoubtAcknowledgement() {
         setAcknowledged({});
         setOpen(true);
       } catch (error) {
+        if (cancelled) return;
+        setFilterError("Unable to refresh the selected doubt range. Please try again.");
+        setClassrooms([]);
+        setAcknowledged({});
+        if (filterPeriod !== "ALL" || open) setOpen(true);
         // This is a secondary reminder layer. It must never block Teacher Home.
         console.error("TEACHER DAILY DOUBT ACKNOWLEDGEMENT LOAD FAILED", error);
+      } finally {
+        if (!cancelled) setFilterLoading(false);
       }
     }
 
@@ -172,7 +251,7 @@ export default function TeacherDailyDoubtAcknowledgement() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [filterPeriod, customStartDate, customEndDate]);
 
   const allAcknowledged = useMemo(
     () =>
@@ -209,6 +288,14 @@ export default function TeacherDailyDoubtAcknowledgement() {
   }
 
   async function downloadPdf() {
+    if (filterLoading || classrooms.length === 0) return;
+
+    const selectedRange = getDoubtFilterRange(
+      filterPeriod,
+      customStartDate,
+      customEndDate
+    );
+
     const printable = classrooms
       .map(
         (item) => `
@@ -242,7 +329,7 @@ export default function TeacherDailyDoubtAcknowledgement() {
         strong { color:#C2410C; }
       `;
       await printHtmlAsPdf({
-        bodyHtml: `<h1>Unresolved Doubt Bank</h1><div class="date">${getIndiaDateKey()}</div>${printable}`,
+        bodyHtml: `<h1>Unresolved Doubt Bank</h1><div class="date">${getIndiaDateKey()}${selectedRange?.start && selectedRange?.end ? ` · ${selectedRange.start} to ${selectedRange.end}` : " · All current unresolved doubts"}</div>${printable}`,
         css,
         fileName: `Teacher-Unresolved-Doubts-${getIndiaDateKey()}.pdf`,
         title: "Teacher Unresolved Doubts PDF",
@@ -307,7 +394,7 @@ export default function TeacherDailyDoubtAcknowledgement() {
         </head>
         <body>
           <h1>Unresolved Doubt Bank</h1>
-          <div class="date">${getIndiaDateKey()}</div>
+          <div class="date">${getIndiaDateKey()}${selectedRange?.start && selectedRange?.end ? ` · ${selectedRange.start} to ${selectedRange.end}` : " · All current unresolved doubts"}</div>
           ${printable}
         </body>
       </html>
@@ -342,6 +429,14 @@ export default function TeacherDailyDoubtAcknowledgement() {
         .teacher-doubt-ack-kicker { margin:0; color:#EA580C; font-size:10px; font-weight:900; letter-spacing:1.6px; }
         .teacher-doubt-ack-title { margin:6px 0 4px; color:#07142D; font-size:24px; line-height:1.12; font-weight:900; }
         .teacher-doubt-ack-copy { margin:0; color:#64748B; font-size:12px; line-height:1.45; font-weight:600; }
+        .teacher-doubt-ack-filter { display:flex; align-items:flex-end; gap:8px; margin-top:12px; flex-wrap:wrap; }
+        .teacher-doubt-ack-filter-field { display:flex; flex-direction:column; gap:4px; min-width:190px; }
+        .teacher-doubt-ack-filter-label { color:#64748B; font-size:8px; font-weight:900; letter-spacing:.9px; text-transform:uppercase; }
+        .teacher-doubt-ack-filter-select,.teacher-doubt-ack-filter-date { width:100%; min-height:34px; border:1px solid #CBD5E1; border-radius:9px; background:#FFF; color:#0F172A; padding:0 9px; font-size:10px; font-weight:800; outline:none; }
+        .teacher-doubt-ack-filter-select:focus,.teacher-doubt-ack-filter-date:focus { border-color:#F97316; box-shadow:0 0 0 2px rgba(249,115,22,.10); }
+        .teacher-doubt-ack-custom { display:grid; grid-template-columns:repeat(2,minmax(130px,1fr)); gap:8px; flex:1 1 280px; min-width:280px; }
+        .teacher-doubt-ack-filter-status { margin-top:6px; color:#C2410C; font-size:8px; font-weight:800; }
+        .teacher-doubt-ack-empty { padding:28px 12px; text-align:center; color:#94A3B8; font-size:10px; font-weight:800; }
         .teacher-doubt-ack-body { min-height:0; overflow-y:auto; padding:14px 16px; }
         .teacher-doubt-ack-class { margin-bottom:10px; padding:12px; border:1px solid #FED7AA; border-radius:15px; background:#FFF7ED; }
         .teacher-doubt-ack-class:last-child { margin-bottom:0; }
@@ -359,6 +454,7 @@ export default function TeacherDailyDoubtAcknowledgement() {
         .teacher-doubt-ack-btn { flex:0 0 auto; border:1px solid #F97316; border-radius:10px; padding:8px 12px; background:#F97316; color:#FFF; font-size:10px; font-weight:900; cursor:pointer; }
         .teacher-doubt-ack-btn:disabled { opacity:.45; cursor:not-allowed; }
         .teacher-doubt-ack-download { border:1px solid #FED7AA; border-radius:10px; padding:8px 10px; background:#FFF7ED; color:#C2410C; font-size:9px; font-weight:900; cursor:pointer; }
+        .teacher-doubt-ack-download:disabled { opacity:.45; cursor:not-allowed; }
         @media (max-width:1024px) {
           .teacher-doubt-ack-overlay { padding:10px; }
           .teacher-doubt-ack-modal { width:min(620px,100%); max-height:90vh; border-radius:18px; }
@@ -366,6 +462,12 @@ export default function TeacherDailyDoubtAcknowledgement() {
           .teacher-doubt-ack-kicker { font-size:8px; letter-spacing:1.15px; }
           .teacher-doubt-ack-title { font-size:18px; margin-top:4px; }
           .teacher-doubt-ack-copy { font-size:9px; line-height:1.35; }
+          .teacher-doubt-ack-filter { gap:6px; margin-top:8px; }
+          .teacher-doubt-ack-filter-field { min-width:150px; flex:1 1 150px; }
+          .teacher-doubt-ack-filter-label { font-size:6.5px; }
+          .teacher-doubt-ack-filter-select,.teacher-doubt-ack-filter-date { min-height:30px; padding:0 7px; font-size:8px; border-radius:8px; }
+          .teacher-doubt-ack-custom { min-width:220px; gap:6px; }
+          .teacher-doubt-ack-filter-status { font-size:6.5px; }
           .teacher-doubt-ack-body { padding:9px; }
           .teacher-doubt-ack-class { padding:9px; margin-bottom:7px; border-radius:12px; }
           .teacher-doubt-ack-class-name { font-size:11px; }
@@ -387,6 +489,12 @@ export default function TeacherDailyDoubtAcknowledgement() {
           .teacher-doubt-ack-kicker { font-size:6.5px; letter-spacing:.85px; }
           .teacher-doubt-ack-title { font-size:15px; margin:3px 0; }
           .teacher-doubt-ack-copy { font-size:7.5px; line-height:1.3; }
+          .teacher-doubt-ack-filter { display:grid; grid-template-columns:minmax(0,1fr); gap:5px; margin-top:7px; }
+          .teacher-doubt-ack-filter-field { min-width:0; }
+          .teacher-doubt-ack-filter-label { font-size:5.5px; }
+          .teacher-doubt-ack-filter-select,.teacher-doubt-ack-filter-date { min-height:28px; padding:0 6px; font-size:7px; border-radius:7px; }
+          .teacher-doubt-ack-custom { min-width:0; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
+          .teacher-doubt-ack-filter-status { margin-top:3px; font-size:5.5px; }
           .teacher-doubt-ack-body { padding:7px; }
           .teacher-doubt-ack-class { padding:7px; margin-bottom:5px; border-radius:10px; }
           .teacher-doubt-ack-class-head { gap:5px; }
@@ -414,10 +522,73 @@ export default function TeacherDailyDoubtAcknowledgement() {
             Please review the latest unresolved doubt bank for every classroom
             currently requiring your attention. Acknowledge each classroom before continuing.
           </p>
+
+          <div className="teacher-doubt-ack-filter">
+            <div className="teacher-doubt-ack-filter-field">
+              <label className="teacher-doubt-ack-filter-label" htmlFor="teacher-doubt-range">
+                Doubt range
+              </label>
+              <select
+                id="teacher-doubt-range"
+                className="teacher-doubt-ack-filter-select"
+                value={filterPeriod}
+                onChange={(event) => setFilterPeriod(event.target.value as DoubtFilterPeriod)}
+                disabled={filterLoading}
+              >
+                <option value="ALL">All current unresolved doubts</option>
+                <option value="30">Last 30 days</option>
+                <option value="60">Last 60 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="CUSTOM">Custom</option>
+              </select>
+            </div>
+
+            {filterPeriod === "CUSTOM" ? (
+              <div className="teacher-doubt-ack-custom">
+                <div className="teacher-doubt-ack-filter-field">
+                  <label className="teacher-doubt-ack-filter-label" htmlFor="teacher-doubt-custom-start">
+                    From
+                  </label>
+                  <input
+                    id="teacher-doubt-custom-start"
+                    className="teacher-doubt-ack-filter-date"
+                    type="date"
+                    value={customStartDate}
+                    onChange={(event) => setCustomStartDate(event.target.value)}
+                    disabled={filterLoading}
+                  />
+                </div>
+                <div className="teacher-doubt-ack-filter-field">
+                  <label className="teacher-doubt-ack-filter-label" htmlFor="teacher-doubt-custom-end">
+                    To
+                  </label>
+                  <input
+                    id="teacher-doubt-custom-end"
+                    className="teacher-doubt-ack-filter-date"
+                    type="date"
+                    value={customEndDate}
+                    min={customStartDate || undefined}
+                    onChange={(event) => setCustomEndDate(event.target.value)}
+                    disabled={filterLoading}
+                  />
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {filterError ? (
+            <div className="teacher-doubt-ack-filter-status">{filterError}</div>
+          ) : null}
         </div>
 
         <div className="teacher-doubt-ack-body">
-          {classrooms.map((item) => (
+          {filterLoading ? (
+            <div className="teacher-doubt-ack-empty">Refreshing unresolved doubts…</div>
+          ) : classrooms.length === 0 ? (
+            <div className="teacher-doubt-ack-empty">
+              No unresolved doubts are available for the selected date range.
+            </div>
+          ) : classrooms.map((item) => (
             <section className="teacher-doubt-ack-class" key={item.classroom}>
               <div className="teacher-doubt-ack-class-head">
                 <div className="teacher-doubt-ack-class-name">{item.classroom}</div>
@@ -454,7 +625,9 @@ export default function TeacherDailyDoubtAcknowledgement() {
 
         <div className="teacher-doubt-ack-foot">
           <div className="teacher-doubt-ack-foot-note">
-            {allAcknowledged
+            {classrooms.length === 0
+              ? "Choose another date range to review unresolved doubts."
+              : allAcknowledged
               ? "All classrooms acknowledged."
               : `Acknowledge ${classrooms.length} classroom${classrooms.length === 1 ? "" : "s"} to continue.`}
           </div>
@@ -463,6 +636,7 @@ export default function TeacherDailyDoubtAcknowledgement() {
             <button
               type="button"
               className="teacher-doubt-ack-download"
+              disabled={filterLoading || classrooms.length === 0}
               onClick={downloadPdf}
             >
               SAVE PDF
