@@ -192,7 +192,7 @@ export async function getTeacherLiveDoubtClosureForAssignments(
   const { data, error } = await (supabase as any)
     .from("pending_teacher_doubts")
     .select(
-      "id,student_uuid,teacher_assignment_uuid,daily_log_uuid,subject_name,previous_topic_name,previous_difficult_concept,source_feedback_id,status,doubt_resolved,log_date"
+      "id,student_uuid,teacher_assignment_uuid,daily_log_uuid,subject_name,previous_topic_name,previous_difficult_concept,status,doubt_resolved,log_date"
     )
     .in("teacher_assignment_uuid", ids)
     .gte("log_date", startDate)

@@ -11,6 +11,7 @@ import SchoolStarPerformersPage from "../../starPerformers/pages/SchoolStarPerfo
 import "../../schoolIntelligence/pages/schoolIntelligence.css";
 import { AcademicYearProvider, useAcademicYearContext } from "../../academicYear/context/AcademicYearContext";
 import AcademicYearSelector from "../../academicYear/components/AcademicYearSelector";
+import PortalManual from "../../../components/portalManual/PortalManual";
 
 interface Props { onLogout: () => void; }
 type Tab = "overview" | "teachers" | "classrooms" | "academic" | "lesson-plans" | "unit-tests" | "exam-papers" | "worksheets" | "star-performers";
@@ -72,5 +73,6 @@ function SchoolDashboardContent({ onLogout }: Props) {
       @media(max-width:1024px){.school-nav{grid-template-columns:auto 1fr auto;padding:10px 14px}.school-brand span{display:none}.school-nav-long{display:none}.school-nav-short{display:inline}.school-nav-tabs{justify-content:flex-start;overflow-x:auto;padding-bottom:2px}.school-nav-tabs button{padding:8px 10px;font-size:9px}.school-logout{padding:8px 11px;font-size:9px}}
       @media(max-width:600px){.school-nav{gap:7px;padding:7px 9px}.school-brand b{font-size:9px}.school-brand-mark{width:25px;height:25px;border-radius:7px}.school-nav-tabs{gap:5px}.school-nav-tabs button{padding:7px 8px;border-radius:8px;font-size:7px}.school-logout{padding:7px 9px;border-radius:8px;font-size:7px}}
     `}</style>
+    <PortalManual role="school" activePage={tab} />
   </div>;
 }

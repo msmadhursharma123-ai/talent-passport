@@ -1,4 +1,5 @@
 import React from "react";
+import PortalManual from "../../components/portalManual/PortalManual";
 
 export type PartnerTab =
   | "dashboard"
@@ -522,6 +523,8 @@ export default function PartnerLayout({
       {/* =========================================================
           CURRENT PARTNER PAGE
          ========================================================= */}
+
+      <PortalManual role="partner" activePage={activeTab} />
 
       <div
         className="partner-layout-content"

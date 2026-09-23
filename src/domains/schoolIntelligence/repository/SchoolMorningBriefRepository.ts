@@ -118,8 +118,7 @@ export async function getSchoolMorningBriefRawData(
   const doubtsResult = await supabase
     .from("pending_teacher_doubts")
     .select("id,student_uuid,student_name,teacher_assignment_uuid,daily_log_uuid,status,student_response,school_name,class_name,section_name,subject_name,previous_topic_name,previous_difficult_concept,log_date,doubt_resolved,revision_checked_at,created_at")
-    .eq("school_name", schoolName)
-    .in("teacher_assignment_uuid", assignmentIds)
+.in("teacher_assignment_uuid", assignmentIds)
     .gte("log_date", startDate)
     .lte("log_date", endDate);
 

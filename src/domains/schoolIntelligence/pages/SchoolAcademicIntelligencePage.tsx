@@ -1,10 +1,11 @@
 import "./schoolIntelligence.css";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
+import { loadCanonicalSchoolExamPreparation } from "../../examPreparationIntelligence/canonical/ExamPreparationCanonicalService";
+import { buildExamPreparationRange, todayExamPreparationDate } from "../../examPreparationIntelligence/canonical/ExamPreparationDate";
 import type { SchoolExamPreparationClassroom, SchoolExamPreparationStudent } from "../types/SchoolIntelligenceModels";
 import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
 
-type Period="ALL"|"7"|"14"|"CUSTOM";
+type Period="ALL"|"30"|"60"|"90"|"CUSTOM";
 type FilterYear="ALL"|"2026"|"2027"|"2028";
 type FilterMonth="ALL"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"|"10"|"11"|"12";
 
@@ -18,50 +19,34 @@ const monthOptions=[
  ["7","July"],["8","August"],["9","September"],["10","October"],["11","November"],["12","December"]
 ] as const;
 
-function dateKey(date:Date){
- const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(date);
- return `${parts.find(p=>p.type==="year")?.value??""}-${parts.find(p=>p.type==="month")?.value??""}-${parts.find(p=>p.type==="day")?.value??""}`;
-}
-
 function filterRange(year:FilterYear,month:FilterMonth,period:Period,from:string,to:string){
- const today=new Date();
- let start:string|undefined;
- let end:string|undefined;
+ const periodRange=buildExamPreparationRange(period,from,to);
+ if(periodRange===null)return null;
 
- if(period==="7"||period==="14"||period==="30"){
-   const days=Number(period);
-   const endDate=new Date(today);
-   const startDate=new Date(today);
-   startDate.setDate(startDate.getDate()-(days-1));
-   start=dateKey(startDate);
-   end=dateKey(endDate);
- }
-
- if(period==="CUSTOM"){
-   if(!from||!to||from>to) return null;
-   start=from; end=to;
- }
+ let start=periodRange.startDate;
+ let endExclusive=periodRange.endDateExclusive;
 
  if(year!=="ALL"){
    const y=Number(year);
    const yearStart=`${y}-01-01`;
-   const yearEnd=`${y}-12-31`;
-   start=start ? (start>yearStart?start:yearStart) : yearStart;
-   end=end ? (end<yearEnd?end:yearEnd) : yearEnd;
- }
- if(month!=="ALL"){
-   const y=year==="ALL"?today.getFullYear():Number(year);
-   const m=Number(month);
-   const monthStart=new Date(y,m-1,1);
-   const monthEnd=new Date(y,m,0);
-   const monthStartKey=dateKey(monthStart);
-   const monthEndKey=dateKey(monthEnd);
-   start=start ? (start>monthStartKey?start:monthStartKey) : monthStartKey;
-   end=end ? (end<monthEndKey?end:monthEndKey) : monthEndKey;
+   const yearEndExclusive=`${y+1}-01-01`;
+   start=start?(start>yearStart?start:yearStart):yearStart;
+   endExclusive=endExclusive?(endExclusive<yearEndExclusive?endExclusive:yearEndExclusive):yearEndExclusive;
  }
 
- if(start&&end&&start>end) return null;
- return {start,end};
+ if(month!=="ALL"){
+   const y=year==="ALL"?Number(todayExamPreparationDate().slice(0,4)):Number(year);
+   const m=Number(month);
+   const monthStart=`${y}-${String(m).padStart(2,"0")}-01`;
+   const nextMonth=new Date(Date.UTC(y,m,1));
+   const monthEndExclusive=`${nextMonth.getUTCFullYear()}-${String(nextMonth.getUTCMonth()+1).padStart(2,"0")}-${String(nextMonth.getUTCDate()).padStart(2,"0")}`;
+   start=start?(start>monthStart?start:monthStart):monthStart;
+   endExclusive=endExclusive?(endExclusive<monthEndExclusive?endExclusive:monthEndExclusive):monthEndExclusive;
+ }
+
+ if(start&&endExclusive&&start>=endExclusive)return null;
+
+ return {start,endExclusive};
 }
 
 export default function SchoolAcademicIntelligencePage(){
@@ -74,11 +59,11 @@ export default function SchoolAcademicIntelligencePage(){
 
  async function load(){
    const range=filterRange(year,month,period,from,to);
-   if(!range)return;
+   if(!range){setLoading(false);return;}
    setLoading(true);
    try{
-     const d=await loadSchoolIntelligence(undefined,range.start,range.end);
-     setAll(d.examPreparation??[]);
+     const d=await loadCanonicalSchoolExamPreparation({startDate:range.start,endDateExclusive:range.endExclusive});
+     setAll(d??[]);
    }finally{setLoading(false)}
  }
 
@@ -103,7 +88,7 @@ export default function SchoolAcademicIntelligencePage(){
     <F label="Search Student"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Student name"/></F>
     <F label="Year"><select value={year} onChange={e=>{setYear(e.target.value as FilterYear);if(e.target.value==="ALL")setMonth("ALL")}}><option value="ALL">All years</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option></select></F>
     <F label="Month"><select value={month} disabled={year==="ALL"} onChange={e=>setMonth(e.target.value as FilterMonth)}><option value="ALL">{year==="ALL"?"Select year first":"All months"}</option>{monthOptions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></F>
-    <F label="Time Period"><div className="sa-period-control"><select value={period} onChange={e=>setPeriod(e.target.value as Period)}><option value="ALL">All time</option><option value="7">Last 1 Week</option><option value="14">Last 2 Weeks</option><option value="30">Last 30 Days</option><option value="CUSTOM">Custom Date</option></select>{period==="CUSTOM"&&<div className="sa-custom-inline"><input aria-label="From date" type="date" value={from} onChange={e=>setFrom(e.target.value)}/><input aria-label="To date" type="date" value={to} onChange={e=>setTo(e.target.value)}/></div>}</div></F>
+    <F label="Time Period"><div className="sa-period-control"><select value={period} onChange={e=>setPeriod(e.target.value as Period)}><option value="ALL">All time</option><option value="30">Last 30 Days</option><option value="60">Last 60 Days</option><option value="90">Last 90 Days</option><option value="CUSTOM">Custom Date</option></select>{period==="CUSTOM"&&<div className="sa-custom-inline"><input aria-label="From date" type="date" value={from} onChange={e=>setFrom(e.target.value)}/><input aria-label="To date" type="date" value={to} onChange={e=>setTo(e.target.value)}/></div>}</div></F>
    </div>
    {loading?<><SchoolAnalyticsLoadingPopup active={loading} page="academic" /><div className="school-empty">Loading exam preparation intelligence…</div></>:visible.length===0?<div className="school-empty">{search.trim()?"No student matching this name exists in the selected timeline.":"No unresolved not-discussed doubt data exists for the selected filters."}</div>:visible.map(c=><Board key={c.classroomKey} c={c}/>)}
   </section>

@@ -27,6 +27,8 @@ export interface LiveDoubtRow {
   resolved_by?: string | null;
   last_reconciled_at?: string | null;
   updated_at?: string | null;
+  created_at?: string | null;
+  academic_year_id?: string | null;
 }
 
 export interface LiveReconciliationSubject {
@@ -71,7 +73,7 @@ export function normalizeLiveConcept(value: unknown) {
   return normalize(value);
 }
 
-export async function syncStudentLiveDoubtLedger(): Promise<boolean> {
+export async function syncStudentLiveDoubtLedger(strict = false): Promise<boolean> {
   try {
     const identity = requireIdentity();
     const { error } = await client().rpc(
@@ -80,18 +82,24 @@ export async function syncStudentLiveDoubtLedger(): Promise<boolean> {
     );
 
     if (error) {
-      if (isMissingLiveInfrastructure(error)) return false;
+      if (isMissingLiveInfrastructure(error)) {
+        if (strict) throw error;
+        return false;
+      }
       throw error;
     }
 
     return true;
   } catch (error) {
-    if (isMissingLiveInfrastructure(error)) return false;
+    if (isMissingLiveInfrastructure(error)) {
+      if (strict) throw error;
+      return false;
+    }
     throw error;
   }
 }
 
-export async function getStudentLiveDoubtRows(): Promise<LiveDoubtRow[]> {
+export async function getStudentLiveDoubtRows(strict = false): Promise<LiveDoubtRow[]> {
   try {
     const identity = requireIdentity();
     const { data, error } = await client().rpc(
@@ -100,19 +108,26 @@ export async function getStudentLiveDoubtRows(): Promise<LiveDoubtRow[]> {
     );
 
     if (error) {
-      if (isMissingLiveInfrastructure(error)) return [];
+      if (isMissingLiveInfrastructure(error)) {
+        if (strict) throw error;
+        return [];
+      }
       throw error;
     }
 
     return (data ?? []) as LiveDoubtRow[];
   } catch (error) {
-    if (isMissingLiveInfrastructure(error)) return [];
+    if (isMissingLiveInfrastructure(error)) {
+        if (strict) throw error;
+        return [];
+      }
     throw error;
   }
 }
 
 export async function getLiveDoubtsForTeacherAssignments(
-  assignmentIds: string[]
+  assignmentIds: string[],
+  strict = false
 ): Promise<LiveDoubtRow[]> {
   const ids = Array.from(
     new Set((assignmentIds ?? []).filter(Boolean).map(String))
@@ -127,19 +142,123 @@ export async function getLiveDoubtsForTeacherAssignments(
       .in("teacher_assignment_uuid", ids);
 
     if (error) {
-      if (isMissingLiveInfrastructure(error)) return [];
+      if (isMissingLiveInfrastructure(error)) {
+        if (strict) throw error;
+        return [];
+      }
       throw error;
     }
 
     return (data ?? []) as LiveDoubtRow[];
   } catch (error) {
-    if (isMissingLiveInfrastructure(error)) return [];
+    if (isMissingLiveInfrastructure(error)) {
+        if (strict) throw error;
+        return [];
+      }
     throw error;
   }
 }
 
+function liveExamPreparationDateKey(row: LiveDoubtRow): string {
+  // Preserve the existing Exam Preparation historical-day precedence used by
+  // the Student repository. Resolution/reconciliation timestamps must not move
+  // an old doubt into a different day.
+  const raw =
+    row.first_seen_at ??
+    row.source_submitted_at ??
+    row.latest_source_submitted_at ??
+    (row as any).created_at ??
+    "";
+
+  if (!raw) return "";
+
+  const rawText = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(rawText)) return rawText;
+
+  const parsed = new Date(rawText);
+  if (Number.isNaN(parsed.getTime())) return "";
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(parsed);
+
+  return `${parts.find((part) => part.type === "year")?.value ?? ""}-${
+    parts.find((part) => part.type === "month")?.value ?? ""
+  }-${parts.find((part) => part.type === "day")?.value ?? ""}`;
+}
+
+/**
+ * Exam Preparation-only Live read scope.
+ *
+ * This is deliberately read-only and deliberately does not use
+ * last_reconciled_at as an eligibility gate. The existing merge function
+ * remains responsible for reconciliation/matching and continues to preserve
+ * its existing includeUnmatchedLive behavior.
+ */
+export function filterLiveRowsForExamPreparation(
+  rows: LiveDoubtRow[],
+  options: {
+    startDate?: string;
+    endDateInclusive?: string;
+    endDateExclusive?: string;
+    subjectName?: string;
+  } = {}
+): LiveDoubtRow[] {
+  const subject = normalize(options.subjectName);
+  const hasSubjectFilter = Boolean(
+    subject && subject !== "all subjects" && subject !== "all_subjects"
+  );
+
+  return (Array.isArray(rows) ? rows : []).filter((row) => {
+    if (hasSubjectFilter && exactSubject(row) !== subject) return false;
+
+    const dateKey = liveExamPreparationDateKey(row);
+    if (
+      !dateKey &&
+      (options.startDate || options.endDateInclusive || options.endDateExclusive)
+    ) {
+      return false;
+    }
+
+    if (options.startDate && dateKey < options.startDate) return false;
+    if (options.endDateInclusive && dateKey > options.endDateInclusive) return false;
+    if (options.endDateExclusive && dateKey >= options.endDateExclusive) return false;
+
+    return true;
+  });
+}
+
+export async function getExamPreparationLiveRowsForTeacherAssignments(
+  assignmentIds: string[],
+  startDate?: string,
+  endDateInclusive?: string
+): Promise<LiveDoubtRow[]> {
+  const rows = await getLiveDoubtsForTeacherAssignments(assignmentIds);
+  return filterLiveRowsForExamPreparation(rows, {
+    startDate,
+    endDateInclusive,
+  });
+}
+
+export async function getExamPreparationLiveRowsForStudent(
+  startDate?: string,
+  endDateExclusive?: string,
+  subjectName?: string
+): Promise<LiveDoubtRow[]> {
+  const rows = await getStudentLiveDoubtRows();
+  return filterLiveRowsForExamPreparation(rows, {
+    startDate,
+    endDateExclusive,
+    subjectName,
+  });
+}
+
 export async function getLiveDoubtsForSchool(
-  schoolUuid: string
+  schoolUuid: string,
+  strict = false
 ): Promise<LiveDoubtRow[]> {
   if (!schoolUuid) return [];
 
@@ -150,15 +269,36 @@ export async function getLiveDoubtsForSchool(
       .eq("school_uuid", schoolUuid);
 
     if (error) {
-      if (isMissingLiveInfrastructure(error)) return [];
+      if (isMissingLiveInfrastructure(error)) {
+        if (strict) throw error;
+        return [];
+      }
       throw error;
     }
 
     return (data ?? []) as LiveDoubtRow[];
   } catch (error) {
-    if (isMissingLiveInfrastructure(error)) return [];
+    if (isMissingLiveInfrastructure(error)) {
+        if (strict) throw error;
+        return [];
+      }
     throw error;
   }
+}
+
+export async function getSchoolIntelligenceLiveRows(
+  schoolUuid: string,
+  startDate?: string,
+  endDateInclusive?: string
+): Promise<LiveDoubtRow[]> {
+  const rows = await getLiveDoubtsForSchool(schoolUuid);
+
+  return filterLiveRowsForExamPreparation(rows, {
+    startDate,
+    endDateInclusive,
+  }).filter(
+    (row) => row.is_unresolved === true || Boolean(row.last_reconciled_at)
+  );
 }
 
 function latestSourceTime(row: LiveDoubtRow) {
@@ -316,17 +456,21 @@ function chooseLiveForPending(
  * In BOTH modes, a live row that matches a pending row is consumed exactly
  * once. Nothing is counted twice.
  */
-export function mergePendingDoubtsWithLiveLedger(
+export interface LiveDoubtReconciliationMatch {
+  pending: any;
+  live: LiveDoubtRow | null;
+  merged: any;
+}
+
+export function reconcilePendingDoubtsWithLiveLedger(
   pendingDoubts: any[],
   liveRows: LiveDoubtRow[],
   options?: { includeUnmatchedLive?: boolean }
-) {
+): LiveDoubtReconciliationMatch[] {
   const pending = Array.isArray(pendingDoubts) ? pendingDoubts : [];
   const live = Array.isArray(liveRows) ? liveRows : [];
   const includeUnmatchedLive =
     options?.includeUnmatchedLive !== false;
-
-  if (!live.length) return pending;
 
   const byFeedback = new Map<string, LiveDoubtRow[]>();
   const byDailyLogConcept = new Map<string, LiveDoubtRow[]>();
@@ -362,8 +506,9 @@ export function mergePendingDoubtsWithLiveLedger(
   }
 
   const consumedLiveIds = new Set<string>();
+  const reconciled: LiveDoubtReconciliationMatch[] = [];
 
-  const merged = pending.map((row: any) => {
+  for (const row of pending) {
     const candidateLists: LiveDoubtRow[][] = [];
 
     const feedbackKey = sourceFeedbackKey(row?.source_feedback_id);
@@ -391,69 +536,94 @@ export function mergePendingDoubtsWithLiveLedger(
     ).filter((item) => !consumedLiveIds.has(String(item.id)));
 
     const liveMatch = chooseLiveForPending(row, candidates);
-    if (!liveMatch) return row;
 
-    consumedLiveIds.add(String(liveMatch.id));
+    if (liveMatch) {
+      consumedLiveIds.add(String(liveMatch.id));
+    }
 
-    return {
-      ...row,
-      student_name:
-        row.student_name ?? liveMatch.student_name ?? "Student",
-      previous_topic_name:
-        row.previous_topic_name ??
-        liveMatch.topic_name ??
-        liveMatch.doubt_concept,
-      previous_difficult_concept:
-        row.previous_difficult_concept ??
-        liveMatch.doubt_concept,
-      status: liveMatch.is_unresolved ? "NOT DISCUSSED" : "RESOLVED",
-      doubt_resolved: !liveMatch.is_unresolved,
-      student_response: liveMatch.is_unresolved
-        ? row.student_response
-        : "DISCUSSED",
-      revision_checked_at:
-        liveMatch.last_reconciled_at ??
-        row.revision_checked_at,
-    };
-  });
+    const merged = liveMatch
+      ? {
+          ...row,
+          student_name:
+            row.student_name ?? liveMatch.student_name ?? "Student",
+          previous_topic_name:
+            row.previous_topic_name ??
+            liveMatch.topic_name ??
+            liveMatch.doubt_concept,
+          previous_difficult_concept:
+            row.previous_difficult_concept ??
+            liveMatch.doubt_concept,
+          status: liveMatch.is_unresolved ? "NOT DISCUSSED" : "RESOLVED",
+          doubt_resolved: !liveMatch.is_unresolved,
+          student_response: liveMatch.is_unresolved
+            ? row.student_response
+            : "DISCUSSED",
+          revision_checked_at:
+            liveMatch.last_reconciled_at ??
+            row.revision_checked_at,
+        }
+      : row;
+
+    reconciled.push({
+      pending: row,
+      live: liveMatch,
+      merged,
+    });
+  }
 
   if (!includeUnmatchedLive) {
-    return merged;
+    return reconciled;
   }
 
   for (const row of live) {
     const id = String(row.id ?? "");
     if (!id || consumedLiveIds.has(id)) continue;
 
-    merged.push({
-      id: `live-${id}`,
-      _live_only: true,
-      student_uuid: row.student_uuid,
-      student_name: row.student_name ?? "Student",
-      teacher_uuid: row.teacher_uuid,
-      teacher_assignment_uuid: row.teacher_assignment_uuid,
-      daily_log_uuid: row.daily_log_uuid,
-      status: row.is_unresolved ? "NOT DISCUSSED" : "RESOLVED",
-      student_response: row.is_unresolved ? null : "DISCUSSED",
-      school_name: null,
-      class_name: row.class_name,
-      section_name: row.section_name,
-      subject_name: row.subject_name,
-      previous_topic_name:
-        row.topic_name ?? row.doubt_concept,
-      previous_difficult_concept: row.doubt_concept,
-      log_date:
-        row.first_seen_at?.slice(0, 10) ??
-        row.source_submitted_at?.slice(0, 10) ??
-        row.latest_source_submitted_at?.slice(0, 10) ??
-        null,
-      doubt_resolved: !row.is_unresolved,
-      revision_checked_at: row.last_reconciled_at,
-      created_at: row.first_seen_at,
+    reconciled.push({
+      pending: null,
+      live: row,
+      merged: {
+        id: `live-${id}`,
+        _live_only: true,
+        student_uuid: row.student_uuid,
+        student_name: row.student_name ?? "Student",
+        teacher_uuid: row.teacher_uuid,
+        teacher_assignment_uuid: row.teacher_assignment_uuid,
+        daily_log_uuid: row.daily_log_uuid,
+        status: row.is_unresolved ? "NOT DISCUSSED" : "RESOLVED",
+        student_response: row.is_unresolved ? null : "DISCUSSED",
+        school_name: null,
+        class_name: row.class_name,
+        section_name: row.section_name,
+        subject_name: row.subject_name,
+        previous_topic_name:
+          row.topic_name ?? row.doubt_concept,
+        previous_difficult_concept: row.doubt_concept,
+        log_date:
+          row.first_seen_at?.slice(0, 10) ??
+          row.source_submitted_at?.slice(0, 10) ??
+          row.latest_source_submitted_at?.slice(0, 10) ??
+          null,
+        doubt_resolved: !row.is_unresolved,
+        revision_checked_at: row.last_reconciled_at,
+        created_at: row.first_seen_at,
+      },
     });
   }
 
-  return merged;
+  return reconciled;
+}
+
+export function mergePendingDoubtsWithLiveLedger(
+  pendingDoubts: any[],
+  liveRows: LiveDoubtRow[],
+  options?: { includeUnmatchedLive?: boolean }
+) {
+  return reconcilePendingDoubtsWithLiveLedger(
+    pendingDoubts,
+    liveRows,
+    options
+  ).map((item) => item.merged);
 }
 
 /**

@@ -4,6 +4,7 @@ import { getTeacherAssignmentsByTeacher } from "../../teacherIntelligence/reposi
 import {
   getLiveDoubtsForTeacherAssignments,
   mergeFeedbackUnderstandingLevels,
+  mergePendingDoubtsWithLiveLedger,
 } from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 import type {
   PTMAssignment,
@@ -167,30 +168,38 @@ async function queryFeedback(logIds: string[]): Promise<any[]> {
 async function queryCurrentDoubts(assignmentIds: string[]): Promise<PTMDoubt[]> {
   if (assignmentIds.length === 0) return [];
 
-  try {
-    const liveRows = await getLiveDoubtsForTeacherAssignments(assignmentIds);
-    const live = (liveRows ?? [])
-      .filter((row: any) => row.is_unresolved)
-      .map(mapDoubt);
-
-    if (live.length > 0) return live;
-  } catch (error) {
-    console.warn("PTM LIVE DOUBT READ FAILED — USING PENDING DOUBT FALLBACK", error);
-  }
-
   const supabase = getSupabaseClient();
   if (!supabase) return [];
 
   const { data, error } = await (supabase as any)
     .from("pending_teacher_doubts")
     .select(
-      "id,student_uuid,teacher_assignment_uuid,subject_name,previous_topic_name,previous_difficult_concept,status,doubt_resolved,log_date,created_at"
+      "id,student_uuid,student_name,teacher_assignment_uuid,daily_log_uuid,subject_name,previous_topic_name,previous_difficult_concept,status,doubt_resolved,log_date,created_at"
     )
-    .in("teacher_assignment_uuid", assignmentIds);
+    .in("teacher_assignment_uuid", assignmentIds)
+    .eq("status", "NOT DISCUSSED");
 
   if (error) throw error;
 
-  return (data ?? []).map(mapDoubt).filter((row: PTMDoubt) => row.isUnresolved);
+  const pendingRows = (data ?? []).filter((row: any) => row?.doubt_resolved !== true);
+
+  try {
+    const liveRows = await getLiveDoubtsForTeacherAssignments(assignmentIds);
+    const merged = mergePendingDoubtsWithLiveLedger(
+      pendingRows,
+      liveRows ?? [],
+      { includeUnmatchedLive: true }
+    );
+
+    return merged
+      .map(mapDoubt)
+      .filter((row: PTMDoubt) => row.isUnresolved);
+  } catch (error) {
+    console.warn("PTM LIVE DOUBT READ FAILED — USING LOOP-2 DATA", error);
+    return pendingRows
+      .map(mapDoubt)
+      .filter((row: PTMDoubt) => row.isUnresolved);
+  }
 }
 
 async function loadStudents(
@@ -287,7 +296,7 @@ export async function getPTMPreparedDataset(): Promise<PTMPreparedDataset> {
     const liveRows = await getLiveDoubtsForTeacherAssignments(assignmentIds);
     effectiveFeedback = mergeFeedbackUnderstandingLevels(
       rawFeedback,
-      (liveRows ?? []).filter((row: any) => row.last_reconciled_at)
+      liveRows ?? []
     );
   } catch (error) {
     console.warn("PTM FEEDBACK LIVE OVERLAY FAILED — ORIGINAL FEEDBACK PRESERVED", error);

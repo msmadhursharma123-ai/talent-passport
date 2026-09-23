@@ -30,6 +30,8 @@ import ContactCenterPage from "./identityWorld/ContactCenterPage";
 import PlatformIntelligenceSection from "./identityWorld/PlatformIntelligenceSection";
 import FiveMinuteSchoolImpactPage from "./identityWorld/FiveMinuteSchoolImpactPage";
 import RequestDemoPage from "./identityWorld/RequestDemoPage";
+import PortalManualPage from "./identityWorld/manual/PortalManualPage";
+import UserManualBookmark from "./identityWorld/manual/UserManualBookmark";
 
 interface Props {
   onContinue: () => void;
@@ -59,7 +61,8 @@ type PublicPage =
   | "resources"
   | "blogs"
   | "contact"
-  | "request-demo";
+  | "request-demo"
+  | "manual";
 
 const VALID_PAGES = new Set<PublicPage>([
   "home",
@@ -86,6 +89,7 @@ const VALID_PAGES = new Set<PublicPage>([
   "blogs",
   "contact",
   "request-demo",
+  "manual",
 ]);
 
 function readPageFromHash(): PublicPage {
@@ -122,6 +126,7 @@ export default function IdentityWorld({ onContinue }: Props) {
       case "home":
         return (
           <>
+            <UserManualBookmark onClick={() => { window.location.hash = "#manual"; }} />
             <IdentityWorldHome onContinue={onContinue} />
             <PlatformIntelligenceSection />
             <FiveMinuteSchoolImpactPage />
@@ -150,6 +155,13 @@ export default function IdentityWorld({ onContinue }: Props) {
       case "blogs": return <BlogsPage />;
       case "contact": return <ContactCenterPage />;
       case "request-demo": return <RequestDemoPage />;
+      case "manual":
+        return (
+          <PortalManualPage
+            onBack={() => { window.location.hash = "#hero"; }}
+            onOpenPortal={() => { window.location.hash = "#hero"; onContinue(); }}
+          />
+        );
       default: return <IdentityWorldHome onContinue={onContinue} />;
     }
   }, [page, onContinue]);
@@ -158,7 +170,7 @@ export default function IdentityWorld({ onContinue }: Props) {
     <main className="landing-shell iw-public-shell">
       <LandingNavbar onPortalClick={onContinue} />
       <div className="iw-public-content">{content}</div>
-      {page !== "home" && <LandingCTA onContinue={onContinue} />}
+      {page !== "home" && page !== "manual" && <LandingCTA onContinue={onContinue} />}
       <LandingFooter onContinue={onContinue} />
     </main>
   );

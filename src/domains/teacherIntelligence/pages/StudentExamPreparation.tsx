@@ -4,8 +4,19 @@ import {
 } from "react";
 
 import {
+  getSubjectsByClass,
+} from "../../../data/academicMasterRepository";
+
+import {
+  requireIdentity,
+} from "../../../services/identityService";
+
+import {
   getStudentExamPreparationIntelligenceWithLiveLayer,
 } from "../../liveDoubtIntelligence/service/LiveStudentExamPreparation";
+import {
+  buildExamPreparationRange,
+} from "../../examPreparationIntelligence/canonical/ExamPreparationDate";
 
 interface SubjectBreakdown {
   subject: string;
@@ -31,6 +42,10 @@ interface ExamPreparationData {
   subjectBreakdown?: SubjectBreakdown[];
 }
 
+type TimeFilter = "30" | "60" | "90" | "ALL" | "CUSTOM";
+
+const ALL_SUBJECTS = "ALL_SUBJECTS";
+
 const subjectPalette = [
   { bg: "linear-gradient(135deg, #FFF7ED 0%, #FFFBF5 100%)", ink: "#C2410C" },
   { bg: "linear-gradient(135deg, #EFF6FF 0%, #F8FBFF 100%)", ink: "#1D4ED8" },
@@ -40,40 +55,89 @@ const subjectPalette = [
   { bg: "linear-gradient(135deg, #F0FDFA 0%, #F7FFFD 100%)", ink: "#0F766E" },
 ];
 
-interface StudentExamPreparationProps {
-  selectedSubject?: string;
-  selectedMonth?: string;
+function buildDateRange(
+  timeFilter: TimeFilter,
+  customStart: string,
+  customEnd: string
+) {
+  return buildExamPreparationRange(
+    timeFilter,
+    customStart,
+    customEnd
+  );
 }
 
-export default function StudentExamPreparation({
-  selectedSubject = "",
-  selectedMonth = "",
-}: StudentExamPreparationProps) {
+export default function StudentExamPreparation() {
   const [data, setData] = useState<ExamPreparationData | null>(null);
+  const [subjectOptions, setSubjectOptions] = useState<string[]>(["All Subjects"]);
+  const [selectedSubject, setSelectedSubject] = useState(ALL_SUBJECTS);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("30");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!selectedSubject || !selectedMonth) {
+    try {
+      const identity = requireIdentity();
+      const masterSubjects = identity.className
+        ? getSubjectsByClass(identity.className)
+        : [];
+
+      const cleaned = masterSubjects
+        .map((subject) => String(subject).trim())
+        .filter((subject) => subject && subject.toLowerCase() !== "all subjects");
+
+      setSubjectOptions(Array.from(new Set(["All Subjects", ...cleaned])));
+    } catch (error) {
+      console.error("STUDENT EXAM PREPARATION SUBJECT LIST LOAD FAILED", error);
+      setSubjectOptions(["All Subjects"]);
+    }
+  }, []);
+
+  useEffect(() => {
+    const range = buildDateRange(timeFilter, customStart, customEnd);
+    if (!range) {
       setData(null);
+      setLoading(false);
       return;
     }
-    void loadData();
-  }, [selectedSubject, selectedMonth]);
 
-  async function loadData() {
+    void loadData(range.startDate, range.endDateExclusive);
+  }, [selectedSubject, timeFilter, customStart, customEnd]);
+
+  async function loadData(startDate: string, endDateExclusive: string) {
     try {
+      setLoading(true);
+
       const response =
         await getStudentExamPreparationIntelligenceWithLiveLayer(
           selectedSubject,
-          selectedMonth
+          "",
+          {
+            startDate,
+            endDateExclusive,
+          }
         );
 
       setData(response ?? null);
+
+      const actualSubjects = (response?.subjectBreakdown ?? [])
+        .map((item) => String(item.subject ?? "").trim())
+        .filter(Boolean);
+
+      if (actualSubjects.length > 0) {
+        setSubjectOptions((current) =>
+          Array.from(new Set(["All Subjects", ...current.filter((item) => item !== "All Subjects"), ...actualSubjects]))
+        );
+      }
     } catch (error) {
       console.error(
         "STUDENT EXAM PREPARATION LOAD FAILED",
         error
       );
       setData(null);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -82,6 +146,10 @@ export default function StudentExamPreparation({
       b.totalUnresolvedDoubts - a.totalUnresolvedDoubts ||
       a.subject.localeCompare(b.subject)
   );
+
+  const customRangeInvalid =
+    timeFilter === "CUSTOM" &&
+    Boolean(customStart && customEnd && customStart > customEnd);
 
   return (
     <div className="student-exam-preparation tp-exam-prep-root">
@@ -104,6 +172,69 @@ export default function StudentExamPreparation({
       <div className="tp-exam-live-note">
         LIVE STUDENT VERIFICATION ACTIVE — unresolved values use the latest live doubt reconciliation.
       </div>
+
+      <div className="tp-exam-filter-bar">
+        <div className="tp-exam-filter">
+          <label htmlFor="student-exam-subject">Subject</label>
+          <select
+            id="student-exam-subject"
+            value={selectedSubject}
+            onChange={(event) => setSelectedSubject(event.target.value)}
+          >
+            <option value={ALL_SUBJECTS}>All Subjects</option>
+            {subjectOptions
+              .filter((subject) => subject !== "All Subjects")
+              .map((subject) => (
+                <option key={subject} value={subject}>
+                  {subject}
+                </option>
+              ))}
+          </select>
+        </div>
+
+        <div className="tp-exam-filter">
+          <label htmlFor="student-exam-time">Time Period</label>
+          <select
+            id="student-exam-time"
+            value={timeFilter}
+            onChange={(event) => setTimeFilter(event.target.value as TimeFilter)}
+          >
+            <option value="ALL">All time</option><option value="30">Last 30 Days</option>
+            <option value="60">Last 60 Days</option>
+            <option value="90">Last 90 Days</option>
+            <option value="CUSTOM">Custom Date</option>
+          </select>
+
+          {timeFilter === "CUSTOM" && (
+            <div className="tp-exam-custom-range">
+              <input
+                aria-label="Start date"
+                type="date"
+                value={customStart}
+                onChange={(event) => setCustomStart(event.target.value)}
+              />
+              <input
+                aria-label="End date"
+                type="date"
+                value={customEnd}
+                onChange={(event) => setCustomEnd(event.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {customRangeInvalid && (
+        <p className="tp-exam-filter-error">
+          Please select a valid custom date range.
+        </p>
+      )}
+
+      {loading && (
+        <p className="tp-exam-filter-loading">
+          Loading exam preparation intelligence…
+        </p>
+      )}
 
       <p className="tp-exam-swipe-hint">
         Scroll left & right →
@@ -262,6 +393,77 @@ function ExamRow({
 }
 
 const styles = `
+
+.tp-exam-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.2fr) minmax(150px, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tp-exam-filter {
+  min-width: 0;
+}
+
+.tp-exam-filter label {
+  display: block;
+  margin-bottom: 5px;
+  color: #64748B;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.tp-exam-filter select,
+.tp-exam-filter input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: #0F172A;
+  padding: 9px 10px;
+  font-size: 11px;
+  font-weight: 750;
+  outline: none;
+}
+
+.tp-exam-filter select:focus,
+.tp-exam-filter input:focus {
+  border-color: #FDBA74;
+}
+
+.tp-exam-custom-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+.tp-exam-filter-error {
+  margin: 0 0 8px;
+  padding: 7px 9px;
+  border: 1px solid #FECACA;
+  border-radius: 9px;
+  background: #FEF2F2;
+  color: #B91C1C;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.tp-exam-filter-loading {
+  margin: 0 0 8px;
+  padding: 7px 9px;
+  border: 1px solid #DBEAFE;
+  border-radius: 9px;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  font-size: 9px;
+  font-weight: 700;
+}
+
 .tp-exam-prep-root,
 .tp-exam-prep-root * {
   box-sizing: border-box;
@@ -458,6 +660,21 @@ const styles = `
 }
 
 @media (max-width: 1024px) {
+  .tp-exam-filter-bar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .tp-exam-filter label {
+    font-size: 8px;
+  }
+
+  .tp-exam-filter select,
+  .tp-exam-filter input {
+    padding: 8px 8px;
+    font-size: 10px;
+  }
+
   .tp-exam-prep-root {
     padding: 16px !important;
     border-radius: 20px !important;
@@ -547,6 +764,35 @@ const styles = `
 }
 
 @media (max-width: 600px) {
+  .tp-exam-filter-bar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 5px;
+    margin-bottom: 7px;
+  }
+
+  .tp-exam-filter label {
+    margin-bottom: 3px;
+    font-size: 6.5px;
+  }
+
+  .tp-exam-filter select,
+  .tp-exam-filter input {
+    padding: 6px 5px;
+    border-radius: 7px;
+    font-size: 8px;
+  }
+
+  .tp-exam-custom-range {
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .tp-exam-filter-error,
+  .tp-exam-filter-loading {
+    padding: 6px 7px;
+    font-size: 7px;
+  }
+
   .tp-exam-prep-root {
     padding: 12px !important;
     border-radius: 16px !important;

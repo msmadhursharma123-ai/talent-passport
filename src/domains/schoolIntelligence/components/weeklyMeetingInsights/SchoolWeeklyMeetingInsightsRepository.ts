@@ -114,8 +114,7 @@ export async function getSchoolWeeklyMeetingRawData(
     .select(
       "id,student_uuid,teacher_assignment_uuid,daily_log_uuid,status,student_response,doubt_resolved,revision_checked_at,created_at,log_date"
     )
-    .eq("school_name", schoolName)
-    .in("teacher_assignment_uuid", assignmentIds)
+.in("teacher_assignment_uuid", assignmentIds)
     .gte("log_date", startDate)
     .lte("log_date", endDate);
 

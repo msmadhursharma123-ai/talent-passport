@@ -1,0 +1,19 @@
+.tp-user-manual-bookmark {
+  position: fixed; left: 0; top: 150px; z-index: 80;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 43px; padding: 0 14px 0 11px;
+  border: 1px solid rgba(20, 33, 61, 0.10); border-left: 0;
+  border-radius: 0 11px 11px 0; background: rgba(255,255,255,0.97);
+  color: #143B73; box-shadow: 0 8px 24px rgba(20,33,61,0.11);
+  font: inherit; font-size: 10px; font-weight: 850; letter-spacing: 0.15px;
+  cursor: pointer; backdrop-filter: blur(12px);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.tp-user-manual-bookmark:hover { transform: translateX(3px); box-shadow: 0 12px 28px rgba(20,33,61,0.14); }
+.tp-user-manual-bookmark:focus-visible { outline: 3px solid rgba(36,79,143,0.28); outline-offset: 2px; }
+.tp-user-manual-bookmark-icon { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 7px; background: #FFF8EB; color: #A06C17; }
+@media (max-width: 640px) {
+  .tp-user-manual-bookmark { top: 92px; min-height: 38px; padding: 0 11px 0 8px; font-size: 9px; border-radius: 0 10px 10px 0; }
+  .tp-user-manual-bookmark-icon { width: 22px; height: 22px; }
+}
+@media (prefers-reduced-motion: reduce) { .tp-user-manual-bookmark { transition: none; } }

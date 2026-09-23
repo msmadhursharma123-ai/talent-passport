@@ -1,7 +1,7 @@
 import { getSupabaseClient } from "../../../supabaseClient";
 import { requireSchoolIdentity } from "../../../services/identityService";
 import {
-  getLiveDoubtsForTeacherAssignments,
+  getSchoolIntelligenceLiveRows,
   mergeFeedbackUnderstandingLevels,
 } from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 
@@ -161,10 +161,14 @@ export async function getSchoolIntelligenceRawData(
     feedback = feedbackResult.data ?? [];
   }
 
+  // Assignment UUIDs are the canonical school boundary here. Do not add a
+  // school_name predicate: legacy Loop-2 rows can have stale/null school_name
+  // while retaining the correct teacher_assignment_uuid. Teacher Intelligence
+  // already uses the assignment UUID boundary, so School Intelligence must
+  // use the same boundary for parity.
   let doubtsQuery = supabase
     .from("pending_teacher_doubts")
     .select("id,student_uuid,student_name,teacher_assignment_uuid,daily_log_uuid,status,student_response,school_name,class_name,section_name,subject_name,previous_topic_name,previous_difficult_concept,log_date,doubt_resolved,revision_checked_at,created_at")
-    .eq("school_name", schoolName)
     .in("teacher_assignment_uuid", assignmentIds.map(String));
 
   if (startDate) doubtsQuery = doubtsQuery.gte("log_date", startDate);
@@ -271,30 +275,11 @@ export async function getSchoolClassroomSupplementalMetrics(
   // with the selected timeline when an old doubt is resolved later.
   let effectiveFeedback = raw.feedback;
   try {
-    const assignmentIds = raw.assignments
-      .map((assignment: any) => String(assignment.id ?? ""))
-      .filter(Boolean);
-    const liveRows = (await getLiveDoubtsForTeacherAssignments(assignmentIds)).filter((row: any) => {
-      if (!row.last_reconciled_at) return false;
-      const value =
-        row.first_seen_at ??
-        row.log_date ??
-        row.source_submitted_at ??
-        row.latest_source_submitted_at ??
-        row.created_at;
-      const parsed = new Date(String(value ?? ""));
-      if (Number.isNaN(parsed.getTime())) return false;
-      const parts = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Asia/Kolkata",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }).formatToParts(parsed);
-      const dateKey = `${parts.find(p => p.type === "year")?.value ?? ""}-${parts.find(p => p.type === "month")?.value ?? ""}-${parts.find(p => p.type === "day")?.value ?? ""}`;
-      if (startDate && dateKey < startDate) return false;
-      if (endDate && dateKey > endDate) return false;
-      return true;
-    });
+    const liveRows = await getSchoolIntelligenceLiveRows(
+      raw.schoolUuid,
+      startDate,
+      endDate
+    );
     effectiveFeedback = mergeFeedbackUnderstandingLevels(
       raw.feedback,
       liveRows

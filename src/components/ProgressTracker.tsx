@@ -923,13 +923,10 @@ export default function ProgressTracker() {
 
 </div>
 
+
       {/* Academic Ledger */}
 
-      <StudentExamPreparation
-        selectedSubject={selectedSubject}
-        selectedMonth={selectedMonth}
-        availableSubjects={subjects}
-      />
+      <StudentExamPreparation />
 
     </div>
 

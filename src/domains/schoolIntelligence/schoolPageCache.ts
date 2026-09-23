@@ -13,8 +13,8 @@ export function readSchoolPageCache<T>(key: string): T | undefined {
     return undefined;
   }
 
-  // A revisit starts a fresh 300-second window, as requested.
-  entry.storedAt = Date.now();
+  // TTL is measured from the original write. A revisit must not silently
+  // extend stale school intelligence indefinitely.
   return entry.value;
 }
 

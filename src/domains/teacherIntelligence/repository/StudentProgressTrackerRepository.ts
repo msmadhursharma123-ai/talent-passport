@@ -72,21 +72,6 @@ export async function getStudentProgressTracker(
 
   const supabase =
     getSupabaseClient();
-  // The Progress Tracker dropdown is also the authoritative period for the
-  // embedded Student Exam Preparation table. This event is additive and does
-  // not alter the existing tracker contract.
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(
-      "talentPassport.progressTracker.selectedMonth",
-      selectedMonth
-    );
-    window.dispatchEvent(
-      new CustomEvent("talentPassport:progressTrackerMonthChanged", {
-        detail: { selectedMonth },
-      })
-    );
-  }
-
   /*
   --------------------------------------
   SELECTED MONTH

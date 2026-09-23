@@ -27,6 +27,10 @@ import {
 getTeacherPendingDoubtLedger,
 } from "../repository/TeacherPendingDoubtRepository";
 
+import {
+  mergePendingDoubtsWithLiveLedger,
+} from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
+
 interface LiveTeacherDoubtLedgerRow {
   classroom: string;
   pendingCount: number;
@@ -147,7 +151,7 @@ async function loadLiveTeacherDoubtLedger(
     const { data, error } = await (supabase as any)
       .from("student_live_unresolved_doubts")
       .select(
-        "student_uuid,student_name,teacher_assignment_uuid,class_name,section_name,subject_name,topic_name,doubt_concept,last_seen_at,latest_source_submitted_at,is_unresolved"
+        "student_uuid,student_name,teacher_assignment_uuid,daily_log_uuid,source_feedback_id,latest_source_feedback_id,class_name,section_name,subject_name,topic_name,doubt_concept,first_seen_at,source_submitted_at,last_seen_at,latest_source_submitted_at,created_at,is_unresolved"
       )
       .in(
         "teacher_assignment_uuid",
@@ -156,7 +160,40 @@ async function loadLiveTeacherDoubtLedger(
 
     if (error) throw error;
 
-    const rows = Array.isArray(data) ? data : [];
+    const liveRows = Array.isArray(data) ? data : [];
+
+    // Build the classroom overlay from the same canonical Loop-2 + Live
+    // reconciliation used by Exam Preparation. This prevents a Live row for
+    // one subject from replacing unrelated Loop-2 rows in the same classroom.
+    const { data: pendingData, error: pendingError } = await (supabase as any)
+      .from("pending_teacher_doubts")
+      .select("*")
+      .in("teacher_assignment_uuid", resolvedAssignmentIds)
+      .eq("status", "NOT DISCUSSED");
+
+    if (pendingError) throw pendingError;
+
+    const mergedRows = mergePendingDoubtsWithLiveLedger(
+      (pendingData ?? []).filter((row: any) => row?.doubt_resolved !== true),
+      liveRows as any[],
+      { includeUnmatchedLive: true }
+    ).filter(
+      (row: any) =>
+        row?.doubt_resolved !== true &&
+        String(row?.status ?? "").trim().toUpperCase() === "NOT DISCUSSED"
+    );
+
+    const liveClassrooms = new Set(
+      liveRows
+        .filter((row: any) => row?.is_unresolved === true)
+        .map((row: any) =>
+          row.class_name && row.section_name
+            ? `${row.class_name}-${row.section_name}`
+            : ""
+        )
+        .filter(Boolean)
+    );
+
     const grouped = new Map<
       string,
       {
@@ -168,7 +205,7 @@ async function loadLiveTeacherDoubtLedger(
       }
     >();
 
-    for (const row of rows) {
+    for (const row of mergedRows) {
       const classroom =
         row.class_name && row.section_name
           ? `${row.class_name}-${row.section_name}`
@@ -184,10 +221,12 @@ async function loadLiveTeacherDoubtLedger(
         hasLiveState: false,
       };
 
-      existing.hasLiveState = true;
+      existing.hasLiveState = liveClassrooms.has(classroom);
 
       const isUnresolved =
-        row.is_unresolved === true;
+        row.is_unresolved === true ||
+        (row.doubt_resolved !== true &&
+          String(row.status ?? "").trim().toUpperCase() === "NOT DISCUSSED");
 
       if (isUnresolved && row.student_uuid) {
         existing.students.set(
@@ -221,6 +260,8 @@ async function loadLiveTeacherDoubtLedger(
       const dateValue =
         row.latest_source_submitted_at ??
         row.last_seen_at ??
+        row.log_date ??
+        row.created_at ??
         "";
 
       if (
@@ -259,8 +300,12 @@ async function loadLiveTeacherDoubtLedger(
             : "—",
           status:
             value.students.size > 0
-              ? "Live · Student Verified"
-              : "Live · All Resolved",
+              ? value.hasLiveState
+                ? "Live + Loop-2 · Student Verified"
+                : "Needs Revision"
+              : value.hasLiveState
+              ? "Live · All Resolved"
+              : "Needs Revision",
         })
       );
 

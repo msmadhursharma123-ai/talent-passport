@@ -7,10 +7,15 @@ import {
 import {
   getTeacherExamAttentionIntelligenceWithLiveLayer,
 } from "../../liveDoubtIntelligence/service/LiveTeacherExamPreparation";
+import {
+  buildExamPreparationRange,
+  shiftExamPreparationDate,
+  todayExamPreparationDate,
+} from "../../examPreparationIntelligence/canonical/ExamPreparationDate";
 
 type FilterYear = "ALL" | "2026" | "2027" | "2028";
 type FilterMonth = "ALL" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12";
-type FilterPeriod = "ALL" | "7" | "14" | "30" | "CUSTOM";
+type FilterPeriod = "ALL" | "30" | "60" | "90" | "CUSTOM";
 
 const examMonthOptions = [
   ["1", "January"], ["2", "February"], ["3", "March"], ["4", "April"],
@@ -18,44 +23,47 @@ const examMonthOptions = [
   ["9", "September"], ["10", "October"], ["11", "November"], ["12", "December"],
 ] as const;
 
-function examDateKey(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit",
-  }).formatToParts(date);
-  return `${parts.find(p => p.type === "year")?.value ?? ""}-${parts.find(p => p.type === "month")?.value ?? ""}-${parts.find(p => p.type === "day")?.value ?? ""}`;
-}
+function examFilterRange(
+  year: FilterYear,
+  month: FilterMonth,
+  period: FilterPeriod,
+  from: string,
+  to: string
+) {
+  const periodRange = buildExamPreparationRange(period, from, to);
+  if (periodRange === null) return null;
 
-function examFilterRange(year: FilterYear, month: FilterMonth, period: FilterPeriod, from: string, to: string) {
-  const now = new Date();
-  let start: string | undefined;
-  let end: string | undefined;
+  let start = periodRange.startDate;
+  let endExclusive = periodRange.endDateExclusive;
 
-  if (period === "7" || period === "14" || period === "30") {
-    end = examDateKey(now);
-    const d = new Date(now);
-    d.setDate(d.getDate() - (Number(period) - 1));
-    start = examDateKey(d);
-  }
-  if (period === "CUSTOM") {
-    if (!from || !to || from > to) return null;
-    start = from; end = to;
-  }
   if (year !== "ALL") {
-    const ys = `${year}-01-01`, ye = `${year}-12-31`;
+    const ys = `${year}-01-01`;
+    const ye = `${Number(year) + 1}-01-01`;
     start = start ? (start > ys ? start : ys) : ys;
-    end = end ? (end < ye ? end : ye) : ye;
+    endExclusive = endExclusive
+      ? (endExclusive < ye ? endExclusive : ye)
+      : ye;
   }
+
   if (month !== "ALL") {
-    // Month is intentionally combined with a selected year.
-    const y = year === "ALL" ? now.getFullYear() : Number(year);
+    const y = year === "ALL" ? Number(todayExamPreparationDate().slice(0, 4)) : Number(year);
     const m = Number(month);
-    const ms = examDateKey(new Date(y, m - 1, 1));
-    const me = examDateKey(new Date(y, m, 0));
+    const ms = `${y}-${String(m).padStart(2, "0")}-01`;
+    const nextMonth = new Date(Date.UTC(y, m, 1));
+    const me = `${nextMonth.getUTCFullYear()}-${String(nextMonth.getUTCMonth() + 1).padStart(2, "0")}-${String(nextMonth.getUTCDate()).padStart(2, "0")}`;
+
     start = start ? (start > ms ? start : ms) : ms;
-    end = end ? (end < me ? end : me) : me;
+    endExclusive = endExclusive
+      ? (endExclusive < me ? endExclusive : me)
+      : me;
   }
-  if (start && end && start > end) return null;
-  return { start, end };
+
+  if (start && endExclusive && start >= endExclusive) return null;
+
+  return {
+    start,
+    end: endExclusive ? shiftExamPreparationDate(endExclusive, -1) : undefined,
+  };
 }
 
 export default function ExamPreparationPage() {
@@ -357,7 +365,7 @@ export default function ExamPreparationPage() {
       <div className="exam-prep-filter">
         <label>Time Period</label>
         <select value={period} onChange={e => setPeriod(e.target.value as FilterPeriod)}>
-          <option value="ALL">All time</option><option value="7">Last 1 Week</option><option value="14">Last 2 Weeks</option><option value="30">Last 30 Days</option><option value="CUSTOM">Custom Date</option>
+          <option value="ALL">All time</option><option value="30">Last 30 Days</option><option value="60">Last 60 Days</option><option value="90">Last 90 Days</option><option value="CUSTOM">Custom Date</option>
         </select>
         {period === "CUSTOM" && <div className="exam-prep-custom-dates"><input type="date" value={from} onChange={e => setFrom(e.target.value)} aria-label="From date" /><input type="date" value={to} onChange={e => setTo(e.target.value)} aria-label="To date" /></div>}
       </div>

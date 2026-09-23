@@ -5,6 +5,7 @@ import { AcademicYearProvider } from "../../domains/academicYear/context/Academi
 
 import TeacherHeader from "./TeacherHeader";
 import TeacherSidebar from "./TeacherSidebar";
+import PortalManual from "../../components/portalManual/PortalManual";
 
 import TeacherHome from "./TeacherHome";
 
@@ -264,6 +265,7 @@ export default function TeacherLayout({ onLogout }: Props) {
           </main>
         </div>
       </div>
+      <PortalManual role="teacher" activePage={activePage} />
       </>
     </AcademicYearProvider>
   );

@@ -87,7 +87,10 @@ export async function getStudentProgressTrackerWithLiveLayer(
   selectedSubject?: string,
   selectedMonth?: string
 ): Promise<StudentProgressTracker> {
-  const base = await getStudentProgressTracker();
+  const base = await getStudentProgressTracker(
+    selectedSubject ?? "",
+    selectedMonth ?? ""
+  );
 
   try {
     const identity = requireIdentity();
