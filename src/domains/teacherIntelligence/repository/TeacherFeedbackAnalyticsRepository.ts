@@ -1,3 +1,4 @@
+import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getCurrentTeacher } from "../../../services/identityService";
 import {
@@ -282,6 +283,10 @@ item.understanding_level ===
 "I didn't understand."
 
 ).length;
+
+const learningFeedback = effectiveFeedback.filter((item:any) =>
+  isLearningUnderstandingLevel(item.understanding_level)
+);
 
 const actualDailyLogUuid =
 
@@ -679,14 +684,18 @@ CLASSROOM HEALTH SCORE
 
 ****************************************/
 
-const totalStudents =
-
-totalStudentsInClass;
+const absentStudentUuids = new Set(
+  effectiveFeedback
+    .filter((item:any) => String(item.understanding_level ?? "").trim() === "I was absent.")
+    .map((item:any) => String(item.student_uuid ?? ""))
+    .filter(Boolean)
+);
+const totalLearningStudents = Math.max(0, totalStudentsInClass - absentStudentUuids.size);
 
 
 const healthScore =
 
-totalStudents === 0
+totalLearningStudents === 0
 
 ? 0
 
@@ -706,7 +715,7 @@ completelyUnderstood +
 
 /
 
-totalStudents
+totalLearningStudents
 
 )
 
@@ -811,7 +820,7 @@ teachingRecommendation,
 
 // NEW
 
-totalStudents,
+totalStudents: totalStudentsInClass,
 
 pendingStudentsCount,
 
@@ -1481,6 +1490,10 @@ export async function getStudentsAtRisk(
     const lastThree =
 
       sortedResponses
+
+        .filter((item: any) =>
+          isLearningUnderstandingLevel(item.understanding_level)
+        )
 
         .slice(
           0,

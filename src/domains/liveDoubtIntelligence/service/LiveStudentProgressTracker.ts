@@ -1,3 +1,4 @@
+import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getStudentProgressTracker, type StudentProgressTracker } from "../../teacherIntelligence/repository/StudentProgressTrackerRepository";
 import { requireIdentity } from "../../../services/identityService";
@@ -153,11 +154,15 @@ export async function getStudentProgressTrackerWithLiveLayer(
     const assistanceNeeded =
       partiallyUnderstood + didntUnderstand;
 
+    const learningRows = rows.filter((row: any) =>
+      isLearningUnderstandingLevel(row.understanding_level)
+    );
+
     const satisfactionRate =
-      trackedDays === 0
+      learningRows.length === 0
         ? 0
         : Math.round(
-            (completelyUnderstood / trackedDays) * 100
+            (completelyUnderstood / learningRows.length) * 100
           );
 
     const weekMap = new Map<number, any[]>();
@@ -187,12 +192,16 @@ export async function getStudentProgressTrackerWithLiveLayer(
         (row: any) => row.understanding_level === NONE
       ).length;
 
+      const learningItems = items.filter((row: any) =>
+        isLearningUnderstandingLevel(row.understanding_level)
+      );
+
       const healthScore =
-        items.length === 0
+        learningItems.length === 0
           ? 0
           : Math.round(
               ((complete + partial * 0.5) /
-                items.length) *
+                learningItems.length) *
                 100
             );
 

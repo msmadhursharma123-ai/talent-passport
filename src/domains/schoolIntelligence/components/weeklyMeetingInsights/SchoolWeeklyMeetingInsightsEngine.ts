@@ -1,3 +1,4 @@
+import { isLearningUnderstandingLevel } from "../../../../utils/learningFeedbackAnalytics";
 import type {
   SchoolWeeklyMeetingHoliday,
   SchoolWeeklyMeetingInsights,
@@ -204,19 +205,25 @@ function metricBase(
     effectiveUnderstanding({ doubts }, row),
   );
   const complete = effective.filter((value) => value === COMPLETE).length;
+  const learningTeacherFeedback = teacherFeedback.filter((row:any) =>
+    isLearningUnderstandingLevel(effectiveUnderstanding({ doubts }, row))
+  );
   const healthByLecture: number[] = [];
   for (const log of teacherLogs) {
     const rows = teacherFeedback.filter(
       (feedbackRow: any) => String(feedbackRow.daily_log_uuid) === String(log.id),
     );
-    if (!rows.length) continue;
-    const c = rows.filter(
+    const learningRows = rows.filter((feedbackRow:any) =>
+      isLearningUnderstandingLevel(effectiveUnderstanding({ doubts }, feedbackRow))
+    );
+    if (!learningRows.length) continue;
+    const c = learningRows.filter(
       (feedbackRow: any) => effectiveUnderstanding({ doubts }, feedbackRow) === COMPLETE,
     ).length;
-    const p = rows.filter(
+    const p = learningRows.filter(
       (feedbackRow: any) => effectiveUnderstanding({ doubts }, feedbackRow) === PARTIAL,
     ).length;
-    healthByLecture.push(Math.round(((c + p * 0.5) / rows.length) * 100));
+    healthByLecture.push(Math.round(((c + p * 0.5) / learningRows.length) * 100));
   }
 
   const resolved = teacherDoubts.filter(
@@ -256,7 +263,7 @@ function metricBase(
     feedbackEligible: eligible,
     feedbackResponses: responders,
     feedbackRate: pct(responders, eligible),
-    understandingRate: pct(complete, teacherFeedback.length),
+    understandingRate: pct(complete, learningTeacherFeedback.length),
     doubtsAsked: teacherDoubts.length,
     doubtsResolved: resolved,
     doubtClosureRate: pct(resolved, teacherDoubts.length),

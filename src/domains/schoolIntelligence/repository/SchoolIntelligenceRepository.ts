@@ -1,8 +1,11 @@
+import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
+
 import { getSupabaseClient } from "../../../supabaseClient";
 import { requireSchoolIdentity } from "../../../services/identityService";
 import {
   getSchoolIntelligenceLiveRows,
   mergeFeedbackUnderstandingLevels,
+  mergePendingDoubtsWithLiveLedger,
 } from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 
 export interface SchoolIntelligenceRawData {
@@ -198,15 +201,22 @@ export async function getSchoolIntelligenceRawData(
    ========================================================= */
 
 export interface SchoolClassroomSupplementalMetric {
+  assignmentUuid: string;
   className: string;
   sectionName: string;
+  subjectName: string;
   totalStudents: number;
   classHealthPercentage: number;
+  healthLectureCount: number;
 }
 
 function sameClassValue(a: unknown, b: unknown) {
   return String(a ?? "").trim().toLowerCase() ===
     String(b ?? "").trim().toLowerCase();
+}
+
+function normalizeConcept(value: unknown) {
+  return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 function getEffectiveUnderstandingLevel(
@@ -223,42 +233,61 @@ function getEffectiveUnderstandingLevel(
     return original;
   }
 
-  const matches = doubts.filter(
-    doubt =>
+  const concepts = Array.isArray(feedback?.concepts_not_understood)
+    ? feedback.concepts_not_understood.filter(Boolean)
+    : [];
+
+  if (concepts.length === 0) return original;
+
+  const matches = doubts.filter((doubt) => {
+    const sameLog =
       String(doubt.daily_log_uuid ?? "") ===
-        String(feedback?.daily_log_uuid ?? "") &&
+      String(feedback?.daily_log_uuid ?? "");
+    const sameStudent =
       String(doubt.student_uuid ?? "") ===
-        String(feedback?.student_uuid ?? "")
-  );
+      String(feedback?.student_uuid ?? "");
+    const doubtConcept = normalizeConcept(
+      doubt.previous_difficult_concept ??
+        doubt.doubt_concept ??
+        doubt.previous_topic_name
+    );
+
+    return (
+      sameLog &&
+      sameStudent &&
+      concepts.some(
+        (concept: string) => normalizeConcept(concept) === doubtConcept
+      )
+    );
+  });
 
   if (matches.length === 0) return original;
 
-  const latest = [...matches].sort((a, b) => {
-    const aTime = new Date(
-      a.revision_checked_at ?? a.created_at ?? 0
-    ).getTime();
+  const unresolvedConcepts = concepts.filter((concept: string) => {
+    const normalizedConcept = normalizeConcept(concept);
 
-    const bTime = new Date(
-      b.revision_checked_at ?? b.created_at ?? 0
-    ).getTime();
+    return !matches.some((doubt) => {
+      const doubtConcept = normalizeConcept(
+        doubt.previous_difficult_concept ??
+          doubt.doubt_concept ??
+          doubt.previous_topic_name
+      );
 
-    return bTime - aTime;
-  })[0];
+      if (doubtConcept !== normalizedConcept) return false;
 
-  const response = String(
-    latest?.student_response ?? ""
-  ).trim().toUpperCase();
+      const response = String(
+        doubt.student_response ?? ""
+      ).trim().toUpperCase();
 
-  if (
-    response === "DISCUSSED" ||
-    latest?.doubt_resolved === true ||
-    String(latest?.status ?? "").trim().toUpperCase() ===
-      "RESOLVED"
-  ) {
-    return COMPLETE;
-  }
+      return !(
+        response === "DISCUSSED" ||
+        doubt.doubt_resolved === true ||
+        String(doubt.status ?? "").trim().toUpperCase() === "RESOLVED"
+      );
+    });
+  });
 
-  return original;
+  return unresolvedConcepts.length === 0 ? COMPLETE : original;
 }
 
 export async function getSchoolClassroomSupplementalMetrics(
@@ -270,10 +299,13 @@ export async function getSchoolClassroomSupplementalMetrics(
     endDate
   );
 
-  // Supplemental classroom-health metrics must use the same historical live
-  // date rule as the main school snapshot. This keeps Class Health % aligned
-  // with the selected timeline when an old doubt is resolved later.
+  // This is a presentation-specific metric for each assignment (class +
+  // section + subject). It intentionally uses the same current-state Live
+  // evidence contract as the main School Overview snapshot, while retaining
+  // the existing fail-open behavior if the optional Live infrastructure is
+  // unavailable.
   let effectiveFeedback = raw.feedback;
+  let effectiveDoubts = raw.doubts;
   try {
     const liveRows = await getSchoolIntelligenceLiveRows(
       raw.schoolUuid,
@@ -284,6 +316,11 @@ export async function getSchoolClassroomSupplementalMetrics(
       raw.feedback,
       liveRows
     );
+    effectiveDoubts = mergePendingDoubtsWithLiveLedger(
+      raw.doubts,
+      liveRows,
+      { includeUnmatchedLive: true }
+    );
   } catch (liveError) {
     console.error(
       "SCHOOL SUPPLEMENTAL LIVE OVERLAY FAILED — ORIGINAL METRICS PRESERVED",
@@ -291,70 +328,25 @@ export async function getSchoolClassroomSupplementalMetrics(
     );
   }
 
-  const classroomKeys = new Map<
-    string,
-    { className: string; sectionName: string }
-  >();
+  const getEffectiveLevel = (feedback: any) =>
+    getEffectiveUnderstandingLevel(feedback, effectiveDoubts);
+  const isLearningFeedback = (feedback: any) =>
+    isLearningUnderstandingLevel(getEffectiveLevel(feedback));
 
-  raw.assignments
+  return raw.assignments
     .filter((assignment: any) => assignment.is_active !== false)
-    .forEach((assignment: any) => {
-      const className = String(
-        assignment.class_name ?? ""
-      );
-
-      const sectionName = String(
-        assignment.section_name ?? ""
-      );
-
-      const key = `${className}|||${sectionName}`;
-
-      if (!classroomKeys.has(key)) {
-        classroomKeys.set(key, {
-          className,
-          sectionName,
-        });
-      }
-    });
-
-  return Array.from(classroomKeys.values()).map(
-    ({ className, sectionName }) => {
-      const classroomAssignments = raw.assignments.filter(
-        (assignment: any) =>
-          assignment.is_active !== false &&
-          sameClassValue(
-            assignment.class_name,
-            className
-          ) &&
-          sameClassValue(
-            assignment.section_name,
-            sectionName
-          )
-      );
-
-      const assignmentIds = new Set(
-        classroomAssignments.map((assignment: any) =>
-          String(assignment.id ?? "")
-        )
-      );
-
-      const classroomLogs = raw.logs.filter(
+    .map((assignment: any) => {
+      const assignmentUuid = String(assignment.id ?? "");
+      const assignmentLogs = raw.logs.filter(
         (log: any) =>
-          assignmentIds.has(
-            String(log.teacher_assignment_uuid ?? "")
-          )
+          String(log.teacher_assignment_uuid ?? "") === assignmentUuid
       );
+
 
       const classroomStudents = raw.students.filter(
         (student: any) =>
-          sameClassValue(
-            student.class_name,
-            className
-          ) &&
-          sameClassValue(
-            student.section_name,
-            sectionName
-          )
+          sameClassValue(student.class_name, assignment.class_name) &&
+          sameClassValue(student.section_name, assignment.section_name)
       );
 
       const totalStudents = new Set(
@@ -366,38 +358,30 @@ export async function getSchoolClassroomSupplementalMetrics(
       let totalHealth = 0;
       let healthLectureCount = 0;
 
-      for (const log of classroomLogs) {
+      for (const log of assignmentLogs) {
         const logFeedback = effectiveFeedback.filter(
           (feedback: any) =>
             String(feedback.daily_log_uuid ?? "") ===
-            String(log.id ?? "")
+              String(log.id ?? "") &&
+            isLearningFeedback(feedback)
         );
 
-        if (logFeedback.length === 0) {
-          continue;
-        }
+        if (logFeedback.length === 0) continue;
 
         const completely = logFeedback.filter(
           (feedback: any) =>
-            getEffectiveUnderstandingLevel(
-              feedback,
-              raw.doubts
-            ) === "I completely understood."
+            String(getEffectiveLevel(feedback) ?? "").trim() ===
+            "I completely understood."
         ).length;
 
         const partial = logFeedback.filter(
           (feedback: any) =>
-            getEffectiveUnderstandingLevel(
-              feedback,
-              raw.doubts
-            ) === "I partially understood."
+            String(getEffectiveLevel(feedback) ?? "").trim() ===
+            "I partially understood."
         ).length;
 
         const dailyHealth = Math.round(
-          (
-            (completely + partial * 0.5) /
-            logFeedback.length
-          ) * 100
+          ((completely + partial * 0.5) / logFeedback.length) * 100
         );
 
         totalHealth += dailyHealth;
@@ -407,16 +391,16 @@ export async function getSchoolClassroomSupplementalMetrics(
       const classHealthPercentage =
         healthLectureCount === 0
           ? 0
-          : Math.round(
-              totalHealth / healthLectureCount
-            );
+          : Math.round(totalHealth / healthLectureCount);
 
       return {
-        className,
-        sectionName,
+        assignmentUuid,
+        className: String(assignment.class_name ?? ""),
+        sectionName: String(assignment.section_name ?? ""),
+        subjectName: String(assignment.subject_name ?? ""),
         totalStudents,
         classHealthPercentage,
+        healthLectureCount,
       };
-    }
-  );
+    });
 }

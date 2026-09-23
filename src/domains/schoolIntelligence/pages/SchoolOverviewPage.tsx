@@ -116,8 +116,8 @@ export default function SchoolOverviewPage() {
           const schoolUuid = getCurrentSchool()?.schoolUuid;
           const supplementalKey = schoolUuid
             ? (range === "custom"
-              ? `overview-supplemental-v1|${schoolUuid}|${customStart}|${customEnd}`
-              : `overview-supplemental-v1|${schoolUuid}|${range}`)
+              ? `overview-supplemental-v2|${schoolUuid}|${customStart}|${customEnd}`
+              : `overview-supplemental-v2|${schoolUuid}|${range}`)
             : undefined;
 
           const cachedSupplemental = supplementalKey
@@ -227,7 +227,7 @@ export default function SchoolOverviewPage() {
     () =>
       new Map(
         classroomMetrics.map(metric => [
-          `${metric.className}|||${metric.sectionName}`,
+          metric.assignmentUuid,
           metric,
         ])
       ),
@@ -249,7 +249,7 @@ export default function SchoolOverviewPage() {
       })
       .map(row => {
         const metric = classroomMetricsMap.get(
-          classroomKey(row)
+          String(row.assignmentUuid)
         );
 
         return {
@@ -297,8 +297,24 @@ export default function SchoolOverviewPage() {
           rows.reduce((sum, row) => sum + row.topicsTaught, 0) / rows.length
         ),
         totalStudents: rows[0].totalStudents,
-        averageClassHealthPercentage:
-          rows[0].classHealthPercentage,
+        averageClassHealthPercentage: (() => {
+          const totalLectureWeight = rows.reduce(
+            (sum, row) => {
+              const metric = classroomMetricsMap.get(String(row.assignmentUuid));
+              return sum + (metric?.healthLectureCount ?? 0);
+            },
+            0
+          );
+          if (totalLectureWeight === 0) return 0;
+          const weightedHealth = rows.reduce(
+            (sum, row) => {
+              const metric = classroomMetricsMap.get(String(row.assignmentUuid));
+              return sum + row.classHealthPercentage * (metric?.healthLectureCount ?? 0);
+            },
+            0
+          );
+          return Math.round(weightedHealth / totalLectureWeight);
+        })(),
         averageResponseRate: average("responseRate"),
         averageUnderstandingRate: average("understandingRate"),
         averagePartialUnderstandingRate: average("partialUnderstandingRate"),
@@ -1172,8 +1188,8 @@ export default function SchoolOverviewPage() {
           <div className="so-table-status">
             Response % is the average daily participation rate for the
             class/section in the selected period. Class Health % is the average
-            classroom understanding score across feedback-bearing lectures in
-            the selected period. A resolved pending doubt moves its earlier
+            subject-specific understanding score across feedback-bearing lectures
+            for that class, section, and subject in the selected period. A resolved pending doubt moves its earlier
             Partial / Didn't Understand signal into Understanding; an unresolved
             or Not Discussed signal keeps its original category.
           </div>

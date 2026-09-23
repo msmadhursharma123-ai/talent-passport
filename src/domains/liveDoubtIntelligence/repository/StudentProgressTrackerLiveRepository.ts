@@ -1,3 +1,4 @@
+import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getTableIdentity } from "../../../services/identityService";
 import {
@@ -92,9 +93,12 @@ export async function getStudentProgressTrackerLive(subjectName: string, selecte
   const completelyUnderstood = rows.filter((item: any) => item.effective_understanding_level === "I completely understood.").length;
   const partiallyUnderstood = rows.filter((item: any) => item.effective_understanding_level === "I partially understood.").length;
   const didntUnderstand = rows.filter((item: any) => item.effective_understanding_level === "I didn't understand.").length;
+  const learningRows = rows.filter((item: any) =>
+    isLearningUnderstandingLevel(item.effective_understanding_level)
+  );
   const trackedDays = rows.length;
   const assistanceNeeded = partiallyUnderstood + didntUnderstand;
-  const satisfactionRate = trackedDays === 0 ? 0 : Math.round((completelyUnderstood / trackedDays) * 100);
+  const satisfactionRate = learningRows.length === 0 ? 0 : Math.round((completelyUnderstood / learningRows.length) * 100);
 
   const weekMap = new Map<number, any[]>();
   rows.forEach((item: any) => {
@@ -108,7 +112,8 @@ export async function getStudentProgressTrackerLive(subjectName: string, selecte
     const complete = items.filter((x: any) => x.effective_understanding_level === "I completely understood.").length;
     const partial = items.filter((x: any) => x.effective_understanding_level === "I partially understood.").length;
     const didnt = items.filter((x: any) => x.effective_understanding_level === "I didn't understand.").length;
-    const healthScore = items.length === 0 ? 0 : Math.round(((complete + partial * 0.5) / items.length) * 100);
+    const learningItems = items.filter((x: any) => isLearningUnderstandingLevel(x.effective_understanding_level ?? x.understanding_level));
+    const healthScore = learningItems.length === 0 ? 0 : Math.round(((complete + partial * 0.5) / learningItems.length) * 100);
     return {
       week: `Week ${week}`,
       trackedDays: items.length,

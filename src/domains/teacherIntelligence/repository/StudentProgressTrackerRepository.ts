@@ -1,3 +1,4 @@
+import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
 import { getSupabaseClient } from "../../../supabaseClient";
 
 import {
@@ -333,6 +334,10 @@ export async function getStudentProgressTracker(
         "I didn't understand."
     ).length;
 
+  const learningRows = rows.filter((item: any) =>
+    isLearningUnderstandingLevel(item.understanding_level)
+  );
+
   const trackedDays =
     rows.length;
 
@@ -341,12 +346,12 @@ export async function getStudentProgressTracker(
     didntUnderstand;
 
   const satisfactionRate =
-    trackedDays === 0
+    learningRows.length === 0
       ? 0
       : Math.round(
           (
             completelyUnderstood /
-            trackedDays
+            learningRows.length
           ) * 100
         );
 

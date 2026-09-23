@@ -1,3 +1,4 @@
+import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
 import type {
   StarPerformerPeriod,
   StarPerformerRow,
@@ -122,9 +123,13 @@ function metricForClassroom(
       String(doubt.status ?? "").trim().toUpperCase() === "RESOLVED"
   ).length;
 
+  const learningFeedback = effectiveFeedback.filter(row =>
+    isLearningUnderstandingLevel(row.effectiveUnderstandingLevel)
+  );
+
   const understandingPercentage = pct(
-    effectiveFeedback.filter(row => row.effectiveUnderstandingLevel === COMPLETE).length,
-    effectiveFeedback.length
+    learningFeedback.filter(row => row.effectiveUnderstandingLevel === COMPLETE).length,
+    learningFeedback.length
   );
 
   let healthTotal = 0;
@@ -135,18 +140,21 @@ function metricForClassroom(
       row => String(row.daily_log_uuid ?? "") === String(log.id ?? "")
     );
 
-    if (lectureFeedback.length === 0) continue;
+    const learningLectureFeedback = lectureFeedback.filter(row =>
+      isLearningUnderstandingLevel(row.effectiveUnderstandingLevel)
+    );
+    if (learningLectureFeedback.length === 0) continue;
 
-    const completely = lectureFeedback.filter(
+    const completely = learningLectureFeedback.filter(
       row => row.effectiveUnderstandingLevel === COMPLETE
     ).length;
 
-    const partial = lectureFeedback.filter(
+    const partial = learningLectureFeedback.filter(
       row => row.effectiveUnderstandingLevel === PARTIAL
     ).length;
 
     const lectureHealth = Math.round(
-      ((completely + partial * 0.5) / lectureFeedback.length) * 100
+      ((completely + partial * 0.5) / learningLectureFeedback.length) * 100
     );
 
     healthTotal += lectureHealth;

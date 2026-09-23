@@ -1,3 +1,4 @@
+import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
 import { getSupabaseClient } from "../../../supabaseClient";
 import {
   getLiveDoubtsForTeacherAssignments,
@@ -460,51 +461,59 @@ export async function getOverallClassroomComparison(
               continue;
             }
 
+            const learningFeedback = logFeedback.filter((item:any) =>
+              isLearningUnderstandingLevel(item.understanding_level)
+            );
+
             const completely =
-              logFeedback.filter(
+              learningFeedback.filter(
                 (item:any) =>
                   item.understanding_level ===
                   "I completely understood."
               ).length;
 
             const partial =
-              logFeedback.filter(
+              learningFeedback.filter(
                 (item:any) =>
                   item.understanding_level ===
                   "I partially understood."
               ).length;
 
             const difficult =
-              logFeedback.filter(
+              learningFeedback.filter(
                 (item:any) =>
                   item.understanding_level ===
                   "I didn't understand."
               ).length;
 
             const healthScore =
-              Math.round(
-                (
-                  (
-                    completely +
-                    partial * 0.5
-                  ) /
-                  logFeedback.length
-                ) * 100
-              );
+              learningFeedback.length === 0
+                ? 0
+                : Math.round(
+                    (
+                      (
+                        completely +
+                        partial * 0.5
+                      ) /
+                      learningFeedback.length
+                    ) * 100
+                  );
 
             totalHealthScore +=
               healthScore;
 
             totalDoubtPercentage +=
-              Math.round(
-                (
-                  (
-                    partial +
-                    difficult
-                  ) /
-                  logFeedback.length
-                ) * 100
-              );
+              learningFeedback.length === 0
+                ? 0
+                : Math.round(
+                    (
+                      (
+                        partial +
+                        difficult
+                      ) /
+                      learningFeedback.length
+                    ) * 100
+                  );
 
             lectureCount++;
           }
@@ -932,16 +941,26 @@ export async function getCurrentMonthClassroomMetrics(
               "I partially understood."
           ).length;
 
-        const dailyScore =
-          Math.round(
-            (
-              (
-                completely +
-                partial * 0.5
-              ) /
-              logFeedback.length
-            ) * 100
+        const learningFeedback =
+          logFeedback.filter(
+            (item: any) =>
+              isLearningUnderstandingLevel(
+                item.understanding_level
+              )
           );
+
+        const dailyScore =
+          learningFeedback.length === 0
+            ? 0
+            : Math.round(
+                (
+                  (
+                    completely +
+                    partial * 0.5
+                  ) /
+                  learningFeedback.length
+                ) * 100
+              );
 
         scoreTotal +=
           dailyScore;

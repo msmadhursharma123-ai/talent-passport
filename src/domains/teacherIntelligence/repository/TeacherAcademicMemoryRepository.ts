@@ -1,3 +1,4 @@
+import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getCurrentTeacher } from "../../../services/identityService";
 
@@ -100,7 +101,7 @@ const conceptMap =
 new Map<string,number>();
 
 
-feedback.forEach((item:any)=>{
+feedback.filter((item:any) => isLearningUnderstandingLevel(item.understanding_level)).forEach((item:any)=>{
 
 const concepts =
 
@@ -151,7 +152,7 @@ const topicMap =
 new Map<string,number>();
 
 
-feedback.forEach((item:any)=>{
+feedback.filter((item:any) => isLearningUnderstandingLevel(item.understanding_level)).forEach((item:any)=>{
 
 const topic =
 
@@ -205,7 +206,7 @@ const studentMap =
 new Map<string,number>();
 
 
-feedback.forEach((item:any)=>{
+feedback.filter((item:any) => isLearningUnderstandingLevel(item.understanding_level)).forEach((item:any)=>{
 
 
 if(

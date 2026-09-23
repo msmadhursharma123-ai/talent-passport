@@ -8,12 +8,19 @@ import type {
 } from "../types/SchoolIntelligenceModels";
 import type { SchoolIntelligenceRawData } from "../repository/SchoolIntelligenceRepository";
 
+import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
+
 const COMPLETE = "I completely understood.";
 const PARTIAL = "I partially understood.";
 const NONE = "I didn't understand.";
 
 const pct = (part: number, total: number) =>
   total === 0 ? 0 : Math.round((part / total) * 100);
+
+
+
+const isLearningFeedback = (feedback: any) =>
+  isLearningUnderstandingLevel(feedback?.effective_understanding_level ?? feedback?.understanding_level);
 
 function getDoubtMetrics(doubts: any[]) {
   const doubtsAsked = doubts.length;
@@ -128,7 +135,9 @@ function buildDailyClassroomIntelligence(raw:SchoolIntelligenceRawData):SchoolTe
       const partial=feedback.filter(f=>f.understanding_level===PARTIAL).length;
       const none=feedback.filter(f=>f.understanding_level===NONE).length;
       const submitted=new Set(feedback.map(f=>f.student_uuid).filter(Boolean)).size;
-      const score=totalStudents===0?0:Math.round(((full+partial*.5)/totalStudents)*100);
+      const absentStudentUuids=new Set(feedback.filter(f=>String(f.understanding_level??"").trim()==="I was absent.").map(f=>String(f.student_uuid??"")).filter(Boolean));
+      const learningStudentDenominator=Math.max(0,totalStudents-absentStudentUuids.size);
+      const score=learningStudentDenominator===0?0:Math.round(((full+partial*.5)/learningStudentDenominator)*100);
       let status="Excellent"; if(score<80)status="Needs Attention"; if(score<50)status="Critical";
 
       const conceptMap=new Map<string,number>();
@@ -146,9 +155,9 @@ function buildDailyClassroomIntelligence(raw:SchoolIntelligenceRawData):SchoolTe
         latestLectureUuid:String(latest.id??""),latestLectureDate:String(latest.log_date??""),
         latestTopic:latest.topic_name??"-",totalStudents,feedbackSubmitted:submitted,
         feedbackRemaining:Math.max(0,totalStudents-submitted),completelyUnderstood:full,
-        completelyUnderstoodRate:pct(full,totalStudents),partiallyUnderstood:partial,
-        partiallyUnderstoodRate:pct(partial,totalStudents),didntUnderstand:none,
-        didntUnderstandRate:pct(none,totalStudents),classHealthScore:score,classHealthStatus:status,
+        completelyUnderstoodRate:pct(full,learningStudentDenominator),partiallyUnderstood:partial,
+        partiallyUnderstoodRate:pct(partial,learningStudentDenominator),didntUnderstand:none,
+        didntUnderstandRate:pct(none,learningStudentDenominator),classHealthScore:score,classHealthStatus:status,
         mostDifficultConcept:[...conceptMap.entries()].sort((x,y)=>y[1]-x[1])[0]?.[0]??"-",
         studentsRequiringAttention:attention
       }];
@@ -277,14 +286,18 @@ export function buildSchoolIntelligenceSnapshot(
     ...row,
     effective_understanding_level: effectiveUnderstanding(raw, row),
   }));
+  // Absence is a neutral attendance response, not a learning outcome. Keep
+  // it in response counts, but exclude it from understanding/partial/did-not-
+  // understand denominators so those percentages describe learning feedback.
+  const learningFeedback = effectiveFeedback.filter(isLearningFeedback);
 
-  const complete = effectiveFeedback.filter(
+  const complete = learningFeedback.filter(
     x => x.effective_understanding_level === COMPLETE
   ).length;
-  const partial = effectiveFeedback.filter(
+  const partial = learningFeedback.filter(
     x => x.effective_understanding_level === PARTIAL
   ).length;
-  const none = effectiveFeedback.filter(
+  const none = learningFeedback.filter(
     x => x.effective_understanding_level === NONE
   ).length;
 
@@ -314,17 +327,18 @@ export function buildSchoolIntelligenceSnapshot(
     const feedback = effectiveFeedback.filter(
       x => logIds.has(String(x.daily_log_uuid))
     );
+    const learningFeedbackForAssignment = feedback.filter(isLearningFeedback);
     const teacher = raw.teachers.find(
       x => String(x.teacher_uuid) === String(assignment.teacher_uuid)
     );
 
-    const fully = feedback.filter(
+    const fully = learningFeedbackForAssignment.filter(
       x => x.effective_understanding_level === COMPLETE
     ).length;
-    const partly = feedback.filter(
+    const partly = learningFeedbackForAssignment.filter(
       x => x.effective_understanding_level === PARTIAL
     ).length;
-    const difficult = feedback.filter(
+    const difficult = learningFeedbackForAssignment.filter(
       x => x.effective_understanding_level === NONE
     ).length;
 
@@ -357,9 +371,9 @@ export function buildSchoolIntelligenceSnapshot(
       completelyUnderstood: fully,
       partiallyUnderstood: partly,
       didntUnderstand: difficult,
-      understandingRate: pct(fully, feedback.length),
-      partialUnderstandingRate: pct(partly, feedback.length),
-      doubtRate: pct(difficult, feedback.length),
+      understandingRate: pct(fully, learningFeedbackForAssignment.length),
+      partialUnderstandingRate: pct(partly, learningFeedbackForAssignment.length),
+      doubtRate: pct(difficult, learningFeedbackForAssignment.length),
       doubtsAsked: doubtMetrics.doubtsAsked,
       doubtsResolved: doubtMetrics.doubtsResolved,
       doubtClosureRate: doubtMetrics.doubtClosureRate,
@@ -378,13 +392,14 @@ export function buildSchoolIntelligenceSnapshot(
     const feedback = effectiveFeedback.filter(
       x => logIds.has(String(x.daily_log_uuid))
     );
-    const fully = feedback.filter(
+    const learningFeedbackForTeacher = feedback.filter(isLearningFeedback);
+    const fully = learningFeedbackForTeacher.filter(
       x => x.effective_understanding_level === COMPLETE
     ).length;
-    const partly = feedback.filter(
+    const partly = learningFeedbackForTeacher.filter(
       x => x.effective_understanding_level === PARTIAL
     ).length;
-    const difficult = feedback.filter(
+    const difficult = learningFeedbackForTeacher.filter(
       x => x.effective_understanding_level === NONE
     ).length;
 
@@ -412,9 +427,9 @@ export function buildSchoolIntelligenceSnapshot(
       ),
       topicsTaught: logs.length,
       responses: feedback.length,
-      understandingRate: pct(fully, feedback.length),
-      partialUnderstandingRate: pct(partly, feedback.length),
-      doubtRate: pct(difficult, feedback.length),
+      understandingRate: pct(fully, learningFeedbackForTeacher.length),
+      partialUnderstandingRate: pct(partly, learningFeedbackForTeacher.length),
+      doubtRate: pct(difficult, learningFeedbackForTeacher.length),
       doubtsAsked: doubtMetrics.doubtsAsked,
       doubtsResolved: doubtMetrics.doubtsResolved,
       doubtClosureRate: doubtMetrics.doubtClosureRate,
@@ -431,22 +446,23 @@ export function buildSchoolIntelligenceSnapshot(
   const trends: SchoolAcademicTrendPoint[] = Array.from(byDate.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, rows]) => {
-      const fully = rows.filter(
+      const learningRows = rows.filter(isLearningFeedback);
+      const fully = learningRows.filter(
         x => x.effective_understanding_level === COMPLETE
       ).length;
-      const partly = rows.filter(
+      const partly = learningRows.filter(
         x => x.effective_understanding_level === PARTIAL
       ).length;
-      const difficult = rows.filter(
+      const difficult = learningRows.filter(
         x => x.effective_understanding_level === NONE
       ).length;
 
       return {
         date,
         responses: rows.length,
-        understandingRate: pct(fully, rows.length),
-        partialUnderstandingRate: pct(partly, rows.length),
-        doubtRate: pct(difficult, rows.length),
+        understandingRate: pct(fully, learningRows.length),
+        partialUnderstandingRate: pct(partly, learningRows.length),
+        doubtRate: pct(difficult, learningRows.length),
       };
     });
 
@@ -475,9 +491,9 @@ export function buildSchoolIntelligenceSnapshot(
       completelyUnderstood: complete,
       partiallyUnderstood: partial,
       didntUnderstand: none,
-      understandingRate: pct(complete, raw.feedback.length),
-      partialUnderstandingRate: pct(partial, raw.feedback.length),
-      doubtRate: pct(none, raw.feedback.length),
+      understandingRate: pct(complete, learningFeedback.length),
+      partialUnderstandingRate: pct(partial, learningFeedback.length),
+      doubtRate: pct(none, learningFeedback.length),
       doubtsAsked,
       activeDoubts,
       resolvedDoubts,

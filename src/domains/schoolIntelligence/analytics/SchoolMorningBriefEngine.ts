@@ -1,3 +1,4 @@
+import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
 import type {
   SchoolMorningBrief,
   SchoolMorningBriefClassroomMetric,
@@ -182,7 +183,10 @@ function teacherDailyMetrics(raw: SchoolMorningBriefRawData, yesterday: string) 
 
     const logIds = new Set(logs.map((log: any) => String(log.id ?? "")));
     const feedback = raw.feedback.filter((row: any) => logIds.has(String(row.daily_log_uuid ?? "")));
-    const complete = feedback.filter((row: any) => effectiveUnderstanding(row, raw.doubts) === COMPLETE).length;
+    const learningFeedback = feedback.filter((row:any) =>
+      isLearningUnderstandingLevel(effectiveUnderstanding(row, raw.doubts))
+    );
+    const complete = learningFeedback.filter((row: any) => effectiveUnderstanding(row, raw.doubts) === COMPLETE).length;
     const teacherDoubts = raw.doubts.filter(
       (doubt: any) =>
         teacherAssignmentIds.has(String(doubt.teacher_assignment_uuid ?? "")) &&
@@ -193,7 +197,7 @@ function teacherDailyMetrics(raw: SchoolMorningBriefRawData, yesterday: string) 
     metrics.push({
       teacherUuid,
       teacherName: String(teacher.full_name ?? "Teacher"),
-      understandingRate: pct(complete, feedback.length),
+      understandingRate: pct(complete, learningFeedback.length),
       doubtClosureRate: pct(resolved, teacherDoubts.length),
       feedbackCount: feedback.length,
       doubtsAsked: teacherDoubts.length,
@@ -244,8 +248,11 @@ function classroomMetrics(raw: SchoolMorningBriefRawData, start: string, end: st
     // not ranked when they have no activity in the period.
     if (!logs.length) continue;
 
-    const complete = feedback.filter((row: any) => effectiveUnderstanding(row, raw.doubts) === COMPLETE).length;
-    const understandingRate = pct(complete, feedback.length) ?? 0;
+    const learningFeedback = feedback.filter((row:any) =>
+      isLearningUnderstandingLevel(effectiveUnderstanding(row, raw.doubts))
+    );
+    const complete = learningFeedback.filter((row: any) => effectiveUnderstanding(row, raw.doubts) === COMPLETE).length;
+    const understandingRate = pct(complete, learningFeedback.length) ?? 0;
     const responseRate = averageDailyResponseRate(raw, logs, feedback, classroom.className, classroom.sectionName);
     const resolved = doubts.filter(isResolved).length;
     // Zero doubts means there was no closure obligation. Treating that component
