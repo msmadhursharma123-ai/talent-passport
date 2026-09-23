@@ -103,32 +103,29 @@ function isResolved(doubt: any) {
   );
 }
 
-function latestDoubtForFeedback(doubts: any[], feedback: any) {
-  const matches = doubts.filter(
-    (doubt) =>
-      String(doubt.daily_log_uuid ?? "") === String(feedback.daily_log_uuid ?? "") &&
-      String(doubt.student_uuid ?? "") === String(feedback.student_uuid ?? ""),
-  );
-
-  if (!matches.length) return null;
-
-  return [...matches].sort((a, b) => {
-    const aTime = new Date(a.revision_checked_at ?? a.created_at ?? 0).getTime();
-    const bTime = new Date(b.revision_checked_at ?? b.created_at ?? 0).getTime();
-    return bTime - aTime;
-  })[0];
+function normalizeConcept(value: unknown) {
+  return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 function effectiveUnderstanding(feedback: any, doubts: any[]) {
   const original = String(feedback?.understanding_level ?? "").trim();
+  if (feedback?._live_reconciled === true) return original;
   if (original !== PARTIAL && original !== NONE) return original;
-
-  const doubt = latestDoubtForFeedback(doubts, feedback);
-  if (!doubt) return original;
-
-  const response = String(doubt.student_response ?? "").trim().toUpperCase();
-  if (response === "DISCUSSED" || isResolved(doubt)) return COMPLETE;
-  return original;
+  const concepts = Array.isArray(feedback?.concepts_not_understood) ? feedback.concepts_not_understood.filter(Boolean) : [];
+  if (!concepts.length) return original;
+  const matches = doubts.filter((doubt) =>
+    String(doubt.daily_log_uuid ?? "") === String(feedback.daily_log_uuid ?? "") &&
+    String(doubt.student_uuid ?? "") === String(feedback.student_uuid ?? "") &&
+    concepts.some((concept: string) => normalizeConcept(doubt.previous_difficult_concept ?? doubt.doubt_concept ?? doubt.previous_topic_name) === normalizeConcept(concept))
+  );
+  if (!matches.length) return original;
+  const unresolved = concepts.filter((concept: string) =>
+    !matches.some((doubt: any) =>
+      normalizeConcept(doubt.previous_difficult_concept ?? doubt.doubt_concept ?? doubt.previous_topic_name) === normalizeConcept(concept) &&
+      !(String(doubt.student_response ?? "").trim().toUpperCase() === "DISCUSSED" || doubt.doubt_resolved === true || String(doubt.status ?? "").trim().toUpperCase() === "RESOLVED")
+    )
+  );
+  return unresolved.length === 0 ? COMPLETE : original;
 }
 
 function classroomStudentCount(raw: SchoolMorningBriefRawData, className: string, sectionName: string) {

@@ -38,47 +38,30 @@ function inInclusiveRange(value: unknown, start: string, end: string) {
   return Boolean(key) && key >= start && key <= end;
 }
 
+function normalizeConcept(value: unknown) {
+  return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 function getEffectiveUnderstandingLevel(feedback: any, doubts: any[]) {
   const original = feedback?.understanding_level;
-
-  if (original !== PARTIAL && original !== NONE) {
-    return original;
-  }
-
-  const matches = doubts.filter(
-    doubt =>
-      String(doubt?.daily_log_uuid ?? "") ===
-        String(feedback?.daily_log_uuid ?? "") &&
-      String(doubt?.student_uuid ?? "") ===
-        String(feedback?.student_uuid ?? "")
+  if (feedback?._live_reconciled === true) return original;
+  if (original !== PARTIAL && original !== NONE) return original;
+  const concepts = Array.isArray(feedback?.concepts_not_understood) ? feedback.concepts_not_understood.filter(Boolean) : [];
+  if (!concepts.length) return original;
+  const matches = doubts.filter((doubt) =>
+    String(doubt?.daily_log_uuid ?? "") === String(feedback?.daily_log_uuid ?? "") &&
+    String(doubt?.student_uuid ?? "") === String(feedback?.student_uuid ?? "") &&
+    (!feedback?.subject_name || !doubt?.subject_name || normalizeConcept(doubt.subject_name) === normalizeConcept(feedback.subject_name)) &&
+    concepts.some((concept: string) => normalizeConcept(doubt?.previous_difficult_concept ?? doubt?.doubt_concept ?? doubt?.previous_topic_name) === normalizeConcept(concept))
   );
-
-  if (matches.length === 0) return original;
-
-  const latest = [...matches].sort((a, b) => {
-    const aTime = new Date(
-      a?.revision_checked_at ?? a?.created_at ?? 0
-    ).getTime();
-    const bTime = new Date(
-      b?.revision_checked_at ?? b?.created_at ?? 0
-    ).getTime();
-
-    return bTime - aTime;
-  })[0];
-
-  const response = String(latest?.student_response ?? "")
-    .trim()
-    .toUpperCase();
-
-  if (
-    response === "DISCUSSED" ||
-    latest?.doubt_resolved === true ||
-    String(latest?.status ?? "").trim().toUpperCase() === "RESOLVED"
-  ) {
-    return COMPLETE;
-  }
-
-  return original;
+  if (!matches.length) return original;
+  const unresolved = concepts.filter((concept: string) =>
+    !matches.some((doubt: any) =>
+      normalizeConcept(doubt?.previous_difficult_concept ?? doubt?.doubt_concept ?? doubt?.previous_topic_name) === normalizeConcept(concept) &&
+      !(doubt?.doubt_resolved === true || String(doubt?.status ?? "").trim().toUpperCase() === "RESOLVED" || String(doubt?.student_response ?? "").trim().toUpperCase() === "DISCUSSED")
+    )
+  );
+  return unresolved.length === 0 ? COMPLETE : original;
 }
 
 function dailyStudentFeedbackRate(

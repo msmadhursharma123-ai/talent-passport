@@ -85,9 +85,12 @@ function effectiveRows(rows: any[], liveRows: any[]) {
 
 export async function getStudentProgressTrackerWithLiveLayer(
   selectedSubject?: string,
-  selectedMonth?: string
+  selectedMonth?: string,
+  baseTracker?: StudentProgressTracker
 ): Promise<StudentProgressTracker> {
-  const base = await getStudentProgressTracker(
+  // V3-compatible Live overlay. The optional baseTracker lets the caller
+  // reuse the already-loaded base result so the tracker is calculated once.
+  const base = baseTracker ?? await getStudentProgressTracker(
     selectedSubject ?? "",
     selectedMonth ?? ""
   );
@@ -122,9 +125,7 @@ export async function getStudentProgressTrackerWithLiveLayer(
 
     const rows = effectiveRows(
       data ?? [],
-      (await getStudentLiveDoubtRows()).filter(
-        (row) => row.last_reconciled_at
-      )
+      await getStudentLiveDoubtRows()
     );
 
     if (!rows.length) return base;

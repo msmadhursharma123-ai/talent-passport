@@ -12,6 +12,7 @@ import {
 
 import {
 getTeacherAssignmentsByTeacher,
+filterTeacherAssignmentsToSchool,
 }
 from "./TeacherAssignmentRepository";
 
@@ -236,7 +237,7 @@ context?: RadarBuildContext
   const effectiveFeedback =
     mergeFeedbackUnderstandingLevels(
       classroomFeedback,
-      liveRows.filter((row) => row.last_reconciled_at)
+      liveRows
     );
 
 const supabase = getSupabaseClient();
@@ -1125,7 +1126,12 @@ export async function getStudentsAtRisk(
         teacher.teacherUuid
       );
 
-      assignmentIdsForRisk = assignments
+      const schoolAssignments = filterTeacherAssignmentsToSchool(
+        assignments,
+        teacher.schoolUuid
+      );
+
+      assignmentIdsForRisk = schoolAssignments
         .filter(
           (assignment) =>
             assignment.isActive !== false &&
@@ -1218,11 +1224,16 @@ export async function getStudentsAtRisk(
     let assignmentIds = assignmentIdsForRisk;
 
     if (assignmentIds.length === 0 && !subjectName) {
-      const { data: assignments } = await (supabase as any)
+      let assignmentQuery = (supabase as any)
         .from("teacher_classroom_assignments")
-        .select("id")
+        .select("id,school_uuid")
         .eq("class_name", className)
         .eq("section_name", sectionName);
+      const currentTeacher = getCurrentTeacher();
+      if (currentTeacher?.schoolUuid) {
+        assignmentQuery = assignmentQuery.eq("school_uuid", currentTeacher.schoolUuid);
+      }
+      const { data: assignments } = await assignmentQuery;
 
       assignmentIds = (assignments ?? [])
         .map((assignment: any) => assignment.id)
@@ -1237,7 +1248,7 @@ export async function getStudentsAtRisk(
     effectiveFeedbacks =
       mergeFeedbackUnderstandingLevels(
         feedbacks,
-        liveRows.filter((row) => row.last_reconciled_at)
+        liveRows
       );
   } catch (error) {
     console.error(

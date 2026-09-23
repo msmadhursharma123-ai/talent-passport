@@ -1,6 +1,9 @@
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getCurrentTeacher } from "../../../services/identityService";
-import { getTeacherAssignmentsByTeacher } from "../../teacherIntelligence/repository/TeacherAssignmentRepository";
+import {
+  getTeacherAssignmentsByTeacher,
+  filterTeacherAssignmentsToSchool,
+} from "../../teacherIntelligence/repository/TeacherAssignmentRepository";
 import {
   getLiveDoubtRowsForAssignments,
   isPendingDoubtLiveResolved,
@@ -36,7 +39,10 @@ export async function getTeacherExamAttentionIntelligenceLive() {
   const teacher = getCurrentTeacher();
   if (!teacher) return [];
 
-  const assignments = await getTeacherAssignmentsByTeacher(teacher.teacherUuid);
+  const assignments = filterTeacherAssignmentsToSchool(
+    await getTeacherAssignmentsByTeacher(teacher.teacherUuid),
+    teacher.schoolUuid
+  );
   const assignmentIds = assignments
     .map((item) => assignmentKey(item.id))
     .filter(Boolean);
@@ -111,7 +117,10 @@ export async function getTeacherPendingDoubtLedgerLive() {
   const teacher = getCurrentTeacher();
   if (!teacher) return [];
 
-  const assignments = await getTeacherAssignmentsByTeacher(teacher.teacherUuid);
+  const assignments = filterTeacherAssignmentsToSchool(
+    await getTeacherAssignmentsByTeacher(teacher.teacherUuid),
+    teacher.schoolUuid
+  );
   const assignmentIds = assignments
     .map((item) => assignmentKey(item.id))
     .filter(Boolean);

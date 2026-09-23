@@ -1,5 +1,10 @@
 import { getSupabaseClient } from "../../../../supabaseClient";
 import { requireSchoolIdentity } from "../../../../services/identityService";
+import {
+  getSchoolIntelligenceLiveRows,
+  mergeFeedbackUnderstandingLevels,
+  mergePendingDoubtsWithLiveLedger,
+} from "../../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 
 export interface SchoolWeeklyMeetingRawData {
   schoolUuid: string;
@@ -112,13 +117,22 @@ export async function getSchoolWeeklyMeetingRawData(
   const doubtResult = await supabase
     .from("pending_teacher_doubts")
     .select(
-      "id,student_uuid,teacher_assignment_uuid,daily_log_uuid,status,student_response,doubt_resolved,revision_checked_at,created_at,log_date"
+      "id,student_uuid,teacher_assignment_uuid,daily_log_uuid,status,student_response,doubt_resolved,revision_checked_at,created_at,log_date,subject_name,previous_topic_name,previous_difficult_concept,student_name"
     )
 .in("teacher_assignment_uuid", assignmentIds)
     .gte("log_date", startDate)
     .lte("log_date", endDate);
 
   if (doubtResult.error) throw doubtResult.error;
+
+  const scopedLiveRows = await getSchoolIntelligenceLiveRows(
+    schoolUuid,
+    startDate,
+    endDate,
+  );
+  const rawDoubts = doubtResult.data ?? [];
+  const effectiveFeedback = mergeFeedbackUnderstandingLevels(feedback, scopedLiveRows);
+  const effectiveDoubts = mergePendingDoubtsWithLiveLedger(rawDoubts, scopedLiveRows, { includeUnmatchedLive: true });
 
   return {
     schoolUuid,
@@ -127,8 +141,8 @@ export async function getSchoolWeeklyMeetingRawData(
     assignments,
     students,
     logs,
-    feedback,
-    doubts: doubtResult.data ?? [],
+    feedback: effectiveFeedback,
+    doubts: effectiveDoubts,
     planners,
     schoolHolidays: await getSchoolCalendarHolidays(supabase, schoolUuid, startDate, endDate),
   };

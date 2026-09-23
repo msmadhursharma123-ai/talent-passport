@@ -132,7 +132,8 @@ export default function ProgressTracker() {
         const liveData =
           await getStudentProgressTrackerWithLiveLayer(
             selectedSubject,
-            selectedMonth
+            selectedMonth,
+            baseData
           );
 
         // Never replace the original calendar array.

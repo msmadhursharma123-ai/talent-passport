@@ -1,6 +1,9 @@
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getCurrentTeacher } from "../../../services/identityService";
-import { getTeacherAssignmentsByTeacher } from "../../teacherIntelligence/repository/TeacherAssignmentRepository";
+import {
+  getTeacherAssignmentsByTeacher,
+  filterTeacherAssignmentsToSchool,
+} from "../../teacherIntelligence/repository/TeacherAssignmentRepository";
 import {
   getLiveDoubtsForTeacherAssignments,
   mergeFeedbackUnderstandingLevels,
@@ -249,7 +252,10 @@ export async function getPTMPreparedDataset(): Promise<PTMPreparedDataset> {
   if (!teacher.teacherUuid) throw new Error("Teacher UUID is missing.");
   if (!teacher.schoolUuid) throw new Error("Teacher school UUID is missing.");
 
-  const assignmentRows = await getTeacherAssignmentsByTeacher(teacher.teacherUuid);
+  const assignmentRows = filterTeacherAssignmentsToSchool(
+    await getTeacherAssignmentsByTeacher(teacher.teacherUuid),
+    teacher.schoolUuid
+  );
   const assignments = assignmentRows
     .filter((assignment: any) => assignment.isActive !== false)
     .map((assignment: any) => mapAssignment({

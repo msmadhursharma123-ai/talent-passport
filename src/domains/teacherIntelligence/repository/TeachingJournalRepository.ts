@@ -7,6 +7,7 @@ import {
 
 import {
 getTeacherAssignmentsByTeacher,
+filterTeacherAssignmentsToSchool,
 }
 from "./TeacherAssignmentRepository";
 
@@ -174,6 +175,7 @@ function isDateInMonth(
   );
 }
 
+
 /* ============================================================
    OVERALL CLASSROOM COMPARISON
    ============================================================ */
@@ -189,10 +191,10 @@ export async function getOverallClassroomComparison(
     return [];
   }
 
-  const assignments =
-    await getTeacherAssignmentsByTeacher(
-      teacher.teacherUuid
-    );
+  const assignments = filterTeacherAssignmentsToSchool(
+    await getTeacherAssignmentsByTeacher(teacher.teacherUuid),
+    teacher.schoolUuid
+  );
 
   const {
     selectedYear,
@@ -328,7 +330,6 @@ export async function getOverallClassroomComparison(
       assignmentIds
     )
   ).filter((row) => {
-    if (!row.last_reconciled_at) return false;
     const sourceDate = String(
       row.first_seen_at ??
         row.latest_source_submitted_at ??
@@ -350,6 +351,22 @@ export async function getOverallClassroomComparison(
       feedback ?? [],
       liveRows
     );
+
+  let teachingJournalStudentsQuery = supabase
+    .from("students_master")
+    .select("student_uuid,class_name,section_name,school_uuid");
+  if (teacher.schoolUuid) {
+    teachingJournalStudentsQuery = teachingJournalStudentsQuery.eq("school_uuid", teacher.schoolUuid);
+  }
+  const { data: teachingJournalStudents, error: teachingJournalStudentsError } = await teachingJournalStudentsQuery;
+  if (teachingJournalStudentsError) throw teachingJournalStudentsError;
+  const teachingJournalRosterByClassroom = new Map<string, Set<string>>();
+  for (const student of teachingJournalStudents ?? []) {
+    const key = `${String(student.class_name ?? "").trim()}-${String(student.section_name ?? "").trim()}`;
+    const set = teachingJournalRosterByClassroom.get(key) ?? new Set<string>();
+    if (student.student_uuid) set.add(String(student.student_uuid));
+    teachingJournalRosterByClassroom.set(key, set);
+  }
 
   const comparisonData =
     await Promise.all(
@@ -508,10 +525,25 @@ export async function getOverallClassroomComparison(
                   lectureCount
                 );
 
+          const eligibleStudents =
+            teachingJournalRosterByClassroom.get(classroom) ?? new Set<string>();
+          const feedbackCoverageRates = classroomLogs.map((log: any) => {
+            if (eligibleStudents.size === 0) return 0;
+            const responders = new Set(
+              classroomFeedback
+                .filter((item: any) => String(item.daily_log_uuid) === String(log.id))
+                .map((item: any) => String(item.student_uuid ?? ""))
+                .filter((id: string) => eligibleStudents.has(id))
+            ).size;
+            return Math.min(100, Math.round((responders / eligibleStudents.size) * 100));
+          });
           const averageFeedbackPercentage =
-            classroomLogs.length === 0
+            feedbackCoverageRates.length === 0
               ? 0
-              : 100;
+              : Math.round(
+                  feedbackCoverageRates.reduce((sum: number, rate: number) => sum + rate, 0) /
+                  feedbackCoverageRates.length
+                );
 
           let studentsAtRisk = 0;
 
@@ -629,13 +661,12 @@ export async function getCurrentMonthClassroomMetrics(
     return [];
   }
 
-  const assignments =
-    teacherAssignments &&
-    teacherAssignments.length > 0
+  const assignments = filterTeacherAssignmentsToSchool(
+    teacherAssignments && teacherAssignments.length > 0
       ? teacherAssignments
-      : await getTeacherAssignmentsByTeacher(
-          teacher.teacherUuid
-        );
+      : await getTeacherAssignmentsByTeacher(teacher.teacherUuid),
+    teacher.schoolUuid
+  );
 
   const classroomGroups =
     groupAssignmentsByClassroom(
@@ -777,7 +808,6 @@ export async function getCurrentMonthClassroomMetrics(
       assignmentIds
     )
   ).filter((row) => {
-    if (!row.last_reconciled_at) return false;
     const sourceDate = String(
       row.first_seen_at ??
         row.latest_source_submitted_at ??

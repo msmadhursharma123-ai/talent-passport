@@ -1,5 +1,10 @@
 import { getSupabaseClient } from "../../../supabaseClient";
 import { requireSchoolIdentity } from "../../../services/identityService";
+import {
+  getSchoolIntelligenceLiveRows,
+  mergeFeedbackUnderstandingLevels,
+  mergePendingDoubtsWithLiveLedger,
+} from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 
 export interface SchoolMorningBriefRawData {
   schoolUuid: string;
@@ -124,6 +129,13 @@ export async function getSchoolMorningBriefRawData(
 
   if (doubtsResult.error) throw doubtsResult.error;
 
+  const scopedLiveRows = await getSchoolIntelligenceLiveRows(
+    schoolUuid,
+    startDate,
+    endDate,
+  );
+  const rawDoubts = doubtsResult.data ?? [];
+
   return {
     schoolUuid,
     schoolName,
@@ -131,7 +143,7 @@ export async function getSchoolMorningBriefRawData(
     assignments,
     students,
     logs,
-    feedback,
-    doubts: doubtsResult.data ?? [],
+    feedback: mergeFeedbackUnderstandingLevels(feedback, scopedLiveRows),
+    doubts: mergePendingDoubtsWithLiveLedger(rawDoubts, scopedLiveRows, { includeUnmatchedLive: true }),
   };
 }

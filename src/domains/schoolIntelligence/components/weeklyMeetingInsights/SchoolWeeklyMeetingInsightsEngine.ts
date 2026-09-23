@@ -127,32 +127,29 @@ function holidayMap(holidays: SchoolWeeklyMeetingHoliday[]) {
   return new Map(holidays.map(h => [h.date, h]));
 }
 
-function latestDoubtForFeedback(raw: any, feedback: any) {
-  const matches = raw.doubts.filter(
-    (d: any) =>
-      String(d.daily_log_uuid ?? "") === String(feedback.daily_log_uuid ?? "") &&
-      String(d.student_uuid ?? "") === String(feedback.student_uuid ?? "")
-  );
-  return [...matches].sort((a: any, b: any) =>
-    new Date(b.revision_checked_at ?? b.created_at ?? 0).getTime() -
-    new Date(a.revision_checked_at ?? a.created_at ?? 0).getTime()
-  )[0] ?? null;
+function normalizeConcept(value: unknown) {
+  return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 function effectiveUnderstanding(raw: any, feedback: any) {
   const original = feedback.understanding_level;
+  if (feedback?._live_reconciled === true) return original;
   if (original !== PARTIAL && original !== NONE) return original;
-  const doubt = latestDoubtForFeedback(raw, feedback);
-  if (!doubt) return original;
-  const response = String(doubt.student_response ?? "").trim().toUpperCase();
-  if (
-    response === "DISCUSSED" ||
-    doubt.doubt_resolved === true ||
-    String(doubt.status ?? "").trim().toUpperCase() === "RESOLVED"
-  ) {
-    return COMPLETE;
-  }
-  return original;
+  const concepts = Array.isArray(feedback?.concepts_not_understood) ? feedback.concepts_not_understood.filter(Boolean) : [];
+  if (!concepts.length) return original;
+  const matches = raw.doubts.filter((d: any) =>
+    String(d.daily_log_uuid ?? "") === String(feedback.daily_log_uuid ?? "") &&
+    String(d.student_uuid ?? "") === String(feedback.student_uuid ?? "") &&
+    concepts.some((concept: string) => normalizeConcept(d.previous_difficult_concept ?? d.doubt_concept ?? d.previous_topic_name) === normalizeConcept(concept))
+  );
+  if (!matches.length) return original;
+  const unresolved = concepts.filter((concept: string) =>
+    !matches.some((d: any) =>
+      normalizeConcept(d.previous_difficult_concept ?? d.doubt_concept ?? d.previous_topic_name) === normalizeConcept(concept) &&
+      !(String(d.student_response ?? "").trim().toUpperCase() === "DISCUSSED" || d.doubt_resolved === true || String(d.status ?? "").trim().toUpperCase() === "RESOLVED")
+    )
+  );
+  return unresolved.length === 0 ? COMPLETE : original;
 }
 
 function metricBase(

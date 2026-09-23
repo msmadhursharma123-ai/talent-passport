@@ -39,47 +39,29 @@ function getDoubtMetrics(doubts: any[]) {
 const sameValue = (a: unknown, b: unknown) =>
   String(a ?? "").trim().toLowerCase() === String(b ?? "").trim().toLowerCase();
 
-function latestDoubtForFeedback(raw: SchoolIntelligenceRawData, feedback: any) {
-  const matches = raw.doubts.filter(
-    doubt =>
-      String(doubt.daily_log_uuid ?? "") === String(feedback.daily_log_uuid ?? "") &&
-      String(doubt.student_uuid ?? "") === String(feedback.student_uuid ?? "")
-  );
-
-  if (matches.length === 0) return null;
-
-  return [...matches].sort((a, b) => {
-    const aTime = new Date(a.revision_checked_at ?? a.created_at ?? 0).getTime();
-    const bTime = new Date(b.revision_checked_at ?? b.created_at ?? 0).getTime();
-    return bTime - aTime;
-  })[0];
+function normalizeConcept(value: unknown) {
+  return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 function effectiveUnderstanding(raw: SchoolIntelligenceRawData, feedback: any) {
   const original = feedback.understanding_level;
-
-  if (original !== PARTIAL && original !== NONE) {
-    return original;
-  }
-
-  const doubt = latestDoubtForFeedback(raw, feedback);
-  if (!doubt) return original;
-
-  const response = String(doubt.student_response ?? "").trim().toUpperCase();
-
-  // Once the student confirms that the old gap was discussed,
-  // that earlier learning signal moves into the understood bucket.
-  if (
-    response === "DISCUSSED" ||
-    doubt.doubt_resolved === true ||
-    String(doubt.status ?? "").trim().toUpperCase() === "RESOLVED"
-  ) {
-    return COMPLETE;
-  }
-
-  // NOT DISCUSSED (or still pending) preserves the student's original
-  // PARTIAL vs DIDN'T UNDERSTAND classification.
-  return original;
+  if (feedback?._live_reconciled === true) return original;
+  if (original !== PARTIAL && original !== NONE) return original;
+  const concepts = Array.isArray(feedback?.concepts_not_understood) ? feedback.concepts_not_understood.filter(Boolean) : [];
+  if (!concepts.length) return original;
+  const matches = raw.doubts.filter((doubt: any) =>
+    String(doubt.daily_log_uuid ?? "") === String(feedback.daily_log_uuid ?? "") &&
+    String(doubt.student_uuid ?? "") === String(feedback.student_uuid ?? "") &&
+    concepts.some((concept: string) => normalizeConcept(doubt.previous_difficult_concept ?? doubt.doubt_concept ?? doubt.previous_topic_name) === normalizeConcept(concept))
+  );
+  if (!matches.length) return original;
+  const unresolved = concepts.filter((concept: string) =>
+    !matches.some((doubt: any) =>
+      normalizeConcept(doubt.previous_difficult_concept ?? doubt.doubt_concept ?? doubt.previous_topic_name) === normalizeConcept(concept) &&
+      !(String(doubt.student_response ?? "").trim().toUpperCase() === "DISCUSSED" || doubt.doubt_resolved === true || String(doubt.status ?? "").trim().toUpperCase() === "RESOLVED")
+    )
+  );
+  return unresolved.length === 0 ? COMPLETE : original;
 }
 
 function averageDailyResponseRate(

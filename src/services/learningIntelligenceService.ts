@@ -11,6 +11,7 @@ import {
 
 import {
     getStudentLiveDoubtRows,
+    filterLiveRowsForCurrentState,
     mergeFeedbackUnderstandingLevels,
     syncStudentLiveDoubtLedger,
     type LiveDoubtRow,
@@ -154,10 +155,26 @@ export async function getStudentLearningIntelligenceWithLiveLayer(
         const liveRows =
             await getStudentLiveDoubtRows();
 
-        const reconciledRows =
-            liveRows.filter(
-                row => Boolean(row.last_reconciled_at)
-            );
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - periodDays);
+        const cutoffParts = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Kolkata",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+        }).formatToParts(cutoffDate);
+        const cutoffKey = `${cutoffParts.find(p => p.type === "year")?.value ?? ""}-${cutoffParts.find(p => p.type === "month")?.value ?? ""}-${cutoffParts.find(p => p.type === "day")?.value ?? ""}`;
+        const todayParts = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Kolkata",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+        }).formatToParts(new Date());
+        const todayKey = `${todayParts.find(p => p.type === "year")?.value ?? ""}-${todayParts.find(p => p.type === "month")?.value ?? ""}-${todayParts.find(p => p.type === "day")?.value ?? ""}`;
+        const reconciledRows = filterLiveRowsForCurrentState(liveRows, {
+            startDate: cutoffKey,
+            endDateInclusive: todayKey,
+        });
 
         const rawRows =
             await getStudentFeedbackHistory() as LearningFeedbackRecord[];

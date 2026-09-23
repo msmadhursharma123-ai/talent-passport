@@ -240,7 +240,9 @@ export async function getExamPreparationLiveRowsForTeacherAssignments(
   return filterLiveRowsForExamPreparation(rows, {
     startDate,
     endDateInclusive,
-  });
+  }).filter(
+    (row) => row.is_unresolved === true || Boolean(row.last_reconciled_at)
+  );
 }
 
 export async function getExamPreparationLiveRowsForStudent(
@@ -286,6 +288,27 @@ export async function getLiveDoubtsForSchool(
   }
 }
 
+/**
+ * Shared current-state analytics read scope.
+ *
+ * This deliberately uses the original/source doubt date and does not gate
+ * eligibility on last_reconciled_at. A currently-unresolved Live row is
+ * valid current intelligence even when that timestamp is NULL; resolved rows
+ * remain available when they are needed to reconcile the corresponding
+ * historical Loop-2/feedback evidence.
+ */
+export function filterLiveRowsForCurrentState(
+  rows: LiveDoubtRow[],
+  options: {
+    startDate?: string;
+    endDateInclusive?: string;
+    endDateExclusive?: string;
+    subjectName?: string;
+  } = {}
+): LiveDoubtRow[] {
+  return filterLiveRowsForExamPreparation(rows, options);
+}
+
 export async function getSchoolIntelligenceLiveRows(
   schoolUuid: string,
   startDate?: string,
@@ -293,12 +316,10 @@ export async function getSchoolIntelligenceLiveRows(
 ): Promise<LiveDoubtRow[]> {
   const rows = await getLiveDoubtsForSchool(schoolUuid);
 
-  return filterLiveRowsForExamPreparation(rows, {
+  return filterLiveRowsForCurrentState(rows, {
     startDate,
     endDateInclusive,
-  }).filter(
-    (row) => row.is_unresolved === true || Boolean(row.last_reconciled_at)
-  );
+  });
 }
 
 function latestSourceTime(row: LiveDoubtRow) {

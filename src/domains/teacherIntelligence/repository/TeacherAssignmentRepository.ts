@@ -40,6 +40,17 @@ GET ASSIGNMENTS BY TEACHER
 =========================================================
 */
 
+export function filterTeacherAssignmentsToSchool(
+  assignments: TeacherAssignment[],
+  schoolUuid?: string | null
+): TeacherAssignment[] {
+  const school = String(schoolUuid ?? "").trim();
+  if (!school) return assignments ?? [];
+  return (assignments ?? []).filter(
+    (assignment) => String(assignment.schoolUuid ?? "").trim() === school
+  );
+}
+
 export async function getTeacherAssignmentsByTeacher(
   teacherUuid: string
 ): Promise<TeacherAssignment[]> {

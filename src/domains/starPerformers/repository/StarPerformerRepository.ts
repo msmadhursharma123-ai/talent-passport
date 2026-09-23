@@ -262,9 +262,7 @@ async function fetchRawYearData(year: number) {
 
   try {
     liveRows = (liveResult ?? []).filter(
-      (row: any) =>
-        row?.last_reconciled_at &&
-        inRange(sourceDate(row), startDate, endDate)
+      (row: any) => inRange(sourceDate(row), startDate, endDate)
     );
   } catch (error) {
     console.error(
