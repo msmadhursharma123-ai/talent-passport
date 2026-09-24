@@ -1,5 +1,7 @@
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getCurrentTeacher } from "../../../services/identityService";
+import { getCanonicalPTMExamPreparationRows } from "../../examPreparationIntelligence/canonical/ExamPreparationCanonicalService";
+import type { CanonicalExamPreparationRow } from "../../examPreparationIntelligence/canonical/ExamPreparationTypes";
 import {
   getTeacherAssignmentsByTeacher,
   filterTeacherAssignmentsToSchool,
@@ -205,6 +207,67 @@ async function queryCurrentDoubts(assignmentIds: string[]): Promise<PTMDoubt[]> 
   }
 }
 
+async function loadPeerAssignmentsForClassrooms(
+  schoolUuid: string,
+  classrooms: Set<string>,
+  fallbackAssignments: PTMAssignment[]
+): Promise<PTMAssignment[]> {
+  if (!schoolUuid || classrooms.size === 0) return fallbackAssignments;
+
+  const supabase = getSupabaseClient();
+  if (!supabase) return fallbackAssignments;
+
+  /*
+   * PTM is a classroom-level discussion surface, not a subject-owner-only
+   * surface. Once a teacher is legitimately assigned to a classroom, the
+   * PTM student card must be able to assemble the same student's evidence
+   * across every active subject assignment in that classroom.
+   *
+   * Scope is deliberately restricted to:
+   *   1. the authenticated teacher's school, and
+   *   2. classroom + section combinations already assigned to that teacher.
+   *
+   * No other classroom/school assignments are pulled into PTM.
+   */
+  const { data, error } = await (supabase as any)
+    .from("teacher_classroom_assignments")
+    .select(
+      "id,teacher_uuid,school_uuid,class_name,section_name,subject_name,is_active"
+    )
+    .eq("school_uuid", schoolUuid)
+    .eq("is_active", true);
+
+  if (error) {
+    /*
+     * Preserve the existing PTM behavior if a deployment's RLS configuration
+     * does not yet expose peer classroom assignments. This makes the upgrade
+     * additive and prevents a permissions issue from breaking the existing
+     * teacher PTM workspace.
+     */
+    console.warn(
+      "PTM PEER ASSIGNMENT READ FAILED — USING CURRENT TEACHER ASSIGNMENTS",
+      error
+    );
+    return fallbackAssignments;
+  }
+
+  const peerAssignments = (data ?? [])
+    .map((row: any) => mapAssignment(row))
+    .filter(
+      (assignment: PTMAssignment) =>
+        assignment.id &&
+        assignment.isActive &&
+        classrooms.has(`${assignment.className}|||${assignment.sectionName}`)
+    );
+
+  const byId = new Map<string, PTMAssignment>();
+  [...fallbackAssignments, ...peerAssignments].forEach((assignment) => {
+    if (assignment.id) byId.set(assignment.id, assignment);
+  });
+
+  return Array.from(byId.values());
+}
+
 async function loadStudents(
   schoolUuid: string,
   schoolName: string,
@@ -256,7 +319,7 @@ export async function getPTMPreparedDataset(): Promise<PTMPreparedDataset> {
     await getTeacherAssignmentsByTeacher(teacher.teacherUuid),
     teacher.schoolUuid
   );
-  const assignments = assignmentRows
+  const currentTeacherAssignments = assignmentRows
     .filter((assignment: any) => assignment.isActive !== false)
     .map((assignment: any) => mapAssignment({
       id: assignment.id,
@@ -269,7 +332,26 @@ export async function getPTMPreparedDataset(): Promise<PTMPreparedDataset> {
     }))
     .filter((assignment) => assignment.id);
 
-  const assignmentIds = unique(assignments.map((assignment) => assignment.id));
+  const classrooms = new Set(
+    currentTeacherAssignments.map(
+      (assignment) => `${assignment.className}|||${assignment.sectionName}`
+    )
+  );
+
+  /*
+   * ADDITIVE PTM UPGRADE:
+   * The authenticated teacher remains the gatekeeper for which classrooms
+   * appear in PTM. Within those classrooms, load every active subject
+   * assignment so the selected student's report can be assembled across
+   * English, Maths, Hindi, Science, Social Science, etc.
+   */
+  const assignments = await loadPeerAssignmentsForClassrooms(
+    teacher.schoolUuid,
+    classrooms,
+    currentTeacherAssignments
+  );
+
+  const assignmentIds: string[] = unique(assignments.map((assignment) => assignment.id));
   if (assignmentIds.length === 0) {
     return {
       teacherUuid: teacher.teacherUuid,
@@ -321,6 +403,89 @@ export async function getPTMPreparedDataset(): Promise<PTMPreparedDataset> {
   };
 }
 
+export async function getPTMCanonicalExamPreparationRows(
+  student: PTMStudent,
+  assignments: PTMAssignment[],
+  range: { startDate?: string; endDateExclusive?: string }
+): Promise<CanonicalExamPreparationRow[]> {
+  const relevantAssignmentIds = assignments
+    .filter(
+      (assignment) =>
+        assignment.isActive &&
+        assignment.schoolUuid === student.schoolUuid &&
+        assignment.className.trim().toLowerCase() === student.className.trim().toLowerCase() &&
+        assignment.sectionName.trim().toLowerCase() === student.sectionName.trim().toLowerCase()
+    )
+    .map((assignment) => assignment.id)
+    .filter(Boolean);
+
+  if (relevantAssignmentIds.length === 0) return [];
+
+  return getCanonicalPTMExamPreparationRows({
+    studentUuid: student.studentUuid,
+    assignmentIds: relevantAssignmentIds,
+    schoolUuid: student.schoolUuid,
+    className: student.className,
+    sectionName: student.sectionName,
+    startDate: range.startDate,
+    endDateExclusive: range.endDateExclusive,
+  });
+}
+
+async function mapLiveFeedbackOverlay(
+  rawFeedback: any[],
+  assignmentIds: string[]
+): Promise<PTMFeedback[]> {
+  let effectiveFeedback = rawFeedback;
+  try {
+    const liveRows = await getLiveDoubtsForTeacherAssignments(assignmentIds, true);
+    effectiveFeedback = mergeFeedbackUnderstandingLevels(rawFeedback, liveRows ?? []);
+  } catch (error) {
+    console.warn("PTM DATE-RANGE FEEDBACK LIVE OVERLAY FAILED — ORIGINAL FEEDBACK PRESERVED", error);
+  }
+
+  return effectiveFeedback.map(mapFeedback);
+}
+
+export async function getPTMAllTimeEvidence(
+  assignmentIds: string[]
+): Promise<{ logs: PTMLog[]; feedback: PTMFeedback[] }> {
+  const uniqueAssignmentIds = unique(assignmentIds.filter(Boolean));
+  if (uniqueAssignmentIds.length === 0) return { logs: [], feedback: [] };
+
+  const supabase = getSupabaseClient();
+  if (!supabase) return { logs: [], feedback: [] };
+
+  const { data: rawLogs, error: logsError } = await (supabase as any)
+    .from("teacher_daily_logs")
+    .select("id,teacher_assignment_uuid,topic_name,concepts_covered,log_date,created_at")
+    .in("teacher_assignment_uuid", uniqueAssignmentIds)
+    .order("log_date", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (logsError) throw logsError;
+
+  const { data: assignmentRows, error: assignmentError } = await (supabase as any)
+    .from("teacher_classroom_assignments")
+    .select("id,teacher_uuid,school_uuid,class_name,section_name,subject_name,is_active")
+    .in("id", uniqueAssignmentIds);
+
+  if (assignmentError) throw assignmentError;
+
+  const assignmentMap = new Map<string, PTMAssignment>(
+    (assignmentRows ?? []).map((row: any): [string, PTMAssignment] => [
+      String(row.id),
+      mapAssignment(row),
+    ])
+  );
+
+  const logs = (rawLogs ?? []).map((row: any) => mapLog(row, assignmentMap));
+  const rawFeedback = await queryFeedback(logs.map((log) => log.id));
+  const feedback = await mapLiveFeedbackOverlay(rawFeedback, uniqueAssignmentIds);
+
+  return { logs, feedback };
+}
+
 export async function getPTMDateRangeEvidence(
   assignmentIds: string[],
   startDate: string,
@@ -349,12 +514,16 @@ export async function getPTMDateRangeEvidence(
 
   if (assignmentError) throw assignmentError;
 
-  const assignmentMap = new Map(
-    (assignmentRows ?? []).map((row: any) => [String(row.id), mapAssignment(row)])
+  const assignmentMap = new Map<string, PTMAssignment>(
+    (assignmentRows ?? []).map((row: any): [string, PTMAssignment] => [
+      String(row.id),
+      mapAssignment(row),
+    ])
   );
 
   const logs = (rawLogs ?? []).map((row: any) => mapLog(row, assignmentMap));
-  const feedback = (await queryFeedback(logs.map((log) => log.id))).map(mapFeedback);
+  const rawFeedback = await queryFeedback(logs.map((log) => log.id));
+  const feedback = await mapLiveFeedbackOverlay(rawFeedback, uniqueAssignmentIds);
 
   return { logs, feedback };
 }

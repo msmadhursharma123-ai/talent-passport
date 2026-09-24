@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  getPTMAllTimeEvidence,
+  getPTMCanonicalExamPreparationRows,
   getPTMDateRangeEvidence,
   getPTMPreparedDataset,
 } from "../repository/PTMRepository";
 import {
   buildPTMReport,
   getPTMPeriod,
-  prepareStandardPTMReports,
 } from "../services/PTMService";
 import { blobToBase64, buildPTMPdf } from "../services/PTMPdfService";
 import { sendPTMReportEmail } from "../services/PTMEmailService";
 import { downloadOrSharePdfBlob } from "../../../services/platform/nativeDocumentService";
+import { shiftExamPreparationDate } from "../../examPreparationIntelligence/canonical/ExamPreparationDate";
+import type { CanonicalExamPreparationRow } from "../../examPreparationIntelligence/canonical/ExamPreparationTypes";
 import type {
   PTMFeedback,
   PTMLog,
@@ -21,13 +24,11 @@ import type {
 } from "../types/PTMModels";
 
 const PERIOD_OPTIONS: Array<{ value: PTMTimePreset; label: string }> = [
-  { value: "30", label: "30 days" },
-  { value: "60", label: "60 days" },
-  { value: "90", label: "90 days" },
-  { value: "7", label: "1 week" },
-  { value: "14", label: "2 weeks" },
-  { value: "21", label: "3 weeks" },
-  { value: "CUSTOM", label: "Custom date" },
+  { value: "ALL", label: "All Time" },
+  { value: "30", label: "Last 30 Days" },
+  { value: "60", label: "Last 60 Days" },
+  { value: "90", label: "Last 90 Days" },
+  { value: "CUSTOM", label: "Custom" },
 ];
 
 function IndiaToday() {
@@ -73,7 +74,6 @@ function reportFileName(report: PTMReport) {
 
 export default function ParentsTeacherMeetingPage() {
   const [dataset, setDataset] = useState<PTMPreparedDataset | null>(null);
-  const [standardReports, setStandardReports] = useState<Map<string, Map<PTMTimePreset, PTMReport>>>(new Map());
   const [search, setSearch] = useState("");
   const [className, setClassName] = useState("");
   const [sectionName, setSectionName] = useState("");
@@ -83,6 +83,9 @@ export default function ParentsTeacherMeetingPage() {
   const [filtersTouched, setFiltersTouched] = useState(false);
   const [selectedStudentUuid, setSelectedStudentUuid] = useState("");
   const [customEvidence, setCustomEvidence] = useState<{ logs: PTMLog[]; feedback: PTMFeedback[] } | null>(null);
+  const [canonicalRows, setCanonicalRows] = useState<CanonicalExamPreparationRow[]>([]);
+  const [canonicalRowsKey, setCanonicalRowsKey] = useState("");
+  const [loadingCanonical, setLoadingCanonical] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingCustom, setLoadingCustom] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
@@ -99,7 +102,8 @@ export default function ParentsTeacherMeetingPage() {
     try {
       const prepared = await getPTMPreparedDataset();
       setDataset(prepared);
-      setStandardReports(prepareStandardPTMReports(prepared));
+      setCanonicalRows([]);
+      setCanonicalRowsKey("");
     } catch (loadError: any) {
       console.error("PTM PRELOAD FAILED", loadError);
       setError(loadError?.message ?? "Unable to prepare the Parents Teacher Meeting workspace.");
@@ -153,23 +157,110 @@ export default function ParentsTeacherMeetingPage() {
     [visibleStudents, selectedStudentUuid]
   );
 
+  const canonicalRequestKey = useMemo(() => {
+    if (!selectedStudent) return "";
+    return [
+      selectedStudent.studentUuid,
+      selectedStudent.className,
+      selectedStudent.sectionName,
+      periodPreset,
+      customStart,
+      customEnd,
+    ].join("|");
+  }, [selectedStudent, periodPreset, customStart, customEnd]);
+
+  const selectedPeriod = useMemo(
+    () => getPTMPeriod(periodPreset, customStart, customEnd),
+    [periodPreset, customStart, customEnd]
+  );
+
+  const canonicalRange = useMemo(() => {
+    if (periodPreset === "ALL") return {};
+    if (!selectedPeriod.startDate || !selectedPeriod.endDate) return null;
+    return {
+      startDate: selectedPeriod.startDate,
+      endDateExclusive: shiftExamPreparationDate(selectedPeriod.endDate, 1),
+    };
+  }, [periodPreset, selectedPeriod]);
+
+  const preloadStart = useMemo(() => shiftDays(IndiaToday(), -89), []);
+  const needsExtendedEvidence =
+    periodPreset === "ALL" ||
+    (periodPreset === "CUSTOM" &&
+      Boolean(customStart && customEnd) &&
+      !(customStart >= preloadStart && customEnd <= IndiaToday()));
+
+  useEffect(() => {
+    if (!dataset || !selectedStudent || !filtersTouched || !canonicalRequestKey) {
+      setCanonicalRows([]);
+      setCanonicalRowsKey("");
+      return;
+    }
+
+    if (!canonicalRange) {
+      setCanonicalRows([]);
+      setCanonicalRowsKey("");
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingCanonical(true);
+    setError("");
+
+    void getPTMCanonicalExamPreparationRows(selectedStudent, dataset.assignments, canonicalRange)
+      .then((rows) => {
+        if (cancelled) return;
+        setCanonicalRows(rows);
+        setCanonicalRowsKey(canonicalRequestKey);
+      })
+      .catch((canonicalError: any) => {
+        if (cancelled) return;
+        console.error("PTM CANONICAL EXAM PREPARATION LOAD FAILED", canonicalError);
+        setCanonicalRows([]);
+        setCanonicalRowsKey("");
+        setError(canonicalError?.message ?? "Unable to load canonical Exam Preparation intelligence for this PTM student.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingCanonical(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dataset, selectedStudent, filtersTouched, canonicalRequestKey, canonicalRange]);
+
   const currentReport = useMemo(() => {
     if (!dataset || !selectedStudent) return null;
-    if (periodPreset !== "CUSTOM") {
-      return standardReports.get(selectedStudent.studentUuid)?.get(periodPreset) ?? null;
-    }
-    if (!customStart || !customEnd || customStart > customEnd) return null;
-    const period = getPTMPeriod("CUSTOM", customStart, customEnd);
+    if (canonicalRowsKey !== canonicalRequestKey || loadingCanonical) return null;
+    if (needsExtendedEvidence && (loadingCustom || !customEvidence)) return null;
+
+    const period = getPTMPeriod(periodPreset, customStart, customEnd);
+    const useExtendedEvidence = (periodPreset === "ALL" || periodPreset === "CUSTOM") && Boolean(customEvidence);
+    const logs = useExtendedEvidence ? customEvidence!.logs : dataset.logs;
+    const feedback = useExtendedEvidence ? customEvidence!.feedback : dataset.feedback;
+
     return buildPTMReport(
       dataset,
       selectedStudent,
       period,
-      customEvidence?.logs ?? dataset.logs,
-      customEvidence?.feedback ?? dataset.feedback
+      logs,
+      feedback,
+      canonicalRows
     );
-  }, [dataset, selectedStudent, periodPreset, standardReports, customStart, customEnd, customEvidence]);
-
-  const preloadStart = useMemo(() => shiftDays(IndiaToday(), -89), []);
+  }, [
+    dataset,
+    selectedStudent,
+    periodPreset,
+    customStart,
+    customEnd,
+    customEvidence,
+    canonicalRows,
+    canonicalRowsKey,
+    canonicalRequestKey,
+    loadingCanonical,
+    needsExtendedEvidence,
+    loadingCustom,
+  ]);
 
   async function prepareCustomEvidence(startDate: string, endDate: string) {
     if (!dataset || !startDate || !endDate || startDate > endDate) {
@@ -198,6 +289,22 @@ export default function ParentsTeacherMeetingPage() {
     }
   }
 
+  async function prepareAllTimeEvidence() {
+    if (!dataset) return;
+    setLoadingCustom(true);
+    setError("");
+    try {
+      const evidence = await getPTMAllTimeEvidence(dataset.assignments.map((assignment) => assignment.id));
+      setCustomEvidence(evidence);
+    } catch (allTimeError: any) {
+      console.error("PTM ALL-TIME EVIDENCE LOAD FAILED", allTimeError);
+      setError(allTimeError?.message ?? "Unable to load all-time PTM teaching and feedback intelligence.");
+      setCustomEvidence(null);
+    } finally {
+      setLoadingCustom(false);
+    }
+  }
+
   function touch() {
     setFiltersTouched(true);
     setEmailMessage("");
@@ -220,12 +327,19 @@ export default function ParentsTeacherMeetingPage() {
     touch();
     setPeriodPreset(value);
     setCustomEvidence(null);
+    setCanonicalRows([]);
+    setCanonicalRowsKey("");
     setEmailMessage("");
     if (value === "CUSTOM") {
       const today = IndiaToday();
-      setCustomStart(shiftDays(today, -29));
+      const start = shiftDays(today, -29);
+      setCustomStart(start);
       setCustomEnd(today);
-      void prepareCustomEvidence(shiftDays(today, -29), today);
+      void prepareCustomEvidence(start, today);
+    } else if (value === "ALL") {
+      setCustomStart("");
+      setCustomEnd("");
+      void prepareAllTimeEvidence();
     }
   }
 
@@ -349,10 +463,10 @@ export default function ParentsTeacherMeetingPage() {
         .ptm-student-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; }
         .ptm-student-item { border:1px solid #E2E8F0; border-radius:13px; padding:11px; background:#FFFFFF; cursor:pointer; text-align:left; transition:.16s ease; }
         .ptm-student-item:hover { border-color:#FDBA74; background:#FFF7ED; }
-        .ptm-avatar { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#FFF7ED; border:1px solid #FED7AA; color:#EA580C; font-size:11px; font-weight:800; flex:none; }
+        .ptm-avatar { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#FFF7ED; border:1px solid #FED7AA; color:#EA580C; font-size:13.2px; font-weight:800; flex:none; }
         .ptm-student-row { display:flex; gap:9px; align-items:center; }
-        .ptm-student-name { font-size:12px; font-weight:800; color:#0F172A; line-height:1.25; }
-        .ptm-student-meta { margin-top:3px; color:#64748B; font-size:8.5px; font-weight:700; line-height:1.4; }
+        .ptm-student-name { font-size:14.4px; font-weight:800; color:#0F172A; line-height:1.25; }
+        .ptm-student-meta { margin-top:3px; color:#64748B; font-size:10.2px; font-weight:700; line-height:1.4; }
         .ptm-report-card { margin-top:10px; padding:15px; }
         .ptm-report-head {
           position:relative;
@@ -374,40 +488,42 @@ export default function ParentsTeacherMeetingPage() {
         .ptm-report-head .ptm-section-kicker { color:#F97316; }
         .ptm-report-head .ptm-btn { border-color:#CBD5E1; background:#FFFFFF; color:#334155; }
         .ptm-report-head .ptm-btn.primary { background:#FFF7ED; border-color:#FDBA74; color:#C2410C; }
-        .ptm-btn { border:1px solid #CBD5E1; background:#FFFFFF; color:#334155; border-radius:9px; padding:8px 10px; font-size:9px; font-weight:800; cursor:pointer; }
+        .ptm-btn { border:1px solid #CBD5E1; background:#FFFFFF; color:#334155; border-radius:9px; padding:8px 10px; font-size:10.8px; font-weight:800; cursor:pointer; }
         .ptm-btn.primary { background:#FFF7ED; border-color:#FDBA74; color:#C2410C; }
         .ptm-btn:disabled { opacity:.55; cursor:not-allowed; }
-        .ptm-report-title { margin:4px 0 3px; font-size:20px; line-height:1.1; font-weight:800; color:#0F172A; }
-        .ptm-report-subtitle { color:#64748B; font-size:9px; font-weight:700; line-height:1.45; }
+        .ptm-report-title { margin:4px 0 3px; font-size:24px; line-height:1.1; font-weight:800; color:#0F172A; }
+        .ptm-report-subtitle { color:#64748B; font-size:10.8px; font-weight:700; line-height:1.45; }
         .ptm-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:12px; }
         .ptm-metric { border:1px solid #E2E8F0; border-radius:12px; background:#F8FAFC; padding:10px; }
-        .ptm-metric-label { color:#64748B; font-size:7.5px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; }
-        .ptm-metric-value { margin-top:5px; color:#0F172A; font-size:18px; font-weight:800; line-height:1; }
+        .ptm-metric-label { color:#64748B; font-size:9px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; }
+        .ptm-metric-value { margin-top:5px; color:#0F172A; font-size:21.6px; font-weight:800; line-height:1; }
         .ptm-section { margin-top:14px; }
         .ptm-section-head { margin-bottom:8px; }
-        .ptm-section-kicker { color:#F97316; font-size:8px; font-weight:800; letter-spacing:1.1px; text-transform:uppercase; }
-        .ptm-section-title { margin:4px 0 0; color:#0F172A; font-size:14px; font-weight:800; }
-        .ptm-section-copy { margin:3px 0 0; color:#94A3B8; font-size:8.5px; font-weight:700; line-height:1.4; }
+        .ptm-section-kicker { color:#F97316; font-size:9.6px; font-weight:800; letter-spacing:1.1px; text-transform:uppercase; }
+        .ptm-section-title { margin:4px 0 0; color:#0F172A; font-size:16.8px; font-weight:800; }
+        .ptm-section-copy { margin:3px 0 0; color:#94A3B8; font-size:10.2px; font-weight:700; line-height:1.4; }
         .ptm-subject-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
         .ptm-subject { border:1px solid #E2E8F0; border-radius:13px; padding:11px; background:#FFFFFF; }
         .ptm-subject-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-        .ptm-subject-name { font-size:12px; font-weight:800; color:#0F172A; }
-        .ptm-subject-score { padding:5px 7px; border-radius:999px; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; font-size:8px; font-weight:800; white-space:nowrap; }
+        .ptm-subject-name { font-size:14.4px; font-weight:800; color:#0F172A; }
+        .ptm-subject-score { padding:5px 7px; border-radius:999px; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; font-size:9.6px; font-weight:800; white-space:nowrap; }
         .ptm-subject-stats { margin-top:8px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
         .ptm-mini { padding:7px; border-radius:9px; background:#F8FAFC; border:1px solid #EEF2F7; }
-        .ptm-mini-label { color:#94A3B8; font-size:6.8px; font-weight:800; text-transform:uppercase; }
-        .ptm-mini-value { margin-top:3px; color:#0F172A; font-size:10px; font-weight:800; }
+        .ptm-mini-label { color:#94A3B8; font-size:8.16px; font-weight:800; text-transform:uppercase; }
+        .ptm-mini-value { margin-top:3px; color:#0F172A; font-size:12px; font-weight:800; }
         .ptm-topic-list { margin-top:8px; display:flex; flex-wrap:wrap; gap:5px; }
-        .ptm-topic { padding:5px 7px; border-radius:7px; background:#FFF7ED; color:#9A3412; border:1px solid #FED7AA; font-size:7.5px; font-weight:700; }
-        .ptm-doubt-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-        .ptm-doubt { border:1px solid #FECACA; background:#FEF2F2; border-radius:12px; padding:10px; }
-        .ptm-doubt-head { display:flex; justify-content:space-between; gap:8px; color:#991B1B; font-size:9px; font-weight:800; }
-        .ptm-doubt-item { margin-top:6px; padding-top:6px; border-top:1px solid #FEE2E2; color:#7F1D1D; font-size:8px; font-weight:700; line-height:1.45; }
+        .ptm-topic { padding:5px 7px; border-radius:7px; background:#FFF7ED; color:#9A3412; border:1px solid #FED7AA; font-size:9px; font-weight:700; }
+        .ptm-subsection-label { margin-top:10px; color:#64748B; font-size:9px; font-weight:800; letter-spacing:.65px; text-transform:uppercase; }
+        .ptm-subsection-label.unresolved { color:#991B1B; }
+        .ptm-canonical-doubts { margin-top:6px; display:grid; gap:5px; }
+        .ptm-canonical-doubt { display:flex; align-items:flex-start; gap:5px; padding:6px 7px; border-radius:8px; background:#FEF2F2; border:1px solid #FEE2E2; color:#7F1D1D; font-size:9px; font-weight:700; line-height:1.35; }
+        .ptm-canonical-topic { font-weight:800; }
+        .ptm-canonical-arrow { color:#B91C1C; font-weight:900; }
         .ptm-discussion { display:grid; gap:6px; }
-        .ptm-discussion-item { padding:9px 10px; border-left:3px solid #F97316; background:#FFF7ED; border-radius:8px; color:#7C2D12; font-size:8.5px; font-weight:700; line-height:1.45; }
+        .ptm-discussion-item { padding:9px 10px; border-left:3px solid #F97316; background:#FFF7ED; border-radius:8px; color:#7C2D12; font-size:10.2px; font-weight:700; line-height:1.45; }
         .ptm-empty { padding:24px 14px; text-align:center; border:1px dashed #CBD5E1; border-radius:13px; background:#FFFFFF; }
-        .ptm-empty-title { color:#334155; font-size:12px; font-weight:800; }
-        .ptm-empty-copy { margin-top:4px; color:#94A3B8; font-size:8.5px; font-weight:700; line-height:1.45; }
+        .ptm-empty-title { color:#334155; font-size:14.4px; font-weight:800; }
+        .ptm-empty-copy { margin-top:4px; color:#94A3B8; font-size:10.2px; font-weight:700; line-height:1.45; }
         .ptm-alert { margin-top:9px; padding:9px 10px; border-radius:9px; font-size:8.5px; font-weight:800; }
         .ptm-alert.error { background:#FEF2F2; border:1px solid #FECACA; color:#B91C1C; }
         .ptm-alert.success { background:#ECFDF5; border:1px solid #BBF7D0; color:#166534; }
@@ -441,11 +557,11 @@ export default function ParentsTeacherMeetingPage() {
           .ptm-filter-grid, .ptm-custom-grid { grid-template-columns:1fr; }
           .ptm-filter-grid .ptm-field:first-child { grid-column:auto; }
           .ptm-status { align-items:flex-start; flex-direction:column; }
-          .ptm-student-list, .ptm-subject-grid, .ptm-doubt-grid { grid-template-columns:1fr; }
+          .ptm-student-list, .ptm-subject-grid { grid-template-columns:1fr; }
           .ptm-report-head { flex-direction:column; margin:-10px -10px 0; padding:14px 10px 11px; border-radius:13px 13px 0 0; }
           .ptm-report-actions { width:100%; justify-content:flex-start; }
           .ptm-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
-          .ptm-metric-value { font-size:16px; }
+          .ptm-metric-value { font-size:19.2px; }
         }
       `}</style>
 
@@ -504,11 +620,11 @@ export default function ParentsTeacherMeetingPage() {
             <div className="ptm-custom-grid">
               <div className="ptm-field">
                 <label>From</label>
-                <input type="date" value={customStart} max={customEnd || IndiaToday()} onChange={(event) => { touch(); setCustomStart(event.target.value); setCustomEvidence(null); void prepareCustomEvidence(event.target.value, customEnd); }} />
+                <input type="date" value={customStart} max={customEnd || IndiaToday()} onChange={(event) => { touch(); setCustomStart(event.target.value); setCustomEvidence(null); setCanonicalRows([]); setCanonicalRowsKey(""); void prepareCustomEvidence(event.target.value, customEnd); }} />
               </div>
               <div className="ptm-field">
                 <label>To</label>
-                <input type="date" value={customEnd} min={customStart || undefined} max={IndiaToday()} onChange={(event) => { touch(); setCustomEnd(event.target.value); setCustomEvidence(null); void prepareCustomEvidence(customStart, event.target.value); }} />
+                <input type="date" value={customEnd} min={customStart || undefined} max={IndiaToday()} onChange={(event) => { touch(); setCustomEnd(event.target.value); setCustomEvidence(null); setCanonicalRows([]); setCanonicalRowsKey(""); void prepareCustomEvidence(customStart, event.target.value); }} />
               </div>
             </div>
           )}
@@ -517,9 +633,11 @@ export default function ParentsTeacherMeetingPage() {
             <span>
               {loading
                 ? "Preparing teacher-assigned student intelligence…"
-                : loadingCustom
-                  ? "Preparing the selected custom date range…"
-                  : dataset
+                : loadingCanonical
+                  ? "Reconciling Loop 2 + Live Exam Preparation intelligence…"
+                  : loadingCustom
+                    ? "Preparing the selected time period…"
+                    : dataset
                     ? `${dataset.students.length} assigned students · ${dataset.assignments.length} active subject assignments prepared`
                     : "No prepared data"}
             </span>
@@ -561,6 +679,15 @@ export default function ParentsTeacherMeetingPage() {
           </section>
         )}
 
+        {filtersTouched && selectedStudent && !currentReport && (loadingCanonical || loadingCustom) && (
+          <section className="ptm-report-card">
+            <div className="ptm-empty">
+              <div className="ptm-empty-title">Preparing the canonical PTM intelligence…</div>
+              <div className="ptm-empty-copy">Loop 2 and Live are being reconciled using the same Exam Preparation intelligence used by the Student, Teacher and School views.</div>
+            </div>
+          </section>
+        )}
+
         {filtersTouched && selectedStudent && currentReport && (
           <section className="ptm-report-card">
             <div className="ptm-report-head">
@@ -580,7 +707,7 @@ export default function ParentsTeacherMeetingPage() {
               <div className="ptm-metric"><div className="ptm-metric-label">Combined understanding</div><div className="ptm-metric-value">{currentReport.combinedUnderstandingPercentage}%</div></div>
               <div className="ptm-metric"><div className="ptm-metric-label">Feedback response</div><div className="ptm-metric-value">{currentReport.overallResponseRate}%</div></div>
               <div className="ptm-metric"><div className="ptm-metric-label">Feedback days</div><div className="ptm-metric-value">{currentReport.feedbackDays}</div></div>
-              <div className="ptm-metric"><div className="ptm-metric-label">Current doubts</div><div className="ptm-metric-value">{currentReport.pendingDoubts.reduce((sum, group) => sum + group.count, 0)}</div></div>
+              <div className="ptm-metric"><div className="ptm-metric-label">Unresolved doubts in period</div><div className="ptm-metric-value">{currentReport.pendingDoubts.reduce((sum, group) => sum + group.count, 0)}</div></div>
             </div>
 
             <div className="ptm-section">
@@ -593,8 +720,11 @@ export default function ParentsTeacherMeetingPage() {
 
             <div className="ptm-section">
               <div className="ptm-section-head">
-                <div className="ptm-section-kicker">02 · Understanding</div>
-                <h3 className="ptm-section-title">Subject-wise learning snapshot</h3>
+                <div className="ptm-section-kicker">02 · All Subjects</div>
+                <h3 className="ptm-section-title">Complete subject-wise learning snapshot</h3>
+                <p className="ptm-section-copy">
+                  This student view includes every active subject assigned to this class and section, so the attending teacher can discuss the complete PTM picture even when another subject teacher is unavailable.
+                </p>
               </div>
               <div className="ptm-subject-grid">
                 {currentReport.subjects.map((subject) => (
@@ -608,8 +738,21 @@ export default function ParentsTeacherMeetingPage() {
                       <div className="ptm-mini"><div className="ptm-mini-label">Responses</div><div className="ptm-mini-value">{subject.feedbackCount}</div></div>
                       <div className="ptm-mini"><div className="ptm-mini-label">Rate</div><div className="ptm-mini-value">{subject.responseRate}%</div></div>
                     </div>
+                    <div className="ptm-subsection-label">What was taught in this selected period</div>
                     <div className="ptm-topic-list">
                       {subject.topics.length > 0 ? subject.topics.map((topic) => <span className="ptm-topic" key={topic}>{topic}</span>) : <span className="ptm-section-copy">No topic recorded in this period.</span>}
+                    </div>
+                    <div className="ptm-subsection-label unresolved">What unresolved doubt currently exists in this selected period · {subject.unresolvedDoubtCount}</div>
+                    <div className="ptm-canonical-doubts">
+                      {subject.unresolvedDoubts.length > 0
+                        ? subject.unresolvedDoubts.map((item, index) => (
+                            <div className="ptm-canonical-doubt" key={`${subject.subject}-${item.topic}-${item.concept}-${index}`}>
+                              <span className="ptm-canonical-topic">{item.topic}</span>
+                              <span className="ptm-canonical-arrow">→</span>
+                              <span>{item.concept}</span>
+                            </div>
+                          ))
+                        : <span className="ptm-section-copy">No unresolved doubt in this selected period.</span>}
                     </div>
                   </article>
                 ))}
@@ -618,27 +761,7 @@ export default function ParentsTeacherMeetingPage() {
 
             <div className="ptm-section">
               <div className="ptm-section-head">
-                <div className="ptm-section-kicker">03 · Current intelligence</div>
-                <h3 className="ptm-section-title">Pending doubts by subject</h3>
-                <p className="ptm-section-copy">Current unresolved doubts are shown separately from the selected reporting window.</p>
-              </div>
-              {currentReport.pendingDoubts.length > 0 ? (
-                <div className="ptm-doubt-grid">
-                  {currentReport.pendingDoubts.map((group) => (
-                    <article className="ptm-doubt" key={group.subject}>
-                      <div className="ptm-doubt-head"><span>{group.subject}</span><span>{group.count}</span></div>
-                      {group.items.map((item, index) => <div className="ptm-doubt-item" key={`${item.topic}-${item.concept}-${index}`}>{item.topic} · {item.concept}</div>)}
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className="ptm-empty"><div className="ptm-empty-title">No current pending doubts</div><div className="ptm-empty-copy">No unresolved doubt is currently recorded for this student in the teacher's assigned classrooms.</div></div>
-              )}
-            </div>
-
-            <div className="ptm-section">
-              <div className="ptm-section-head">
-                <div className="ptm-section-kicker">04 · Parent discussion</div>
+                <div className="ptm-section-kicker">03 · Parent discussion</div>
                 <h3 className="ptm-section-title">Ready to discuss</h3>
               </div>
               <div className="ptm-discussion">

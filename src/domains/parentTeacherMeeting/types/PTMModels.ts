@@ -1,4 +1,5 @@
 export type PTMTimePreset =
+  | "ALL"
   | "7"
   | "14"
   | "21"
@@ -78,6 +79,8 @@ export interface PTMSubjectMetric {
   didntUnderstand: number;
   understandingPercentage: number;
   topics: string[];
+  unresolvedDoubtCount: number;
+  unresolvedDoubts: Array<{ topic: string; concept: string }>;
 }
 
 export interface PTMPendingDoubtGroup {

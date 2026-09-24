@@ -287,6 +287,36 @@ function canonicalizeReconciledRow(
  * This prevents a date or subject filter from separating a Loop-2 row from
  * its Live counterpart before the authoritative current state is known.
  */
+function finalizeCanonicalRows(
+  reconciled: Array<{ pending: any; live: any; merged: any }>,
+  options: Pick<CanonicalExamPreparationOptions, "subjectName" | "startDate" | "endDateExclusive">
+) {
+  const hasSubjectFilter = !isAllSubjects(options.subjectName);
+
+  return reconciled
+    .map(canonicalizeReconciledRow)
+    .filter((row): row is CanonicalExamPreparationRow => Boolean(row))
+    .filter((row) =>
+      !hasSubjectFilter ||
+      normalize(row.subjectName) === normalize(options.subjectName)
+    )
+    .filter((row) =>
+      isExamPreparationDateInRange(
+        row.canonicalDate,
+        options.startDate,
+        options.endDateExclusive
+      )
+    )
+    .sort(
+      (a, b) =>
+        a.canonicalDate.localeCompare(b.canonicalDate) ||
+        a.studentName.localeCompare(b.studentName) ||
+        a.subjectName.localeCompare(b.subjectName) ||
+        a.conceptName.localeCompare(b.conceptName) ||
+        a.id.localeCompare(b.id)
+    );
+}
+
 export async function getCanonicalExamPreparationRows(
   options: CanonicalExamPreparationOptions
 ): Promise<CanonicalExamPreparationRow[]> {
@@ -324,30 +354,97 @@ export async function getCanonicalExamPreparationRows(
     { includeUnmatchedLive: true }
   );
 
-  const hasSubjectFilter = !isAllSubjects(options.subjectName);
+  return finalizeCanonicalRows(reconciled, options);
+}
 
-  return reconciled
-    .map(canonicalizeReconciledRow)
-    .filter((row): row is CanonicalExamPreparationRow => Boolean(row))
-    .filter((row) =>
-      !hasSubjectFilter ||
-      normalize(row.subjectName) === normalize(options.subjectName)
+/**
+ * PTM projection of the same canonical Loop-2 + Live Exam Preparation engine.
+ *
+ * PTM supplies assignment IDs already authorized by its teacher/classroom
+ * scope. This function re-validates those IDs against the authenticated
+ * school, active status, and optional class/section before reading doubt rows.
+ * Reconciliation, canonicalization, subject filtering, and date filtering are
+ * exactly the same functions used by the existing Exam Preparation portals.
+ */
+export async function getCanonicalPTMExamPreparationRows(options: {
+  studentUuid: string;
+  assignmentIds: string[];
+  schoolUuid: string;
+  className?: string;
+  sectionName?: string;
+  subjectName?: string;
+  startDate?: string;
+  endDateExclusive?: string;
+}): Promise<CanonicalExamPreparationRow[]> {
+  const requestedAssignmentIds = Array.from(
+    new Set(options.assignmentIds.map((id) => String(id ?? "").trim()).filter(Boolean))
+  );
+
+  if (!options.studentUuid || !options.schoolUuid || requestedAssignmentIds.length === 0) {
+    return [];
+  }
+
+  const supabase = client();
+  const { data: assignmentRows, error: assignmentError } = await supabase
+    .from("teacher_classroom_assignments")
+    .select(
+      "id,teacher_uuid,school_uuid,academic_year,is_active,class_name,section_name,subject_name"
     )
-    .filter((row) =>
-      isExamPreparationDateInRange(
-        row.canonicalDate,
-        options.startDate,
-        options.endDateExclusive
-      )
-    )
-    .sort(
-      (a, b) =>
-        a.canonicalDate.localeCompare(b.canonicalDate) ||
-        a.studentName.localeCompare(b.studentName) ||
-        a.subjectName.localeCompare(b.subjectName) ||
-        a.conceptName.localeCompare(b.conceptName) ||
-        a.id.localeCompare(b.id)
-    );
+    .eq("school_uuid", options.schoolUuid)
+    .eq("is_active", true)
+    .in("id", requestedAssignmentIds);
+
+  if (assignmentError) throw assignmentError;
+
+  const validAssignments = (assignmentRows ?? []).filter((row: any) => {
+    if (options.className && normalize(row.class_name) !== normalize(options.className)) return false;
+    if (options.sectionName && normalize(row.section_name) !== normalize(options.sectionName)) return false;
+    return true;
+  });
+
+  const validAssignmentIds: string[] = Array.from(
+    new Set<string>(validAssignments.map((row: any) => String(row.id ?? "")).filter(Boolean))
+  );
+
+  if (validAssignmentIds.length === 0) return [];
+
+  const [{ data: pendingRows, error: pendingError }, liveRows] = await Promise.all([
+    supabase
+      .from("pending_teacher_doubts")
+      .select("*")
+      .eq("status", "NOT DISCUSSED")
+      .eq("student_uuid", options.studentUuid)
+      .in("teacher_assignment_uuid", validAssignmentIds),
+    getLiveDoubtsForTeacherAssignments(validAssignmentIds, true),
+  ]);
+
+  if (pendingError) throw pendingError;
+
+  const validAssignmentSet = new Set(validAssignmentIds);
+  const scopedPending = (pendingRows ?? []).filter(
+    (row: any) =>
+      rowMatchesStudent(row, options.studentUuid) &&
+      validAssignmentSet.has(String(row?.teacher_assignment_uuid ?? "")) &&
+      activeLoop2(row)
+  );
+
+  const scopedLive = (liveRows ?? []).filter(
+    (row: any) =>
+      rowMatchesStudent(row, options.studentUuid) &&
+      validAssignmentSet.has(String(row?.teacher_assignment_uuid ?? ""))
+  );
+
+  const reconciled = reconcilePendingDoubtsWithLiveLedger(
+    scopedPending,
+    scopedLive,
+    { includeUnmatchedLive: true }
+  );
+
+  return finalizeCanonicalRows(reconciled, options).filter((row) => {
+    if (options.className && normalize(row.className) !== normalize(options.className)) return false;
+    if (options.sectionName && normalize(row.sectionName) !== normalize(options.sectionName)) return false;
+    return row.studentUuid === options.studentUuid;
+  });
 }
 
 function attentionLevel(count: number): "HIGH" | "MEDIUM" | "LOW" {

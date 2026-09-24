@@ -1,4 +1,5 @@
 import { buildLearningIntelligence } from "../../../engines/learningIntelligenceEngine";
+import type { CanonicalExamPreparationRow } from "../../examPreparationIntelligence/canonical/ExamPreparationTypes";
 import type {
   PTMDateRange,
   PTMFeedback,
@@ -43,6 +44,13 @@ function inRange(value: string, startDate: string, endDate: string): boolean {
 
 function periodForPreset(preset: PTMTimePreset, customStart = "", customEnd = ""): PTMDateRange {
   const today = todayIndia();
+  if (preset === "ALL") {
+    return {
+      startDate: "",
+      endDate: today,
+      label: "All Time",
+    };
+  }
   if (preset === "CUSTOM") {
     return {
       startDate: customStart,
@@ -101,10 +109,10 @@ function buildDiscussionPoints(report: Omit<PTMReport, "discussionPoints">): str
   if (report.pendingDoubts.length > 0) {
     const total = report.pendingDoubts.reduce((sum, group) => sum + group.count, 0);
     points.push(
-      `${total} current pending doubt${total === 1 ? "" : "s"} remain across ${report.pendingDoubts.length} subject${report.pendingDoubts.length === 1 ? "" : "s"}.`
+      `${total} unresolved doubt${total === 1 ? "" : "s"} remain in the selected period across ${report.pendingDoubts.length} subject${report.pendingDoubts.length === 1 ? "" : "s"}.`
     );
   } else {
-    points.push("There are no current pending doubts in the teacher's assigned classrooms for this student.");
+    points.push("There are no unresolved doubts in the selected period for this student.");
   }
 
   return points;
@@ -115,7 +123,8 @@ export function buildPTMReport(
   student: PTMStudent,
   period: PTMDateRange,
   logsOverride = dataset.logs,
-  feedbackOverride = dataset.feedback
+  feedbackOverride = dataset.feedback,
+  canonicalRows?: CanonicalExamPreparationRow[]
 ): PTMReport {
   const relevantAssignments = dataset.assignments.filter(
     (assignment) =>
@@ -161,6 +170,29 @@ export function buildPTMReport(
     ).filter(Boolean)
   ).size;
 
+  const hasCanonicalRows = canonicalRows !== undefined;
+  const canonicalStudentRows = (canonicalRows ?? []).filter(
+    (row) =>
+      same(row.studentUuid, student.studentUuid) &&
+      same(row.className, student.className) &&
+      same(row.sectionName, student.sectionName)
+  );
+
+  const canonicalDoubtsBySubject = new Map<
+    string,
+    Array<{ topic: string; concept: string }>
+  >();
+
+  canonicalStudentRows.forEach((row) => {
+    const subject = cleanTopic(row.subjectName) || "Other";
+    const items = canonicalDoubtsBySubject.get(subject) ?? [];
+    items.push({
+      topic: cleanTopic(row.topicName) || "—",
+      concept: cleanTopic(row.conceptName) || "—",
+    });
+    canonicalDoubtsBySubject.set(subject, items);
+  });
+
   const subjects = Array.from(
     new Set(relevantAssignments.map((assignment) => assignment.subjectName).filter(Boolean))
   )
@@ -179,6 +211,8 @@ export function buildPTMReport(
         0
       ).understandingScore;
 
+      const unresolvedDoubts = canonicalDoubtsBySubject.get(subject) ?? [];
+
       return {
         subject,
         logsCount: subjectLogs.length,
@@ -189,35 +223,45 @@ export function buildPTMReport(
         didntUnderstand: didnt,
         understandingPercentage: understanding,
         topics: uniqueSorted(subjectLogs.map((log) => cleanTopic(log.topicName))),
+        unresolvedDoubtCount: unresolvedDoubts.length,
+        unresolvedDoubts,
       };
     });
 
-  const pendingDoubts = dataset.pendingDoubts
-    .filter(
-      (doubt) =>
-        same(doubt.studentUuid, student.studentUuid) &&
-        assignmentIds.has(doubt.teacherAssignmentUuid) &&
-        doubt.isUnresolved !== false
-    )
-    .reduce<PTMReport["pendingDoubts"]>((groups, doubt) => {
-      const subject = cleanTopic(doubt.subjectName) || "Other";
-      const existing = groups.find((group) => same(group.subject, subject));
-      const item = {
-        topic: cleanTopic(doubt.topicName) || "—",
-        concept: cleanTopic(doubt.concept) || "—",
-      };
-      if (existing) {
-        const key = `${item.topic}|||${item.concept}`.toLowerCase();
-        if (!existing.items.some((current) => `${current.topic}|||${current.concept}`.toLowerCase() === key)) {
-          existing.items.push(item);
-        }
-        existing.count = existing.items.length;
-      } else {
-        groups.push({ subject, count: 1, items: [item] });
-      }
-      return groups;
-    }, [])
-    .sort((a, b) => a.subject.localeCompare(b.subject));
+  const pendingDoubts = hasCanonicalRows
+    ? Array.from(canonicalDoubtsBySubject.entries())
+        .map(([subject, items]) => ({
+          subject,
+          count: items.length,
+          items,
+        }))
+        .sort((a, b) => a.subject.localeCompare(b.subject))
+    : dataset.pendingDoubts
+        .filter(
+          (doubt) =>
+            same(doubt.studentUuid, student.studentUuid) &&
+            assignmentIds.has(doubt.teacherAssignmentUuid) &&
+            doubt.isUnresolved !== false
+        )
+        .reduce<PTMReport["pendingDoubts"]>((groups, doubt) => {
+          const subject = cleanTopic(doubt.subjectName) || "Other";
+          const existing = groups.find((group) => same(group.subject, subject));
+          const item = {
+            topic: cleanTopic(doubt.topicName) || "—",
+            concept: cleanTopic(doubt.concept) || "—",
+          };
+          if (existing) {
+            const key = `${item.topic}|||${item.concept}`.toLowerCase();
+            if (!existing.items.some((current) => `${current.topic}|||${current.concept}`.toLowerCase() === key)) {
+              existing.items.push(item);
+            }
+            existing.count = existing.items.length;
+          } else {
+            groups.push({ subject, count: 1, items: [item] });
+          }
+          return groups;
+        }, [])
+        .sort((a, b) => a.subject.localeCompare(b.subject));
 
   const base: Omit<PTMReport, "discussionPoints"> = {
     student,
