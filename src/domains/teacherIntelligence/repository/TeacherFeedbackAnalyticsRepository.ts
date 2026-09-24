@@ -1,4 +1,7 @@
-import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
+import {
+  calculateLearningLectureMetrics,
+  isLearningUnderstandingLevel,
+} from "../../../utils/learningFeedbackAnalytics";
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getCurrentTeacher } from "../../../services/identityService";
 import {
@@ -520,6 +523,7 @@ TOTAL STUDENTS
 ****************************************/
 
 let totalStudentsInClass = 0;
+let classroomRosterStudentUuids: string[] = [];
 
 let pendingStudents:any[] = [];
 
@@ -606,38 +610,43 @@ actualSectionName
 let allStudents =
   context?.allStudents ?? [];
 
-if(
-  !context?.allStudents
-){
+const currentTeacher = getCurrentTeacher();
 
-const {
-data
-} = await (supabase as any)
+// The denominator must come from the authenticated teacher's school.
+// The fast-radar caller historically preloaded students by class/section only,
+// so do not trust that preload when a canonical school UUID is available.
+if (currentTeacher?.schoolUuid) {
+  const {
+    data,
+    error: studentsError,
+  } = await (supabase as any)
+    .from("students_master")
+    .select("student_uuid,student_name,school_uuid")
+    .eq("school_uuid", currentTeacher.schoolUuid)
+    .eq("class_name", actualClassName)
+    .eq("section_name", actualSectionName);
 
-.from("students_master")
+  if (studentsError) throw studentsError;
+  allStudents = data ?? [];
+} else if (!context?.allStudents) {
+  const { data } = await (supabase as any)
+    .from("students_master")
+    .select("student_uuid,student_name")
+    .eq("class_name", actualClassName)
+    .eq("section_name", actualSectionName);
 
-.select(
-"student_uuid,student_name"
-)
-
-.eq(
-"class_name",
-actualClassName
-)
-
-.eq(
-"section_name",
-actualSectionName
-);
-
-allStudents =
-  data ?? [];
-
+  allStudents = data ?? [];
 }
 
-totalStudentsInClass =
+classroomRosterStudentUuids = Array.from(
+  new Set(
+    (allStudents ?? [])
+      .map((student:any) => String(student.student_uuid ?? "").trim())
+      .filter(Boolean),
+  ),
+);
 
-allStudents.length;
+totalStudentsInClass = classroomRosterStudentUuids.length;
 
 
 /*
@@ -684,44 +693,12 @@ CLASSROOM HEALTH SCORE
 
 ****************************************/
 
-const absentStudentUuids = new Set(
-  effectiveFeedback
-    .filter((item:any) => String(item.understanding_level ?? "").trim() === "I was absent.")
-    .map((item:any) => String(item.student_uuid ?? ""))
-    .filter(Boolean)
-);
-const totalLearningStudents = Math.max(0, totalStudentsInClass - absentStudentUuids.size);
+const classroomLearningMetrics = calculateLearningLectureMetrics({
+  studentUuids: classroomRosterStudentUuids,
+  feedback: effectiveFeedback,
+});
 
-
-const healthScore =
-
-totalLearningStudents === 0
-
-? 0
-
-:
-
-Math.round(
-
-(
-
-(
-
-completelyUnderstood +
-
-(partiallyUnderstood * 0.5)
-
-)
-
-/
-
-totalLearningStudents
-
-)
-
-* 100
-
-);
+const healthScore = classroomLearningMetrics.healthPercentage;
 
 
 let status =

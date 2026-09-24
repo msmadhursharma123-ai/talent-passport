@@ -8,7 +8,16 @@ import type {
 } from "../types/SchoolIntelligenceModels";
 import type { SchoolIntelligenceRawData } from "../repository/SchoolIntelligenceRepository";
 
-import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
+import {
+  aggregateLearningLectureMetrics,
+  calculateLearningLectureMetrics,
+  isLearningUnderstandingLevel,
+} from "../../../utils/learningFeedbackAnalytics";
+import {
+  calculateDoubtClosureRate,
+  countResolvedDoubts,
+  calculateLearningDoubtRate,
+} from "../../../utils/analyticsConsistency";
 
 const COMPLETE = "I completely understood.";
 const PARTIAL = "I partially understood.";
@@ -23,23 +32,13 @@ const isLearningFeedback = (feedback: any) =>
   isLearningUnderstandingLevel(feedback?.effective_understanding_level ?? feedback?.understanding_level);
 
 function getDoubtMetrics(doubts: any[]) {
-  const doubtsAsked = doubts.length;
-
-  const doubtsResolved = doubts.filter(
-    doubt =>
-      doubt.doubt_resolved === true ||
-      String(doubt.status ?? "")
-        .trim()
-        .toUpperCase() === "RESOLVED"
-  ).length;
+  const doubtsAsked = (doubts ?? []).length;
+  const doubtsResolved = countResolvedDoubts(doubts ?? []);
 
   return {
     doubtsAsked,
     doubtsResolved,
-    doubtClosureRate: pct(
-      doubtsResolved,
-      doubtsAsked
-    ),
+    doubtClosureRate: calculateDoubtClosureRate(doubts ?? []),
   };
 }
 
@@ -92,14 +91,14 @@ function averageDailyResponseRate(
   if (strength === 0) return 0;
 
   const dailyRates = logs.map(log => {
-    const responders = new Set(
-      feedback
-        .filter(row => String(row.daily_log_uuid) === String(log.id))
-        .map(row => row.student_uuid)
-        .filter(Boolean)
-    ).size;
+    const lectureMetrics = calculateLearningLectureMetrics({
+      studentUuids: classStudents.map(student => student.student_uuid),
+      feedback: feedback.filter(
+        row => String(row.daily_log_uuid) === String(log.id)
+      ),
+    });
 
-    return Math.min(100, (responders / strength) * 100);
+    return lectureMetrics.responseRate;
   });
 
   return Math.round(
@@ -130,14 +129,16 @@ function buildDailyClassroomIntelligence(raw:SchoolIntelligenceRawData):SchoolTe
       const students=raw.students.filter(s=>
         sameValue(s.class_name,a.class_name)&&sameValue(s.section_name,a.section_name)
       );
-      const totalStudents=new Set(students.map(s=>s.student_uuid).filter(Boolean)).size;
-      const full=feedback.filter(f=>f.understanding_level===COMPLETE).length;
-      const partial=feedback.filter(f=>f.understanding_level===PARTIAL).length;
-      const none=feedback.filter(f=>f.understanding_level===NONE).length;
-      const submitted=new Set(feedback.map(f=>f.student_uuid).filter(Boolean)).size;
-      const absentStudentUuids=new Set(feedback.filter(f=>String(f.understanding_level??"").trim()==="I was absent.").map(f=>String(f.student_uuid??"")).filter(Boolean));
-      const learningStudentDenominator=Math.max(0,totalStudents-absentStudentUuids.size);
-      const score=learningStudentDenominator===0?0:Math.round(((full+partial*.5)/learningStudentDenominator)*100);
+      const latestMetrics = calculateLearningLectureMetrics({
+        studentUuids: students.map(s => s.student_uuid),
+        feedback,
+      });
+      const totalStudents = latestMetrics.totalStudents;
+      const full = latestMetrics.completeStudents;
+      const partial = latestMetrics.partialStudents;
+      const none = latestMetrics.didntUnderstandStudents;
+      const submitted = latestMetrics.responseStudents + latestMetrics.absentStudents;
+      const score = latestMetrics.healthPercentage;
       let status="Excellent"; if(score<80)status="Needs Attention"; if(score<50)status="Critical";
 
       const conceptMap=new Map<string,number>();
@@ -155,9 +156,9 @@ function buildDailyClassroomIntelligence(raw:SchoolIntelligenceRawData):SchoolTe
         latestLectureUuid:String(latest.id??""),latestLectureDate:String(latest.log_date??""),
         latestTopic:latest.topic_name??"-",totalStudents,feedbackSubmitted:submitted,
         feedbackRemaining:Math.max(0,totalStudents-submitted),completelyUnderstood:full,
-        completelyUnderstoodRate:pct(full,learningStudentDenominator),partiallyUnderstood:partial,
-        partiallyUnderstoodRate:pct(partial,learningStudentDenominator),didntUnderstand:none,
-        didntUnderstandRate:pct(none,learningStudentDenominator),classHealthScore:score,classHealthStatus:status,
+        completelyUnderstoodRate:pct(full,latestMetrics.eligibleStudents),partiallyUnderstood:partial,
+        partiallyUnderstoodRate:pct(partial,latestMetrics.eligibleStudents),didntUnderstand:none,
+        didntUnderstandRate:pct(none,latestMetrics.eligibleStudents),classHealthScore:score,classHealthStatus:status,
         mostDifficultConcept:[...conceptMap.entries()].sort((x,y)=>y[1]-x[1])[0]?.[0]??"-",
         studentsRequiringAttention:attention
       }];
@@ -286,68 +287,52 @@ export function buildSchoolIntelligenceSnapshot(
     ...row,
     effective_understanding_level: effectiveUnderstanding(raw, row),
   }));
-  // Absence is a neutral attendance response, not a learning outcome. Keep
-  // it in response counts, but exclude it from understanding/partial/did-not-
-  // understand denominators so those percentages describe learning feedback.
-  const learningFeedback = effectiveFeedback.filter(isLearningFeedback);
 
-  const complete = learningFeedback.filter(
-    x => x.effective_understanding_level === COMPLETE
-  ).length;
-  const partial = learningFeedback.filter(
-    x => x.effective_understanding_level === PARTIAL
-  ).length;
-  const none = learningFeedback.filter(
-    x => x.effective_understanding_level === NONE
-  ).length;
-
-  const activeDoubts = raw.doubts.filter(
-    x =>
-      x.doubt_resolved !== true &&
-      String(x.status ?? "").trim().toUpperCase() !== "RESOLVED"
-  ).length;
-  const resolvedDoubts = raw.doubts.filter(
-    x =>
-      x.doubt_resolved === true ||
-      String(x.status ?? "").trim().toUpperCase() === "RESOLVED"
-  ).length;
-
-  const doubtsAsked = raw.doubts.length;
-
-  const doubtClosureRate = pct(
-    resolvedDoubts,
-    doubtsAsked
+  const assignmentById = new Map(
+    raw.assignments.map((assignment: any) => [String(assignment.id ?? ""), assignment]),
   );
+
+  const rosterForAssignment = (assignment: any) =>
+    raw.students
+      .filter(
+        (student: any) =>
+          sameValue(student.class_name, assignment?.class_name) &&
+          sameValue(student.section_name, assignment?.section_name),
+      )
+      .map((student: any) => student.student_uuid)
+      .filter(Boolean);
+
+  const metricsForLogs = (logs: any[]) =>
+    logs.map((log: any) => {
+      const assignment = assignmentById.get(String(log.teacher_assignment_uuid ?? ""));
+      const lectureFeedback = effectiveFeedback.filter(
+        (row: any) => String(row.daily_log_uuid ?? "") === String(log.id ?? ""),
+      );
+
+      return calculateLearningLectureMetrics({
+        studentUuids: rosterForAssignment(assignment),
+        feedback: lectureFeedback,
+        getUnderstandingLevel: (row: any) => row.effective_understanding_level,
+      });
+    });
+
+  const allDoubtsMetrics = getDoubtMetrics(raw.doubts);
+  const allLectureMetrics = metricsForLogs(raw.logs);
+  const allLearningMetrics = aggregateLearningLectureMetrics(allLectureMetrics);
 
   const classrooms: SchoolClassroomHealthRow[] = raw.assignments.map(assignment => {
     const logs = raw.logs.filter(
       x => String(x.teacher_assignment_uuid) === String(assignment.id)
     );
-    const logIds = new Set(logs.map(x => String(x.id)));
-    const feedback = effectiveFeedback.filter(
-      x => logIds.has(String(x.daily_log_uuid))
-    );
-    const learningFeedbackForAssignment = feedback.filter(isLearningFeedback);
+    const lectureMetrics = metricsForLogs(logs);
+    const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
     const teacher = raw.teachers.find(
       x => String(x.teacher_uuid) === String(assignment.teacher_uuid)
     );
-
-    const fully = learningFeedbackForAssignment.filter(
-      x => x.effective_understanding_level === COMPLETE
-    ).length;
-    const partly = learningFeedbackForAssignment.filter(
-      x => x.effective_understanding_level === PARTIAL
-    ).length;
-    const difficult = learningFeedbackForAssignment.filter(
-      x => x.effective_understanding_level === NONE
-    ).length;
-
     const doubtMetrics = getDoubtMetrics(
       raw.doubts.filter(
         doubt =>
-          String(
-            doubt.teacher_assignment_uuid ?? ""
-          ) === String(assignment.id ?? "")
+          String(doubt.teacher_assignment_uuid ?? "") === String(assignment.id ?? "")
       )
     );
 
@@ -359,24 +344,31 @@ export function buildSchoolIntelligenceSnapshot(
       subjectName: assignment.subject_name ?? "",
       teacherUuid: assignment.teacher_uuid,
       teacherName: teacher?.full_name ?? "Teacher",
+      totalStudents: rosterForAssignment(assignment).length,
       topicsTaught: logs.length,
-      responses: feedback.length,
-      responseRate: averageDailyResponseRate(
-        raw,
-        logs,
-        feedback,
-        assignment.class_name,
-        assignment.section_name
+      responses:
+        aggregate.responseStudentObservations + aggregate.absentStudentObservations,
+      responseRate: aggregate.responseRate,
+      completelyUnderstood: aggregate.completeStudentObservations,
+      partiallyUnderstood: aggregate.partialStudentObservations,
+      didntUnderstand: aggregate.didntUnderstandStudentObservations,
+      understandingRate: aggregate.understandingRate,
+      partialUnderstandingRate: aggregate.partialRate,
+      doubtRate: calculateLearningDoubtRate(
+        aggregate.partialStudentObservations,
+        aggregate.didntUnderstandStudentObservations,
+        aggregate.eligibleStudentObservations,
       ),
-      completelyUnderstood: fully,
-      partiallyUnderstood: partly,
-      didntUnderstand: difficult,
-      understandingRate: pct(fully, learningFeedbackForAssignment.length),
-      partialUnderstandingRate: pct(partly, learningFeedbackForAssignment.length),
-      doubtRate: pct(difficult, learningFeedbackForAssignment.length),
       doubtsAsked: doubtMetrics.doubtsAsked,
       doubtsResolved: doubtMetrics.doubtsResolved,
       doubtClosureRate: doubtMetrics.doubtClosureRate,
+      eligibleStudentObservations: aggregate.eligibleStudentObservations,
+      responseStudentObservations: aggregate.responseStudentObservations,
+      completeStudentObservations: aggregate.completeStudentObservations,
+      partialStudentObservations: aggregate.partialStudentObservations,
+      didntUnderstandStudentObservations: aggregate.didntUnderstandStudentObservations,
+      healthPercentageSum: aggregate.healthPercentageSum,
+      healthLectureCount: aggregate.lectureCount,
     };
   });
 
@@ -388,29 +380,11 @@ export function buildSchoolIntelligenceSnapshot(
     const logs = raw.logs.filter(
       x => assignmentIds.has(String(x.teacher_assignment_uuid))
     );
-    const logIds = new Set(logs.map(x => String(x.id)));
-    const feedback = effectiveFeedback.filter(
-      x => logIds.has(String(x.daily_log_uuid))
-    );
-    const learningFeedbackForTeacher = feedback.filter(isLearningFeedback);
-    const fully = learningFeedbackForTeacher.filter(
-      x => x.effective_understanding_level === COMPLETE
-    ).length;
-    const partly = learningFeedbackForTeacher.filter(
-      x => x.effective_understanding_level === PARTIAL
-    ).length;
-    const difficult = learningFeedbackForTeacher.filter(
-      x => x.effective_understanding_level === NONE
-    ).length;
-
+    const lectureMetrics = metricsForLogs(logs);
+    const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
     const doubtMetrics = getDoubtMetrics(
       raw.doubts.filter(
-        doubt =>
-          assignmentIds.has(
-            String(
-              doubt.teacher_assignment_uuid ?? ""
-            )
-          )
+        doubt => assignmentIds.has(String(doubt.teacher_assignment_uuid ?? ""))
       )
     );
 
@@ -426,43 +400,55 @@ export function buildSchoolIntelligenceSnapshot(
         )
       ),
       topicsTaught: logs.length,
-      responses: feedback.length,
-      understandingRate: pct(fully, learningFeedbackForTeacher.length),
-      partialUnderstandingRate: pct(partly, learningFeedbackForTeacher.length),
-      doubtRate: pct(difficult, learningFeedbackForTeacher.length),
+      responses:
+        aggregate.responseStudentObservations + aggregate.absentStudentObservations,
+      understandingRate: aggregate.understandingRate,
+      partialUnderstandingRate: aggregate.partialRate,
+      doubtRate: calculateLearningDoubtRate(
+        aggregate.partialStudentObservations,
+        aggregate.didntUnderstandStudentObservations,
+        aggregate.eligibleStudentObservations,
+      ),
       doubtsAsked: doubtMetrics.doubtsAsked,
       doubtsResolved: doubtMetrics.doubtsResolved,
       doubtClosureRate: doubtMetrics.doubtClosureRate,
+      eligibleStudentObservations: aggregate.eligibleStudentObservations,
+      responseStudentObservations: aggregate.responseStudentObservations,
+      completeStudentObservations: aggregate.completeStudentObservations,
+      partialStudentObservations: aggregate.partialStudentObservations,
+      didntUnderstandStudentObservations: aggregate.didntUnderstandStudentObservations,
     };
   });
 
-  const byDate = new Map<string, any[]>();
-  effectiveFeedback.forEach(row => {
-    const date = String(row.submitted_at ?? "").split("T")[0];
-    if (!date) return;
-    byDate.set(date, [...(byDate.get(date) ?? []), row]);
-  });
+  const logsByDate = new Map<string, any[]>();
+  for (const log of raw.logs) {
+    const date = String(log.log_date ?? "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    const list = logsByDate.get(date) ?? [];
+    list.push(log);
+    logsByDate.set(date, list);
+  }
 
-  const trends: SchoolAcademicTrendPoint[] = Array.from(byDate.entries())
+  const trends: SchoolAcademicTrendPoint[] = Array.from(logsByDate.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, rows]) => {
-      const learningRows = rows.filter(isLearningFeedback);
-      const fully = learningRows.filter(
-        x => x.effective_understanding_level === COMPLETE
-      ).length;
-      const partly = learningRows.filter(
-        x => x.effective_understanding_level === PARTIAL
-      ).length;
-      const difficult = learningRows.filter(
-        x => x.effective_understanding_level === NONE
-      ).length;
-
+    .map(([date, logs]) => {
+      const aggregate = aggregateLearningLectureMetrics(metricsForLogs(logs));
       return {
         date,
-        responses: rows.length,
-        understandingRate: pct(fully, learningRows.length),
-        partialUnderstandingRate: pct(partly, learningRows.length),
-        doubtRate: pct(difficult, learningRows.length),
+        responses:
+          aggregate.responseStudentObservations + aggregate.absentStudentObservations,
+        understandingRate: aggregate.understandingRate,
+        partialUnderstandingRate: aggregate.partialRate,
+        doubtRate: calculateLearningDoubtRate(
+          aggregate.partialStudentObservations,
+          aggregate.didntUnderstandStudentObservations,
+          aggregate.eligibleStudentObservations,
+        ),
+        eligibleStudentObservations: aggregate.eligibleStudentObservations,
+        responseStudentObservations: aggregate.responseStudentObservations,
+        completeStudentObservations: aggregate.completeStudentObservations,
+        partialStudentObservations: aggregate.partialStudentObservations,
+        didntUnderstandStudentObservations: aggregate.didntUnderstandStudentObservations,
       };
     });
 
@@ -487,17 +473,27 @@ export function buildSchoolIntelligenceSnapshot(
       totalStudents: raw.students.length,
       classesReporting: reporting.size,
       topicsTaught: raw.logs.length,
-      responses: raw.feedback.length,
-      completelyUnderstood: complete,
-      partiallyUnderstood: partial,
-      didntUnderstand: none,
-      understandingRate: pct(complete, learningFeedback.length),
-      partialUnderstandingRate: pct(partial, learningFeedback.length),
-      doubtRate: pct(none, learningFeedback.length),
-      doubtsAsked,
-      activeDoubts,
-      resolvedDoubts,
-      doubtResolutionRate: doubtClosureRate,
+      responses:
+        allLearningMetrics.responseStudentObservations +
+        allLearningMetrics.absentStudentObservations,
+      completelyUnderstood: allLearningMetrics.completeStudentObservations,
+      partiallyUnderstood: allLearningMetrics.partialStudentObservations,
+      didntUnderstand: allLearningMetrics.didntUnderstandStudentObservations,
+      understandingRate: allLearningMetrics.understandingRate,
+      partialUnderstandingRate: allLearningMetrics.partialRate,
+      doubtRate: calculateLearningDoubtRate(
+        allLearningMetrics.partialStudentObservations,
+        allLearningMetrics.didntUnderstandStudentObservations,
+        allLearningMetrics.eligibleStudentObservations,
+      ),
+      doubtsAsked: allDoubtsMetrics.doubtsAsked,
+      activeDoubts: raw.doubts.filter(
+        x =>
+          x.doubt_resolved !== true &&
+          String(x.status ?? "").trim().toUpperCase() !== "RESOLVED"
+      ).length,
+      resolvedDoubts: allDoubtsMetrics.doubtsResolved,
+      doubtResolutionRate: allDoubtsMetrics.doubtClosureRate,
     },
     classrooms,
     teachers,

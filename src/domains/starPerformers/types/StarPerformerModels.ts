@@ -33,6 +33,13 @@ export interface StarPerformerTeacherMetric {
     responses: number;
     doubtsAsked: number;
     doubtsResolved: number;
+    eligibleStudentObservations: number;
+    responseStudentObservations: number;
+    completeStudentObservations: number;
+    partialStudentObservations: number;
+    didntUnderstandStudentObservations: number;
+    healthPercentageSum: number;
+    healthLectureCount: number;
   }>;
 }
 

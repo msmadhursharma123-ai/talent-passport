@@ -1,5 +1,6 @@
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getCurrentTeacher } from "../../../services/identityService";
+import { calculateDoubtClosureRateFromCounts } from "../../../utils/analyticsConsistency";
 import {
   getTeacherAssignmentsByTeacher,
   filterTeacherAssignmentsToSchool,
@@ -238,8 +239,7 @@ export async function getTeacherLiveDoubtClosureForAssignments(
     result.set(assignmentId, {
       doubtsAsked: doubts.length,
       doubtsResolved: resolved,
-      doubtClosureRate:
-        doubts.length === 0 ? 0 : Math.round((resolved / doubts.length) * 100),
+      doubtClosureRate: calculateDoubtClosureRateFromCounts(doubts.length, resolved),
     });
   }
 

@@ -27,6 +27,7 @@ export interface SchoolClassroomHealthRow {
   subjectName: string;
   teacherUuid: string;
   teacherName: string;
+  totalStudents: number;
   topicsTaught: number;
   responses: number;
   responseRate: number;
@@ -39,6 +40,13 @@ export interface SchoolClassroomHealthRow {
   doubtsAsked: number;
   doubtsResolved: number;
   doubtClosureRate: number;
+  eligibleStudentObservations: number;
+  responseStudentObservations: number;
+  completeStudentObservations: number;
+  partialStudentObservations: number;
+  didntUnderstandStudentObservations: number;
+  healthPercentageSum: number;
+  healthLectureCount: number;
 }
 
 export interface SchoolTeacherIntelligenceRow {
@@ -54,6 +62,11 @@ export interface SchoolTeacherIntelligenceRow {
   doubtsAsked: number;
   doubtsResolved: number;
   doubtClosureRate: number;
+  eligibleStudentObservations: number;
+  responseStudentObservations: number;
+  completeStudentObservations: number;
+  partialStudentObservations: number;
+  didntUnderstandStudentObservations: number;
 }
 
 export interface SchoolAcademicTrendPoint {
@@ -62,6 +75,11 @@ export interface SchoolAcademicTrendPoint {
   understandingRate: number;
   partialUnderstandingRate: number;
   doubtRate: number;
+  eligibleStudentObservations: number;
+  responseStudentObservations: number;
+  completeStudentObservations: number;
+  partialStudentObservations: number;
+  didntUnderstandStudentObservations: number;
 }
 
 

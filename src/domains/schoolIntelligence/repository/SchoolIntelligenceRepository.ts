@@ -1,4 +1,7 @@
-import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
+import {
+  aggregateLearningLectureMetrics,
+  calculateLearningLectureMetrics,
+} from "../../../utils/learningFeedbackAnalytics";
 
 import { getSupabaseClient } from "../../../supabaseClient";
 import { requireSchoolIdentity } from "../../../services/identityService";
@@ -208,6 +211,16 @@ export interface SchoolClassroomSupplementalMetric {
   totalStudents: number;
   classHealthPercentage: number;
   healthLectureCount: number;
+  healthPercentageSum: number;
+  eligibleStudentObservations: number;
+  responseStudentObservations: number;
+  completeStudentObservations: number;
+  partialStudentObservations: number;
+  didntUnderstandStudentObservations: number;
+  responseRate: number;
+  understandingRate: number;
+  partialUnderstandingRate: number;
+  didntUnderstandRate: number;
 }
 
 function sameClassValue(a: unknown, b: unknown) {
@@ -330,9 +343,6 @@ export async function getSchoolClassroomSupplementalMetrics(
 
   const getEffectiveLevel = (feedback: any) =>
     getEffectiveUnderstandingLevel(feedback, effectiveDoubts);
-  const isLearningFeedback = (feedback: any) =>
-    isLearningUnderstandingLevel(getEffectiveLevel(feedback));
-
   return raw.assignments
     .filter((assignment: any) => assignment.is_active !== false)
     .map((assignment: any) => {
@@ -355,43 +365,20 @@ export async function getSchoolClassroomSupplementalMetrics(
           .filter(Boolean)
       ).size;
 
-      let totalHealth = 0;
-      let healthLectureCount = 0;
+      const lectureMetrics = assignmentLogs.map((log: any) =>
+        calculateLearningLectureMetrics({
+          studentUuids: classroomStudents.map((student: any) => student.student_uuid),
+          feedback: effectiveFeedback.filter(
+            (feedback: any) =>
+              String(feedback.daily_log_uuid ?? "") === String(log.id ?? ""),
+          ),
+          getUnderstandingLevel: getEffectiveLevel,
+        }),
+      );
+      const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
 
-      for (const log of assignmentLogs) {
-        const logFeedback = effectiveFeedback.filter(
-          (feedback: any) =>
-            String(feedback.daily_log_uuid ?? "") ===
-              String(log.id ?? "") &&
-            isLearningFeedback(feedback)
-        );
-
-        if (logFeedback.length === 0) continue;
-
-        const completely = logFeedback.filter(
-          (feedback: any) =>
-            String(getEffectiveLevel(feedback) ?? "").trim() ===
-            "I completely understood."
-        ).length;
-
-        const partial = logFeedback.filter(
-          (feedback: any) =>
-            String(getEffectiveLevel(feedback) ?? "").trim() ===
-            "I partially understood."
-        ).length;
-
-        const dailyHealth = Math.round(
-          ((completely + partial * 0.5) / logFeedback.length) * 100
-        );
-
-        totalHealth += dailyHealth;
-        healthLectureCount += 1;
-      }
-
-      const classHealthPercentage =
-        healthLectureCount === 0
-          ? 0
-          : Math.round(totalHealth / healthLectureCount);
+      const classHealthPercentage = aggregate.classHealthPercentage;
+      const healthLectureCount = aggregate.lectureCount;
 
       return {
         assignmentUuid,
@@ -401,6 +388,16 @@ export async function getSchoolClassroomSupplementalMetrics(
         totalStudents,
         classHealthPercentage,
         healthLectureCount,
+        healthPercentageSum: aggregate.healthPercentageSum,
+        eligibleStudentObservations: aggregate.eligibleStudentObservations,
+        responseStudentObservations: aggregate.responseStudentObservations,
+        completeStudentObservations: aggregate.completeStudentObservations,
+        partialStudentObservations: aggregate.partialStudentObservations,
+        didntUnderstandStudentObservations: aggregate.didntUnderstandStudentObservations,
+        responseRate: aggregate.responseRate,
+        understandingRate: aggregate.understandingRate,
+        partialUnderstandingRate: aggregate.partialRate,
+        didntUnderstandRate: aggregate.didntUnderstandRate,
       };
     });
 }

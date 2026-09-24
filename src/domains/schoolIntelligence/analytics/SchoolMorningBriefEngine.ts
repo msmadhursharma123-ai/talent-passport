@@ -1,17 +1,21 @@
-import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
+import {
+  aggregateLearningLectureMetrics,
+  calculateLearningLectureMetrics,
+} from "../../../utils/learningFeedbackAnalytics";
 import type {
   SchoolMorningBrief,
   SchoolMorningBriefClassroomMetric,
   SchoolMorningBriefTeacherDailyMetric,
 } from "../types/SchoolMorningBriefModels";
+import {
+  calculateDoubtClosureRate,
+  countResolvedDoubts,
+} from "../../../utils/analyticsConsistency";
 import type { SchoolMorningBriefRawData } from "../repository/SchoolMorningBriefRepository";
 
 const COMPLETE = "I completely understood.";
 const PARTIAL = "I partially understood.";
 const NONE = "I didn't understand.";
-
-const pct = (part: number, total: number): number | null =>
-  total === 0 ? null : Math.round((part / total) * 100);
 
 const same = (a: unknown, b: unknown) =>
   String(a ?? "").trim().toLowerCase() === String(b ?? "").trim().toLowerCase();
@@ -97,12 +101,6 @@ export function getMorningBriefPeriod(todayKey: string) {
   };
 }
 
-function isResolved(doubt: any) {
-  return (
-    doubt?.doubt_resolved === true ||
-    String(doubt?.status ?? "").trim().toUpperCase() === "RESOLVED"
-  );
-}
 
 function normalizeConcept(value: unknown) {
   return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -129,41 +127,42 @@ function effectiveUnderstanding(feedback: any, doubts: any[]) {
   return unresolved.length === 0 ? COMPLETE : original;
 }
 
-function classroomStudentCount(raw: SchoolMorningBriefRawData, className: string, sectionName: string) {
-  return new Set(
-    raw.students
-      .filter((student: any) => same(student.class_name, className) && same(student.section_name, sectionName))
-      .map((student: any) => String(student.student_uuid ?? ""))
-      .filter(Boolean),
-  ).size;
+function rosterForAssignment(raw: SchoolMorningBriefRawData, assignment: any): string[] {
+  return raw.students
+    .filter(
+      (student: any) =>
+        same(student.class_name, assignment?.class_name) &&
+        same(student.section_name, assignment?.section_name),
+    )
+    .map((student: any) => student.student_uuid)
+    .filter(Boolean);
 }
 
-function averageDailyResponseRate(
+function metricsForLogs(
   raw: SchoolMorningBriefRawData,
   logs: any[],
   feedback: any[],
-  className: string,
-  sectionName: string,
+  assignmentById: Map<string, any>,
+  doubts: any[],
 ) {
-  const strength = classroomStudentCount(raw, className, sectionName);
-  if (!logs.length || strength === 0) return 0;
-
-  const dailyRates = logs.map((log) => {
-    const responders = new Set(
-      feedback
-        .filter((row) => String(row.daily_log_uuid) === String(log.id))
-        .map((row) => String(row.student_uuid ?? ""))
-        .filter(Boolean),
-    ).size;
-
-    return Math.min(100, (responders / strength) * 100);
+  return logs.map((log: any) => {
+    const assignment = assignmentById.get(String(log.teacher_assignment_uuid ?? ""));
+    const lectureFeedback = feedback.filter(
+      (row: any) => String(row.daily_log_uuid ?? "") === String(log.id ?? ""),
+    );
+    return calculateLearningLectureMetrics({
+      studentUuids: rosterForAssignment(raw, assignment),
+      feedback: lectureFeedback,
+      getUnderstandingLevel: (row: any) => effectiveUnderstanding(row, doubts),
+    });
   });
-
-  return Math.round(dailyRates.reduce((sum, value) => sum + value, 0) / dailyRates.length);
 }
 
 function teacherDailyMetrics(raw: SchoolMorningBriefRawData, yesterday: string) {
   const metrics: SchoolMorningBriefTeacherDailyMetric[] = [];
+  const assignmentById = new Map(
+    raw.assignments.map((assignment: any) => [String(assignment.id ?? ""), assignment]),
+  );
 
   for (const teacher of raw.teachers) {
     const teacherUuid = String(teacher.teacher_uuid ?? "");
@@ -183,23 +182,22 @@ function teacherDailyMetrics(raw: SchoolMorningBriefRawData, yesterday: string) 
 
     const logIds = new Set(logs.map((log: any) => String(log.id ?? "")));
     const feedback = raw.feedback.filter((row: any) => logIds.has(String(row.daily_log_uuid ?? "")));
-    const learningFeedback = feedback.filter((row:any) =>
-      isLearningUnderstandingLevel(effectiveUnderstanding(row, raw.doubts))
-    );
-    const complete = learningFeedback.filter((row: any) => effectiveUnderstanding(row, raw.doubts) === COMPLETE).length;
+    const lectureMetrics = metricsForLogs(raw, logs, feedback, assignmentById, raw.doubts);
+    const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
     const teacherDoubts = raw.doubts.filter(
       (doubt: any) =>
         teacherAssignmentIds.has(String(doubt.teacher_assignment_uuid ?? "")) &&
         String(doubt.log_date ?? "") === yesterday,
     );
-    const resolved = teacherDoubts.filter(isResolved).length;
+    const resolved = countResolvedDoubts(teacherDoubts);
 
     metrics.push({
       teacherUuid,
       teacherName: String(teacher.full_name ?? "Teacher"),
-      understandingRate: pct(complete, learningFeedback.length),
-      doubtClosureRate: pct(resolved, teacherDoubts.length),
-      feedbackCount: feedback.length,
+      understandingRate: aggregate.understandingRate,
+      doubtClosureRate: calculateDoubtClosureRate(teacherDoubts),
+      feedbackCount:
+        aggregate.responseStudentObservations + aggregate.absentStudentObservations,
       doubtsAsked: teacherDoubts.length,
       doubtsResolved: resolved,
     });
@@ -211,15 +209,17 @@ function teacherDailyMetrics(raw: SchoolMorningBriefRawData, yesterday: string) 
 function classroomMetrics(raw: SchoolMorningBriefRawData, start: string, end: string) {
   const classroomMap = new Map<string, { className: string; sectionName: string }>();
 
-  raw.assignments
-    .forEach((assignment: any) => {
-      const className = String(assignment.class_name ?? "").trim();
-      const sectionName = String(assignment.section_name ?? "").trim();
-      if (!className || !sectionName) return;
-      classroomMap.set(`${className}|||${sectionName}`, { className, sectionName });
-    });
+  raw.assignments.forEach((assignment: any) => {
+    const className = String(assignment.class_name ?? "").trim();
+    const sectionName = String(assignment.section_name ?? "").trim();
+    if (!className || !sectionName) return;
+    classroomMap.set(`${className}|||${sectionName}`, { className, sectionName });
+  });
 
   const rows: SchoolMorningBriefClassroomMetric[] = [];
+  const assignmentById = new Map(
+    raw.assignments.map((assignment: any) => [String(assignment.id ?? ""), assignment]),
+  );
 
   for (const [classroomKey, classroom] of classroomMap) {
     const assignmentIds = new Set(
@@ -242,36 +242,28 @@ function classroomMetrics(raw: SchoolMorningBriefRawData, start: string, end: st
     const feedback = raw.feedback.filter((row: any) => logIds.has(String(row.daily_log_uuid ?? "")));
     const doubts = raw.doubts.filter((doubt: any) => assignmentIds.has(String(doubt.teacher_assignment_uuid ?? "")));
 
-    // Rank every distinct school classroom represented by an assignment,
-    // including assignments that are no longer active, when it has teaching
-    // activity in the selected historical period. Empty/inactive classrooms are
-    // not ranked when they have no activity in the period.
     if (!logs.length) continue;
 
-    const learningFeedback = feedback.filter((row:any) =>
-      isLearningUnderstandingLevel(effectiveUnderstanding(row, raw.doubts))
+    const lectureMetrics = metricsForLogs(raw, logs, feedback, assignmentById, doubts);
+    const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
+    const resolved = countResolvedDoubts(doubts);
+    const doubtClosureRate = calculateDoubtClosureRate(doubts);
+    const combinedScore = Math.round(
+      (aggregate.responseRate + aggregate.understandingRate + doubtClosureRate) / 3,
     );
-    const complete = learningFeedback.filter((row: any) => effectiveUnderstanding(row, raw.doubts) === COMPLETE).length;
-    const understandingRate = pct(complete, learningFeedback.length) ?? 0;
-    const responseRate = averageDailyResponseRate(raw, logs, feedback, classroom.className, classroom.sectionName);
-    const resolved = doubts.filter(isResolved).length;
-    // Zero doubts means there was no closure obligation. Treating that component
-    // as 100% avoids incorrectly ranking a classroom with no doubt signal as a
-    // bottom performer simply because 0/0 is undefined.
-    const doubtClosureRate = doubts.length === 0 ? 100 : (pct(resolved, doubts.length) ?? 0);
-    const combinedScore = Math.round((responseRate + understandingRate + doubtClosureRate) / 3);
 
     rows.push({
       classroomKey,
       classroom: `Class ${classroom.className} · Section ${classroom.sectionName}`,
       className: classroom.className,
       sectionName: classroom.sectionName,
-      responseRate,
-      understandingRate,
+      responseRate: aggregate.responseRate,
+      understandingRate: aggregate.understandingRate,
       doubtClosureRate,
       combinedScore,
       logsCount: logs.length,
-      feedbackCount: feedback.length,
+      feedbackCount:
+        aggregate.responseStudentObservations + aggregate.absentStudentObservations,
       doubtsAsked: doubts.length,
       doubtsResolved: resolved,
     });

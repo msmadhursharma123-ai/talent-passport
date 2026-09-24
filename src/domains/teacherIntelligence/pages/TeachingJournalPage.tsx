@@ -23,6 +23,7 @@ TeacherDailyLog,
 import {
 
 getMonthlyComprehensionData,
+getTeachingJournalLectureMetrics,
 
 }
 
@@ -74,6 +75,13 @@ monthlyFeedback,
 setMonthlyFeedback
 
 ] = useState<any[]>([]);
+
+const [
+monthlyLectureMetrics,
+
+setMonthlyLectureMetrics
+
+] = useState<Map<string, any>>(new Map());
 
 const [
 
@@ -207,7 +215,8 @@ await getMonthlyComprehensionData(
 
 filteredLogs.map(
 (log)=>log.id!
-)
+),
+assignment.id ? [String(assignment.id)] : [],
 
 );
 
@@ -215,6 +224,27 @@ filteredLogs.map(
 setMonthlyFeedback(
 feedback
 );
+
+try {
+
+const metrics = await getTeachingJournalLectureMetrics(
+  assignment.id,
+  filteredLogs,
+  feedback,
+);
+
+setMonthlyLectureMetrics(metrics);
+
+} catch (error) {
+
+console.error(
+  "TEACHING JOURNAL LECTURE METRICS LOAD FAILED",
+  error,
+);
+
+setMonthlyLectureMetrics(new Map());
+
+}
 
 };
 
@@ -625,66 +655,13 @@ if(!log){
 return null;
 }
 
-const feedback = monthlyFeedback.filter(
+const metric = monthlyLectureMetrics.get(String(log.id ?? ""));
 
-(item)=>
-
-item.daily_log_uuid === log.id
-
-);
-
-if(feedback.length === 0){
-return null;
+if(!metric){
+return 0;
 }
 
-const complete = feedback.filter(
-
-(item)=>
-
-item.understanding_level ===
-"I completely understood."
-
-).length;
-
-
-const partial = feedback.filter(
-
-(item)=>
-
-item.understanding_level ===
-"I partially understood."
-
-).length;
-
-
-const totalStudents =
-
-feedback.length;
-
-
-const score =
-
-Math.round(
-
-(
-
-(
-
-complete +
-
-(partial * 0.5)
-
-)
-
-/
-
-totalStudents
-
-) * 100
-
-);
-
-return score;
+return metric.healthPercentage;
 
 }
 
@@ -3419,10 +3396,34 @@ return (
             </div>
 
             <ComparisonRow
-              title="Average Student Understanding %"
+              title="Average Learning Health %"
               data={overallClassroomComparison.map(
                 (item: any) =>
                   `${item.averageHealthScore}%`
+              )}
+            />
+
+            <ComparisonRow
+              title="Average Understanding %"
+              data={overallClassroomComparison.map(
+                (item: any) =>
+                  `${item.averageUnderstandingPercentage}%`
+              )}
+            />
+
+            <ComparisonRow
+              title="Average Partial Understanding %"
+              data={overallClassroomComparison.map(
+                (item: any) =>
+                  `${item.averagePartialPercentage}%`
+              )}
+            />
+
+            <ComparisonRow
+              title="Average Didn't Understand %"
+              data={overallClassroomComparison.map(
+                (item: any) =>
+                  `${item.averageDidntUnderstandPercentage}%`
               )}
             />
 

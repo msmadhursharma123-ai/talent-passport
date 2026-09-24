@@ -1,9 +1,16 @@
-import { isLearningUnderstandingLevel } from "../../../../utils/learningFeedbackAnalytics";
+import {
+  aggregateLearningLectureMetrics,
+  calculateLearningLectureMetrics,
+} from "../../../../utils/learningFeedbackAnalytics";
 import type {
   SchoolWeeklyMeetingHoliday,
   SchoolWeeklyMeetingInsights,
   SchoolWeeklyMeetingTeacherMetric,
 } from "./SchoolWeeklyMeetingInsightsModels";
+import {
+  calculateDoubtClosureRate,
+  countResolvedDoubts,
+} from "../../../../utils/analyticsConsistency";
 
 const COMPLETE = "I completely understood.";
 const PARTIAL = "I partially understood.";
@@ -190,47 +197,20 @@ function metricBase(
     assignmentIds.has(String(doubt.teacher_assignment_uuid)),
   );
 
-  const eligible = teacherLogs.reduce((sum, log) => {
+  const lectureMetrics = teacherLogs.map((log: any) => {
     const assignment = assignmentById.get(String(log.teacher_assignment_uuid));
-    return sum + new Set(assignment?.__studentIds ?? []).size;
-  }, 0);
-
-  const responders = new Set(
-    teacherFeedback
-      .map((row: any) => `${row.daily_log_uuid}:${row.student_uuid}`)
-      .filter(Boolean),
-  ).size;
-
-  const effective = teacherFeedback.map((row: any) =>
-    effectiveUnderstanding({ doubts }, row),
-  );
-  const complete = effective.filter((value) => value === COMPLETE).length;
-  const learningTeacherFeedback = teacherFeedback.filter((row:any) =>
-    isLearningUnderstandingLevel(effectiveUnderstanding({ doubts }, row))
-  );
-  const healthByLecture: number[] = [];
-  for (const log of teacherLogs) {
     const rows = teacherFeedback.filter(
       (feedbackRow: any) => String(feedbackRow.daily_log_uuid) === String(log.id),
     );
-    const learningRows = rows.filter((feedbackRow:any) =>
-      isLearningUnderstandingLevel(effectiveUnderstanding({ doubts }, feedbackRow))
-    );
-    if (!learningRows.length) continue;
-    const c = learningRows.filter(
-      (feedbackRow: any) => effectiveUnderstanding({ doubts }, feedbackRow) === COMPLETE,
-    ).length;
-    const p = learningRows.filter(
-      (feedbackRow: any) => effectiveUnderstanding({ doubts }, feedbackRow) === PARTIAL,
-    ).length;
-    healthByLecture.push(Math.round(((c + p * 0.5) / learningRows.length) * 100));
-  }
+    return calculateLearningLectureMetrics({
+      studentUuids: assignment?.__studentIds ?? [],
+      feedback: rows,
+      getUnderstandingLevel: (row: any) => effectiveUnderstanding({ doubts }, row),
+    });
+  });
 
-  const resolved = teacherDoubts.filter(
-    (doubt: any) =>
-      doubt.doubt_resolved === true ||
-      String(doubt.status ?? "").trim().toUpperCase() === "RESOLVED",
-  ).length;
+  const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
+  const resolved = countResolvedDoubts(teacherDoubts);
 
   return {
     teacherUuid: String(teacher.teacher_uuid ?? ""),
@@ -260,17 +240,15 @@ function metricBase(
           ),
         ).size,
     ),
-    feedbackEligible: eligible,
-    feedbackResponses: responders,
-    feedbackRate: pct(responders, eligible),
-    understandingRate: pct(complete, learningTeacherFeedback.length),
+    feedbackEligible: aggregate.eligibleStudentObservations,
+    feedbackResponses: aggregate.responseStudentObservations,
+    feedbackRate: pct(aggregate.responseStudentObservations, aggregate.eligibleStudentObservations),
+    understandingRate: pct(aggregate.completeStudentObservations, aggregate.eligibleStudentObservations),
     doubtsAsked: teacherDoubts.length,
     doubtsResolved: resolved,
-    doubtClosureRate: pct(resolved, teacherDoubts.length),
+    doubtClosureRate: calculateDoubtClosureRate(teacherDoubts),
     classHealthPercentage:
-      healthByLecture.length === 0
-        ? null
-        : Math.round(healthByLecture.reduce((a, b) => a + b, 0) / healthByLecture.length),
+      aggregate.lectureCount === 0 ? null : aggregate.classHealthPercentage,
     latePlannerCount: 0,
     latestLatePlannerSubmittedAt: null,
     latestLatePlannerDelayMinutes: null,

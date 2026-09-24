@@ -1,4 +1,12 @@
-import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
+import {
+  aggregateLearningLectureMetrics,
+  calculateLearningLectureMetrics,
+} from "../../../utils/learningFeedbackAnalytics";
+import {
+  calculateDoubtClosureRate,
+  calculateDoubtClosureRateFromCounts,
+  countResolvedDoubts,
+} from "../../../utils/analyticsConsistency";
 import type {
   StarPerformerPeriod,
   StarPerformerRow,
@@ -8,9 +16,6 @@ import type {
 const COMPLETE = "I completely understood.";
 const PARTIAL = "I partially understood.";
 const NONE = "I didn't understand.";
-
-const pct = (part: number, total: number) =>
-  total <= 0 ? 0 : Math.round((part / total) * 100);
 
 function same(a: unknown, b: unknown) {
   return String(a ?? "").trim().toLowerCase() === String(b ?? "").trim().toLowerCase();
@@ -65,34 +70,12 @@ function getEffectiveUnderstandingLevel(feedback: any, doubts: any[]) {
   return unresolved.length === 0 ? COMPLETE : original;
 }
 
-function dailyStudentFeedbackRate(
-  logs: any[],
-  feedbackByLog: Map<string, any[]>,
-  rosterSize: number
-) {
-  if (logs.length === 0 || rosterSize === 0) return 0;
-
-  const dailyRates = logs.map(log => {
-    const responders = new Set(
-      (feedbackByLog.get(String(log.id ?? "")) ?? [])
-        .map(row => String(row.student_uuid ?? ""))
-        .filter(Boolean)
-    ).size;
-
-    return Math.min(100, (responders / rosterSize) * 100);
-  });
-
-  return dailyRates.length
-    ? Math.round(dailyRates.reduce((sum, rate) => sum + rate, 0) / dailyRates.length)
-    : 0;
-}
-
 function metricForClassroom(
   assignments: any[],
   logsByAssignment: Map<string, any[]>,
   feedbackByLog: Map<string, any[]>,
   doubtsByAssignment: Map<string, any[]>,
-  rosterByClassroom: Map<string, number>,
+  rosterByClassroom: Map<string, Set<string>>,
   className: string,
   sectionName: string
 ): StarPerformerTeacherMetric["classMetrics"][number] {
@@ -117,60 +100,24 @@ function metricForClassroom(
   }));
 
   const doubtsAsked = classroomDoubts.length;
-  const doubtsResolved = classroomDoubts.filter(
-    doubt =>
-      doubt.doubt_resolved === true ||
-      String(doubt.status ?? "").trim().toUpperCase() === "RESOLVED"
-  ).length;
+  const doubtsResolved = countResolvedDoubts(classroomDoubts);
 
-  const learningFeedback = effectiveFeedback.filter(row =>
-    isLearningUnderstandingLevel(row.effectiveUnderstandingLevel)
+  const roster = rosterByClassroom.get(`${className}|||${sectionName}`) ?? new Set<string>();
+  const lectureMetrics = classroomLogs.map(log =>
+    calculateLearningLectureMetrics({
+      studentUuids: roster,
+      feedback: effectiveFeedback.filter(
+        row => String(row.daily_log_uuid ?? "") === String(log.id ?? ""),
+      ),
+      getUnderstandingLevel: (row: any) => row.effectiveUnderstandingLevel,
+    }),
   );
+  const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
+  const understandingPercentage = aggregate.understandingRate;
+  const classHealthPercentage = aggregate.classHealthPercentage;
+  const studentFeedbackPercentage = aggregate.responseRate;
 
-  const understandingPercentage = pct(
-    learningFeedback.filter(row => row.effectiveUnderstandingLevel === COMPLETE).length,
-    learningFeedback.length
-  );
-
-  let healthTotal = 0;
-  let healthLectureCount = 0;
-
-  for (const log of classroomLogs) {
-    const lectureFeedback = effectiveFeedback.filter(
-      row => String(row.daily_log_uuid ?? "") === String(log.id ?? "")
-    );
-
-    const learningLectureFeedback = lectureFeedback.filter(row =>
-      isLearningUnderstandingLevel(row.effectiveUnderstandingLevel)
-    );
-    if (learningLectureFeedback.length === 0) continue;
-
-    const completely = learningLectureFeedback.filter(
-      row => row.effectiveUnderstandingLevel === COMPLETE
-    ).length;
-
-    const partial = learningLectureFeedback.filter(
-      row => row.effectiveUnderstandingLevel === PARTIAL
-    ).length;
-
-    const lectureHealth = Math.round(
-      ((completely + partial * 0.5) / learningLectureFeedback.length) * 100
-    );
-
-    healthTotal += lectureHealth;
-    healthLectureCount += 1;
-  }
-
-  const classHealthPercentage =
-    healthLectureCount === 0 ? 0 : Math.round(healthTotal / healthLectureCount);
-
-  const studentFeedbackPercentage = dailyStudentFeedbackRate(
-    classroomLogs,
-    feedbackByLog,
-    rosterByClassroom.get(`${className}|||${sectionName}`) ?? 0
-  );
-
-  const doubtClosurePercentage = pct(doubtsResolved, doubtsAsked);
+  const doubtClosurePercentage = calculateDoubtClosureRate(classroomDoubts);
 
   const combinedScore = Math.round(
     (
@@ -189,9 +136,16 @@ function metricForClassroom(
     studentFeedbackPercentage,
     combinedScore,
     topicsTaught: classroomLogs.length,
-    responses: classroomFeedback.length,
+    responses: aggregate.responseStudentObservations + aggregate.absentStudentObservations,
     doubtsAsked,
     doubtsResolved,
+    eligibleStudentObservations: aggregate.eligibleStudentObservations,
+    responseStudentObservations: aggregate.responseStudentObservations,
+    completeStudentObservations: aggregate.completeStudentObservations,
+    partialStudentObservations: aggregate.partialStudentObservations,
+    didntUnderstandStudentObservations: aggregate.didntUnderstandStudentObservations,
+    healthPercentageSum: aggregate.healthPercentageSum,
+    healthLectureCount: aggregate.lectureCount,
   };
 }
 
@@ -308,7 +262,7 @@ export function buildStarPerformerRows(
     assignment => assignment.is_active !== false
   );
 
-  const rosterByClassroom = new Map<string, number>();
+  const rosterByClassroom = new Map<string, Set<string>>();
   const rosterSets = new Map<string, Set<string>>();
 
   for (const student of raw.students) {
@@ -320,7 +274,7 @@ export function buildStarPerformerRows(
   }
 
   for (const [key, set] of rosterSets.entries()) {
-    rosterByClassroom.set(key, set.size);
+    rosterByClassroom.set(key, set);
   }
 
   const teacherAssignmentsByTeacher = new Map<string, any[]>();
@@ -415,27 +369,31 @@ export function buildStarPerformerRows(
         );
 
         const count = classMetrics.length;
-
-        const average = (key: keyof typeof classMetrics[number]) =>
-          count === 0
-            ? 0
-            : Math.round(
-                classMetrics.reduce(
-                  (sum, item) => sum + Number(item[key] ?? 0),
-                  0
-                ) / count
-              );
+        const eligible = classMetrics.reduce((sum, item) => sum + item.eligibleStudentObservations, 0);
+        const responses = classMetrics.reduce((sum, item) => sum + item.responseStudentObservations, 0);
+        const complete = classMetrics.reduce((sum, item) => sum + item.completeStudentObservations, 0);
+        const healthLectureCount = classMetrics.reduce((sum, item) => sum + item.healthLectureCount, 0);
+        const healthSum = classMetrics.reduce((sum, item) => sum + item.healthPercentageSum, 0);
+        const doubtsAsked = classMetrics.reduce((sum, item) => sum + item.doubtsAsked, 0);
+        const doubtsResolved = classMetrics.reduce((sum, item) => sum + item.doubtsResolved, 0);
+        const understandingPercentage = eligible === 0 ? 0 : Math.round((complete / eligible) * 100);
+        const studentFeedbackPercentage = eligible === 0 ? 0 : Math.round((responses / eligible) * 100);
+        const classHealthPercentage = healthLectureCount === 0 ? 0 : Math.round(healthSum / healthLectureCount);
+        const doubtClosurePercentage = calculateDoubtClosureRateFromCounts(doubtsAsked, doubtsResolved);
+        const combinedScore = Math.round(
+          (understandingPercentage + doubtClosurePercentage + classHealthPercentage + studentFeedbackPercentage) / 4,
+        );
 
         return {
           teacherUuid: String(teacher.teacher_uuid ?? ""),
           teacherName: String(teacher.full_name ?? "Teacher"),
           classrooms: classMetrics.map(item => item.classroom),
           classroomCount: count,
-          understandingPercentage: average("understandingPercentage"),
-          doubtClosurePercentage: average("doubtClosurePercentage"),
-          classHealthPercentage: average("classHealthPercentage"),
-          studentFeedbackPercentage: average("studentFeedbackPercentage"),
-          combinedScore: average("combinedScore"),
+          understandingPercentage,
+          doubtClosurePercentage,
+          classHealthPercentage,
+          studentFeedbackPercentage,
+          combinedScore,
           classMetrics,
         };
       })

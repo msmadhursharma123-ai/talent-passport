@@ -1,4 +1,12 @@
-import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
+import {
+  aggregateLearningLectureMetrics,
+  calculateLearningLectureMetrics,
+} from "../../../utils/learningFeedbackAnalytics";
+import {
+  calculateDoubtClosureRate,
+  calculateLearningDoubtRate,
+  countResolvedDoubts,
+} from "../../../utils/analyticsConsistency";
 import { getSupabaseClient } from "../../../supabaseClient";
 import {
   getLiveDoubtsForTeacherAssignments,
@@ -32,7 +40,8 @@ from "../../../services/identityService";
 
 export async function getMonthlyComprehensionData(
 
-dailyLogIds:string[]
+dailyLogIds:string[],
+teacherAssignmentIds:string[] = []
 
 ){
 
@@ -63,7 +72,17 @@ dailyLogIds
 );
 
 
+if (!teacherAssignmentIds.length) {
 return data ?? [];
+}
+
+const liveRows = await getLiveDoubtsForTeacherAssignments(teacherAssignmentIds.map(String));
+const logIds = new Set(dailyLogIds.map(String));
+const scopedLiveRows = liveRows.filter((row:any) =>
+logIds.has(String(row.daily_log_uuid ?? ""))
+);
+
+return mergeFeedbackUnderstandingLevels(data ?? [], scopedLiveRows);
 
 }
 
@@ -418,141 +437,34 @@ export async function getOverallClassroomComparison(
           const doubtsAsked =
             classroomDoubts.length;
 
-          const doubtsResolved =
-            classroomDoubts.filter(
-              (doubt:any) =>
-                doubt.doubt_resolved === true ||
-                String(
-                  doubt.status ?? ""
-                )
-                  .trim()
-                  .toUpperCase() ===
-                  "RESOLVED"
-            ).length;
+          const doubtsResolved = countResolvedDoubts(classroomDoubts);
 
-          const doubtClosureRate =
-            doubtsAsked === 0
-              ? 0
-              : Math.round(
-                  (
-                    doubtsResolved /
-                    doubtsAsked
-                  ) * 100
-                );
-
-          let totalHealthScore = 0;
-          let lectureCount = 0;
-          let totalDoubtPercentage = 0;
-
-          for (
-            const log of classroomLogs
-          ) {
-
-            const logFeedback =
-              classroomFeedback.filter(
-                (item:any) =>
-                  item.daily_log_uuid ===
-                  log.id
-              );
-
-            if (
-              logFeedback.length === 0
-            ) {
-              continue;
-            }
-
-            const learningFeedback = logFeedback.filter((item:any) =>
-              isLearningUnderstandingLevel(item.understanding_level)
-            );
-
-            const completely =
-              learningFeedback.filter(
-                (item:any) =>
-                  item.understanding_level ===
-                  "I completely understood."
-              ).length;
-
-            const partial =
-              learningFeedback.filter(
-                (item:any) =>
-                  item.understanding_level ===
-                  "I partially understood."
-              ).length;
-
-            const difficult =
-              learningFeedback.filter(
-                (item:any) =>
-                  item.understanding_level ===
-                  "I didn't understand."
-              ).length;
-
-            const healthScore =
-              learningFeedback.length === 0
-                ? 0
-                : Math.round(
-                    (
-                      (
-                        completely +
-                        partial * 0.5
-                      ) /
-                      learningFeedback.length
-                    ) * 100
-                  );
-
-            totalHealthScore +=
-              healthScore;
-
-            totalDoubtPercentage +=
-              learningFeedback.length === 0
-                ? 0
-                : Math.round(
-                    (
-                      (
-                        partial +
-                        difficult
-                      ) /
-                      learningFeedback.length
-                    ) * 100
-                  );
-
-            lectureCount++;
-          }
-
-          const averageHealthScore =
-            lectureCount === 0
-              ? 0
-              : Math.round(
-                  totalHealthScore /
-                  lectureCount
-                );
-
-          const averageDoubtPercentage =
-            lectureCount === 0
-              ? 0
-              : Math.round(
-                  totalDoubtPercentage /
-                  lectureCount
-                );
+          const doubtClosureRate = calculateDoubtClosureRate(classroomDoubts);
 
           const eligibleStudents =
             teachingJournalRosterByClassroom.get(classroom) ?? new Set<string>();
-          const feedbackCoverageRates = classroomLogs.map((log: any) => {
-            if (eligibleStudents.size === 0) return 0;
-            const responders = new Set(
-              classroomFeedback
-                .filter((item: any) => String(item.daily_log_uuid) === String(log.id))
-                .map((item: any) => String(item.student_uuid ?? ""))
-                .filter((id: string) => eligibleStudents.has(id))
-            ).size;
-            return Math.min(100, Math.round((responders / eligibleStudents.size) * 100));
-          });
-          const averageFeedbackPercentage =
-            feedbackCoverageRates.length === 0
-              ? 0
-              : Math.round(
-                  feedbackCoverageRates.reduce((sum: number, rate: number) => sum + rate, 0) /
-                  feedbackCoverageRates.length
-                );
+
+          const lectureMetrics = classroomLogs.map((log: any) =>
+            calculateLearningLectureMetrics({
+              studentUuids: eligibleStudents,
+              feedback: classroomFeedback.filter(
+                (item: any) => String(item.daily_log_uuid) === String(log.id),
+              ),
+              getUnderstandingLevel: (item: any) => item.understanding_level,
+            }),
+          );
+          const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
+
+          const averageHealthScore = aggregate.classHealthPercentage;
+          const averageUnderstandingPercentage = aggregate.understandingRate;
+          const averagePartialPercentage = aggregate.partialRate;
+          const averageDidntUnderstandPercentage = aggregate.didntUnderstandRate;
+          const averageDoubtPercentage = calculateLearningDoubtRate(
+            aggregate.partialStudentObservations,
+            aggregate.didntUnderstandStudentObservations,
+            aggregate.eligibleStudentObservations,
+          );
+          const averageFeedbackPercentage = aggregate.responseRate;
 
           let studentsAtRisk = 0;
 
@@ -584,6 +496,9 @@ export async function getOverallClassroomComparison(
               `Class ${classroom}`,
 
             averageHealthScore,
+            averageUnderstandingPercentage,
+            averagePartialPercentage,
+            averageDidntUnderstandPercentage,
 
             averageDoubtPercentage,
 
@@ -839,6 +754,21 @@ export async function getCurrentMonthClassroomMetrics(
       liveRows
     );
 
+  const { data: rosterStudents, error: rosterError } = await (supabase as any)
+    .from("students_master")
+    .select("student_uuid,class_name,section_name,school_uuid")
+    .eq("school_uuid", teacher.schoolUuid);
+
+  if (rosterError) throw rosterError;
+
+  const rosterByClassroom = new Map<string, Set<string>>();
+  for (const student of rosterStudents ?? []) {
+    const key = `${String(student.class_name ?? "").trim()}-${String(student.section_name ?? "").trim()}`;
+    const set = rosterByClassroom.get(key) ?? new Set<string>();
+    if (student.student_uuid) set.add(String(student.student_uuid));
+    rosterByClassroom.set(key, set);
+  }
+
   return classroomGroups.map(
     ([classroom, group]) => {
 
@@ -884,101 +814,25 @@ export async function getCurrentMonthClassroomMetrics(
       const doubtsAsked =
         classroomDoubts.length;
 
-      const doubtsResolved =
-        classroomDoubts.filter(
-          (doubt:any) =>
-            doubt.doubt_resolved === true ||
-            String(
-              doubt.status ?? ""
-            )
-              .trim()
-              .toUpperCase() ===
-              "RESOLVED"
-        ).length;
+      const doubtsResolved = countResolvedDoubts(classroomDoubts);
 
-      const doubtClosureRate =
-        doubtsAsked === 0
-          ? 0
-          : Math.round(
-              (
-                doubtsResolved /
-                doubtsAsked
-              ) * 100
-            );
+      const doubtClosureRate = calculateDoubtClosureRate(classroomDoubts);
 
-      let scoreTotal = 0;
-      let feedbackDays = 0;
-      let totalResponses = 0;
-
-      for (
-        const log of classroomLogs
-      ) {
-
-        const logFeedback =
-          classroomFeedback.filter(
-            (item:any) =>
-              item.daily_log_uuid ===
-              log.id
-          );
-
-        if (
-          logFeedback.length === 0
-        ) {
-          continue;
-        }
-
-        const completely =
-          logFeedback.filter(
-            (item:any) =>
-              item.understanding_level ===
-              "I completely understood."
-          ).length;
-
-        const partial =
-          logFeedback.filter(
-            (item:any) =>
-              item.understanding_level ===
-              "I partially understood."
-          ).length;
-
-        const learningFeedback =
-          logFeedback.filter(
-            (item: any) =>
-              isLearningUnderstandingLevel(
-                item.understanding_level
-              )
-          );
-
-        const dailyScore =
-          learningFeedback.length === 0
-            ? 0
-            : Math.round(
-                (
-                  (
-                    completely +
-                    partial * 0.5
-                  ) /
-                  learningFeedback.length
-                ) * 100
-              );
-
-        scoreTotal +=
-          dailyScore;
-
-        feedbackDays += 1;
-
-        totalResponses +=
-          logFeedback.length;
-
-      }
-
-      const averageUnderstanding =
-        feedbackDays === 0
-          ? 0
-          : Math.round(
-              scoreTotal /
-              feedbackDays
-            );
+      const roster = rosterByClassroom.get(classroom) ?? new Set<string>();
+      const lectureMetrics = classroomLogs.map((log: any) =>
+        calculateLearningLectureMetrics({
+          studentUuids: roster,
+          feedback: classroomFeedback.filter(
+            (item: any) => String(item.daily_log_uuid) === String(log.id),
+          ),
+          getUnderstandingLevel: (item: any) => item.understanding_level,
+        }),
+      );
+      const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
+      const averageUnderstanding = aggregate.classHealthPercentage;
+      const feedbackDays = aggregate.lectureCount;
+      const totalResponses =
+        aggregate.responseStudentObservations + aggregate.absentStudentObservations;
 
       return {
 
@@ -1021,4 +875,55 @@ export async function getCurrentMonthClassroomMetrics(
     }
   );
 
+}
+
+export async function getTeachingJournalLectureMetrics(
+  assignmentId: string,
+  logs: any[],
+  feedback: any[],
+) {
+  const supabase = getSupabaseClient();
+  const teacher = getCurrentTeacher();
+  if (!supabase || !teacher?.schoolUuid || !assignmentId) return new Map<string, any>();
+
+  const { data: assignment, error: assignmentError } = await (supabase as any)
+    .from("teacher_classroom_assignments")
+    .select("id,class_name,section_name,school_uuid")
+    .eq("id", assignmentId)
+    .eq("school_uuid", teacher.schoolUuid)
+    .maybeSingle();
+
+  if (assignmentError) throw assignmentError;
+  if (!assignment) return new Map<string, any>();
+
+  const { data: students, error: studentError } = await (supabase as any)
+    .from("students_master")
+    .select("student_uuid,class_name,section_name,school_uuid")
+    .eq("school_uuid", teacher.schoolUuid)
+    .eq("class_name", assignment.class_name)
+    .eq("section_name", assignment.section_name);
+
+  if (studentError) throw studentError;
+
+  const roster = new Set(
+    (students ?? [])
+      .map((student: any) => String(student.student_uuid ?? "").trim())
+      .filter(Boolean),
+  );
+
+  const metrics = new Map<string, any>();
+  for (const log of logs ?? []) {
+    const lectureFeedback = (feedback ?? []).filter(
+      (row: any) => String(row.daily_log_uuid ?? "") === String(log.id ?? ""),
+    );
+    metrics.set(
+      String(log.id ?? ""),
+      calculateLearningLectureMetrics({
+        studentUuids: roster,
+        feedback: lectureFeedback,
+      }),
+    );
+  }
+
+  return metrics;
 }

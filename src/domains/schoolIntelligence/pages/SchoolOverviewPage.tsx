@@ -1,12 +1,6 @@
 import "./schoolIntelligence.css";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
-import { getCurrentSchool } from "../../../services/identityService";
-import { readSchoolPageCache, writeSchoolPageCache } from "../schoolPageCache";
-import {
-  getSchoolClassroomSupplementalMetrics,
-  type SchoolClassroomSupplementalMetric,
-} from "../repository/SchoolIntelligenceRepository";
 import type {
   SchoolClassroomHealthRow,
   SchoolIntelligenceSnapshot,
@@ -48,9 +42,6 @@ export default function SchoolOverviewPage() {
   const [showTeacherAccessManager, setShowTeacherAccessManager] = useState(false);
   const [showStudentAccessManager, setShowStudentAccessManager] = useState(false);
   const [data, setData] = useState<SchoolIntelligenceSnapshot | null>(null);
-  const [classroomMetrics, setClassroomMetrics] = useState<
-    SchoolClassroomSupplementalMetric[]
-  >([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -109,59 +100,6 @@ export default function SchoolOverviewPage() {
 
         if (!cancelled) {
           setData(snapshot);
-        }
-
-        try {
-          let supplemental: SchoolClassroomSupplementalMetric[];
-          const schoolUuid = getCurrentSchool()?.schoolUuid;
-          const supplementalKey = schoolUuid
-            ? (range === "custom"
-              ? `overview-supplemental-v2|${schoolUuid}|${customStart}|${customEnd}`
-              : `overview-supplemental-v2|${schoolUuid}|${range}`)
-            : undefined;
-
-          const cachedSupplemental = supplementalKey
-            ? readSchoolPageCache<SchoolClassroomSupplementalMetric[]>(supplementalKey)
-            : undefined;
-
-          if (cachedSupplemental) {
-            supplemental = cachedSupplemental;
-          } else if (range === "custom") {
-            supplemental =
-              await getSchoolClassroomSupplementalMetrics(
-                customStart,
-                customEnd
-              );
-          } else {
-            const end = new Date();
-            const start = new Date();
-            start.setDate(
-              end.getDate() - (Number(range) - 1)
-            );
-
-            supplemental =
-              await getSchoolClassroomSupplementalMetrics(
-                start.toISOString().slice(0, 10),
-                end.toISOString().slice(0, 10)
-              );
-          }
-
-          if (!cachedSupplemental && supplementalKey) {
-            writeSchoolPageCache(supplementalKey, supplemental);
-          }
-
-          if (!cancelled) {
-            setClassroomMetrics(supplemental);
-          }
-        } catch (supplementalError) {
-          console.error(
-            "SCHOOL CLASSROOM VERIFICATION METRICS LOAD FAILED",
-            supplementalError
-          );
-
-          if (!cancelled) {
-            setClassroomMetrics([]);
-          }
         }
       } catch (e: any) {
         if (!cancelled) {
@@ -223,17 +161,6 @@ export default function SchoolOverviewPage() {
     [data]
   );
 
-  const classroomMetricsMap = useMemo(
-    () =>
-      new Map(
-        classroomMetrics.map(metric => [
-          metric.assignmentUuid,
-          metric,
-        ])
-      ),
-    [classroomMetrics]
-  );
-
   const visibleRows = useMemo(() => {
     const rows = (data?.classrooms ?? [])
       .filter(row => {
@@ -247,18 +174,13 @@ export default function SchoolOverviewPage() {
 
         return classMatch && subjectMatch && teacherMatch;
       })
-      .map(row => {
-        const metric = classroomMetricsMap.get(
-          String(row.assignmentUuid)
-        );
-
-        return {
-          ...row,
-          totalStudents: metric?.totalStudents ?? 0,
-          classHealthPercentage:
-            metric?.classHealthPercentage ?? 0,
-        };
-      });
+      .map(row => ({
+        ...row,
+        classHealthPercentage:
+          row.healthLectureCount === 0
+            ? 0
+            : Math.round(row.healthPercentageSum / row.healthLectureCount),
+      }));
 
     return [...rows].sort((a, b) => {
       const difference = a[sortKey] - b[sortKey];
@@ -266,7 +188,6 @@ export default function SchoolOverviewPage() {
     });
   }, [
     data,
-    classroomMetricsMap,
     selectedClasses,
     subject,
     teacher,
@@ -286,57 +207,39 @@ export default function SchoolOverviewPage() {
       const rows = visibleRows.filter(row => classroomKey(row) === classKey);
       if (rows.length === 0) return [];
 
-      const average = (key: SortKey) =>
-        Math.round(rows.reduce((sum, row) => sum + row[key], 0) / rows.length);
+      const average = (values: number[]) =>
+        values.length === 0
+          ? 0
+          : Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
 
       return [{
         key: classKey,
         label: classOptions.find(option => option.value === classKey)?.label ?? rows[0].classroom,
         rows,
-        averageTopics: Math.round(
-          rows.reduce((sum, row) => sum + row.topicsTaught, 0) / rows.length
-        ),
+        // This row is explicitly an average of the visible subject rows.
+        // Keep each subject equally weighted; do not re-weight by lectures or
+        // student observations here because the subject-level rows are already
+        // the authoritative metrics displayed immediately above.
+        averageTopics: average(rows.map(row => row.topicsTaught)),
         totalStudents: rows[0].totalStudents,
-        averageClassHealthPercentage: (() => {
-          const totalLectureWeight = rows.reduce(
-            (sum, row) => {
-              const metric = classroomMetricsMap.get(String(row.assignmentUuid));
-              return sum + (metric?.healthLectureCount ?? 0);
-            },
-            0
-          );
-          if (totalLectureWeight === 0) return 0;
-          const weightedHealth = rows.reduce(
-            (sum, row) => {
-              const metric = classroomMetricsMap.get(String(row.assignmentUuid));
-              return sum + row.classHealthPercentage * (metric?.healthLectureCount ?? 0);
-            },
-            0
-          );
-          return Math.round(weightedHealth / totalLectureWeight);
-        })(),
-        averageResponseRate: average("responseRate"),
-        averageUnderstandingRate: average("understandingRate"),
-        averagePartialUnderstandingRate: average("partialUnderstandingRate"),
-        averageDoubtRate: average("doubtRate"),
-         averageDoubtClosureRate:
-           (() => {
-             const asked = rows.reduce(
-               (sum, row) =>
-                 sum + row.doubtsAsked,
-               0
-             );
-             const resolved = rows.reduce(
-               (sum, row) =>
-                 sum + row.doubtsResolved,
-               0
-             );
-             return asked === 0
-               ? 0
-               : Math.round(
-                   (resolved / asked) * 100
-                 );
-           })(),
+        averageClassHealthPercentage: average(
+          rows.map(row => row.classHealthPercentage),
+        ),
+        averageResponseRate: average(
+          rows.map(row => row.responseRate),
+        ),
+        averageUnderstandingRate: average(
+          rows.map(row => row.understandingRate),
+        ),
+        averagePartialUnderstandingRate: average(
+          rows.map(row => row.partialUnderstandingRate),
+        ),
+        averageDoubtRate: average(
+          rows.map(row => row.doubtRate),
+        ),
+        averageDoubtClosureRate: average(
+          rows.map(row => row.doubtClosureRate),
+        ),
       }];
     });
   }, [showClassAverages, selectedClasses, visibleRows, classOptions]);
