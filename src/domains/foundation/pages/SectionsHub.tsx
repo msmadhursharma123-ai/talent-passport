@@ -405,7 +405,7 @@ export default function SectionsHub({
     );
       return (
     <>
-      <div style={pageStyle}>
+      <div className="tp-admin-foundation-page" style={pageStyle}>
         <FoundationManagementHeader
           showBackButton
           onBack={onBack}

@@ -149,7 +149,7 @@ const {
 
 
   return (
-    <div style={pageStyle}>
+    <div className="tp-admin-platform-registry-page" style={pageStyle}>
       <header style={headerStyle}>
         <div>
           <h1 style={titleStyle}>

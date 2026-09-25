@@ -345,7 +345,7 @@ const rows =
         onChange={handleFilterChange}
       />
 
-      <div
+      <div className="tp-admin-kpi-detail tp-admin-kpi-competition-detail"
         style={{
           display: "flex",
           justifyContent: "flex-end",

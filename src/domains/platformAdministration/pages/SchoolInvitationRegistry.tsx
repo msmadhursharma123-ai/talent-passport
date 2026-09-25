@@ -339,7 +339,7 @@ Please share these credentials securely with the school administrator.`
 
     return(
 
-          <div style={pageStyle}>
+          <div className="tp-admin-platform-admin-page" style={pageStyle}>
       <header style={headerStyle}>
         <div>
           <h1 style={titleStyle}>

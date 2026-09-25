@@ -436,7 +436,7 @@ export default function ClassesHub({
 
   return (
     <>
-      <div style={pageStyle}>
+      <div className="tp-admin-foundation-page" style={pageStyle}>
 
         <FoundationManagementHeader
           showBackButton

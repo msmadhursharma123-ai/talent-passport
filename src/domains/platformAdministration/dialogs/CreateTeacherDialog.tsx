@@ -12,7 +12,7 @@ export default function CreateTeacherDialog({
   if (!open) return null;
 
   return (
-    <div style={overlayStyle}>
+    <div className="tp-admin-compact-dialog" style={overlayStyle}>
       <div style={dialogStyle}>
 
         <h2 style={titleStyle}>

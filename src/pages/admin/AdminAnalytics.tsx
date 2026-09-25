@@ -296,6 +296,7 @@ const matchesArea =
   return (
 
     <div
+      className="tp-admin-page tp-admin-analytics-page"
       style={{
         padding:"24px", background:"linear-gradient(180deg,#F8FAFD,#F3F6FA)", minHeight:"100vh"
       }}
@@ -338,6 +339,7 @@ const matchesArea =
       </div>
 
       <div
+        className="tp-admin-analytics-tabs"
         style={{
           display:"flex",
           gap:"12px",
@@ -392,6 +394,7 @@ const matchesArea =
           {/* KPI SECTION */}
 
           <div
+            className="tp-admin-analytics-kpi-grid"
             style={kpiGrid}
           >
 
@@ -462,6 +465,7 @@ const matchesArea =
           {/* STUDENT INSIGHTS */}
 
           <div
+            className="tp-admin-analytics-section-grid"
             style={{
               display:"grid",
               gridTemplateColumns:
@@ -688,6 +692,7 @@ const matchesArea =
           
 
            <div
+  className="tp-admin-partner-filter-grid"
   style={{
     display: "grid",
     gridTemplateColumns:

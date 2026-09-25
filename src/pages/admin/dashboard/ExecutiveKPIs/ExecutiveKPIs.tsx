@@ -47,6 +47,7 @@ export default function ExecutiveKPIs() {
   return (
     <>
       <div
+        className="tp-admin-executive-kpi-grid"
         style={{
           display: "grid",
           gridTemplateColumns:

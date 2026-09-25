@@ -367,7 +367,7 @@ export default function CurriculumHub({
 
   return (
     <>
-      <div style={pageStyle}>
+      <div className="tp-admin-foundation-page" style={pageStyle}>
 
         <FoundationManagementHeader
           showBackButton

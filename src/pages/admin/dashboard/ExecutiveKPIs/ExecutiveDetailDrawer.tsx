@@ -30,6 +30,7 @@ export default function ExecutiveDetailDrawer({
 
       {/* Drawer */}
       <div
+        className="tp-admin-executive-drawer"
         style={{
           position: "fixed",
           top: 0,

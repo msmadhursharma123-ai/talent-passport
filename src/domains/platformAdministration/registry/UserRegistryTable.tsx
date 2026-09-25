@@ -85,7 +85,7 @@ export default function UserRegistryTable({
 
         return (
 
-            <div style={loadingStyle}>
+            <div className="tp-admin-user-registry-table" style={loadingStyle}>
 
                 Loading users...
 

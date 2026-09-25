@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "../../styles/adminPagesCompactV3Final.css";
 
 import AdminDashboard from "../AdminDashboard";
 import CompetitionEntries from "./CompetitionEntries";

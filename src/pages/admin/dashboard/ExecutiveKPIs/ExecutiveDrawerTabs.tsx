@@ -33,6 +33,7 @@ export default function ExecutiveDrawerTabs({
 }: ExecutiveDrawerTabsProps) {
   return (
     <div
+      className="tp-admin-drawer-tabs"
       style={{
         display: "flex",
         gap: 12,

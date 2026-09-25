@@ -268,6 +268,7 @@ const activities = [
   return (
 
     <div
+      className="tp-admin-student-lead-table"
       style={{
         background:"white",
         borderRadius:"24px",
@@ -624,6 +625,7 @@ color: "#64748B",
   }}
 >
   <div
+    className="tp-admin-lead-table-scroll"
     style={{
       overflowX: "auto",
     }}

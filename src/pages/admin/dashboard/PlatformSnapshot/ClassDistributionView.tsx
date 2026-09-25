@@ -144,6 +144,7 @@ export default function ClassDistributionView({
   return (
     <>
       <div
+        className="tp-admin-registry-view tp-admin-class-distribution"
         style={{
           display: "flex",
           justifyContent:

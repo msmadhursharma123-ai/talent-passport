@@ -921,6 +921,7 @@ const topEvents =
 
   return (
     <div
+      className="tp-admin-page tp-admin-dashboard-page"
       style={{
         padding: "24px",
         background:

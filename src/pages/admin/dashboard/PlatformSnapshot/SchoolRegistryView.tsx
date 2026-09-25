@@ -135,6 +135,7 @@ export default function SchoolRegistryView({
   return (
     <>
       <div
+        className="tp-admin-registry-view tp-admin-school-registry"
         style={{
           display: "flex",
           justifyContent:

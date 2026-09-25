@@ -2,7 +2,7 @@ import React from "react";
 
 export default function CurriculumImport() {
   return (
-    <div style={containerStyle}>
+    <div className="tp-admin-foundation-page tp-admin-foundation-import" style={containerStyle}>
       {/* HEADER */}
 
       <section>

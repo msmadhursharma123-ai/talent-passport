@@ -1,6 +1,7 @@
 export default function StudentInsightPanel() {
   return (
     <div
+      className="tp-admin-student-insight-panel"
       style={{
         background: "linear-gradient(145deg,#FFFFFF,#F8FBFF)",
         borderRadius: "20px",

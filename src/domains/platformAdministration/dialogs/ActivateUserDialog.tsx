@@ -241,7 +241,7 @@ export default function ActivateUserDialog({
   ====================================================== */
 
     return (
-    <div style={overlayStyle}>
+    <div className="tp-admin-compact-dialog" style={overlayStyle}>
       <div style={dialogStyle}>
         <UserDialogHeader
           title={dialogTitle}

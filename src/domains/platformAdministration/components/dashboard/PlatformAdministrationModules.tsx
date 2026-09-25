@@ -105,7 +105,7 @@ function ModuleCard({
   onClick,
 }: ModuleCardProps) {
   return (
-    <div style={cardStyle}>
+    <div className="tp-admin-platform-modules" style={cardStyle}>
       <div style={iconStyle}>
         {icon}
       </div>

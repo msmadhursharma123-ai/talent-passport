@@ -95,7 +95,7 @@ const searchMatch =
 );
 
   return (
-    <div style={containerStyle}>
+    <div className="tp-admin-registration-tracker" style={containerStyle}>
       {/* Header */}
 
       <div style={headerRow}>
@@ -194,7 +194,7 @@ const searchMatch =
           No pending registrations found.
         </div>
       ) : (
-    <div style={tableContainer}>
+    <div className="tp-admin-registration-table" style={tableContainer}>
 
   <div style={tableHeader}>
 

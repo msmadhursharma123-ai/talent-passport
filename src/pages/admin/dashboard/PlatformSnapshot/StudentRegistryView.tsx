@@ -169,6 +169,7 @@ function toggleSchool(school: string) {
   return (
     <>
       <div
+        className="tp-admin-registry-view tp-admin-student-registry"
         style={{
           display: "grid",
           gridTemplateColumns:

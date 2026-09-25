@@ -10,7 +10,7 @@ export default function HeroBanner({
   subtitle,
 }: HeroBannerProps) {
   return (
-    <div style={heroContainer}>
+    <div className="tp-admin-hero-banner" style={heroContainer}>
       <div style={eyebrow}>
         TALENT PASSPORT OPERATING SYSTEM
       </div>

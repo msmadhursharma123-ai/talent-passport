@@ -19,6 +19,7 @@ export default function ExecutiveDrawerTable({
 }: ExecutiveDrawerTableProps) {
   return (
     <div
+      className="tp-admin-drawer-table"
       style={{
         background: "#FFFFFF",
         border: "1px solid #E5E7EB",

@@ -14,7 +14,7 @@ export default function AcademicExplorer({
   onBack,
 }: AcademicExplorerProps) {
   return (
-    <div style={pageStyle}>
+    <div className="tp-admin-foundation-page tp-admin-academic-explorer" style={pageStyle}>
       <FoundationManagementHeader
         showBackButton
         onBack={onBack}

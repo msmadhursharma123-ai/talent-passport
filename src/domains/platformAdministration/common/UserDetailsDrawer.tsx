@@ -33,7 +33,7 @@ export default function UserDetailsDrawer({
   }
 
   return (
-    <div style={overlayStyle}>
+    <div className="tp-admin-compact-dialog" style={overlayStyle}>
       <aside style={drawerStyle}>
         <div style={headerStyle}>
           <div>

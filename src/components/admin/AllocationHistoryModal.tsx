@@ -129,6 +129,7 @@ async function loadHistory(): Promise<void> {
   return (
 
     <div
+      className="tp-admin-modal-overlay tp-admin-history-modal"
       style={{
         position:"fixed",
         inset:0,

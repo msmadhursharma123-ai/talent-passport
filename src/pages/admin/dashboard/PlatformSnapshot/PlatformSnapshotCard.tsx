@@ -11,6 +11,7 @@ export default function PlatformSnapshotCard({
 }: Props) {
   return (
     <div
+      className="tp-admin-platform-card"
       onClick={onClick}
       style={{
         background: "#fff",

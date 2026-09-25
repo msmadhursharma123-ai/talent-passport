@@ -161,6 +161,7 @@ onContinue();
 return (
 
 <div
+    className="tp-admin-platform-admin-page"
     style={{
         minHeight:"100vh",
         background:"#F8F7F4",

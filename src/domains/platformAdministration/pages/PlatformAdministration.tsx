@@ -46,7 +46,7 @@ if (activePage === "schools") {
 }
 
   return (
-    <div style={pageStyle}>
+    <div className="tp-admin-platform-admin-page" style={pageStyle}>
       <PlatformAdministrationHero />
 
       <PlatformAdministrationStatistics />

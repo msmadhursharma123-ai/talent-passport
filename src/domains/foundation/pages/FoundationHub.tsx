@@ -134,7 +134,7 @@ if (activeModule === "Academic Explorer") {
 }
 
   return (
-    <div style={pageStyle}>
+    <div className="tp-admin-foundation-page" style={pageStyle}>
       <FoundationHero />
 
       <FoundationStatistics />

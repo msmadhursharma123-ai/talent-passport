@@ -1,0 +1,935 @@
+/*
+  Talent Passport Admin Portal — Page-Level Compact UI V3
+  UI-only presentation layer.
+  No data, repository, service, auth, state, routing, scoring, or business rules.
+*/
+
+.tp-admin-page,
+.tp-admin-page *,
+.tp-admin-dashboard-page,
+.tp-admin-dashboard-page *,
+.tp-admin-analytics-page,
+.tp-admin-analytics-page *,
+.tp-admin-competition-page,
+.tp-admin-competition-page * {
+  box-sizing: border-box;
+}
+
+.tp-admin-page {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+/* ---------------- Desktop density ---------------- */
+.tp-admin-dashboard-page,
+.tp-admin-analytics-page,
+.tp-admin-competition-page {
+  padding: 18px !important;
+}
+
+.tp-admin-dashboard-page h1,
+.tp-admin-analytics-page h1,
+.tp-admin-competition-page h1 {
+  line-height: 1.12;
+}
+
+.tp-admin-platform-snapshot-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.tp-admin-two-column-section {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.tp-admin-executive-kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.tp-admin-executive-kpi-card,
+.tp-admin-platform-card,
+.tp-admin-student-insight-panel {
+  min-width: 0 !important;
+  padding: 14px !important;
+  border-radius: 12px !important;
+}
+
+.tp-admin-executive-kpi-card > div,
+.tp-admin-platform-card > div {
+  min-width: 0;
+}
+
+.tp-admin-dashboard-filters {
+  gap: 10px !important;
+  padding: 10px !important;
+  margin-bottom: 14px !important;
+}
+
+.tp-admin-dashboard-filters select,
+.tp-admin-dashboard-filters button {
+  min-height: 38px;
+}
+
+.tp-admin-hero-banner {
+  padding: 18px !important;
+  margin-bottom: 14px !important;
+}
+
+.tp-admin-registration-tracker {
+  padding: 14px !important;
+  margin-top: 14px !important;
+}
+
+.tp-admin-registration-tracker > div {
+  min-width: 0;
+}
+
+.tp-admin-registration-tracker [style*="grid-template-columns"],
+.tp-admin-registration-tracker [style*="gridTemplateColumns"] {
+  min-width: 0 !important;
+}
+
+/* Dashboard table surface: preserve all data; allow horizontal access instead of clipping. */
+.tp-admin-registration-tracker [style*="overflow"] {
+  max-width: 100%;
+}
+
+/* ---------------- Executive drawer ---------------- */
+.tp-admin-executive-drawer {
+  width: min(1080px, 92vw) !important;
+  max-width: 92vw !important;
+}
+
+.tp-admin-executive-drawer > div:first-child {
+  padding: 14px 18px !important;
+}
+
+.tp-admin-executive-drawer > div:last-child {
+  padding: 14px !important;
+  min-width: 0;
+}
+
+.tp-admin-drawer-filters {
+  grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  padding: 10px !important;
+  margin-bottom: 10px !important;
+}
+
+.tp-admin-drawer-filters input,
+.tp-admin-drawer-filters select,
+.tp-admin-drawer-filters button {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+}
+
+.tp-admin-drawer-tabs {
+  gap: 6px !important;
+  margin-bottom: 10px !important;
+  flex-wrap: wrap;
+}
+
+.tp-admin-drawer-tabs button {
+  min-height: 36px;
+  padding: 7px 10px !important;
+}
+
+.tp-admin-drawer-table {
+  min-width: 0;
+  overflow: auto !important;
+}
+
+.tp-admin-drawer-table > div {
+  min-width: 720px;
+}
+
+.tp-admin-kpi-detail {
+  min-width: 0;
+}
+
+/* ---------------- Analytics ---------------- */
+.tp-admin-analytics-tabs {
+  margin-bottom: 14px !important;
+  gap: 8px !important;
+  flex-wrap: wrap;
+}
+
+.tp-admin-analytics-tabs button {
+  min-height: 38px;
+  padding: 8px 12px !important;
+}
+
+.tp-admin-analytics-kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.tp-admin-analytics-section-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.tp-admin-partner-filter-grid {
+  grid-template-columns: 1.6fr repeat(5, minmax(110px, 1fr)) !important;
+  gap: 8px !important;
+  margin-bottom: 12px !important;
+}
+
+.tp-admin-partner-filter-grid input,
+.tp-admin-partner-filter-grid select {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.tp-admin-student-lead-table {
+  padding: 14px !important;
+  border-radius: 14px !important;
+  margin-top: 12px !important;
+}
+
+.tp-admin-student-lead-table table {
+  width: 100%;
+}
+
+/* Analytics modals */
+.tp-admin-modal-overlay {
+  padding: 14px;
+}
+
+.tp-admin-modal-overlay > div {
+  width: min(1100px, 94vw) !important;
+  max-width: 94vw !important;
+  max-height: 88vh !important;
+  min-width: 0 !important;
+  overflow: auto !important;
+  border-radius: 14px !important;
+}
+
+/* ---------------- Competition Operations ---------------- */
+.tp-admin-competition-kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.tp-admin-competition-page [style*="border-radius: 16px"],
+.tp-admin-competition-page [style*="borderRadius: 16"] {
+  border-radius: 12px !important;
+}
+
+.tp-admin-competition-page table {
+  min-width: 760px;
+}
+
+.tp-admin-competition-page [style*="overflow-x"],
+.tp-admin-competition-page [style*="overflowX"] {
+  overflow-x: auto !important;
+  max-width: 100%;
+}
+
+/* ---------------- Registries ---------------- */
+.tp-admin-registry-view {
+  min-width: 0;
+}
+
+.tp-admin-registry-view input,
+.tp-admin-registry-view select,
+.tp-admin-registry-view button {
+  min-width: 0;
+}
+
+.tp-admin-registry-view [style*="grid-template-columns"],
+.tp-admin-registry-view [style*="gridTemplateColumns"] {
+  min-width: 0 !important;
+}
+
+.tp-admin-registry-view [style*="overflow"] {
+  max-width: 100%;
+}
+
+.tp-admin-platform-card {
+  overflow: hidden;
+}
+
+/* ---------------- Tablet ---------------- */
+@media (max-width: 1100px) {
+  .tp-admin-page {
+    padding: 12px !important;
+  }
+
+  .tp-admin-platform-snapshot-grid,
+  .tp-admin-executive-kpi-grid,
+  .tp-admin-competition-kpi-grid,
+  .tp-admin-analytics-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .tp-admin-analytics-section-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .tp-admin-partner-filter-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .tp-admin-partner-filter-grid input {
+    grid-column: span 3;
+  }
+
+  .tp-admin-two-column-section {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .tp-admin-executive-drawer {
+    width: 94vw !important;
+    max-width: 94vw !important;
+  }
+
+  .tp-admin-drawer-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .tp-admin-drawer-filters input,
+  .tp-admin-drawer-filters select:first-of-type {
+    grid-column: span 2;
+  }
+
+  .tp-admin-registration-tracker {
+    padding: 12px !important;
+  }
+}
+
+/* ---------------- Mobile: dense, two-up information surfaces ---------------- */
+@media (max-width: 767px) {
+  .tp-admin-page,
+  .tp-admin-dashboard-page,
+  .tp-admin-analytics-page,
+  .tp-admin-competition-page {
+    padding: 8px !important;
+  }
+
+  .tp-admin-dashboard-page h1,
+  .tp-admin-analytics-page h1,
+  .tp-admin-competition-page h1 {
+    font-size: clamp(20px, 6vw, 28px) !important;
+    margin-bottom: 6px !important;
+  }
+
+  .tp-admin-dashboard-page h2,
+  .tp-admin-dashboard-page h3,
+  .tp-admin-analytics-page h2,
+  .tp-admin-analytics-page h3,
+  .tp-admin-competition-page h2,
+  .tp-admin-competition-page h3 {
+    font-size: 12px !important;
+    margin: 7px 0 9px !important;
+    letter-spacing: .8px !important;
+  }
+
+  /* Keep information two-up wherever the content can safely fit. */
+  .tp-admin-platform-snapshot-grid,
+  .tp-admin-executive-kpi-grid,
+  .tp-admin-competition-kpi-grid,
+  .tp-admin-analytics-kpi-grid,
+  .tp-admin-analytics-section-grid,
+  .tp-admin-two-column-section {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .tp-admin-platform-card,
+  .tp-admin-executive-kpi-card,
+  .tp-admin-student-insight-panel {
+    padding: 9px !important;
+    border-radius: 10px !important;
+  }
+
+  .tp-admin-platform-card > div,
+  .tp-admin-executive-kpi-card > div {
+    line-height: 1.2 !important;
+  }
+
+  .tp-admin-dashboard-filters {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    padding: 7px !important;
+  }
+
+  .tp-admin-dashboard-filters select,
+  .tp-admin-dashboard-filters button {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 38px !important;
+    padding: 7px 8px !important;
+    font-size: 14px !important;
+  }
+
+  .tp-admin-hero-banner {
+    padding: 12px !important;
+    margin-bottom: 8px !important;
+    border-radius: 12px !important;
+  }
+
+  .tp-admin-hero-banner h1 {
+    font-size: 19px !important;
+  }
+
+  .tp-admin-hero-banner p {
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+  }
+
+  .tp-admin-registration-tracker {
+    padding: 9px !important;
+    margin-top: 9px !important;
+    border-radius: 11px !important;
+  }
+
+  /* Dense table surfaces: horizontal scroll is deliberate so no data is hidden. */
+  .tp-admin-registration-tracker,
+  .tp-admin-student-lead-table,
+  .tp-admin-drawer-table,
+  .tp-admin-registry-view {
+    overflow-x: auto !important;
+  }
+
+  .tp-admin-registration-table,
+  .tp-admin-lead-table-scroll {
+    min-width: 620px;
+  }
+
+  .tp-admin-analytics-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .tp-admin-analytics-tabs button {
+    width: 100% !important;
+    min-height: 38px !important;
+  }
+
+  .tp-admin-partner-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .tp-admin-partner-filter-grid input {
+    grid-column: span 2;
+  }
+
+  .tp-admin-partner-filter-grid select,
+  .tp-admin-partner-filter-grid input {
+    min-height: 38px !important;
+    font-size: 14px !important;
+    padding: 7px 8px !important;
+  }
+
+  .tp-admin-executive-drawer {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    border-left: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .tp-admin-executive-drawer > div:first-child {
+    padding: 10px 12px !important;
+  }
+
+  .tp-admin-executive-drawer > div:first-child > div:first-child > div:first-child {
+    font-size: 17px !important;
+  }
+
+  .tp-admin-executive-drawer > div:last-child {
+    padding: 8px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  .tp-admin-drawer-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    padding: 7px !important;
+    margin-bottom: 7px !important;
+  }
+
+  .tp-admin-drawer-filters input,
+  .tp-admin-drawer-filters select,
+  .tp-admin-drawer-filters button {
+    min-height: 36px !important;
+    font-size: 13px !important;
+    padding: 6px !important;
+  }
+
+  .tp-admin-drawer-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+  }
+
+  .tp-admin-drawer-tabs button {
+    min-height: 34px !important;
+    padding: 5px 6px !important;
+    font-size: 12px !important;
+  }
+
+  .tp-admin-drawer-table > div {
+    min-width: 650px !important;
+  }
+
+  .tp-admin-modal-overlay {
+    padding: 6px !important;
+    align-items: flex-end !important;
+  }
+
+  .tp-admin-modal-overlay > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92dvh !important;
+    border-radius: 14px 14px 0 0 !important;
+    overflow: auto !important;
+  }
+
+  .tp-admin-competition-page table {
+    min-width: 720px !important;
+  }
+
+  .tp-admin-competition-page [style*="display: flex"],
+  .tp-admin-competition-page [style*="display:flex"] {
+    min-width: 0;
+  }
+
+  .tp-admin-kpi-detail {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .tp-admin-kpi-detail > * {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  .tp-admin-page,
+  .tp-admin-dashboard-page,
+  .tp-admin-analytics-page,
+  .tp-admin-competition-page {
+    padding: 6px !important;
+  }
+
+  .tp-admin-platform-snapshot-grid,
+  .tp-admin-executive-kpi-grid,
+  .tp-admin-competition-kpi-grid,
+  .tp-admin-analytics-kpi-grid,
+  .tp-admin-analytics-section-grid,
+  .tp-admin-two-column-section {
+    gap: 5px !important;
+  }
+
+  .tp-admin-platform-card,
+  .tp-admin-executive-kpi-card,
+  .tp-admin-student-insight-panel {
+    padding: 7px !important;
+  }
+}
+
+.tp-admin-lead-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+}
+
+.tp-admin-evaluation-dialog {
+  width: min(900px, 94vw) !important;
+  max-width: 94vw !important;
+  max-height: 88vh !important;
+  overflow-y: auto !important;
+  padding: 20px !important;
+  border-radius: 14px !important;
+}
+
+@media (max-width: 767px) {
+  .tp-admin-evaluation-modal {
+    padding: 6px !important;
+    align-items: flex-end !important;
+  }
+  .tp-admin-evaluation-dialog {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92dvh !important;
+    border-radius: 14px 14px 0 0 !important;
+    padding: 14px !important;
+  }
+}
+
+/* ---------------- Other Admin Portal modules ----------------
+   Foundation / Platform Administration / registry sub-pages remain on their
+   existing components; these scoped rules make their existing presentation
+   surfaces compact without changing their component logic. */
+@media (max-width: 1100px) {
+  .tp-admin-portal__content > div {
+    min-width: 0;
+  }
+
+  .tp-admin-portal__content [style*="grid-template-columns"],
+  .tp-admin-portal__content [style*="gridTemplateColumns"] {
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .tp-admin-portal__content > div {
+    min-width: 0 !important;
+  }
+
+  /* Existing Foundation / Platform Administration dashboard cards. */
+  .tp-admin-portal__content > div[style*="gap: 40px"],
+  .tp-admin-portal__content > div[style*="gap:\"40px\""] {
+    gap: 12px !important;
+    padding: 6px !important;
+  }
+
+  /* Existing grid-based admin sub-pages: two-up compact surfaces. */
+  .tp-admin-portal__content [style*="grid-template-columns"],
+  .tp-admin-portal__content [style*="gridTemplateColumns"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .tp-admin-portal__content input,
+  .tp-admin-portal__content select,
+  .tp-admin-portal__content textarea,
+  .tp-admin-portal__content button {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* Fixed dialogs within the Admin content become compact bottom sheets. */
+  .tp-admin-portal__content [style*="position: fixed"],
+  .tp-admin-portal__content [style*="position:\"fixed\""] {
+    max-width: 100vw !important;
+  }
+}
+
+/* ---------------- Other Admin Portal modules ----------------
+   Foundation / Platform Administration are rendered directly by AdminPortal and
+   therefore do not carry the page-specific hooks above. These rules are scoped
+   strictly to the existing V3 AdminShell content surface. They change only
+   presentation density and preserve all existing module DOM/logic. */
+.tp-admin-portal__content {
+  min-width: 0;
+}
+
+.tp-admin-portal__content > div {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.tp-admin-portal__content h1,
+.tp-admin-portal__content h2,
+.tp-admin-portal__content h3 {
+  line-height: 1.15;
+}
+
+/* Compact common grid/card surfaces used by Foundation and Platform Administration. */
+.tp-admin-portal__content [style*="grid-template-columns"],
+.tp-admin-portal__content [style*="gridTemplateColumns"] {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.tp-admin-portal__content [style*="display: grid"],
+.tp-admin-portal__content [style*="display:grid"] {
+  gap: 12px !important;
+}
+
+.tp-admin-portal__content [style*="border-radius: 16px"],
+.tp-admin-portal__content [style*="borderRadius: 16"] {
+  border-radius: 12px !important;
+}
+
+.tp-admin-portal__content table {
+  max-width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .tp-admin-portal__content [style*="grid-template-columns: repeat(4"],
+  .tp-admin-portal__content [style*="gridTemplateColumns: repeat(4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .tp-admin-portal__content [style*="grid-template-columns: repeat(3"],
+  .tp-admin-portal__content [style*="gridTemplateColumns: repeat(3"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .tp-admin-portal__content {
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .tp-admin-portal__content [style*="gap: 40px"],
+  .tp-admin-portal__content [style*="gap:40px"] {
+    gap: 12px !important;
+  }
+
+  .tp-admin-portal__content [style*="grid-template-columns: repeat(4"],
+  .tp-admin-portal__content [style*="gridTemplateColumns: repeat(4"],
+  .tp-admin-portal__content [style*="grid-template-columns: repeat(3"],
+  .tp-admin-portal__content [style*="gridTemplateColumns: repeat(3"],
+  .tp-admin-portal__content [style*="grid-template-columns: repeat(2"],
+  .tp-admin-portal__content [style*="gridTemplateColumns: repeat(2"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .tp-admin-portal__content [style*="padding: 24px"],
+  .tp-admin-portal__content [style*="padding:24px"] {
+    padding: 10px !important;
+  }
+
+  .tp-admin-portal__content [style*="padding: 20px"],
+  .tp-admin-portal__content [style*="padding:20px"] {
+    padding: 9px !important;
+  }
+
+  .tp-admin-portal__content input,
+  .tp-admin-portal__content select,
+  .tp-admin-portal__content button {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .tp-admin-portal__content table {
+    min-width: 620px;
+  }
+
+  .tp-admin-portal__content [style*="overflow-x"],
+  .tp-admin-portal__content [style*="overflowX"] {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+  }
+}
+
+/* =====================================================================
+   FINAL PAGE-LEVEL COVERAGE: FOUNDATION + PLATFORM ADMINISTRATION
+   These rules are intentionally scoped to the AdminShell content surface.
+   They change presentation density only.
+===================================================================== */
+
+.tp-admin-foundation-page,
+.tp-admin-platform-admin-page,
+.tp-admin-platform-registry-page {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  gap: 14px !important;
+  padding: 8px !important;
+}
+
+.tp-admin-foundation-page > *,
+.tp-admin-platform-admin-page > *,
+.tp-admin-platform-registry-page > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.tp-admin-foundation-page [style*="grid-template-columns"],
+.tp-admin-foundation-page [style*="gridTemplateColumns"],
+.tp-admin-platform-admin-page [style*="grid-template-columns"],
+.tp-admin-platform-admin-page [style*="gridTemplateColumns"],
+.tp-admin-platform-registry-page [style*="grid-template-columns"],
+.tp-admin-platform-registry-page [style*="gridTemplateColumns"] {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  gap: 10px !important;
+}
+
+.tp-admin-foundation-page [style*="minmax(250px"],
+.tp-admin-foundation-page [style*="minmax(230px"],
+.tp-admin-foundation-page [style*="minmax(260px"],
+.tp-admin-platform-admin-page [style*="minmax(240px"],
+.tp-admin-platform-admin-page [style*="minmax(260px"],
+.tp-admin-platform-registry-page [style*="minmax(260px"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.tp-admin-foundation-page [style*="borderRadius: \"20px\""],
+.tp-admin-foundation-page [style*="border-radius: 20px"],
+.tp-admin-platform-admin-page [style*="borderRadius: \"20px\""],
+.tp-admin-platform-admin-page [style*="border-radius: 20px"],
+.tp-admin-platform-registry-page [style*="borderRadius: \"20px\""],
+.tp-admin-platform-registry-page [style*="border-radius: 20px"] {
+  border-radius: 12px !important;
+}
+
+.tp-admin-foundation-page table,
+.tp-admin-platform-admin-page table,
+.tp-admin-platform-registry-page table {
+  max-width: 100%;
+}
+
+.tp-admin-foundation-page input,
+.tp-admin-foundation-page select,
+.tp-admin-foundation-page textarea,
+.tp-admin-foundation-page button,
+.tp-admin-platform-admin-page input,
+.tp-admin-platform-admin-page select,
+.tp-admin-platform-admin-page textarea,
+.tp-admin-platform-admin-page button,
+.tp-admin-platform-registry-page input,
+.tp-admin-platform-registry-page select,
+.tp-admin-platform-registry-page textarea,
+.tp-admin-platform-registry-page button {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* All Admin foundation/platform dialogs use this neutral presentation hook. */
+.tp-admin-compact-dialog {
+  box-sizing: border-box;
+}
+
+.tp-admin-compact-dialog > div {
+  box-sizing: border-box;
+  width: min(900px, 94vw) !important;
+  max-width: 94vw !important;
+  max-height: 88vh !important;
+  min-width: 0 !important;
+  overflow-y: auto !important;
+}
+
+@media (max-width: 1100px) {
+  .tp-admin-foundation-page,
+  .tp-admin-platform-admin-page,
+  .tp-admin-platform-registry-page {
+    padding: 7px !important;
+    gap: 10px !important;
+  }
+
+  .tp-admin-foundation-page [style*="grid-template-columns: repeat(4"],
+  .tp-admin-foundation-page [style*="gridTemplateColumns: repeat(4"],
+  .tp-admin-platform-admin-page [style*="grid-template-columns: repeat(4"],
+  .tp-admin-platform-admin-page [style*="gridTemplateColumns: repeat(4"],
+  .tp-admin-platform-registry-page [style*="grid-template-columns: repeat(4"],
+  .tp-admin-platform-registry-page [style*="gridTemplateColumns: repeat(4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .tp-admin-foundation-page [style*="grid-template-columns: repeat(3"],
+  .tp-admin-foundation-page [style*="gridTemplateColumns: repeat(3"],
+  .tp-admin-platform-admin-page [style*="grid-template-columns: repeat(3"],
+  .tp-admin-platform-admin-page [style*="gridTemplateColumns: repeat(3"],
+  .tp-admin-platform-registry-page [style*="grid-template-columns: repeat(3"],
+  .tp-admin-platform-registry-page [style*="gridTemplateColumns: repeat(3"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .tp-admin-foundation-page,
+  .tp-admin-platform-admin-page,
+  .tp-admin-platform-registry-page {
+    padding: 6px !important;
+    gap: 8px !important;
+  }
+
+  .tp-admin-foundation-page h1,
+  .tp-admin-platform-admin-page h1,
+  .tp-admin-platform-registry-page h1 {
+    font-size: clamp(20px, 6vw, 27px) !important;
+    line-height: 1.15 !important;
+  }
+
+  /* Two-up compact information cards and management controls. */
+  .tp-admin-foundation-page [style*="grid-template-columns"],
+  .tp-admin-foundation-page [style*="gridTemplateColumns"],
+  .tp-admin-platform-admin-page [style*="grid-template-columns"],
+  .tp-admin-platform-admin-page [style*="gridTemplateColumns"],
+  .tp-admin-platform-registry-page [style*="grid-template-columns"],
+  .tp-admin-platform-registry-page [style*="gridTemplateColumns"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .tp-admin-foundation-page [style*="padding: 32px"],
+  .tp-admin-foundation-page [style*="padding:\"32px\""],
+  .tp-admin-foundation-page [style*="padding: 28px"],
+  .tp-admin-platform-admin-page [style*="padding: 32px"],
+  .tp-admin-platform-admin-page [style*="padding:\"32px\""],
+  .tp-admin-platform-admin-page [style*="padding: 28px"],
+  .tp-admin-platform-registry-page [style*="padding: 32px"],
+  .tp-admin-platform-registry-page [style*="padding: 28px"] {
+    padding: 12px !important;
+  }
+
+  .tp-admin-foundation-page table,
+  .tp-admin-platform-admin-page table,
+  .tp-admin-platform-registry-page table {
+    display: block;
+    width: 100%;
+    min-width: 620px;
+    overflow-x: auto;
+  }
+
+  .tp-admin-foundation-page input,
+  .tp-admin-foundation-page select,
+  .tp-admin-foundation-page textarea,
+  .tp-admin-platform-admin-page input,
+  .tp-admin-platform-admin-page select,
+  .tp-admin-platform-admin-page textarea,
+  .tp-admin-platform-registry-page input,
+  .tp-admin-platform-registry-page select,
+  .tp-admin-platform-registry-page textarea {
+    font-size: 14px !important;
+    min-height: 36px;
+  }
+
+  .tp-admin-compact-dialog {
+    padding: 6px !important;
+    align-items: flex-end !important;
+    overflow-y: auto !important;
+  }
+
+  .tp-admin-compact-dialog > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92dvh !important;
+    border-radius: 14px 14px 0 0 !important;
+    padding: 14px !important;
+    overflow-y: auto !important;
+  }
+
+  .tp-admin-compact-dialog [style*="grid-template-columns"],
+  .tp-admin-compact-dialog [style*="gridTemplateColumns"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .tp-admin-foundation-page,
+  .tp-admin-platform-admin-page,
+  .tp-admin-platform-registry-page {
+    padding: 5px !important;
+  }
+
+  .tp-admin-foundation-page [style*="grid-template-columns"],
+  .tp-admin-foundation-page [style*="gridTemplateColumns"],
+  .tp-admin-platform-admin-page [style*="grid-template-columns"],
+  .tp-admin-platform-admin-page [style*="gridTemplateColumns"],
+  .tp-admin-platform-registry-page [style*="grid-template-columns"],
+  .tp-admin-platform-registry-page [style*="gridTemplateColumns"] {
+    gap: 5px !important;
+  }
+}

@@ -359,6 +359,7 @@ const missingEvents =
   return (
 
     <div
+      className="tp-admin-page tp-admin-competition-page"
       style={{
         padding: "24px",
         background:
@@ -528,6 +529,7 @@ const missingEvents =
       {/* KPI ROW */}
 
       <div
+        className="tp-admin-competition-kpi-grid"
         style={{
           display: "grid",
           gridTemplateColumns:
@@ -1535,6 +1537,7 @@ const avgLeadership =
       {selectedEvaluation && (
 
         <div
+          className="tp-admin-modal-overlay tp-admin-evaluation-modal"
           style={{
             position: "fixed",
             inset: 0,
@@ -1550,6 +1553,7 @@ const avgLeadership =
         >
 
           <div
+            className="tp-admin-evaluation-dialog"
             style={{
               background:
                 "white",

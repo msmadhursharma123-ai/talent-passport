@@ -15,6 +15,7 @@ export default function ExecutiveKPICard({
 }: ExecutiveKPICardProps) {
   return (
     <div
+      className="tp-admin-executive-kpi-card"
       onClick={() => onClick?.(data)}
       style={{
         background: "#FFFFFF",

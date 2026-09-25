@@ -217,7 +217,7 @@ useEffect(() => {
   onChange={handleFilterChange}
 />
 
-<div
+<div className="tp-admin-kpi-detail tp-admin-student-registration-detail"
   style={{
     display: "flex",
     justifyContent: "flex-end",

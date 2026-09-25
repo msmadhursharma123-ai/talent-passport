@@ -317,7 +317,7 @@ export default function NewPartnersView() {
         }
       />
 
-      <div
+      <div className="tp-admin-kpi-detail tp-admin-new-partners-detail"
         style={{
           display: "flex",
           justifyContent:

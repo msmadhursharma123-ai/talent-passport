@@ -25,7 +25,7 @@ export default function DashboardFilters({
   onToggleIncomplete,
 }: DashboardFiltersProps) {
   return (
-    <div style={containerStyle}>
+    <div className="tp-admin-dashboard-filters" style={containerStyle}>
       <select
         value={selectedSchool}
         onChange={(e) => onSchoolChange(e.target.value)}

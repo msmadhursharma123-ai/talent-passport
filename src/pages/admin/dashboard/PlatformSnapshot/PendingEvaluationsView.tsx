@@ -146,6 +146,7 @@ const schoolCount = useMemo(() => {
   return (
     <>
       <div
+        className="tp-admin-registry-view tp-admin-pending-evaluations"
         style={{
           display: "grid",
           gridTemplateColumns:

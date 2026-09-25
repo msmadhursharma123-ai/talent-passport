@@ -296,7 +296,7 @@ const rows: FoundationTableRow[] =
 
   return (
     <>
-      <div style={pageStyle}>
+      <div className="tp-admin-foundation-page" style={pageStyle}>
         <FoundationManagementHeader
           showBackButton
           onBack={onBack}

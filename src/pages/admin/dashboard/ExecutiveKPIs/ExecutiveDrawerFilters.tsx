@@ -20,6 +20,7 @@ export default function ExecutiveDrawerFilters({
 }: ExecutiveDrawerFiltersProps) {
   return (
     <div
+      className="tp-admin-drawer-filters"
       style={{
         display: "grid",
         gridTemplateColumns:

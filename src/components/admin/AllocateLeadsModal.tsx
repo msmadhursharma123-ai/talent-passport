@@ -282,6 +282,7 @@ onClose();
   return (
 
     <div
+      className="tp-admin-modal-overlay tp-admin-allocate-modal"
       style={{
         position:"fixed",
         inset:0,
