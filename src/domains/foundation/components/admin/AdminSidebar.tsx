@@ -15,13 +15,11 @@ export default function AdminSidebar({
 }: AdminSidebarProps) {
   return (
     <div style={containerStyle}>
-      {/* Logo */}
       <div style={logoSection}>
         <h2 style={logoTitle}>Talent Passport</h2>
         <p style={logoSubtitle}>Platform OS</p>
       </div>
 
-      {/* Navigation */}
       <div style={navigationStyle}>
         {ADMIN_MODULES.map((item) => {
           const isActive = activeModule === item.key;
@@ -40,16 +38,13 @@ export default function AdminSidebar({
               {item.label}
 
               {!item.enabled && (
-                <span style={comingSoonBadge}>
-                  Soon
-                </span>
+                <span style={comingSoonBadge}>Soon</span>
               )}
             </button>
           );
         })}
       </div>
 
-      {/* Footer */}
       <div style={footerStyle}>
         Talent Passport OS
         <br />
@@ -59,19 +54,17 @@ export default function AdminSidebar({
   );
 }
 
-/* ============================================================
-   STYLES
-============================================================ */
-
 const containerStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
+  minHeight: "100%",
   height: "100%",
 };
 
 const logoSection: React.CSSProperties = {
   padding: "28px 22px",
   borderBottom: "1px solid #E5E7EB",
+  flexShrink: 0,
 };
 
 const logoTitle: React.CSSProperties = {
@@ -94,6 +87,8 @@ const navigationStyle: React.CSSProperties = {
   gap: "8px",
   padding: "18px",
   flex: 1,
+  overflowY: "auto",
+  minHeight: 0,
 };
 
 const menuButton: React.CSSProperties = {
@@ -110,6 +105,7 @@ const menuButton: React.CSSProperties = {
   justifyContent: "space-between",
   alignItems: "center",
   transition: "all 0.2s ease",
+  minHeight: "46px",
 };
 
 const activeButton: React.CSSProperties = {
@@ -137,4 +133,5 @@ const footerStyle: React.CSSProperties = {
   textAlign: "center",
   color: "#94A3B8",
   fontSize: "12px",
+  flexShrink: 0,
 };

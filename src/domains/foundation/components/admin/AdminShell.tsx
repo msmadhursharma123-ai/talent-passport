@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import "../../../../styles/adminResponsive.css";
 
 interface AdminShellProps {
   sidebar: React.ReactNode;
@@ -11,22 +12,65 @@ export default function AdminShell({
   header,
   children,
 }: AdminShellProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.add("tp-admin-responsive-context");
+    return () => {
+      document.body.classList.remove("tp-admin-responsive-context");
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileMenuOpen]);
+
   return (
-    <div style={containerStyle}>
-      {/* Sidebar */}
-      <aside style={sidebarStyle}>
+    <div className="tp-admin-portal" style={containerStyle}>
+      <div
+        className={`tp-admin-sidebar-backdrop${mobileMenuOpen ? " is-open" : ""}`}
+        aria-hidden="true"
+        onClick={() => setMobileMenuOpen(false)}
+      />
+
+      <aside
+        className={`tp-admin-portal__sidebar${mobileMenuOpen ? " is-open" : ""}`}
+        style={sidebarStyle}
+        aria-label="Admin navigation"
+        onClickCapture={() => setMobileMenuOpen(false)}
+      >
         {sidebar}
       </aside>
 
-      {/* Main Area */}
-      <main style={mainStyle}>
-        {/* Header */}
-        <header style={headerStyle}>
+      <main className="tp-admin-portal__main" style={mainStyle}>
+        <div className="tp-admin-mobile-bar">
+          <button
+            type="button"
+            className="tp-admin-mobile-menu-button"
+            aria-label={mobileMenuOpen ? "Close admin navigation" : "Open admin navigation"}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((open) => !open)}
+          >
+            {mobileMenuOpen ? "×" : "☰"}
+          </button>
+          <div className="tp-admin-mobile-title">Talent Passport Admin</div>
+          <div className="tp-admin-mobile-spacer" aria-hidden="true" />
+        </div>
+
+        <header className="tp-admin-portal__header" style={headerStyle}>
           {header}
         </header>
 
-        {/* Page Content */}
-        <section style={contentStyle}>
+        <section className="tp-admin-portal__content" style={contentStyle}>
           {children}
         </section>
       </main>
@@ -34,13 +78,11 @@ export default function AdminShell({
   );
 }
 
-/* ============================================================
-   STYLES
-============================================================ */
-
 const containerStyle: React.CSSProperties = {
   display: "flex",
   minHeight: "100vh",
+  minWidth: 0,
+  width: "100%",
   background: "#F8FAFC",
 };
 
@@ -54,6 +96,7 @@ const sidebarStyle: React.CSSProperties = {
 
 const mainStyle: React.CSSProperties = {
   flex: 1,
+  minWidth: 0,
   display: "flex",
   flexDirection: "column",
 };
@@ -65,6 +108,7 @@ const headerStyle: React.CSSProperties = {
 
 const contentStyle: React.CSSProperties = {
   flex: 1,
+  minWidth: 0,
   padding: "24px",
   overflow: "auto",
 };
