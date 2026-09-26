@@ -6,6 +6,8 @@ import { jsPDF } from "jspdf";
 import { BookOpen, CheckCircle2, ChevronDown, Download, Search, X } from "lucide-react";
 import { registerAndroidBackHandler } from "../../mobile/androidBackNavigation";
 import type { PortalManualRole, PortalManualSection } from "./manualTypes";
+import ManualVideoCard from "./ManualVideoCard";
+import { getPortalManualVideo } from "./manualVideoRegistry";
 import { STUDENT_MANUAL } from "./studentManual";
 import { TEACHER_MANUAL } from "./teacherManual";
 import { SCHOOL_ADMIN_MANUAL } from "./schoolAdminManual";
@@ -98,6 +100,7 @@ export default function PortalManual({ role, activePage }: Props) {
   }, [content, query]);
 
   const activeSection = content.sections.find((s) => s.id === activeId) ?? filtered[0] ?? content.sections[0];
+  const manualVideo = activeSection && role !== "partner" ? getPortalManualVideo(role, activeSection.id) : undefined;
 
   function selectSection(section: PortalManualSection) {
     setActiveId(section.id); setMobileListOpen(false);
@@ -148,7 +151,7 @@ export default function PortalManual({ role, activePage }: Props) {
           <aside className="tp-portal-manual-sidebar"><div className="tp-portal-manual-sidebar-label">{role === "student" ? "ACADEMICS" : "MANUAL"}</div>{filtered.map(s=><button type="button" key={s.id} className={s.id===activeId?"active":""} onClick={()=>selectSection(s)}>{s.title}</button>)}</aside>
           <main className="tp-portal-manual-main">
             <div className="tp-portal-manual-intro"><div className="tp-portal-manual-eyebrow">HOW TO USE THIS PORTAL</div><h1>{content.label}</h1><p>{content.intro}</p></div>
-            {activeSection ? <article className="tp-portal-manual-section"><div className="tp-portal-manual-section-title"><span><CheckCircle2 size={17}/></span><div><h2>{activeSection.title}</h2><p>{activeSection.summary}</p></div></div>{activeSection.steps?.length ? <div className="tp-portal-manual-step-block"><h3>Steps</h3><ol>{activeSection.steps.map((step,i)=><li key={`${activeSection.id}-step-${i}`}><b>{i+1}</b><span>{step}</span></li>)}</ol></div> : null}{activeSection.bullets?.length ? <div className="tp-portal-manual-bullet-block"><h3>Remember</h3><ul>{activeSection.bullets.map((b)=><li key={b}>{b}</li>)}</ul></div> : null}{activeSection.note ? <div className="tp-portal-manual-note">{activeSection.note}</div> : null}</article> : <div className="tp-portal-manual-empty">No matching topic. Try another word.</div>}
+            {activeSection ? <article className="tp-portal-manual-section"><div className="tp-portal-manual-section-title"><span><CheckCircle2 size={17}/></span><div><h2>{activeSection.title}</h2><p>{activeSection.summary}</p></div></div>{activeSection.steps?.length ? <div className="tp-portal-manual-step-block"><h3>Steps</h3><ol>{activeSection.steps.map((step,i)=><li key={`${activeSection.id}-step-${i}`}><b>{i+1}</b><span>{step}</span></li>)}</ol></div> : null}{activeSection.bullets?.length ? <div className="tp-portal-manual-bullet-block"><h3>Remember</h3><ul>{activeSection.bullets.map((b)=><li key={b}>{b}</li>)}</ul></div> : null}{activeSection.note ? <div className="tp-portal-manual-note">{activeSection.note}</div> : null}{manualVideo ? <ManualVideoCard video={manualVideo} /> : null}</article> : <div className="tp-portal-manual-empty">No matching topic. Try another word.</div>}
           </main>
         </div>
       </div>

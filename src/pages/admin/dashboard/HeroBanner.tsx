@@ -30,12 +30,12 @@ const heroContainer: React.CSSProperties = {
   position: "relative",
   overflow: "hidden",
   background:
-    "radial-gradient(circle at 88% 18%, rgba(255,126,31,0.12) 0 58px, transparent 59px), radial-gradient(circle at 76% 100%, rgba(43,102,246,0.10) 0 82px, transparent 83px), linear-gradient(135deg,#FFFDF9 0%,#FFFFFF 62%,#FFF8F1 100%)",
+    "radial-gradient(circle at 88% 18%, rgba(255,126,31,0.12) 0 58px, transparent 59px), radial-gradient(circle at 76% 100%, rgba(43,102,246,0.10) 0 82px, transparent 83px), linear-gradient(135deg,#0B1F3A 0%,#0B1F3A 62%,#0B1F3A 100%)",
   border: "1px solid #DCE5F0",
   boxShadow: "0 10px 30px rgba(15,39,71,0.06)",
   borderRadius: "24px",
   padding: "30px 34px",
-  color: "#0B1F3A",
+  color: "#DCE5F0",
   marginBottom: "18px",
 };
 
