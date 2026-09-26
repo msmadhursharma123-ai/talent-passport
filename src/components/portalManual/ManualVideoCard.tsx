@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { Pause, Play, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
+import { Maximize2, Minimize2, Pause, Play, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
 import type { ManualVideoConfig } from "./manualVideoTypes";
 import { getPortalManualVideoUrl } from "./manualVideoRegistry";
 import "./manualVideo.css";
@@ -13,7 +13,9 @@ export default function ManualVideoCard({ video }: Props) {
   const [started, setStarted] = useState(false);
   const [muted, setMuted] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const playerRef = useRef<HTMLDivElement | null>(null);
 
   const playbackGenerationRef = useRef(0);
 
@@ -24,6 +26,9 @@ export default function ManualVideoCard({ video }: Props) {
     playbackGenerationRef.current += 1;
     const generation = playbackGenerationRef.current;
     const element = videoRef.current;
+    if (document.fullscreenElement === playerRef.current && typeof document.exitFullscreen === "function") {
+      void document.exitFullscreen().catch(() => undefined);
+    }
 
     if (element) {
       element.pause();
@@ -34,6 +39,7 @@ export default function ManualVideoCard({ video }: Props) {
     setPlaying(false);
     setStarted(false);
     setFailed(false);
+    setFullscreen(false);
 
     return () => {
       if (playbackGenerationRef.current !== generation) return;
@@ -45,6 +51,54 @@ export default function ManualVideoCard({ video }: Props) {
       }
     };
   }, [video.storagePath]);
+
+  useLayoutEffect(() => {
+    const handleFullscreenChange = () => {
+      setFullscreen(document.fullscreenElement === playerRef.current);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  function toggleFullscreen() {
+    const player = playerRef.current;
+    const element = videoRef.current;
+    if (!player || !element) return;
+
+    if (document.fullscreenElement === player) {
+      if (typeof document.exitFullscreen === "function") {
+        void document.exitFullscreen().catch(() => undefined);
+      }
+      return;
+    }
+
+    if (document.fullscreenElement && typeof document.exitFullscreen === "function") {
+      void document.exitFullscreen().catch(() => undefined);
+    }
+
+    if (typeof player.requestFullscreen === "function" && document.fullscreenEnabled) {
+      void player.requestFullscreen().catch(() => {
+        // Some mobile WebViews/browsers expose native video fullscreen instead.
+        const nativeVideo = element as HTMLVideoElement & {
+          webkitEnterFullscreen?: () => void;
+        };
+        if (typeof nativeVideo.webkitEnterFullscreen === "function") {
+          nativeVideo.webkitEnterFullscreen();
+          setFullscreen(true);
+        }
+      });
+      return;
+    }
+
+    const nativeVideo = element as HTMLVideoElement & {
+      webkitEnterFullscreen?: () => void;
+    };
+    if (typeof nativeVideo.webkitEnterFullscreen === "function") {
+      nativeVideo.webkitEnterFullscreen();
+      setFullscreen(true);
+    }
+  }
 
   function startVideo() {
     const element = videoRef.current;
@@ -96,6 +150,9 @@ export default function ManualVideoCard({ video }: Props) {
   function closePlayer() {
     playbackGenerationRef.current += 1;
     const element = videoRef.current;
+    if (document.fullscreenElement === playerRef.current && typeof document.exitFullscreen === "function") {
+      void document.exitFullscreen().catch(() => undefined);
+    }
     if (element) {
       element.pause();
       element.removeAttribute("src");
@@ -104,6 +161,7 @@ export default function ManualVideoCard({ video }: Props) {
     setPlaying(false);
     setStarted(false);
     setFailed(false);
+    setFullscreen(false);
   }
 
   function togglePlayback() {
@@ -145,9 +203,24 @@ export default function ManualVideoCard({ video }: Props) {
       </button>
 
       <div
+        ref={playerRef}
         className="tp-manual-video-player"
         hidden={!started}
         aria-hidden={!started}
+        style={
+          fullscreen
+            ? {
+                position: "fixed",
+                inset: 0,
+                zIndex: 2147483647,
+                width: "100vw",
+                height: "100vh",
+                maxHeight: "none",
+                borderRadius: 0,
+                overflow: "hidden",
+              }
+            : undefined
+        }
       >
         <video
           ref={videoRef}
@@ -159,6 +232,16 @@ export default function ManualVideoCard({ video }: Props) {
           onEnded={() => setPlaying(false)}
           onError={() => setFailed(true)}
           aria-label={video.title}
+          style={
+            fullscreen
+              ? {
+                  width: "100%",
+                  height: "100%",
+                  maxHeight: "100%",
+                  aspectRatio: "auto",
+                }
+              : undefined
+          }
         />
         <div className="tp-manual-video-controls">
           <button type="button" onClick={togglePlayback} aria-label={playing ? "Pause video" : "Play video"}>
@@ -166,6 +249,14 @@ export default function ManualVideoCard({ video }: Props) {
           </button>
           <button type="button" onClick={() => setMuted((value) => !value)} aria-label={muted ? "Unmute video" : "Mute video"}>
             {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+          </button>
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            title={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+          >
+            {fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
           </button>
           <button type="button" onClick={closePlayer} aria-label="Close video">
             <X size={15} />
