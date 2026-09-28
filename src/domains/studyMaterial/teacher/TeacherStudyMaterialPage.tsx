@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   createStudyMaterialSignedUrl,
   downloadStudyMaterialFile,
@@ -22,7 +22,7 @@ function formatBytes(bytes: number) {
 
 export default function TeacherStudyMaterialPage() {
   const [chapters, setChapters] = useState<StudyMaterialChapter[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [chaptersLoading, setChaptersLoading] = useState(false);
   const [error, setError] = useState("");
   const [className, setClassName] = useState("");
   const [subjectName, setSubjectName] = useState("");
@@ -30,26 +30,36 @@ export default function TeacherStudyMaterialPage() {
   const [busyId, setBusyId] = useState("");
   const [preview, setPreview] = useState<{ file: StudyMaterialFile; url: string } | null>(null);
 
-  async function load() {
-    setLoading(true);
-    setError("");
-    try {
-      setChapters(await getStudyMaterialChaptersForTeacher());
-    } catch (e: any) {
-      setError(e?.message ?? "Unable to load study material.");
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadMatchingChapters() {
+      if (!className || !subjectName) {
+        setChapters([]);
+        setChaptersLoading(false);
+        return;
+      }
+
+      setChaptersLoading(true);
+      setError("");
+      try {
+        const rows = await getStudyMaterialChaptersForTeacher(className, subjectName);
+        if (!cancelled) setChapters(rows);
+      } catch (e: any) {
+        if (!cancelled) {
+          setChapters([]);
+          setError(e?.message ?? "Unable to load chapters for the selected class and subject.");
+        }
+      } finally {
+        if (!cancelled) setChaptersLoading(false);
+      }
     }
-  }
 
-  useEffect(() => { void load(); }, []);
+    void loadMatchingChapters();
+    return () => { cancelled = true; };
+  }, [className, subjectName]);
 
-  const matchingChapters = useMemo(
-    () => className && subjectName
-      ? chapters.filter((chapter) => chapter.className === className && chapter.subjectName === subjectName)
-      : [],
-    [chapters, className, subjectName],
-  );
+  const matchingChapters = chapters;
 
   const selectedChapter = matchingChapters.find((chapter) => chapter.id === chapterId) ?? null;
 
@@ -111,19 +121,17 @@ export default function TeacherStudyMaterialPage() {
         <div className="tp-teacher-sm-select-grid">
           <label><span>1 · Class</span><select value={className} onChange={(e) => changeClass(e.target.value)}><option value="">Choose class</option>{STUDY_MATERIAL_CLASSES.map((value) => <option key={value} value={value}>Class {value}</option>)}</select></label>
           <label><span>2 · Subject</span><select value={subjectName} onChange={(e) => changeSubject(e.target.value)}><option value="">Choose subject</option>{STUDY_MATERIAL_SUBJECTS.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
-          <label className="tp-teacher-sm-chapter-select"><span>3 · Chapter</span><select value={chapterId} onChange={(e) => setChapterId(e.target.value)} disabled={!className || !subjectName}><option value="">{!className || !subjectName ? "Choose class & subject first" : matchingChapters.length ? "Choose chapter" : "No chapters added yet"}</option>{matchingChapters.map((chapter) => <option key={chapter.id} value={chapter.id}>{chapter.chapterName}</option>)}</select></label>
+          <label className="tp-teacher-sm-chapter-select"><span>3 · Chapter</span><select value={chapterId} onChange={(e) => setChapterId(e.target.value)} disabled={!className || !subjectName || chaptersLoading}><option value="">{!className || !subjectName ? "Choose class & subject first" : chaptersLoading ? "Loading chapters…" : matchingChapters.length ? "Choose chapter" : "No chapters added yet"}</option>{matchingChapters.map((chapter) => <option key={chapter.id} value={chapter.id}>{chapter.chapterName}</option>)}</select></label>
         </div>
 
         <div className="tp-teacher-sm-selector-note">
-          {!className || !subjectName ? "Select all three fields to open the chapter resources." : !matchingChapters.length ? "No study material has been added for this Class + Subject yet." : !selectedChapter ? "Now choose the chapter to load its Summary, Notes, Q&A and Sample Papers." : `Showing resources added by the platform admin for “${selectedChapter.chapterName}”.`}
+          {!className || !subjectName ? "Select Class and Subject first. The Chapter list will show only chapters with study material for that selection." : chaptersLoading ? "Loading chapters for the selected Class + Subject…" : !matchingChapters.length ? "No study material has been added for this Class + Subject yet." : !selectedChapter ? "Now choose the chapter to load its Summary, Notes, Q&A and Sample Papers." : `Showing resources added by the platform admin for “${selectedChapter.chapterName}”.`}
         </div>
       </section>
 
       {error && <div className="tp-teacher-sm-error">{error}<button type="button" onClick={() => setError("")}>×</button></div>}
 
-      {loading ? (
-        <section className="tp-teacher-sm-empty-state"><div className="tp-teacher-sm-loader">Loading library…</div></section>
-      ) : !selectedChapter ? (
+      {!selectedChapter ? (
         <section className="tp-teacher-sm-empty-state">
           <div className="tp-teacher-sm-empty-icon">▤</div>
           <h2>Choose Class, Subject & Chapter</h2>

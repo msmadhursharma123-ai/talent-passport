@@ -75,11 +75,51 @@ export async function getStudyMaterialChapters(): Promise<StudyMaterialChapter[]
   return (chapters ?? []).map((row: any) => mapChapter(row, grouped.get(String(row.id)) ?? []));
 }
 
-export async function getStudyMaterialChaptersForTeacher(): Promise<StudyMaterialChapter[]> {
-  // The same read path is intentionally used for teachers and admins.
-  // RLS is the authorization boundary; teachers are allowed to read every
-  // published study-material record irrespective of their own assignment.
-  return getStudyMaterialChapters();
+export async function getStudyMaterialChaptersForTeacher(
+  className: string,
+  subjectName: string,
+): Promise<StudyMaterialChapter[]> {
+  const supabase = client();
+  const normalizedClass = className.trim();
+  const normalizedSubject = subjectName.trim();
+
+  if (!normalizedClass || !normalizedSubject) return [];
+
+  // Teacher chapter discovery is deliberately scoped at the database query
+  // level. This prevents records from another class/subject from ever
+  // reaching the chapter dropdown. A chapter is considered available to a
+  // teacher only when it has at least one attached study-material file.
+  const { data: chapters, error: chapterError } = await supabase
+    .from(CHAPTERS_TABLE)
+    .select("id,class_name,subject_name,chapter_name,created_at,updated_at")
+    .eq("class_name", normalizedClass)
+    .eq("subject_name", normalizedSubject)
+    .order("chapter_name", { ascending: true });
+
+  if (chapterError) throw chapterError;
+  if (!chapters?.length) return [];
+
+  const chapterIds = chapters.map((row: any) => String(row.id));
+  const { data: files, error: fileError } = await supabase
+    .from(FILES_TABLE)
+    .select("id,chapter_id,material_type,file_name,storage_path,mime_type,file_size,sort_order,created_at,updated_at")
+    .in("chapter_id", chapterIds)
+    .order("sort_order", { ascending: true })
+    .order("file_name", { ascending: true });
+
+  if (fileError) throw fileError;
+
+  const grouped = new Map<string, StudyMaterialFile[]>();
+  for (const row of files ?? []) {
+    const mapped = mapFile(row);
+    const list = grouped.get(mapped.chapterId) ?? [];
+    list.push(mapped);
+    grouped.set(mapped.chapterId, list);
+  }
+
+  return (chapters ?? [])
+    .map((row: any) => mapChapter(row, grouped.get(String(row.id)) ?? []))
+    .filter((chapter) => chapter.files.length > 0);
 }
 
 export async function upsertStudyMaterialChapter(input: {
@@ -100,24 +140,87 @@ export async function upsertStudyMaterialChapter(input: {
     throw new Error("Class, subject and chapter name are required.");
   }
 
+  const chapterSelect = "id,class_name,subject_name,chapter_name,created_at,updated_at";
+
   if (input.id) {
     const { data, error } = await supabase
       .from(CHAPTERS_TABLE)
       .update(payload)
       .eq("id", input.id)
-      .select("id,class_name,subject_name,chapter_name,created_at,updated_at")
+      .select(chapterSelect)
       .single();
-    if (error) throw error;
+
+    if (error) {
+      // The database deliberately enforces one chapter per class + subject +
+      // chapter name (case-insensitive). Keep that protection intact and
+      // surface a useful message instead of exposing the raw constraint name.
+      if (error.code === "23505") {
+        throw new Error("A chapter with this name already exists for the selected class and subject. Open that record with Edit to add or update its files.");
+      }
+      throw error;
+    }
     return mapChapter(data);
   }
+
+  /*
+    ADD FLOW SAFETY
+    ---------------
+    The editor can legitimately be opened as a fresh "Add Study Material"
+    dialog even when the selected class + subject + chapter already exists.
+    Previously this path always attempted a second INSERT, which correctly
+    hit the database's unique index `tp_study_material_chapters_unique_idx`.
+
+    Reuse the existing chapter before inserting. This lets an admin add, for
+    example, Q&A to an existing chapter without creating a duplicate chapter.
+    The database constraint remains the final race-condition guard below.
+  */
+  const { data: candidates, error: lookupError } = await supabase
+    .from(CHAPTERS_TABLE)
+    .select(chapterSelect)
+    .eq("class_name", payload.class_name)
+    .eq("subject_name", payload.subject_name)
+    .limit(1000);
+
+  if (lookupError) throw lookupError;
+
+  const normalizedChapterName = payload.chapter_name.trim().toLocaleLowerCase();
+  const existing = (candidates ?? []).find(
+    (row: any) => String(row.chapter_name ?? "").trim().toLocaleLowerCase() === normalizedChapterName,
+  );
+
+  if (existing) return mapChapter(existing);
 
   const { data, error } = await supabase
     .from(CHAPTERS_TABLE)
     .insert(payload)
-    .select("id,class_name,subject_name,chapter_name,created_at,updated_at")
+    .select(chapterSelect)
     .single();
-  if (error) throw error;
-  return mapChapter(data);
+
+  if (!error) return mapChapter(data);
+
+  /*
+    Two admin sessions can pass the lookup simultaneously. If another session
+    creates the same chapter between our lookup and INSERT, the unique index
+    returns PostgreSQL 23505 / HTTP 409. Resolve that race by fetching the
+    chapter that now exists and continue with the file upload.
+  */
+  if (error.code === "23505") {
+    const { data: racedCandidates, error: raceLookupError } = await supabase
+      .from(CHAPTERS_TABLE)
+      .select(chapterSelect)
+      .eq("class_name", payload.class_name)
+      .eq("subject_name", payload.subject_name)
+      .limit(1000);
+
+    if (!raceLookupError) {
+      const raced = (racedCandidates ?? []).find(
+        (row: any) => String(row.chapter_name ?? "").trim().toLocaleLowerCase() === normalizedChapterName,
+      );
+      if (raced) return mapChapter(raced);
+    }
+  }
+
+  throw error;
 }
 
 export async function uploadStudyMaterialFiles(
