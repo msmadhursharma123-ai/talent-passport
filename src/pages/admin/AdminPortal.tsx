@@ -11,6 +11,7 @@ import FoundationHub
 from "../../domains/foundation/pages/FoundationHub";
 import PlatformAdministration
 from "../../domains/platformAdministration/pages/PlatformAdministration";
+import StudyMaterialAdminPage from "../../domains/studyMaterial/admin/StudyMaterialAdminPage";
 
 /* ============================================================
    ADMIN PORTAL
@@ -59,6 +60,9 @@ const renderModule = () => {
 
 case "users":
   return <PlatformAdministration />;
+
+    case "learning":
+      return <StudyMaterialAdminPage />;
 
     case "settings":
       return (

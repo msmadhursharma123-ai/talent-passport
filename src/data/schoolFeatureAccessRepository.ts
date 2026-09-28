@@ -29,6 +29,7 @@ export const TEACHER_FEATURES = [
   { key: "exam-paper-planner", label: "Exam Paper" },
   { key: "worksheet-maker", label: "Worksheet" },
   { key: "parents-teacher-meeting", label: "PTM" },
+  { key: "study-material", label: "Study Material" },
 ] as const;
 
 type FeatureDefinition =

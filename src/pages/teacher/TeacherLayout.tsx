@@ -22,6 +22,7 @@ import UnitTestPlannerPage from "../../domains/planners/pages/UnitTestPlannerPag
 import ExamPaperPlannerPage from "../../domains/planners/pages/ExamPaperPlannerPage";
 import WorksheetMakerPage from "../../domains/planners/pages/WorksheetMakerPage";
 import ParentsTeacherMeetingPage from "../../domains/parentTeacherMeeting/pages/ParentsTeacherMeetingPage";
+import TeacherStudyMaterialPage from "../../domains/studyMaterial/teacher/TeacherStudyMaterialPage";
 
 import SchoolPostFeed from "../../domains/schoolIntelligence/components/SchoolPostFeed";
 
@@ -260,6 +261,7 @@ export default function TeacherLayout({ onLogout }: Props) {
                 {activePage === "exam-paper-planner" && <ExamPaperPlannerPage />}
                 {activePage === "worksheet-maker" && <WorksheetMakerPage />}
                 {activePage === "parents-teacher-meeting" && <ParentsTeacherMeetingPage />}
+                {activePage === "study-material" && <TeacherStudyMaterialPage />}
               </>
             )}
           </main>

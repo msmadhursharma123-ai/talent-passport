@@ -42,6 +42,11 @@ export default function TeacherSidebar({
       icon: "♡",
     },
     {
+      id: "study-material",
+      label: "Study Material",
+      icon: "▤",
+    },
+    {
       id: "planners",
       label: "Lesson Planner",
       icon: "▣",

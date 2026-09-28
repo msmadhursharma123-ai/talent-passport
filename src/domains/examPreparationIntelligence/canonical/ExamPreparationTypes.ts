@@ -28,7 +28,7 @@ export interface CanonicalExamPreparationRow {
   conceptName: string;
   canonicalDate: string;
   isUnresolved: true;
-  source: "loop2" | "live";
+  source: "loop2" | "live" | "monthly";
   sourceFeedbackId: string | null;
   liveRowId: string | null;
 }

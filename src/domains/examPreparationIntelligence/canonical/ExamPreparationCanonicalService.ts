@@ -22,6 +22,7 @@ import {
   examPreparationDateKey,
   isExamPreparationDateInRange,
 } from "./ExamPreparationDate";
+import { applyMonthlyCanonicalOverlay } from "../../monthlyLearningReview/service/MonthlyCanonicalOverlayService";
 
 function client() {
   const supabase = getSupabaseClient();
@@ -354,7 +355,8 @@ export async function getCanonicalExamPreparationRows(
     { includeUnmatchedLive: true }
   );
 
-  return finalizeCanonicalRows(reconciled, options);
+  const baseRows = finalizeCanonicalRows(reconciled, options);
+  return applyMonthlyCanonicalOverlay(baseRows, options);
 }
 
 /**
@@ -440,11 +442,23 @@ export async function getCanonicalPTMExamPreparationRows(options: {
     { includeUnmatchedLive: true }
   );
 
-  return finalizeCanonicalRows(reconciled, options).filter((row) => {
+  const baseRows = finalizeCanonicalRows(reconciled, options).filter((row) => {
     if (options.className && normalize(row.className) !== normalize(options.className)) return false;
     if (options.sectionName && normalize(row.sectionName) !== normalize(options.sectionName)) return false;
     return row.studentUuid === options.studentUuid;
   });
+
+  return applyMonthlyCanonicalOverlay(baseRows, {
+    scope: "ptm",
+    studentUuid: options.studentUuid,
+    schoolUuid: options.schoolUuid,
+    assignmentIds: validAssignmentIds,
+    className: options.className,
+    sectionName: options.sectionName,
+    subjectName: options.subjectName,
+    startDate: options.startDate,
+    endDateExclusive: options.endDateExclusive,
+  } as any);
 }
 
 function attentionLevel(count: number): "HIGH" | "MEDIUM" | "LOW" {

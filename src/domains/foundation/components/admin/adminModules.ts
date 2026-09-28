@@ -35,7 +35,7 @@ export const ADMIN_MODULES: ReadonlyArray<AdminModuleItem> = [
   {
     key: "learning",
     label: "📚 Learning Intelligence",
-    enabled: false,
+    enabled: true,
   },
   {
     key: "talent",
