@@ -129,7 +129,7 @@ export default function TeacherStudyMaterialPage() {
         </div>
 
         <div className="tp-teacher-sm-selector-note">
-          {!className || !subjectName ? "Select Class and Subject first. The Chapter list will show only chapters with study material for that selection." : chaptersLoading ? "Loading chapters for the selected Class + Subject…" : !matchingChapters.length ? "No study material has been added for this Class + Subject yet." : !selectedChapter ? "Now choose the chapter to load its Summary, Notes, Q&A and Sample Papers." : `Showing resources added by the platform admin for “${selectedChapter.chapterName}”.`}
+          {!className || !subjectName ? "Select Class and Subject first. The Chapter list will show only chapters with study material for that selection." : chaptersLoading ? "Loading chapters for the selected Class + Subject…" : !matchingChapters.length ? "No study material has been added for this Class + Subject yet." : !selectedChapter ? "Now choose the chapter to load the available resource sections." : `Showing resources added by the platform admin for “${selectedChapter.chapterName}”.`}
         </div>
       </section>
 
@@ -139,7 +139,7 @@ export default function TeacherStudyMaterialPage() {
         <section className="tp-teacher-sm-empty-state">
           <div className="tp-teacher-sm-empty-icon">▤</div>
           <h2>Choose Class, Subject & Chapter</h2>
-          <p>The page intentionally stays clear until all three selections are complete. Once selected, the four chapter resource sections will appear here.</p>
+          <p>The page intentionally stays clear until all three selections are complete. Once selected, only the chapter resource sections that contain material will appear here.</p>
         </section>
       ) : (
         <section className="tp-teacher-sm-results">
@@ -149,9 +149,12 @@ export default function TeacherStudyMaterialPage() {
           </div>
 
           <div className="tp-teacher-sm-resource-grid">
-            {STUDY_MATERIAL_TYPES.map((type) => (
-              <TeacherMaterialSection key={type} type={type} files={selectedChapter.files.filter((file) => file.materialType === type)} busyId={busyId} onView={openFile} onDownload={downloadFile} />
-            ))}
+            {STUDY_MATERIAL_TYPES.map((type) => {
+              const files = selectedChapter.files.filter((file) => file.materialType === type);
+              return files.length > 0 ? (
+                <TeacherMaterialSection key={type} type={type} files={files} busyId={busyId} onView={openFile} onDownload={downloadFile} />
+              ) : null;
+            })}
           </div>
         </section>
       )}
@@ -198,6 +201,7 @@ function TeacherMaterialSection({
   onView: (file: StudyMaterialFile) => Promise<void>;
   onDownload: (file: StudyMaterialFile) => Promise<void>;
 }) {
+  if (files.length === 0) return null;
   const icon = type === "summary" ? "▤" : type === "notes" ? "▥" : type === "qa" ? "Q" : "▦";
   return (
     <article className="tp-teacher-sm-resource-card">
