@@ -11,6 +11,7 @@ import {
 import {
   STUDY_MATERIAL_CLASSES,
   STUDY_MATERIAL_SUBJECTS,
+  getStudyMaterialSubjectsForClass,
   STUDY_MATERIAL_TYPE_LABELS,
   STUDY_MATERIAL_TYPES,
   type StudyMaterialType,
@@ -54,6 +55,10 @@ export default function StudyMaterialAdminPage() {
   const [editor, setEditor] = useState<StudyMaterialChapter | null | "new">(null);
   const [viewer, setViewer] = useState<StudyMaterialChapter | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<StudyMaterialChapter | null>(null);
+  const filterSubjects = useMemo(
+    () => (classFilter ? getStudyMaterialSubjectsForClass(classFilter) : STUDY_MATERIAL_SUBJECTS),
+    [classFilter],
+  );
 
   async function load() {
     setLoading(true);
@@ -130,13 +135,23 @@ export default function StudyMaterialAdminPage() {
             <p>Each row represents one class + subject + chapter. Multiple files can live under every material type.</p>
           </div>
           <div className="tp-sm-filters">
-            <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} aria-label="Filter by class">
+            <select
+              value={classFilter}
+              onChange={(e) => {
+                const value = e.target.value;
+                setClassFilter(value);
+                if (subjectFilter && value && !getStudyMaterialSubjectsForClass(value).includes(subjectFilter)) {
+                  setSubjectFilter("");
+                }
+              }}
+              aria-label="Filter by class"
+            >
               <option value="">All Classes</option>
               {STUDY_MATERIAL_CLASSES.map((value) => <option key={value} value={value}>Class {value}</option>)}
             </select>
             <select value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)} aria-label="Filter by subject">
               <option value="">All Subjects</option>
-              {STUDY_MATERIAL_SUBJECTS.map((value) => <option key={value} value={value}>{value}</option>)}
+              {filterSubjects.map((value) => <option key={value} value={value}>{value}</option>)}
             </select>
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search chapter…" aria-label="Search chapter" />
           </div>
@@ -233,6 +248,7 @@ function StudyMaterialEditor({
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState("");
   const [draggingType, setDraggingType] = useState<StudyMaterialType | null>(null);
+  const editorSubjects = getStudyMaterialSubjectsForClass(className);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -306,8 +322,8 @@ function StudyMaterialEditor({
         </div>
 
         <div className="tp-sm-academic-fields">
-          <label><span>Class</span><select value={className} onChange={(e) => setClassName(e.target.value)}><option value="">Select class</option>{STUDY_MATERIAL_CLASSES.map((value) => <option key={value} value={value}>Class {value}</option>)}</select></label>
-          <label><span>Subject</span><select value={subjectName} onChange={(e) => setSubjectName(e.target.value)}><option value="">Select subject</option>{STUDY_MATERIAL_SUBJECTS.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+          <label><span>Class</span><select value={className} onChange={(e) => { const value = e.target.value; setClassName(value); if (subjectName && !getStudyMaterialSubjectsForClass(value).includes(subjectName)) setSubjectName(""); }}><option value="">Select class</option>{STUDY_MATERIAL_CLASSES.map((value) => <option key={value} value={value}>Class {value}</option>)}</select></label>
+          <label><span>Subject</span><select value={subjectName} onChange={(e) => setSubjectName(e.target.value)}><option value="">Select subject</option>{editorSubjects.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
           <label className="chapter-field"><span>Chapter Name</span><input value={chapterName} onChange={(e) => setChapterName(e.target.value)} placeholder="e.g. The French Revolution" /></label>
         </div>
 

@@ -6,7 +6,7 @@ import {
 } from "../common/studyMaterialRepository";
 import {
   STUDY_MATERIAL_CLASSES,
-  STUDY_MATERIAL_SUBJECTS,
+  getStudyMaterialSubjectsForClass,
   STUDY_MATERIAL_TYPE_LABELS,
   STUDY_MATERIAL_TYPES,
   type StudyMaterialType,
@@ -29,6 +29,8 @@ export default function TeacherStudyMaterialPage() {
   const [chapterId, setChapterId] = useState("");
   const [busyId, setBusyId] = useState("");
   const [preview, setPreview] = useState<{ file: StudyMaterialFile; url: string } | null>(null);
+
+  const availableSubjects = getStudyMaterialSubjectsForClass(className);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +67,9 @@ export default function TeacherStudyMaterialPage() {
 
   function changeClass(value: string) {
     setClassName(value);
+    setSubjectName("");
     setChapterId("");
+    setChapters([]);
   }
 
   function changeSubject(value: string) {
@@ -120,7 +124,7 @@ export default function TeacherStudyMaterialPage() {
 
         <div className="tp-teacher-sm-select-grid">
           <label><span>1 · Class</span><select value={className} onChange={(e) => changeClass(e.target.value)}><option value="">Choose class</option>{STUDY_MATERIAL_CLASSES.map((value) => <option key={value} value={value}>Class {value}</option>)}</select></label>
-          <label><span>2 · Subject</span><select value={subjectName} onChange={(e) => changeSubject(e.target.value)}><option value="">Choose subject</option>{STUDY_MATERIAL_SUBJECTS.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+          <label><span>2 · Subject</span><select value={subjectName} onChange={(e) => changeSubject(e.target.value)}><option value="">Choose subject</option>{availableSubjects.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
           <label className="tp-teacher-sm-chapter-select"><span>3 · Chapter</span><select value={chapterId} onChange={(e) => setChapterId(e.target.value)} disabled={!className || !subjectName || chaptersLoading}><option value="">{!className || !subjectName ? "Choose class & subject first" : chaptersLoading ? "Loading chapters…" : matchingChapters.length ? "Choose chapter" : "No chapters added yet"}</option>{matchingChapters.map((chapter) => <option key={chapter.id} value={chapter.id}>{chapter.chapterName}</option>)}</select></label>
         </div>
 
