@@ -232,22 +232,21 @@ if(coveredToday){
 /*
 -------------------------------------
 
-THE DOUBT WAS RESOLVED DIRECTLY
-BY THE TEACHER
+STUDENT-SPECIFIC RESOLUTION
 
-The existing second loop previously returned
-without persisting anything when the teacher
-covered the common doubt.
+The classroom radar remains the gate that activates the existing
+teacher-covered resolution path. It must NOT decide which concept
+belongs to an individual student.
 
-That made a genuine resolution invisible to
-the doubt-closure metric.
+Loop-1 concepts_not_understood[] is the authoritative student-level
+concept list. For each qualifying student:
+- selected concepts covered today -> RESOLVED
+- selected concepts not covered today -> PENDING
+- no selected concepts -> no Loop-2 row
 
-We now persist the same doubt ledger records,
-but mark them RESOLVED immediately because the
-teacher's daily log proves the concept was
-revised. Students are NOT shown a second-loop
-question in this case.
-
+This preserves the existing radar eligibility signal while making
+resolution student-specific and preventing one classroom concept
+from resolving every student's doubt.
 -------------------------------------
 */
 
@@ -286,28 +285,47 @@ return;
 }
 
 const resolvedRecords:any[] = [];
+const pendingRecords:any[] = [];
 
 for(
 const item of coveredFeedbacks
 ){
 
+const selectedConcepts: string[] = Array.isArray(item.concepts_not_understood)
+? Array.from(
+new Set<string>(
+item.concepts_not_understood
+.map((concept: unknown): string => String(concept ?? "").trim())
+.filter((concept: string): boolean => Boolean(concept))
+)
+)
+: [];
+
+if(selectedConcepts.length === 0){
+continue;
+}
+
 const { data: studentData } =
 await (supabase as any)
-
 .from("students_master")
-
-.select(
-"student_name,school_name"
-)
-
-.eq(
-"student_uuid",
-item.student_uuid
-)
-
+.select("student_name,school_name")
+.eq("student_uuid", item.student_uuid)
 .single();
 
-resolvedRecords.push({
+for(const loop2Concept of selectedConcepts){
+
+const studentConceptCovered =
+isConceptCovered(
+loop2Concept,
+todayConceptsCovered
+);
+
+const targetRecords =
+studentConceptCovered
+? resolvedRecords
+: pendingRecords;
+
+targetRecords.push({
 
 student_uuid:
 item.student_uuid,
@@ -340,22 +358,30 @@ previous_topic_name:
 previousLog.topicName,
 
 previous_difficult_concept:
-mostDifficultConcept,
+loop2Concept,
 
 log_date:
 previousLog.logDate,
 
 status:
-"RESOLVED",
+studentConceptCovered
+? "RESOLVED"
+: "PENDING",
 
 student_response:
-"DISCUSSED",
+studentConceptCovered
+? "DISCUSSED"
+: null,
 
 doubt_resolved:
-true,
+studentConceptCovered
+? true
+: false,
 
 revision_checked_at:
-new Date().toISOString(),
+studentConceptCovered
+? new Date().toISOString()
+: null,
 
 created_at:
 new Date().toISOString(),
@@ -364,33 +390,41 @@ new Date().toISOString(),
 
 }
 
-console.log(
-"INSERTING DIRECTLY RESOLVED DOUBTS"
-);
+}
 
-console.table(
-resolvedRecords
-);
+const resolutionRecords = [
+...resolvedRecords,
+...pendingRecords,
+];
 
-const { error: resolvedInsertError } =
-await (supabase as any)
+if(resolutionRecords.length === 0){
 
-.from("pending_teacher_doubts")
-
-.insert(resolvedRecords);
-
-if(resolvedInsertError){
-
-throw resolvedInsertError;
+return;
 
 }
 
 console.log(
-"TEACHER-COVERED DOUBTS MARKED RESOLVED"
+"INSERTING STUDENT-SPECIFIC DOUBT RESULTS"
+);
+
+console.table(
+resolutionRecords
+);
+
+const { error:resolutionInsertError } =
+await (supabase as any)
+.from("pending_teacher_doubts")
+.insert(resolutionRecords);
+
+if(resolutionInsertError){
+throw resolutionInsertError;
+}
+
+console.log(
+"STUDENT-SPECIFIC DOUBT RESULTS SAVED"
 );
 
 return;
-
 }
 
 
@@ -459,8 +493,38 @@ CREATE PENDING DOUBTS
 
 -------------------------------------
 */
-const records = [];
+const records: any[] = [];
 
+/*
+-------------------------------------
+IMPORTANT LOOP-2 MULTI-SUBTOPIC FIX
+-------------------------------------
+
+Loop-1 stores every checked difficult subtopic in
+student_daily_feedback.concepts_not_understood[].
+
+The old Loop-2 writer collapsed that array into the single
+classroom-radar value `mostDifficultConcept`, which meant that a
+student who selected two subtopics received only one Loop-2 row.
+
+The gate above remains unchanged:
+- Teacher Home still determines the classroom's most common doubt.
+- If today's teacher log covers that doubt, the existing direct-
+  resolution path above remains unchanged.
+- If today's teacher log does NOT cover that doubt, Loop-2 is
+  activated exactly as before.
+
+Only the payload fan-out changes here: when Loop-2 is activated,
+create one pending_teacher_doubts row for EACH selected Loop-1
+subtopic belonging to that student. This preserves the existing
+row-level Loop-2 response flow and lets the existing student UI
+render one card/popup per subtopic.
+
+If a feedback row has no concepts_not_understood[], it has no
+authoritative student concept for Loop-2. Do NOT fall back to the
+classroom-radar concept; skip that student for Loop-2 creation.
+-------------------------------------
+*/
 for (const item of feedbacks) {
 
 const { data: studentData } =
@@ -479,6 +543,21 @@ item.student_uuid
 
 .single();
 
+const selectedConcepts = Array.isArray(item.concepts_not_understood)
+  ? Array.from(
+      new Set(
+        item.concepts_not_understood
+          .map((concept: unknown) => String(concept ?? "").trim())
+          .filter(Boolean)
+      )
+    )
+  : [];
+
+if (selectedConcepts.length === 0) {
+  continue;
+}
+
+for (const loop2Concept of selectedConcepts) {
 
 records.push({
 
@@ -540,7 +619,7 @@ previous_topic_name:
 previousLog.topicName,
 
 previous_difficult_concept:
-mostDifficultConcept,
+loop2Concept,
 
 log_date:
 previousLog.logDate,
@@ -575,6 +654,8 @@ created_at:
 new Date().toISOString(),
 
 });
+
+}
 
 }
 

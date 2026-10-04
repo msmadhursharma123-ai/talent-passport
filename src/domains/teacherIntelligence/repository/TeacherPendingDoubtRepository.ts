@@ -101,9 +101,18 @@ COUNT
 ----------------------------------
 */
 
+/*
+   A student can now legitimately have multiple Loop-2 rows for the
+   same lecture when multiple Loop-1 subtopics were selected. Keep
+   this teacher-facing metric semantic: count students, not subtopic
+   rows.
+*/
 const pendingCount =
-
-data.length;
+new Set(
+  data
+    .map((item:any) => String(item.student_uuid ?? "").trim())
+    .filter(Boolean)
+).size;
 
 
 /*
@@ -135,14 +144,13 @@ STUDENTS
 */
 
 const students =
-
-data
-.map(
-(item:any)=>
-item.student_name
-)
-.filter(Boolean)
-.join(", ");
+Array.from(
+  new Set(
+    data
+      .map((item:any) => String(item.student_name ?? "").trim())
+      .filter(Boolean)
+  )
+).join(", ");
 
 
 /*
