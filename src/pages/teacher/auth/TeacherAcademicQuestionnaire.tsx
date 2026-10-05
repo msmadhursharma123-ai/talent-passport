@@ -21,7 +21,7 @@ import {
 } from "../../../domains/academicYear/services/AnnualTeacherAssignmentService";
 
 import {
-  getSchoolCurrentAcademicYear,
+  getInitialTeacherRegistrationAcademicYear,
 } from "../../../domains/academicYear/repositories/AcademicYearRepository";
 
 import {
@@ -71,7 +71,7 @@ export default function TeacherAcademicQuestionnaire({
     if (academicYearId && academicYearCode) return;
     const teacher = getCurrentTeacher();
     if (!teacher?.schoolUuid) return;
-    void getSchoolCurrentAcademicYear(teacher.schoolUuid)
+    void getInitialTeacherRegistrationAcademicYear(teacher.schoolUuid)
       .then((year) => {
         if (!year) return;
         setResolvedAcademicYearId(academicYearId ?? year.id);
@@ -230,7 +230,7 @@ export default function TeacherAcademicQuestionnaire({
        * its exact stored code. Never invent a year value.
        */
       const currentSchoolYear = teacher.schoolUuid
-        ? await getSchoolCurrentAcademicYear(teacher.schoolUuid)
+        ? await getInitialTeacherRegistrationAcademicYear(teacher.schoolUuid)
         : null;
 
       if (!currentSchoolYear?.id || !currentSchoolYear.academicYearCode) {

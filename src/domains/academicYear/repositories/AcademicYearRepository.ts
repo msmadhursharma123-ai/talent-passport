@@ -52,6 +52,54 @@ export async function getSchoolCurrentAcademicYear(schoolUuid: string) {
   return data ? mapRow(data) : null;
 }
 
+/**
+ * Resolve the academic year used only by the INITIAL teacher registration
+ * questionnaire.
+ *
+ * This intentionally stays inside school_academic_years. The academic-year
+ * architecture uses this table as the school-scoped operational source of
+ * truth, and its id is the only id that may flow into annual onboarding.
+ *
+ * Resolution order:
+ *  1. current school row (is_current = true)
+ *  2. ACTIVE school row covering today
+ *  3. newest ACTIVE school row
+ *
+ * If the school has no operational academic-year row, return null rather
+ * than borrowing an academic_years_master id/code or creating database data.
+ */
+export async function getInitialTeacherRegistrationAcademicYear(schoolUuid: string) {
+  if (!schoolUuid) return null;
+
+  const { data, error } = await client()
+    .from(TABLE)
+    .select("*")
+    .eq("school_uuid", schoolUuid)
+    .order("start_date", { ascending: false });
+
+  if (error) throw error;
+
+  const rows = (data ?? []).map(mapRow);
+  if (!rows.length) return null;
+
+  const current = rows.find((row) => row.isCurrent);
+  if (current?.academicYearCode && current.id) {
+    return current;
+  }
+
+  const active = rows.filter((row) => row.status === "ACTIVE");
+  if (!active.length) return null;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const coveringToday = active.find((row) => {
+    const starts = !row.startDate || row.startDate <= today;
+    const ends = !row.endDate || row.endDate >= today;
+    return starts && ends;
+  });
+
+  return coveringToday ?? active[0] ?? null;
+}
+
 export async function getMyAcademicYearContext() {
   const { data, error } = await client().rpc("get_my_academic_year_context");
   if (error) throw error;
