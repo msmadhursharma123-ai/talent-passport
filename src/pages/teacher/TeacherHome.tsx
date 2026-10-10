@@ -28,6 +28,8 @@ import {
 } from "../../domains/teacherIntelligence/repository/TeacherFeedbackAnalyticsRepository";
 
 import TeacherDailyDoubtAcknowledgement from "../../domains/teacherIntelligence/components/TeacherDailyDoubtAcknowledgement";
+import TeacherPendingDoubtLedger from "../../domains/teacherIntelligence/components/TeacherPendingDoubtLedger";
+import StudentLearningIntelligence from "../../domains/teacherIntelligence/components/StudentLearningIntelligence";
 
 
 
@@ -73,6 +75,9 @@ const [loading, setLoading] =
 useState(true);
 
 const [teacherAssignments,setTeacherAssignments] =
+useState<TeacherAssignment[]>([]);
+
+const [learningAssignments,setLearningAssignments] =
 useState<TeacherAssignment[]>([]);
 
 const [loadingClassrooms,setLoadingClassrooms] =
@@ -134,6 +139,8 @@ useState("Teacher");
         (assignment) =>
           assignment.isActive !== false
       );
+
+    setLearningAssignments(assignments);
 
     const classroomGroups =
       new Map<
@@ -1644,6 +1651,10 @@ Welcome Back, {teacherName}!
           </div>
         </div>
       </div>
+
+      <TeacherPendingDoubtLedger />
+
+      <StudentLearningIntelligence assignments={learningAssignments} />
     </div>
   );
 }
