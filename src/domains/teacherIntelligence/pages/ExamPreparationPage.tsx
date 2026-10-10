@@ -715,7 +715,7 @@ export default function ExamPreparationPage() {
                   ) => (
                     <th
                       className="exam-prep-student-col"
-                      key={student.studentName}
+                      key={student.studentUuid}
                       style={{
                         ...tableHeaderStyle,
 

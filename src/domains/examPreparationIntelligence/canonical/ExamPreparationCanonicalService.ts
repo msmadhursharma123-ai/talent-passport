@@ -213,6 +213,50 @@ function rowMatchesStudent(row: any, studentUuid?: string) {
   return !studentUuid || String(row?.student_uuid ?? "") === String(studentUuid);
 }
 
+/**
+ * Resolve display names by immutable student UUID after the canonical and
+ * monthly rows have been assembled. This function does not group, match,
+ * reorder, or alter any doubt data; it changes only studentName.
+ */
+async function applyCanonicalStudentNames(
+  rows: CanonicalExamPreparationRow[],
+  schoolUuid?: string
+): Promise<CanonicalExamPreparationRow[]> {
+  if (rows.length === 0) return rows;
+
+  const studentUuids = Array.from(new Set(
+    rows.map((row) => clean(row.studentUuid)).filter(Boolean)
+  ));
+  if (studentUuids.length === 0) return rows;
+
+  let query = client()
+    .from("students_master")
+    .select("student_uuid,student_name")
+    .in("student_uuid", studentUuids);
+  if (schoolUuid) query = query.eq("school_uuid", schoolUuid);
+
+  const { data, error } = await query;
+  if (error) {
+    console.warn(
+      "EXAM PREPARATION STUDENT NAME ENRICHMENT FAILED — CANONICAL ROWS PRESERVED",
+      error
+    );
+    return rows;
+  }
+
+  const names = new Map<string, string>();
+  for (const student of data ?? []) {
+    const uuid = clean((student as any).student_uuid);
+    const name = clean((student as any).student_name);
+    if (uuid && name && !names.has(uuid)) names.set(uuid, name);
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    studentName: names.get(clean(row.studentUuid)) || clean(row.studentName) || "Student",
+  }));
+}
+
 function canonicalizeReconciledRow(
   item: { pending: any; live: any; merged: any }
 ): CanonicalExamPreparationRow | null {
@@ -356,7 +400,11 @@ export async function getCanonicalExamPreparationRows(
   );
 
   const baseRows = finalizeCanonicalRows(reconciled, options);
-  return applyMonthlyCanonicalOverlay(baseRows, options);
+  const monthlyRows = await applyMonthlyCanonicalOverlay(baseRows, options);
+  if (options.scope === "teacher" || options.scope === "school") {
+    return applyCanonicalStudentNames(monthlyRows, scope.schoolUuid);
+  }
+  return monthlyRows;
 }
 
 /**
@@ -624,7 +672,7 @@ export function buildTeacherExamPreparationResult(
         .sort(
           (a, b) =>
             b.totalUnresolvedDoubts - a.totalUnresolvedDoubts ||
-            a.studentName.localeCompare(b.studentName)
+            String(a.studentUuid).localeCompare(String(b.studentUuid))
         );
 
       return { classroom, students };
@@ -697,7 +745,7 @@ export function buildSchoolExamPreparationResult(
       .sort(
         (a, b) =>
           b.totalUnresolvedDoubts - a.totalUnresolvedDoubts ||
-          a.studentName.localeCompare(b.studentName)
+          String(a.studentUuid).localeCompare(String(b.studentUuid))
       );
 
     const commonDoubts = new Map<string, number>();
