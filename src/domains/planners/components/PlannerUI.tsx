@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Capacitor } from "@capacitor/core";
 import { printHtmlAsPdf } from "../../../services/platform/nativeDocumentService";
 import type { LessonBlock, LessonPlannerPayload, PlannerRecord, QuestionItem, QuestionPaperPayload, QuestionType, TeacherAssignmentOption, PassageQuestion, PlannerRecommendation } from "../types/PlannerModels";
@@ -66,10 +66,167 @@ function plannerWeekday(dateValue: string) {
   return date.toLocaleDateString("en-IN", { weekday: "long" });
 }
 
-export function LessonComposer({ blocks, onChange, startDate = "", endDate = "", defaultChapter = "" }: { blocks: LessonBlock[]; onChange:(blocks:LessonBlock[])=>void; startDate?: string; endDate?: string; defaultChapter?: string }) {
+function ensureLessonDateRangeBlocks(blocks: LessonBlock[], startDate: string, endDate: string, defaultChapter: string): LessonBlock[] {
+  if (!startDate || !endDate || startDate > endDate) return blocks;
+
+  const requiredTypes: LessonBlock["type"][] = ["day", "chapter", "topic", "subtopics", "notes"];
+  const typeRank = new Map<LessonBlock["type"], number>(requiredTypes.map((type, index) => [type, index + 1]));
+  const prefix: LessonBlock[] = [];
+  const groups: LessonBlock[][] = [];
+  let currentGroup: LessonBlock[] | null = null;
+  for (const block of blocks) {
+    if (block.type === "date") {
+      currentGroup = [block];
+      groups.push(currentGroup);
+    } else if (currentGroup) {
+      currentGroup.push(block);
+    } else {
+      prefix.push(block);
+    }
+  }
+
+  const groupsByDate = new Map<string, LessonBlock[][]>();
+  for (const group of groups) {
+    const dateValue = group[0]?.value ?? "";
+    if (!dateValue) continue;
+    const dateGroups = groupsByDate.get(dateValue) ?? [];
+    dateGroups.push(group);
+    groupsByDate.set(dateValue, dateGroups);
+  }
+
+  // The selected range is authoritative: remove every existing date group
+  // outside it, including groups with teacher-entered content. Do this only
+  // for a complete, valid range (guarded above), and preserve the relative
+  // order of all groups that remain in range.
+  const inRangeGroups = groups.filter(group => {
+    const dateValue = group[0]?.value ?? "";
+    return Boolean(dateValue) && dateValue >= startDate && dateValue <= endDate;
+  });
+  let changed = inRangeGroups.length !== groups.length;
+  if (changed) groups.splice(0, groups.length, ...inRangeGroups);
+
+  let currentDate = startDate;
+  while (currentDate && currentDate <= endDate) {
+    const dateGroups = groupsByDate.get(currentDate);
+    if (!dateGroups?.length) {
+      const generatedGroup: LessonBlock[] = [
+        { id: uid("block"), type: "date", value: currentDate },
+        { id: uid("block"), type: "day", value: plannerWeekday(currentDate) },
+        { id: uid("block"), type: "chapter", value: defaultChapter },
+        { id: uid("block"), type: "topic", value: "" },
+        { id: uid("block"), type: "subtopics", value: "" },
+        { id: uid("block"), type: "notes", value: "" },
+      ];
+      // Insert new groups by date without reordering any existing groups.
+      // Existing groups retain their relative order; if they are already chronological,
+      // newly generated dates are inserted in chronological positions.
+      const insertionIndex = groups.findIndex(existingGroup => (existingGroup[0]?.value ?? "") > currentDate);
+      if (insertionIndex >= 0) groups.splice(insertionIndex, 0, generatedGroup);
+      else groups.push(generatedGroup);
+      groupsByDate.set(currentDate, [generatedGroup]);
+      changed = true;
+    } else {
+      // Preserve repeated groups for the same date. Only complete the first group;
+      // never merge, delete, or rewrite the teacher's existing repeated sections.
+      // Weekday is derived from the date. Refresh it in every same-date group,
+      // retaining each block's ID and all other teacher-entered values.
+      const expectedWeekday = plannerWeekday(currentDate);
+      for (const sameDateGroup of dateGroups) {
+        for (let index = 0; index < sameDateGroup.length; index++) {
+          const block = sameDateGroup[index];
+          if (block.type === "day" && block.value !== expectedWeekday) {
+            sameDateGroup[index] = { ...block, value: expectedWeekday };
+            changed = true;
+          }
+        }
+      }
+
+      const group = dateGroups[0];
+      const present = new Set(group.map(block => block.type));
+      const missing = requiredTypes.filter(type => !present.has(type));
+      if (missing.length) {
+        for (const type of missing) {
+          const rank = typeRank.get(type) ?? Number.MAX_SAFE_INTEGER;
+          // Keep core fields in their required order even when an image or
+          // another repeated section sits between existing core fields.
+          // First insert before the next higher-ranked core field; otherwise
+          // insert after the last lower/equal-ranked core field. Use the image
+          // position only when this group has no other core fields to anchor it.
+          let insertAt = group.findIndex(block => {
+            const blockRank = typeRank.get(block.type);
+            return blockRank !== undefined && blockRank > rank;
+          });
+          if (insertAt < 0) {
+            let lastCoreIndex = -1;
+            group.forEach((block, index) => {
+              const blockRank = typeRank.get(block.type);
+              if (blockRank !== undefined && blockRank <= rank) lastCoreIndex = index;
+            });
+            if (lastCoreIndex >= 0) {
+              insertAt = lastCoreIndex + 1;
+            } else {
+              insertAt = group.findIndex(block => block.type === "image");
+              if (insertAt < 0) insertAt = group.length;
+            }
+          }
+          const value = type === "day" ? expectedWeekday : type === "chapter" ? defaultChapter : "";
+          group.splice(insertAt, 0, { id: uid("block"), type, value });
+          present.add(type);
+          changed = true;
+        }
+      }
+      // Preserve the teacher's existing section order. The original planner
+      // allows sections in any sequence and permits repeats; only newly
+      // generated daily groups are created in canonical order. Missing fields
+      // are inserted without moving or rewriting existing blocks.
+    }
+    const nextDate = addDaysToPlannerDate(currentDate, 1);
+    if (!nextDate || nextDate <= currentDate) break;
+    currentDate = nextDate;
+  }
+
+  // Preserve the original relative order of existing date groups.
+  const nextBlocks = [...prefix, ...groups.flat()];
+  if (!changed && nextBlocks.length === blocks.length && nextBlocks.every((block, index) => block.id === blocks[index]?.id)) return blocks;
+  return nextBlocks;
+}
+export function LessonComposer({ blocks, onChange, startDate = "", endDate = "", defaultChapter = "", autoGenerateDateRange = false }: { blocks: LessonBlock[]; onChange:(blocks:LessonBlock[])=>void; startDate?: string; endDate?: string; defaultChapter?: string; autoGenerateDateRange?: boolean }) {
   const fileRef = useRef<HTMLInputElement|null>(null);
   const [pendingImage, setPendingImage] = useState<string|null>(null);
+  const latestBlocks = useRef(blocks);
+  useEffect(() => {
+    latestBlocks.current = blocks;
+  }, [blocks]);
+  const previousDefaultChapter = useRef(defaultChapter);
+  const previousDateRange = useRef({ startDate: "", endDate: "" });
   const firstChapter = blocks.find(block => block.type === "chapter" && Boolean(block.value?.trim()))?.value?.trim() ?? "";
+
+  // Only a date-range change creates missing daily fields. A chapter-only
+  // change updates eligible chapter values without recreating fields the
+  // teacher deliberately removed. Ordinary block edits never trigger either.
+  useEffect(() => {
+    if (!autoGenerateDateRange) return;
+
+    const currentBlocks = latestBlocks.current;
+    const previousChapter = previousDefaultChapter.current;
+    const previousRange = previousDateRange.current;
+    const rangeChanged = previousRange.startDate !== startDate || previousRange.endDate !== endDate;
+    const chapterChanged = previousChapter !== defaultChapter;
+    let nextBlocks = currentBlocks;
+
+    if (rangeChanged) {
+      nextBlocks = ensureLessonDateRangeBlocks(nextBlocks, startDate, endDate, defaultChapter);
+    }
+    if (chapterChanged && nextBlocks.some(block => block.type === "chapter")) {
+      nextBlocks = nextBlocks.map(block => block.type === "chapter" && (!block.value?.trim() || block.value.trim() === previousChapter.trim())
+        ? { ...block, value: defaultChapter }
+        : block);
+    }
+
+    previousDefaultChapter.current = defaultChapter;
+    previousDateRange.current = { startDate, endDate };
+    if (nextBlocks !== currentBlocks) onChange(nextBlocks);
+  }, [autoGenerateDateRange, startDate, endDate, defaultChapter, onChange]);
 
   const add = (type: LessonBlock["type"]) => {
     if (type === "date") {
@@ -122,7 +279,7 @@ export function LessonComposer({ blocks, onChange, startDate = "", endDate = "",
     <div className="block-picker">{(["date","day","chapter","topic","subtopics","notes","image"] as const).map(type=><button className="block-add" key={type} onClick={()=>type==="image"?setPendingImage("choose"):add(type)}>+ {type}</button>)}</div>
     <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e: any)=>{const f=e.target.files?.[0];if(f)handleImage(f);e.currentTarget.value=""}}/>
     {pendingImage && <div style={{marginTop:8,display:"flex",gap:7}}><button className="planner-btn" onClick={()=>fileRef.current?.click()}>Choose image</button><button className="planner-btn" onClick={()=>setPendingImage(null)}>Cancel</button></div>}
-    <div className="block-list">{blocks.length===0?<div style={{padding:14,textAlign:"center",color:"#94A3B8",fontSize:10,border:"1px dashed #CBD5E1",borderRadius:10}}>Add sections in any order. Each section can be used multiple times.</div>:blocks.map((b,i)=><div className="block-row" key={b.id}><div className="block-index">{i+1}</div><div className="block-type">{b.type}</div><div>{b.type==="image"?(<>{b.imageDataUrl&&<img src={b.imageDataUrl} alt={b.imageName||"planner"}/>}<div style={{fontSize:8,color:"#64748B",marginTop:4}}>{b.imageName}</div></>):b.type==="day"?(<select style={{width:"100%",border:"1px solid #CBD5E1",borderRadius:8,padding:7,fontSize:11}} value={b.value||"Monday"} onChange={(e: any)=>update(b.id,e.target.value)}>{["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"].map(d=><option key={d}>{d}</option>)}</select>):b.type==="date"?(<input type="date" value={b.value||""} onChange={(e: any)=>update(b.id,e.target.value)}/>):<input value={b.value||""} onChange={(e: any)=>update(b.id,e.target.value)} placeholder={`Enter ${b.type}`}/>}</div><button className="block-remove" onClick={()=>remove(b.id)}>×</button></div>)}</div>
+    <div className="block-list">{blocks.length===0?<div style={{padding:14,textAlign:"center",color:"#94A3B8",fontSize:10,border:"1px dashed #CBD5E1",borderRadius:10}}>Add sections in any order. Each section can be used multiple times.</div>:blocks.map((b,i)=><div className="block-row" key={b.id}><div className="block-index">{i+1}</div><div className="block-type">{b.type}</div><div>{b.type==="image"?(<>{b.imageDataUrl&&<img src={b.imageDataUrl} alt={b.imageName||"planner"}/>}<div style={{fontSize:8,color:"#64748B",marginTop:4}}>{b.imageName}</div></>):b.type==="day"?(<select style={{width:"100%",border:"1px solid #CBD5E1",borderRadius:8,padding:7,fontSize:11}} value={b.value||"Monday"} onChange={(e: any)=>update(b.id,e.target.value)}>{["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map(d=><option key={d}>{d}</option>)}</select>):b.type==="date"?(<input type="date" value={b.value||""} onChange={(e: any)=>update(b.id,e.target.value)}/>):<input value={b.value||""} onChange={(e: any)=>update(b.id,e.target.value)} placeholder={`Enter ${b.type}`}/>}</div><button className="block-remove" onClick={()=>remove(b.id)}>×</button></div>)}</div>
   </>;
 }
 
