@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 
 import TeacherDailyLogDialog from "../dialogs/TeacherDailyLogDialog";
+import TeacherDailyLogHistory from "../components/TeacherDailyLogHistory";
 
 import {
   saveTeacherDailyLog,
@@ -931,6 +932,12 @@ async function handleSave(
           )
         )}
       </div>
+
+      {/* ======================================================
+          DAILY LOG HISTORY — ADDITIVE FEATURE
+          Existing publishing and dialog flows remain unchanged.
+         ====================================================== */}
+      <TeacherDailyLogHistory />
 
       {/* ======================================================
           EXISTING DIALOG — FUNCTIONALITY UNCHANGED

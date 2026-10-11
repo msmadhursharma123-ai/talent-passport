@@ -317,3 +317,63 @@ export async function deleteTeacherDailyLog(
 
   return true;
 }
+
+/*
+=========================================================
+GET ALL LOGS BY ASSIGNMENTS — PAGINATED HISTORY READ
+
+This is a separate read path for history/report screens. The
+existing getTeacherDailyLogsByAssignments() remains unchanged
+for current Daily Log behavior. Pagination avoids silently
+truncating histories at the API's per-response row limit.
+=========================================================
+*/
+
+export async function getTeacherDailyLogsByAssignmentsPaginated(
+  teacherAssignmentUuids: string[]
+): Promise<TeacherDailyLog[]> {
+  const supabase = getSupabaseClient();
+  if (!supabase || teacherAssignmentUuids.length === 0) {
+    return [];
+  }
+
+  const uniqueAssignmentUuids = Array.from(
+    new Set(teacherAssignmentUuids.filter(Boolean))
+  );
+  if (uniqueAssignmentUuids.length === 0) {
+    return [];
+  }
+
+  const pageSize = 500;
+  const allRows: any[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from(TABLE_NAME)
+      .select("*")
+      .in("teacher_assignment_uuid", uniqueAssignmentUuids)
+      .order("log_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      throw error;
+    }
+
+    const page = data ?? [];
+
+    // Do not treat a short page as the end of the dataset: the Supabase
+    // project may enforce a response cap smaller than pageSize. Continue
+    // until an empty page is returned, advancing by the actual row count.
+    if (page.length === 0) {
+      break;
+    }
+
+    allRows.push(...page);
+    from += page.length;
+  }
+
+  return allRows.map(mapTeacherDailyLog);
+}
