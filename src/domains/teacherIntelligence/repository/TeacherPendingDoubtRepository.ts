@@ -97,6 +97,54 @@ const classroom =
 
 /*
 ----------------------------------
+STUDENT NAME RESOLUTION
+----------------------------------
+Resolve display names from the canonical students_master table.
+pending_teacher_doubts.student_name can contain an admission/code value
+(e.g. glps025), so it must not be treated as the authoritative name.
+*/
+
+const studentUuids = Array.from(
+  new Set(
+    data
+      .map((item: any) => String(item.student_uuid ?? "").trim())
+      .filter(Boolean)
+  )
+);
+
+const studentNamesByUuid = new Map<string, string>();
+
+if (studentUuids.length > 0) {
+  let studentQuery = (supabase as any)
+    .from("students_master")
+    .select("student_uuid,student_name")
+    .in("student_uuid", studentUuids);
+
+  const schoolUuid = String(assignment.schoolUuid ?? "").trim();
+  if (schoolUuid) {
+    studentQuery = studentQuery.eq("school_uuid", schoolUuid);
+  }
+
+  const { data: studentRows, error: studentNameError } = await studentQuery;
+
+  if (studentNameError) {
+    console.warn(
+      "TEACHER PENDING DOUBT STUDENT NAME RESOLUTION FAILED — USING AVAILABLE STORED LABELS",
+      studentNameError
+    );
+  } else {
+    for (const studentRow of studentRows ?? []) {
+      const uuid = String((studentRow as any).student_uuid ?? "").trim();
+      const name = String((studentRow as any).student_name ?? "").trim();
+      if (uuid && name && !studentNamesByUuid.has(uuid)) {
+        studentNamesByUuid.set(uuid, name);
+      }
+    }
+  }
+}
+
+/*
+----------------------------------
 COUNT
 ----------------------------------
 */
@@ -147,7 +195,17 @@ const students =
 Array.from(
   new Set(
     data
-      .map((item:any) => String(item.student_name ?? "").trim())
+      .map((item:any) => {
+        const studentUuid = String(item.student_uuid ?? "").trim();
+        const canonicalName = studentNamesByUuid.get(studentUuid) ?? "";
+        const storedName = String(item.student_name ?? "").trim();
+
+        // Prefer the canonical database name. Avoid displaying a student
+        // code as though it were a person's name when lookup is unavailable.
+        if (canonicalName) return canonicalName;
+        if (storedName && !/^glps\d+$/i.test(storedName)) return storedName;
+        return "";
+      })
       .filter(Boolean)
   )
 ).join(", ");
