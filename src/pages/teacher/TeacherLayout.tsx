@@ -13,8 +13,6 @@ import TeacherDailyLogPage from "../../domains/teacherIntelligence/pages/Teacher
 
 import TeachingJournalPage from "../../domains/teacherIntelligence/pages/TeachingJournalPage";
 
-import MyClassroomPage from "../../domains/teacherIntelligence/pages/MyClassroomPage";
-
 import ExamPreparationPage from "../../domains/teacherIntelligence/pages/ExamPreparationPage";
 import TeacherStarPerformersPage from "../../domains/starPerformers/pages/TeacherStarPerformersPage";
 import PlannersPage from "../../domains/planners/pages/PlannersPage";
@@ -253,7 +251,6 @@ export default function TeacherLayout({ onLogout }: Props) {
                 {activePage === "dashboard" && <TeacherHome />}
                 {activePage === "daily-log" && <TeacherDailyLogPage />}
                 {activePage === "teaching-journal" && <TeachingJournalPage />}
-                {activePage === "my-classroom" && <MyClassroomPage />}
                 {activePage === "exam-preparation" && <ExamPreparationPage />}
                 {activePage === "star-performers" && <TeacherStarPerformersPage />}
                 {activePage === "planners" && <PlannersPage />}

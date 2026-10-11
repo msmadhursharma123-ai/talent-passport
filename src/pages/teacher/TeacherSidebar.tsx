@@ -23,18 +23,13 @@ export default function TeacherSidebar({
     
     {
       id: "teaching-journal",
-      label: "Class Health",
+      label: "Performance",
       icon: "□",
     },
      {
       id: "exam-preparation",
       label: "Pending Doubts",
       icon: "☆",
-    },
-    {
-      id: "my-classroom",
-      label: "Learning History",
-      icon: "△",
     },
     {
       id: "parents-teacher-meeting",
