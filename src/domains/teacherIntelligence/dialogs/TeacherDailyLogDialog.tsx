@@ -221,6 +221,22 @@ export default function TeacherDailyLogDialog({
     setAssignments(assignments);
   }
 
+  const selectedAssignment = assignments.find(
+    (item) => String(item.id) === selectedAssignmentId
+  );
+
+  // Recognize common Hindi subject labels without changing assignment data.
+  // lang="hi" is a browser/IME hint; a web page cannot force the OS keyboard.
+  const normalizedSubjectName = String(selectedAssignment?.subjectName ?? "")
+    .normalize("NFKC")
+    .trim()
+    .toLocaleLowerCase()
+    .replace(/[\s._()-]+/g, " ");
+  const isHindiSubject =
+    /(^|[^a-z])hindi([^a-z]|$)/i.test(normalizedSubjectName) ||
+    normalizedSubjectName.includes("हिंदी") ||
+    normalizedSubjectName.includes("हिन्दी");
+
   if (!open) {
     return null;
   }
@@ -769,6 +785,8 @@ export default function TeacherDailyLogDialog({
                 marginBottom: 0,
               }}
               placeholder="Enter today's main topic"
+              lang={isHindiSubject ? "hi" : "en"}
+              inputMode="text"
               value={topicName}
               onChange={(e) =>
                 setTopicName(
@@ -965,6 +983,8 @@ export default function TeacherDailyLogDialog({
                   flex: 1,
                 }}
                 placeholder="Enter subtopic or concept covered today"
+                lang={isHindiSubject ? "hi" : "en"}
+                inputMode="text"
                 value={conceptInput}
                 onChange={(e) =>
                   setConceptInput(
@@ -1476,6 +1496,8 @@ export default function TeacherDailyLogDialog({
               rows={5}
               style={textareaStyle}
               placeholder="Additional Teaching Notes..."
+              lang={isHindiSubject ? "hi" : "en"}
+              inputMode="text"
               value={teacherNotes}
               onChange={(e) =>
                 setTeacherNotes(
