@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
 import type { SchoolIntelligenceSnapshot, SchoolTeacherDailyIntelligence } from "../types/SchoolIntelligenceModels";
 import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
+import { downloadStudentHealthAnalysis } from "../services/StudentHealthAnalysisPdfService";
 
 const tones=[
   ["#FFF7ED","#FFFBF5","#FED7AA","#C2410C"],
@@ -23,6 +24,7 @@ export default function ClassroomIntelligencePage(){
   const [error,setError]=useState("");
   const [selected,setSelected]=useState<string[]>([]);
   const [open,setOpen]=useState(false);
+  const [reportLoading,setReportLoading]=useState(false);
   const menuRef=useRef<HTMLDivElement|null>(null);
 
   useEffect(()=>{let dead=false;(async()=>{
@@ -85,7 +87,7 @@ export default function ClassroomIntelligencePage(){
       .ci-menu{position:absolute;z-index:40;top:calc(100% + 7px);left:0;width:min(390px,88vw);max-height:330px;overflow:auto;padding:8px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;box-shadow:0 20px 48px rgba(15,23,42,.17)}
       .ci-actions{display:flex;justify-content:space-between;padding:5px 6px 9px;border-bottom:1px solid #eef2f7}.ci-link{border:0;background:transparent;color:#2563eb;font-size:11px;font-weight:850;cursor:pointer}
       .ci-check{display:flex;align-items:center;gap:9px;padding:9px 7px;border-radius:9px;color:#334155;font-size:12px;font-weight:700;cursor:pointer}.ci-check:hover{background:#f8fafc}.ci-check input{accent-color:#2563eb}
-      .ci-summary{color:#64748b;font-size:11px;font-weight:750;text-align:right}.ci-stack{display:grid;gap:20px;margin-top:20px}
+      .ci-summary{color:#64748b;font-size:11px;font-weight:750;text-align:right}.ci-download-btn{flex:0 0 auto;min-height:38px;max-width:100%;border:0;border-radius:10px;padding:9px 12px;background:#f97316;color:#fff;font-size:12px;font-weight:800;line-height:1.25;cursor:pointer;white-space:normal;box-shadow:0 3px 8px rgba(249,115,22,.16)}.ci-download-btn:disabled{cursor:wait;opacity:.7}.ci-stack{display:grid;gap:20px;margin-top:20px}
       .ci-card{overflow:hidden;border:1px solid #e2e8f0;border-radius:24px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.05)}
       .ci-head{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;border-bottom:1px solid #e2e8f0}
       .ci-kicker{margin-bottom:4px;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.ci-name{margin:0;color:#0f172a;font-size:19px;font-weight:850}
@@ -96,7 +98,7 @@ export default function ClassroomIntelligencePage(){
       .ci-ch{min-width:185px;text-align:left;font-size:11px!important;font-weight:900}.ci-sub{display:block;margin-top:3px;opacity:.72;font-size:9px;font-weight:750}
       .ci-metric{position:sticky;left:0;z-index:2;background:#fbfcfe;color:#334155;font-weight:800}.ci-v{color:#475569;font-weight:600}.ci-green{color:#16a34a;font-weight:850}.ci-yellow{color:#d97706;font-weight:850}.ci-red{color:#dc2626;font-weight:850}.ci-blue{color:#1d4ed8;font-weight:800}
       .ci-legend{display:flex;flex-wrap:wrap;gap:7px;padding:12px 18px;border-top:1px solid #eef2f7;background:#fcfdfe}.ci-legend span{padding:5px 8px;border-radius:999px;font-size:9px;font-weight:800}
-      @media(max-width:760px){.ci-filter-row{align-items:stretch;flex-direction:column}.ci-field{width:100%}.ci-summary{text-align:left}.ci-head{align-items:flex-start}.ci-name{font-size:16px}.ci-mh,.ci-metric{width:155px;min-width:155px}.ci-table{min-width:760px}.ci-table th,.ci-table td{padding:9px 10px;font-size:9px}}
+      @media(max-width:760px){.ci-filter-row{align-items:stretch;flex-direction:column}.ci-field{width:100%}.ci-download-btn{width:100%}.ci-summary{text-align:left}.ci-head{align-items:flex-start}.ci-name{font-size:16px}.ci-mh,.ci-metric{width:155px;min-width:155px}.ci-table{min-width:760px}.ci-table th,.ci-table td{padding:9px 10px;font-size:9px}}
     `}</style>
     <div className="school-stack">
       <section className="school-hero ci-hero">
@@ -126,6 +128,23 @@ export default function ClassroomIntelligencePage(){
               </label>)}
             </div>}
           </div>
+          <button
+            type="button"
+            className="ci-download-btn"
+            disabled={reportLoading}
+            onClick={async()=>{
+              try{
+                setReportLoading(true);
+                await downloadStudentHealthAnalysis();
+              }catch(e:any){
+                setError(e?.message??"Unable to generate Student Health Analysis PDF.");
+              }finally{
+                setReportLoading(false);
+              }
+            }}
+          >
+            {reportLoading?"Preparing PDF…":"Download Student Health Analysis PDF"}
+          </button>
           <div className="ci-summary">{selected.length===0?"Showing every teacher with Daily Log evidence.":`Showing ${visible.length} selected teacher${visible.length===1?"":"s"} only.`}</div>
         </div></div>
 
