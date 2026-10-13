@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
 import type { SchoolIntelligenceSnapshot, SchoolTeacherDailyIntelligence } from "../types/SchoolIntelligenceModels";
 import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
-import { downloadStudentHealthAnalysis } from "../services/StudentHealthAnalysisPdfService";
+import { downloadStudentHealthAnalysis, savePreparedStudentHealthAnalysisPdf, type PreparedStudentHealthAnalysisPdf } from "../services/StudentHealthAnalysisPdfService";
 
 const tones=[
   ["#FFF7ED","#FFFBF5","#FED7AA","#C2410C"],
@@ -25,6 +25,8 @@ export default function ClassroomIntelligencePage(){
   const [selected,setSelected]=useState<string[]>([]);
   const [open,setOpen]=useState(false);
   const [reportLoading,setReportLoading]=useState(false);
+  const [preparedReport,setPreparedReport]=useState<PreparedStudentHealthAnalysisPdf|null>(null);
+  const [reportNotice,setReportNotice]=useState("");
   const menuRef=useRef<HTMLDivElement|null>(null);
 
   useEffect(()=>{let dead=false;(async()=>{
@@ -87,7 +89,7 @@ export default function ClassroomIntelligencePage(){
       .ci-menu{position:absolute;z-index:40;top:calc(100% + 7px);left:0;width:min(390px,88vw);max-height:330px;overflow:auto;padding:8px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;box-shadow:0 20px 48px rgba(15,23,42,.17)}
       .ci-actions{display:flex;justify-content:space-between;padding:5px 6px 9px;border-bottom:1px solid #eef2f7}.ci-link{border:0;background:transparent;color:#2563eb;font-size:11px;font-weight:850;cursor:pointer}
       .ci-check{display:flex;align-items:center;gap:9px;padding:9px 7px;border-radius:9px;color:#334155;font-size:12px;font-weight:700;cursor:pointer}.ci-check:hover{background:#f8fafc}.ci-check input{accent-color:#2563eb}
-      .ci-summary{color:#64748b;font-size:11px;font-weight:750;text-align:right}.ci-download-btn{flex:0 0 auto;min-height:38px;max-width:100%;border:0;border-radius:10px;padding:9px 12px;background:#f97316;color:#fff;font-size:12px;font-weight:800;line-height:1.25;cursor:pointer;white-space:normal;box-shadow:0 3px 8px rgba(249,115,22,.16)}.ci-download-btn:disabled{cursor:wait;opacity:.7}.ci-stack{display:grid;gap:20px;margin-top:20px}
+      .ci-summary{color:#64748b;font-size:11px;font-weight:750;text-align:right}.ci-download-btn{flex:0 0 auto;min-height:38px;max-width:100%;border:0;border-radius:10px;padding:9px 12px;background:#f97316;color:#fff;font-size:12px;font-weight:800;line-height:1.25;cursor:pointer;white-space:normal;box-shadow:0 3px 8px rgba(249,115,22,.16)}.ci-download-btn:disabled{cursor:wait;opacity:.7}.ci-download-notice{margin-top:10px;padding:10px 12px;border:1px solid #fed7aa;border-radius:10px;background:#fff7ed;color:#9a3412;font-size:12px;font-weight:700;line-height:1.45}.ci-stack{display:grid;gap:20px;margin-top:20px}
       .ci-card{overflow:hidden;border:1px solid #e2e8f0;border-radius:24px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.05)}
       .ci-head{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;border-bottom:1px solid #e2e8f0}
       .ci-kicker{margin-bottom:4px;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.ci-name{margin:0;color:#0f172a;font-size:19px;font-weight:850}
@@ -135,18 +137,31 @@ export default function ClassroomIntelligencePage(){
             onClick={async()=>{
               try{
                 setReportLoading(true);
-                await downloadStudentHealthAnalysis();
+                setReportNotice("");
+                if(preparedReport){
+                  await savePreparedStudentHealthAnalysisPdf(preparedReport);
+                  setPreparedReport(null);
+                  setReportNotice("Save/Download action opened. Choose a save destination if your browser asks. Generate again whenever you need the latest records.");
+                }else{
+                  const prepared=await downloadStudentHealthAnalysis();
+                  if(prepared){
+                    setPreparedReport(prepared);
+                    setReportNotice("Your PDF is ready. Tap “Save / Download PDF” again to save it to your device.");
+                  }
+                }
               }catch(e:any){
-                setError(e?.message??"Unable to generate Student Health Analysis PDF.");
+                if(e?.name!=="AbortError")setReportNotice(e?.message??"Unable to save the Student Health Analysis PDF. Please try again.");
               }finally{
                 setReportLoading(false);
               }
             }}
           >
-            {reportLoading?"Preparing PDF…":"Download Student Health Analysis PDF"}
+            {reportLoading?(preparedReport?"Opening save options…":"Preparing PDF…"):(preparedReport?"Save / Download PDF":"Download Student Health Analysis PDF")}
           </button>
           <div className="ci-summary">{selected.length===0?"Showing every teacher with Daily Log evidence.":`Showing ${visible.length} selected teacher${visible.length===1?"":"s"} only.`}</div>
-        </div></div>
+        </div>
+        {reportNotice&&<div className="ci-download-notice" role="status" aria-live="polite">{reportNotice}</div>}
+        </div>
 
         {visible.length?<div className="ci-stack">{visible.map((t,i)=><TeacherCard key={t.teacherUuid} teacher={t} toneIndex={i}/>)}</div>
         :<div className="school-empty">No teacher Daily Log intelligence is available for this selection.</div>}

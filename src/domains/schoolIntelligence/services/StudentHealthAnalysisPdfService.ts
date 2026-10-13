@@ -525,7 +525,71 @@ async function waitForImages(root: HTMLElement, timeoutMs = 8000): Promise<void>
 
 }
 
-export async function downloadStudentHealthAnalysis(): Promise<void> {
+export type PreparedStudentHealthAnalysisPdf = {
+  blob: Blob;
+  fileName: string;
+  title: string;
+};
+
+/**
+ * iOS Safari/Chrome and touch browsers can navigate to a generated PDF Blob
+ * instead of exposing a reliable download control. On those browsers, prepare
+ * the PDF first and let the user perform the final save action from a fresh
+ * tap. Desktop keeps the existing one-click download path.
+ */
+function isTouchBrowser(): boolean {
+  if (typeof navigator === "undefined" || typeof window === "undefined") return false;
+  const userAgent = navigator.userAgent || "";
+  const isIOS = /iPad|iPhone|iPod/i.test(userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(userAgent);
+  const isTouchTabletOrPhone = navigator.maxTouchPoints > 1 &&
+    window.matchMedia?.("(pointer: coarse)").matches === true;
+  return isIOS || isAndroid || isTouchTabletOrPhone;
+}
+
+/** Called only from the user's second, explicit Save/Download tap on mobile/tablet. */
+export async function savePreparedStudentHealthAnalysisPdf(
+  prepared: PreparedStudentHealthAnalysisPdf,
+): Promise<void> {
+  const userAgent = typeof navigator === "undefined" ? "" : navigator.userAgent || "";
+  const isIOS = /iPad|iPhone|iPod/i.test(userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const nav = navigator as Navigator & {
+    canShare?: (data: ShareData) => boolean;
+    share?: (data: ShareData) => Promise<void>;
+  };
+
+  // iOS browsers share WebKit's PDF viewer/download behavior. A user-triggered
+  // Web Share sheet provides the native “Save to Files” action when supported.
+  if (isIOS && typeof nav.share === "function") {
+    const file = new File([prepared.blob], prepared.fileName, { type: "application/pdf" });
+    const shareData: ShareData = { files: [file], title: prepared.title };
+    if (typeof nav.canShare !== "function" || nav.canShare(shareData)) {
+      await nav.share(shareData);
+      return;
+    }
+  }
+
+  // Android Chrome and browsers without file sharing use a real user-click
+  // download. application/octet-stream avoids iOS-style inline PDF handling
+  // if an iPad browser is using a desktop-like user agent.
+  const downloadBlob = new Blob([prepared.blob], {
+    type: isIOS ? "application/octet-stream" : "application/pdf",
+  });
+  const url = URL.createObjectURL(downloadBlob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = prepared.fileName;
+  anchor.rel = "noopener";
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+export async function downloadStudentHealthAnalysis(): Promise<PreparedStudentHealthAnalysisPdf | null> {
 
   const school = getCurrentSchool();
 
@@ -1031,37 +1095,33 @@ export async function downloadStudentHealthAnalysis(): Promise<void> {
 
     const title = `Talent Passport — ${clean(school.schoolName)} Student Health Analysis`;
 
+    const prepared = { blob, fileName, title };
+
     if (Capacitor.isNativePlatform()) {
-
+      // Preserve the existing Capacitor save/share behavior for installed apps.
       await downloadOrSharePdfBlob(blob, fileName, title);
-
-    } else {
-
-      // Do not revoke the object URL immediately after clicking. Mobile Safari
-
-      // and some embedded browsers can cancel a download if the URL is revoked
-
-      // before the browser has consumed it.
-
-      const url = URL.createObjectURL(blob);
-
-      const anchor = document.createElement("a");
-
-      anchor.href = url;
-
-      anchor.download = fileName;
-
-      anchor.style.display = "none";
-
-      document.body.appendChild(anchor);
-
-      anchor.click();
-
-      anchor.remove();
-
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-
+      return null;
     }
+
+    if (isTouchBrowser()) {
+      // Do not auto-open a PDF tab on mobile/tablet. The page will expose a
+      // second, explicit Save/Download button so the final action has a fresh
+      // user gesture (required by several mobile browsers).
+      return prepared;
+    }
+
+    // Preserve the existing one-click Blob download on desktop browsers.
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.rel = "noopener";
+    anchor.style.display = "none";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    return null;
 
   } finally {
 
