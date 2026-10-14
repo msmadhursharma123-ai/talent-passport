@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
 import type { SchoolIntelligenceSnapshot, SchoolTeacherDailyIntelligence } from "../types/SchoolIntelligenceModels";
 import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
-import { downloadStudentHealthAnalysis } from "../services/StudentHealthAnalysisPdfService";
+import { downloadStudentHealthAnalysis, savePreparedStudentHealthAnalysisPdf } from "../services/StudentHealthAnalysisPdfService";
+import type { PreparedStudentHealthAnalysisPdf } from "../services/StudentHealthAnalysisPdfService";
 
 const tones=[
   ["#FFF7ED","#FFFBF5","#FED7AA","#C2410C"],
@@ -26,6 +27,8 @@ export default function ClassroomIntelligencePage(){
   const [open,setOpen]=useState(false);
   const [reportLoading,setReportLoading]=useState(false);
   const [reportProgress,setReportProgress]=useState(0);
+  const [preparedReport,setPreparedReport]=useState<PreparedStudentHealthAnalysisPdf|null>(null);
+  const [reportSaveBusy,setReportSaveBusy]=useState(false);
   const menuRef=useRef<HTMLDivElement|null>(null);
 
   useEffect(()=>{let dead=false;(async()=>{
@@ -137,7 +140,9 @@ export default function ClassroomIntelligencePage(){
               try{
                 setReportLoading(true);
                 setReportProgress(0);
-                await downloadStudentHealthAnalysis(setReportProgress);
+                setPreparedReport(null);
+                const prepared = await downloadStudentHealthAnalysis(setReportProgress);
+                setPreparedReport(prepared);
               }catch(e:any){
                 console.error("Student Health Analysis PDF generation failed",e);
               }finally{
@@ -150,6 +155,13 @@ export default function ClassroomIntelligencePage(){
           {reportLoading&&<div className="ci-pdf-progress" role="progressbar" aria-label="Student Health Analysis PDF preparation" aria-valuemin={0} aria-valuemax={100} aria-valuenow={reportProgress}>
             <div className="ci-pdf-progress-track"><span style={{width:`${reportProgress}%`}} /></div>
             <span className="ci-pdf-progress-label">{reportProgress}%</span>
+          </div>}
+          {preparedReport&&<div className="ci-pdf-fallback" role="region" aria-label="PDF download fallback">If your browser did not save the PDF automatically, use one of these options. On iPhone or iPad, choose “Save to Files” in the share sheet.
+            <div className="ci-pdf-fallback-actions">
+              <button type="button" disabled={reportSaveBusy} onClick={async()=>{setReportSaveBusy(true);try{await savePreparedStudentHealthAnalysisPdf(preparedReport);}catch(e){console.error("Could not open PDF save/share action",e);}finally{setReportSaveBusy(false);}}}>{reportSaveBusy?"Opening save options…":"Save / Share PDF"}</button>
+              <button type="button" onClick={()=>{const url=URL.createObjectURL(preparedReport.blob);const a=document.createElement("a");a.href=url;a.download=preparedReport.fileName;a.rel="noopener";a.click();window.setTimeout(()=>URL.revokeObjectURL(url),60000);}}>Try download again</button>
+              <button type="button" onClick={()=>setPreparedReport(null)}>Dismiss</button>
+            </div>
           </div>}
           <div className="ci-summary">{selected.length===0?"Showing every teacher with Daily Log evidence.":`Showing ${visible.length} selected teacher${visible.length===1?"":"s"} only.`}</div>
         </div>

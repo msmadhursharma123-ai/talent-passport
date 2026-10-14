@@ -376,19 +376,19 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
 
     return `<tr>
 
-      <td style="width:13%"><div class="sha-class">${escapeHtml(assignmentLabel(c))}</div><div class="sha-subtle">${escapeHtml(c.classroom)}</div></td>
+      <td><div class="sha-class">${escapeHtml(assignmentLabel(c))}</div><div class="sha-subtle">${escapeHtml(c.classroom)}</div></td>
 
-      <td style="width:9%">${escapeHtml(displayDate(c.latestLectureDate))}</td>
+      <td>${escapeHtml(displayDate(c.latestLectureDate))}</td>
 
-      <td style="width:10%">${escapeHtml(`${Number(c.feedbackSubmitted ?? 0)} / ${Number(c.totalStudents ?? 0)}`)}</td>
+      <td>${escapeHtml(`${Number(c.feedbackSubmitted ?? 0)} / ${Number(c.totalStudents ?? 0)}`)}</td>
 
-      <td style="width:16%">${escapeHtml(c.latestTopic)}</td>
+      <td>${escapeHtml(c.latestTopic)}</td>
 
-      <td style="width:18%">${escapeHtml(subtopicsByLogId.get(String(c.latestLectureUuid || "")) || "—")}</td>
+      <td>${escapeHtml(subtopicsByLogId.get(String(c.latestLectureUuid || "")) || "—")}</td>
 
-      <td style="width:15%">${escapeHtml(c.mostDifficultConcept)}</td>
+      <td>${escapeHtml(c.mostDifficultConcept)}</td>
 
-      <td style="width:18%" class="sha-attention">${attention}</td>
+      <td class="sha-attention">${attention}</td>
 
     </tr>`;
 
@@ -407,18 +407,21 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
 
   const loop2Rows = classes.map(c => {
     const summary = summaryByClassroom.get(classroomKey(c.className, c.sectionName));
-    const classroomName = `${c.className || "Class"}${c.sectionName ? `-${c.sectionName}` : ""}`;
     return `<tr>
-      <td><div class="sha-class">${escapeHtml(classroomName)}</div></td>
+      <td><div class="sha-class">${escapeHtml(assignmentLabel(c))}</div><div class="sha-subtle">${escapeHtml(c.classroom)}</div></td>
+      <td>${summary ? escapeHtml(displayDate(summary.logDate)) : "—"}</td>
       <td>${summary ? escapeHtml(String(summary.pendingCount)) : "—"}</td>
       <td>${summary ? escapeHtml(summary.previousTopic) : "—"}</td>
-      <td>${summary ? escapeHtml(displayDate(summary.logDate)) : "—"}</td>
       <td>${summary ? escapeHtml(summary.status) : "—"}</td>
       <td>${summary ? escapeHtml(summary.difficultConcept) : "—"}</td>
       <td>${summary ? escapeHtml(summary.students) : "—"}</td>
     </tr>`;
   }).join("");
-  const allDoubts = `<table class="sha-loop2-table"><thead><tr><th style="width:15%">Classroom</th><th style="width:8%">Students with doubts</th><th style="width:17%">Topic taught</th><th style="width:10%">Discussion date</th><th style="width:10%">Status</th><th style="width:18%">Most difficult concept</th><th style="width:22%">Students requiring attention</th></tr></thead><tbody>${loop2Rows || `<tr><td colspan="7">No classroom assignment found for this teacher.</td></tr>`}</tbody></table>`;
+  // Both tables deliberately use the exact same column partitions. The final
+  // column gets the largest share for student names; class/subject and topic
+  // columns remain compact while the date and status columns stay readable.
+  const sharedColumnWidths = `<colgroup><col style="width:10%"><col style="width:9%"><col style="width:8%"><col style="width:12%"><col style="width:13%"><col style="width:8%"><col style="width:40%"></colgroup>`;
+  const allDoubts = `<table class="sha-loop2-table">${sharedColumnWidths}<thead><tr><th>Class / Subject</th><th>Discussion date</th><th>Students with doubts</th><th>Topic taught</th><th>Status</th><th>Most difficult concept</th><th>Students requiring attention</th></tr></thead><tbody>${loop2Rows || `<tr><td colspan="7">No classroom assignment found for this teacher.</td></tr>`}</tbody></table>`;
 
   // Density is decided independently for each teacher page from meaningful cell
   // content, not just classroom count. Empty/default placeholders must not force
@@ -465,7 +468,7 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
 
     <div class="sha-section">LATEST CLASSROOM INSIGHTS</div>
 
-    <div class="sha-table-wrap"><table><thead><tr><th style="width:13%">Class / Subject</th><th style="width:9%">Latest log date</th><th style="width:10%">Students Response</th><th style="width:16%">Topic taught</th><th style="width:18%">Subtopics taught</th><th style="width:15%">Most difficult concept</th><th style="width:19%">Students requiring attention</th></tr></thead><tbody>${tableBody}</tbody></table></div>
+    <div class="sha-table-wrap"><table>${sharedColumnWidths}<thead><tr><th>Class / Subject</th><th>Latest log date</th><th>Students Response</th><th>Topic taught</th><th>Subtopics taught</th><th>Most difficult concept</th><th>Students requiring attention</th></tr></thead><tbody>${tableBody}</tbody></table></div>
 
     <section class="sha-doubts"><div class="sha-section">Day before Yesterday's unresolved doubts</div><div class="sha-doubt-grid">${allDoubts}</div></section>
 
@@ -531,12 +534,39 @@ export type PreparedStudentHealthAnalysisPdf = {
   title: string;
 };
 
-/** Trigger a single-attempt browser download immediately after PDF generation.
- * Some iOS browser/WebKit configurations may still preview a Blob instead of
- * downloading it; that behavior is controlled by the browser, not the page.
- */
-function triggerPdfDownload(blob: Blob, fileName: string): void {
-  const url = URL.createObjectURL(blob);
+function isTouchBrowser(): boolean {
+  const nav = navigator as Navigator & { maxTouchPoints?: number };
+  const ua = nav.userAgent || "";
+  return /iPhone|iPad|iPod|Android/i.test(ua) || (nav.platform === "MacIntel" && (nav.maxTouchPoints ?? 0) > 1) || (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches);
+}
+
+/** Try a native share/save sheet when supported; retain a direct-download fallback. */
+export async function savePreparedStudentHealthAnalysisPdf(prepared: PreparedStudentHealthAnalysisPdf): Promise<void> {
+  const nav = navigator as Navigator & {
+    canShare?: (data: ShareData) => boolean;
+    share?: (data: ShareData) => Promise<void>;
+  };
+  if (typeof nav.share === "function") {
+    try {
+      const file = new File([prepared.blob], prepared.fileName, { type: "application/pdf" });
+      const shareData: ShareData = { files: [file], title: prepared.title };
+      if (typeof nav.canShare !== "function" || nav.canShare(shareData)) {
+        await nav.share(shareData);
+        return;
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      // If file sharing is unavailable or fails, try the browser download route.
+    }
+  }
+  triggerPdfDownload(prepared.blob, prepared.fileName, true);
+}
+
+/** Start the browser's download flow. iOS/WebKit may preview instead; V28 also
+ * returns a retained PDF on touch devices so the UI can offer a manual fallback. */
+function triggerPdfDownload(blob: Blob, fileName: string, useGenericMime = false): void {
+  const downloadBlob = useGenericMime ? new Blob([blob], { type: "application/octet-stream" }) : blob;
+  const url = URL.createObjectURL(downloadBlob);
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = fileName;
@@ -545,11 +575,10 @@ function triggerPdfDownload(blob: Blob, fileName: string): void {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  // Keep the object URL alive long enough for mobile browsers to consume it.
   window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
-export async function downloadStudentHealthAnalysis(onProgress?: (percent: number) => void): Promise<void> {
+export async function downloadStudentHealthAnalysis(onProgress?: (percent: number) => void): Promise<PreparedStudentHealthAnalysisPdf | null> {
 
   const reportProgress = (percent: number) => onProgress?.(Math.max(0, Math.min(100, Math.round(percent))));
   reportProgress(1);
@@ -1080,11 +1109,15 @@ export async function downloadStudentHealthAnalysis(onProgress?: (percent: numbe
     if (Capacitor.isNativePlatform()) {
       // Preserve the existing Capacitor save/share behavior for installed apps.
       await downloadOrSharePdfBlob(blob, fileName, title);
+      reportProgress(100);
+      return null;
     } else {
-      // One click generates and immediately initiates the browser download.
-      triggerPdfDownload(blob, fileName);
+      // One click first attempts the browser download. Keep a copy on touch
+      // devices so Safari/WebKit users have an explicit Save/Share fallback.
+      triggerPdfDownload(blob, fileName, isTouchBrowser());
+      reportProgress(100);
+      return isTouchBrowser() ? { blob, fileName, title } : null;
     }
-    reportProgress(100);
 
   } finally {
 
