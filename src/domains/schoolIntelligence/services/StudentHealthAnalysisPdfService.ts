@@ -470,7 +470,7 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
 
     <div class="sha-table-wrap"><table>${sharedColumnWidths}<thead><tr><th>Class / Subject</th><th>Latest log date</th><th>Students Response</th><th>Topic taught</th><th>Subtopics taught</th><th>Most difficult concept</th><th>Students requiring attention</th></tr></thead><tbody>${tableBody}</tbody></table></div>
 
-    <section class="sha-doubts"><div class="sha-section">Day before Yesterday's unresolved doubts</div><div class="sha-doubt-grid">${allDoubts}</div></section>
+    <section class="sha-doubts"><div class="sha-section">Day before Yesterday's Lecture Unresolved Doubts</div><div class="sha-doubt-grid">${allDoubts}</div></section>
 
     <footer class="sha-footer"><span>Confidential school-use report · Talent Passport</span><span>Teacher report</span></footer>
 
