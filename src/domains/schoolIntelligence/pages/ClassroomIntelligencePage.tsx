@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
 import type { SchoolIntelligenceSnapshot, SchoolTeacherDailyIntelligence } from "../types/SchoolIntelligenceModels";
 import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
-import { downloadStudentHealthAnalysis, savePreparedStudentHealthAnalysisPdf, type PreparedStudentHealthAnalysisPdf } from "../services/StudentHealthAnalysisPdfService";
+import { downloadStudentHealthAnalysis } from "../services/StudentHealthAnalysisPdfService";
 
 const tones=[
   ["#FFF7ED","#FFFBF5","#FED7AA","#C2410C"],
@@ -25,8 +25,7 @@ export default function ClassroomIntelligencePage(){
   const [selected,setSelected]=useState<string[]>([]);
   const [open,setOpen]=useState(false);
   const [reportLoading,setReportLoading]=useState(false);
-  const [preparedReport,setPreparedReport]=useState<PreparedStudentHealthAnalysisPdf|null>(null);
-  const [reportNotice,setReportNotice]=useState("");
+  const [reportProgress,setReportProgress]=useState(0);
   const menuRef=useRef<HTMLDivElement|null>(null);
 
   useEffect(()=>{let dead=false;(async()=>{
@@ -137,30 +136,23 @@ export default function ClassroomIntelligencePage(){
             onClick={async()=>{
               try{
                 setReportLoading(true);
-                setReportNotice("");
-                if(preparedReport){
-                  await savePreparedStudentHealthAnalysisPdf(preparedReport);
-                  setPreparedReport(null);
-                  setReportNotice("Save/Download action opened. Choose a save destination if your browser asks. Generate again whenever you need the latest records.");
-                }else{
-                  const prepared=await downloadStudentHealthAnalysis();
-                  if(prepared){
-                    setPreparedReport(prepared);
-                    setReportNotice("Your PDF is ready. Tap “Save / Download PDF” again to save it to your device.");
-                  }
-                }
+                setReportProgress(0);
+                await downloadStudentHealthAnalysis(setReportProgress);
               }catch(e:any){
-                if(e?.name!=="AbortError")setReportNotice(e?.message??"Unable to save the Student Health Analysis PDF. Please try again.");
+                console.error("Student Health Analysis PDF generation failed",e);
               }finally{
                 setReportLoading(false);
               }
             }}
           >
-            {reportLoading?(preparedReport?"Opening save options…":"Preparing PDF…"):(preparedReport?"Save / Download PDF":"Download Student Health Analysis PDF")}
+            {reportLoading?`Preparing PDF… ${reportProgress}%`:"Download Student Health Analysis PDF"}
           </button>
+          {reportLoading&&<div className="ci-pdf-progress" role="progressbar" aria-label="Student Health Analysis PDF preparation" aria-valuemin={0} aria-valuemax={100} aria-valuenow={reportProgress}>
+            <div className="ci-pdf-progress-track"><span style={{width:`${reportProgress}%`}} /></div>
+            <span className="ci-pdf-progress-label">{reportProgress}%</span>
+          </div>}
           <div className="ci-summary">{selected.length===0?"Showing every teacher with Daily Log evidence.":`Showing ${visible.length} selected teacher${visible.length===1?"":"s"} only.`}</div>
         </div>
-        {reportNotice&&<div className="ci-download-notice" role="status" aria-live="polite">{reportNotice}</div>}
         </div>
 
         {visible.length?<div className="ci-stack">{visible.map((t,i)=><TeacherCard key={t.teacherUuid} teacher={t} toneIndex={i}/>)}</div>

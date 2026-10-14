@@ -58,3 +58,9 @@
 @keyframes tpSchoolLoadingMessage{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @keyframes tpSchoolLoadingProgress{0%{transform:translateX(-120%)}100%{transform:translateX(280%)}}
 @media(max-width:600px){.tp-school-loading-backdrop{padding:16px}.tp-school-loading-card{padding:26px 22px 23px;border-radius:18px}.tp-school-loading-title{font-size:20px}.tp-school-loading-message{font-size:13px;min-height:54px}}
+
+/* Student Health Analysis PDF progress — only visible while the PDF is being prepared. */
+.ci-pdf-progress{display:flex;align-items:center;gap:10px;flex:1 1 100%;min-width:180px;margin-top:8px;color:#334155;font-size:12px;font-weight:800}
+.ci-pdf-progress-track{height:8px;flex:1;overflow:hidden;border-radius:999px;background:#e8edf4}
+.ci-pdf-progress-track span{display:block;height:100%;border-radius:inherit;background:#f97316;transition:width .18s ease}
+.ci-pdf-progress-label{min-width:38px;text-align:right;font-variant-numeric:tabular-nums}

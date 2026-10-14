@@ -531,65 +531,28 @@ export type PreparedStudentHealthAnalysisPdf = {
   title: string;
 };
 
-/**
- * iOS Safari/Chrome and touch browsers can navigate to a generated PDF Blob
- * instead of exposing a reliable download control. On those browsers, prepare
- * the PDF first and let the user perform the final save action from a fresh
- * tap. Desktop keeps the existing one-click download path.
+/** Trigger a single-attempt browser download immediately after PDF generation.
+ * Some iOS browser/WebKit configurations may still preview a Blob instead of
+ * downloading it; that behavior is controlled by the browser, not the page.
  */
-function isTouchBrowser(): boolean {
-  if (typeof navigator === "undefined" || typeof window === "undefined") return false;
-  const userAgent = navigator.userAgent || "";
-  const isIOS = /iPad|iPhone|iPod/i.test(userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const isAndroid = /Android/i.test(userAgent);
-  const isTouchTabletOrPhone = navigator.maxTouchPoints > 1 &&
-    window.matchMedia?.("(pointer: coarse)").matches === true;
-  return isIOS || isAndroid || isTouchTabletOrPhone;
-}
-
-/** Called only from the user's second, explicit Save/Download tap on mobile/tablet. */
-export async function savePreparedStudentHealthAnalysisPdf(
-  prepared: PreparedStudentHealthAnalysisPdf,
-): Promise<void> {
-  const userAgent = typeof navigator === "undefined" ? "" : navigator.userAgent || "";
-  const isIOS = /iPad|iPhone|iPod/i.test(userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const nav = navigator as Navigator & {
-    canShare?: (data: ShareData) => boolean;
-    share?: (data: ShareData) => Promise<void>;
-  };
-
-  // iOS browsers share WebKit's PDF viewer/download behavior. A user-triggered
-  // Web Share sheet provides the native “Save to Files” action when supported.
-  if (isIOS && typeof nav.share === "function") {
-    const file = new File([prepared.blob], prepared.fileName, { type: "application/pdf" });
-    const shareData: ShareData = { files: [file], title: prepared.title };
-    if (typeof nav.canShare !== "function" || nav.canShare(shareData)) {
-      await nav.share(shareData);
-      return;
-    }
-  }
-
-  // Android Chrome and browsers without file sharing use a real user-click
-  // download. application/octet-stream avoids iOS-style inline PDF handling
-  // if an iPad browser is using a desktop-like user agent.
-  const downloadBlob = new Blob([prepared.blob], {
-    type: isIOS ? "application/octet-stream" : "application/pdf",
-  });
-  const url = URL.createObjectURL(downloadBlob);
+function triggerPdfDownload(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = prepared.fileName;
+  anchor.download = fileName;
   anchor.rel = "noopener";
   anchor.style.display = "none";
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
+  // Keep the object URL alive long enough for mobile browsers to consume it.
   window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
-export async function downloadStudentHealthAnalysis(): Promise<PreparedStudentHealthAnalysisPdf | null> {
+export async function downloadStudentHealthAnalysis(onProgress?: (percent: number) => void): Promise<void> {
+
+  const reportProgress = (percent: number) => onProgress?.(Math.max(0, Math.min(100, Math.round(percent))));
+  reportProgress(1);
 
   const school = getCurrentSchool();
 
@@ -600,10 +563,12 @@ export async function downloadStudentHealthAnalysis(): Promise<PreparedStudentHe
   if (!supabase) throw new Error("Supabase is not configured.");
 
   const schoolLogoUrl = await resolveSchoolLogoUrl(supabase, school.organizationUuid);
+  reportProgress(4);
 
   const snapshot = await loadSchoolIntelligence(undefined, undefined, undefined, { forceRefresh: true });
 
   if (snapshot.schoolUuid !== school.schoolUuid) throw new Error("The loaded school context does not match the signed-in school. Please reload the portal.");
+  reportProgress(8);
 
   const [teachersData, assignmentsData] = await Promise.all([
 
@@ -630,6 +595,8 @@ export async function downloadStudentHealthAnalysis(): Promise<PreparedStudentHe
     ),
 
   ]);
+
+  reportProgress(15);
 
   const intelligenceByTeacher = new Map<string, { teacherName: string; classrooms: SchoolDailyClassroomIntelligenceRow[] }>(
 
@@ -980,6 +947,8 @@ export async function downloadStudentHealthAnalysis(): Promise<PreparedStudentHe
     });
   }
 
+  reportProgress(32);
+
   const host = document.createElement("div");
 
   // Keep the render host inside the viewport. V7 placed it 20,000px off-screen,
@@ -1068,7 +1037,10 @@ export async function downloadStudentHealthAnalysis(): Promise<PreparedStudentHe
       const fitScale = Math.min(1, 793 / naturalHeight);
       content.style.transform = `translateX(${(1122 * (1 - fitScale)) / 2}px) scale(${fitScale})`;
 
+      // Keep the original 2x capture resolution for print-quality output.
+      // Improve memory/encoding overhead by avoiding a base64 data URL copy.
       const renderScale = 2;
+      reportProgress(35);
       const canvas = await html2canvas(page, {
         backgroundColor: "#ffffff", scale: renderScale, useCORS: true, logging: false,
         width: 1122, height: 793, windowWidth: 1122,
@@ -1078,50 +1050,41 @@ export async function downloadStudentHealthAnalysis(): Promise<PreparedStudentHe
       if (!canvas.width || !canvas.height) throw new Error(`Could not render the PDF page for ${teachers[index]?.teacherName ?? "a teacher"}.`);
 
       if (index > 0) pdf.addPage("a4", "landscape");
-      // The fixed capture frame has the same aspect ratio as landscape A4.
-      // The content is already scaled inside the frame, so no second shrink step
-      // is needed and the PDF is consistently one page per teacher.
-      pdf.addImage(canvas.toDataURL("image/jpeg", 0.94), "JPEG", 0, 0, 297, 210, undefined, "FAST");
+      // Encode directly to a JPEG Blob, then pass binary bytes to jsPDF.
+      // This avoids allocating a large base64 string while retaining the same
+      // 2x raster resolution and JPEG quality used by the previous report path.
+      const jpegBlob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          blob => blob ? resolve(blob) : reject(new Error(`Could not encode the PDF page for ${teachers[index]?.teacherName ?? "a teacher"}.`)),
+          "image/jpeg",
+          0.94,
+        );
+      });
+      const jpegBytes = new Uint8Array(await jpegBlob.arrayBuffer());
+      pdf.addImage(jpegBytes, "JPEG", 0, 0, 297, 210, undefined, "FAST");
 
       canvas.width = 1;
 
       canvas.height = 1;
+      reportProgress(35 + Math.round(((index + 1) / Math.max(1, pages.length)) * 58));
 
     }
 
+    reportProgress(96);
     const blob = pdf.output("blob");
 
     const fileName = `Student-Health-Analysis-${generatedDate}.pdf`;
 
     const title = `Talent Passport — ${clean(school.schoolName)} Student Health Analysis`;
 
-    const prepared = { blob, fileName, title };
-
     if (Capacitor.isNativePlatform()) {
       // Preserve the existing Capacitor save/share behavior for installed apps.
       await downloadOrSharePdfBlob(blob, fileName, title);
-      return null;
+    } else {
+      // One click generates and immediately initiates the browser download.
+      triggerPdfDownload(blob, fileName);
     }
-
-    if (isTouchBrowser()) {
-      // Do not auto-open a PDF tab on mobile/tablet. The page will expose a
-      // second, explicit Save/Download button so the final action has a fresh
-      // user gesture (required by several mobile browsers).
-      return prepared;
-    }
-
-    // Preserve the existing one-click Blob download on desktop browsers.
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = fileName;
-    anchor.rel = "noopener";
-    anchor.style.display = "none";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    return null;
+    reportProgress(100);
 
   } finally {
 
