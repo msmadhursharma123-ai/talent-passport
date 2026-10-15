@@ -235,7 +235,9 @@ const css=`
    subject/student columns become visible while scrolling.
    ========================================================= */
 @media(max-width:1024px){
-  .sa-filters{grid-template-columns:minmax(105px,1.45fr) minmax(62px,.8fr) minmax(72px,.9fr) minmax(105px,1.15fr);gap:6px;overflow:visible}
+  .sa-filters{grid-template-columns:minmax(0,1.45fr) minmax(0,.8fr) minmax(0,.9fr) minmax(0,1.15fr);gap:6px;overflow:visible}
+  .sa-filter,.sa-period-control{min-width:0;max-width:100%}
+  .sa-period-control select{min-width:0;max-width:100%;width:100%;box-sizing:border-box}
   .sa-filter label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sa-metric,
   .sa-summary-label{
