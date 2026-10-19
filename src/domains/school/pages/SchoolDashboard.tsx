@@ -12,9 +12,10 @@ import "../../schoolIntelligence/pages/schoolIntelligence.css";
 import { AcademicYearProvider, useAcademicYearContext } from "../../academicYear/context/AcademicYearContext";
 import AcademicYearSelector from "../../academicYear/components/AcademicYearSelector";
 import PortalManual from "../../../components/portalManual/PortalManual";
+import LearningEvidencePanel from "../../learningEvidenceEngine/components/LearningEvidencePanel";
 
 interface Props { onLogout: () => void; }
-type Tab = "overview" | "teachers" | "classrooms" | "academic" | "lesson-plans" | "unit-tests" | "exam-papers" | "worksheets" | "star-performers";
+type Tab = "overview" | "teachers" | "classrooms" | "academic" | "lesson-plans" | "unit-tests" | "exam-papers" | "worksheets" | "star-performers" | "learning-evidence";
 
 const tabs: {key:Tab;label:string;short:string}[] = [
   {key:"overview",label:"School Health",short:"Overview"},
@@ -26,6 +27,7 @@ const tabs: {key:Tab;label:string;short:string}[] = [
   {key:"exam-papers",label:"Exam Paper Audit",short:"Papers"},
   {key:"worksheets",label:"Worksheet Audit",short:"Worksheets"},
   {key:"star-performers",label:"Star Performers",short:"Stars"},
+  {key:"learning-evidence",label:"Learning Evidence",short:"Evidence"},
 ];
 
 export default function SchoolDashboard({ onLogout }: Props) {
@@ -60,6 +62,7 @@ function SchoolDashboardContent({ onLogout }: Props) {
       {tab==="exam-papers"&&<SchoolExamPaperPlannerAuditPage/>}
       {tab==="worksheets"&&<SchoolWorksheetPlannerAuditPage/>}
       {tab==="star-performers"&&<SchoolStarPerformersPage/>}
+      {tab==="learning-evidence"&&<LearningEvidencePanel mode="school"/>}
     </div>
 
     <style>{`

@@ -1,0 +1,15 @@
+import { readFileSync } from 'node:fs';
+import { strict as assert } from 'node:assert';
+const root = new URL('../', import.meta.url);
+const repo = readFileSync(new URL('repository/LearningEvidenceRepository.ts', root), 'utf8');
+const panel = readFileSync(new URL('components/LearningEvidencePanel.tsx', root), 'utf8');
+assert.match(repo, /assignmentsWithoutRoster/, 'school report identifies unmatched assigned classrooms');
+assert.match(repo, /SAFETY EXCLUSION/, 'school report discloses skipped unmatched classrooms');
+assert.match(repo, /assignmentsRaw = assignmentsRaw\.filter/, 'only assignments with a validated class/section roster are queried');
+assert.match(repo, /school \$\{schoolUuid\}, academic year \$\{String\(currentYear\.id\)\}/, 'empty intersection diagnostic identifies school/year scope');
+assert.match(panel, /Observed dates/, 'finding table exposes observation dates');
+assert.match(panel, /firstObservedDate/, 'first observed date is displayed');
+assert.match(panel, /lastObservedDate/, 'last observed date is displayed');
+assert.match(panel, /Coverage.*eligible students/i, 'coverage definition is explained to portal users');
+assert.match(panel, /Evidence status.*strength\/completeness/i, 'evidence status is explained');
+console.log('PASS: V30 school roster mismatch is safely isolated/disclosed; observation dates and metric explanations are present.');

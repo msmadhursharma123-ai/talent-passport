@@ -8,6 +8,7 @@ import TeacherSidebar from "./TeacherSidebar";
 import PortalManual from "../../components/portalManual/PortalManual";
 
 import TeacherHome from "./TeacherHome";
+import LearningEvidencePanel from "../../domains/learningEvidenceEngine/components/LearningEvidencePanel";
 
 import TeacherDailyLogPage from "../../domains/teacherIntelligence/pages/TeacherDailyLogPage";
 
@@ -249,6 +250,7 @@ export default function TeacherLayout({ onLogout }: Props) {
             ) : (
               <>
                 {activePage === "dashboard" && <TeacherHome />}
+                {activePage === "learning-evidence" && <LearningEvidencePanel mode="teacher" />}
                 {activePage === "daily-log" && <TeacherDailyLogPage />}
                 {activePage === "teaching-journal" && <TeachingJournalPage />}
                 {activePage === "exam-preparation" && <ExamPreparationPage />}

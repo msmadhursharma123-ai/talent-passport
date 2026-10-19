@@ -20,6 +20,7 @@ export const TEACHER_FEATURES = [
   { key: "teaching-journal", label: "Teaching Journal" },
   { key: "my-classroom", label: "My Classroom" },
   { key: "exam-preparation", label: "Exam Prep" },
+  { key: "learning-evidence", label: "Learning Evidence" },
 
   // Existing Teacher Portal planner modules.
   // Kept here so the same repository remains the single source of truth

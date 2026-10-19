@@ -1,0 +1,18 @@
+import { strict as assert } from 'node:assert';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import ts from 'typescript';
+const root = resolve(fileURLToPath(new URL('../../../../', import.meta.url)));
+const source = readFileSync(resolve(root, 'src/domains/learningEvidenceEngine/repository/CurrentYearAssignments.ts'), 'utf8');
+const js = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } }).outputText;
+const mod = await import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);
+const validate = mod.validateCurrentYearAssignments;
+const base = { school_uuid: 'school-1', id: 'a1', teacher_uuid: 't1', academic_year_id: 'year-1', academic_year: '2026-27' };
+assert.equal(validate([base], 'school-1', 'year-1', '2026-2027').length, 1, 'explicit exact year ID wins over legacy code formatting');
+assert.equal(validate([{...base, academic_year_id: 'year-2'}], 'school-1', 'year-1', '2026-27').length, 0, 'explicit other-year assignment excluded');
+assert.equal(validate([{...base, academic_year_id: null, academic_year: ' 2026-27 '}], 'school-1', 'year-1', '2026-27').length, 1, 'legacy NULL year ID requires matching normalized year code');
+assert.equal(validate([{...base, academic_year_id: null, academic_year: '2025-26'}], 'school-1', 'year-1', '2026-27').length, 0, 'legacy mismatched year code excluded');
+const enrollment = readFileSync(resolve(root, 'src/domains/learningEvidenceEngine/repository/LearningEvidenceRepository.ts'), 'utf8');
+assert.doesNotMatch(enrollment, /\.eq\("status",\s*"ACTIVE"\)/, 'status must be normalized after reading');
+console.log('PASS: V28 year-ID precedence, legacy code fallback, other-year exclusion, and case-normalized enrollment status guard.');

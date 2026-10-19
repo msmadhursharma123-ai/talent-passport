@@ -66,6 +66,7 @@ export default function TeacherSidebar({
       label: "Star Performers",
       icon: "★",
     },
+    { id: "learning-evidence", label: "Learning Evidence", icon: "◈" },
   ];
 
   return (
