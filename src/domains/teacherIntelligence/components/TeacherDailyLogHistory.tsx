@@ -3,7 +3,7 @@ import jsPDF from "jspdf";
 import { getCurrentTeacher } from "../../../services/identityService";
 import { downloadOrSharePdfBlob } from "../../../services/platform/nativeDocumentService";
 import { getTeacherAssignmentsByTeacher } from "../repository/TeacherAssignmentRepository";
-import { getTeacherDailyLogsByAssignmentsPaginated } from "../repository/TeacherDailyLogRepository";
+import { getTeacherDailyLogsByAssignmentsPaginated, updateTeacherDailyLog, deleteTeacherDailyLog } from "../repository/TeacherDailyLogRepository";
 import type { TeacherAssignment } from "../types/TeacherAssignment";
 import type { TeacherDailyLog } from "../types/TeacherDailyLog";
 
@@ -63,7 +63,15 @@ function classLabel(value: Pick<ClassOption, "className" | "sectionName">): stri
   return `Class ${value.className}${value.sectionName ? ` · Section ${value.sectionName}` : ""}`;
 }
 
-export default function TeacherDailyLogHistory() {
+type TeacherDailyLogHistoryProps = {
+  refreshSignal?: number;
+  onRecordsChanged?: () => void | Promise<void>;
+};
+
+export default function TeacherDailyLogHistory({
+  refreshSignal = 0,
+  onRecordsChanged,
+}: TeacherDailyLogHistoryProps) {
   const [assignments, setAssignments] = useState<TeacherAssignment[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(true);
   const [assignmentsError, setAssignmentsError] = useState("");
@@ -74,6 +82,10 @@ export default function TeacherDailyLogHistory() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [editingLog, setEditingLog] = useState<TeacherDailyLog | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [deleteBusyId, setDeleteBusyId] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -357,8 +369,65 @@ export default function TeacherDailyLogHistory() {
     }
   }
 
+  async function saveEditedLog() {
+    if (!editingLog || editSaving) return;
+    if (!editingLog.topicName.trim()) {
+      setEditError("Topic is required.");
+      return;
+    }
+    if (
+      (editingLog.pageFrom !== null && (!Number.isInteger(editingLog.pageFrom) || editingLog.pageFrom < 0)) ||
+      (editingLog.pageTo !== null && (!Number.isInteger(editingLog.pageTo) || editingLog.pageTo < 0))
+    ) {
+      setEditError("Page numbers must be zero or a positive whole number.");
+      return;
+    }
+    if (
+      editingLog.pageFrom !== null &&
+      editingLog.pageTo !== null &&
+      editingLog.pageTo < editingLog.pageFrom
+    ) {
+      setEditError("Page to cannot be less than Page from.");
+      return;
+    }
+    setEditSaving(true); setEditError("");
+    try {
+      await updateTeacherDailyLog(editingLog.id, {
+        topic_name: editingLog.topicName.trim(), concepts_covered: editingLog.conceptsCovered,
+        page_from: editingLog.pageFrom, page_to: editingLog.pageTo,
+        homework_given: editingLog.homeworkGiven, activity_conducted: editingLog.activityConducted,
+        teacher_notes: editingLog.teacherNotes,
+      });
+      setEditingLog(null);
+      await fetchHistory();
+      await onRecordsChanged?.();
+    } catch (error) { setEditError(error instanceof Error ? error.message : "Unable to update this log. This log may already have student feedback. Once even one student submits feedback, the log cannot be edited."); }
+    finally { setEditSaving(false); }
+  }
+
+  async function removeLog(log: TeacherDailyLog) {
+    if (deleteBusyId) return;
+    if (!window.confirm(`Delete the published log for ${log.className} ${log.sectionName} — ${log.topicName}? You can delete it only if no student has submitted feedback. If even one student has responded, deletion will be blocked.`)) return;
+    setDeleteBusyId(log.id); setHistoryError("");
+    try {
+      await deleteTeacherDailyLog(log.id);
+      await fetchHistory();
+      await onRecordsChanged?.();
+    }
+    catch (error) { setHistoryError(error instanceof Error ? error.message : "Unable to delete this log. This log may already have student feedback. Once even one student submits feedback, deletion is not permitted."); }
+    finally { setDeleteBusyId(""); }
+  }
+
+  // Refresh the history after a delete initiated from the published-record cards.
+  useEffect(() => {
+    if (refreshSignal > 0 && history !== null) void fetchHistory();
+    // fetchHistory intentionally runs only when the parent signals a successful mutation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshSignal]);
+
+
   return (
-    <section className="tdlh-card">
+    <section id="teacher-daily-log-history" className="tdlh-card">
       <style>{styles}</style>
       <div className="tdlh-heading">
         <div>
@@ -428,7 +497,7 @@ export default function TeacherDailyLogHistory() {
               <thead>
                 <tr>
                   <th>Date</th><th>Class</th><th>Section</th><th>Subject</th><th>Topic</th>
-                  <th>Subtopics / Concepts</th><th>Pages</th><th>Homework</th><th>Activity</th><th>Teacher Notes</th>
+                  <th>Subtopics / Concepts</th><th>Pages</th><th>Homework</th><th>Activity</th><th>Teacher Notes</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -448,6 +517,7 @@ export default function TeacherDailyLogHistory() {
                     <td><span className={`tdlh-pill ${log.homeworkGiven ? "yes" : "no"}`}>{log.homeworkGiven ? "Yes" : "No"}</span></td>
                     <td><span className={`tdlh-pill ${log.activityConducted ? "yes" : "no"}`}>{log.activityConducted ? "Yes" : "No"}</span></td>
                     <td className="tdlh-notes">{log.teacherNotes || "—"}</td>
+                    <td><div className="tdlh-row-actions"><button type="button" disabled={editSaving || Boolean(deleteBusyId)} onClick={()=>{setEditingLog(log);setEditError("")}}>Edit</button><button type="button" className="tdlh-delete" disabled={editSaving || deleteBusyId===log.id || Boolean(deleteBusyId)} onClick={()=>void removeLog(log)}>{deleteBusyId===log.id?"Deleting…":"Delete"}</button></div></td>
                   </tr>
                 ))}
               </tbody>
@@ -455,12 +525,13 @@ export default function TeacherDailyLogHistory() {
           </div>
         </>
       )}
+      {editingLog && <div className="tdlh-edit-overlay" role="dialog" aria-modal="true" aria-label="Edit daily log"><div className="tdlh-edit-panel"><div className="tdlh-edit-head"><div><h3>Edit Daily Log</h3><p>{classLabel({className:editingLog.className,sectionName:editingLog.sectionName})} · {displayDate(logDateKey(editingLog))} · {editingLog.subjectName}</p></div><button type="button" onClick={()=>{if(!editSaving)setEditingLog(null)}} disabled={editSaving} aria-label="Close edit dialog">×</button></div>{editError&&<div className="tdlh-error">{editError}</div>}<label>Topic taught<input value={editingLog.topicName} onChange={e=>setEditingLog({...editingLog,topicName:e.target.value})}/></label><label>Subtopics / concepts (one per line)<textarea value={editingLog.conceptsCovered.join("\n")} onChange={e=>setEditingLog({...editingLog,conceptsCovered:e.target.value.split("\n").map(v=>v.trim()).filter(Boolean)})}/></label><div className="tdlh-edit-grid"><label>Page from<input type="number" min="0" value={editingLog.pageFrom ?? ""} onChange={e=>setEditingLog({...editingLog,pageFrom:e.target.value===""?null:Number(e.target.value)})}/></label><label>Page to<input type="number" min="0" value={editingLog.pageTo ?? ""} onChange={e=>setEditingLog({...editingLog,pageTo:e.target.value===""?null:Number(e.target.value)})}/></label></div><label className="tdlh-check"><input type="checkbox" checked={editingLog.homeworkGiven} onChange={e=>setEditingLog({...editingLog,homeworkGiven:e.target.checked})}/> Homework given</label><label className="tdlh-check"><input type="checkbox" checked={editingLog.activityConducted} onChange={e=>setEditingLog({...editingLog,activityConducted:e.target.checked})}/> Activity conducted</label><label>Teacher notes<textarea value={editingLog.teacherNotes} onChange={e=>setEditingLog({...editingLog,teacherNotes:e.target.value})}/></label><div className="tdlh-edit-actions"><button type="button" onClick={()=>setEditingLog(null)} disabled={editSaving}>Cancel</button><button type="button" onClick={()=>void saveEditedLog()} disabled={editSaving}>{editSaving?"Saving…":"Save changes"}</button></div></div></div>}
     </section>
   );
 }
 
 const styles = `
-.tdlh-card{position:relative;box-sizing:border-box;width:100%;min-width:0;margin:24px 0 0;padding:24px;border:1px solid #DCE4EF;border-radius:22px;background:#FFF;color:#0B1D38;box-shadow:0 8px 24px rgba(15,35,65,.045);overflow:hidden}
+.tdlh-row-actions{display:flex;gap:5px}.tdlh-row-actions button{border:1px solid #C9DAFF;background:#F4F7FF;color:#2456D6;border-radius:7px;padding:5px 7px;font-size:9px;font-weight:800;cursor:pointer}.tdlh-row-actions .tdlh-delete{border-color:#FECACA;background:#FEF2F2;color:#B91C1C}.tdlh-row-actions button:disabled{opacity:.5}.tdlh-edit-overlay{position:fixed;inset:0;z-index:1200;background:rgba(7,20,45,.45);display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}.tdlh-edit-panel{width:min(560px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:16px;border:1px solid #DCE4EF;padding:18px;box-shadow:0 24px 70px rgba(15,23,42,.22);display:flex;flex-direction:column;gap:11px}.tdlh-edit-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.tdlh-edit-head h3{margin:0;font-size:18px;color:#0B1D38}.tdlh-edit-head p{margin:5px 0 0;font-size:10px;color:#64748B}.tdlh-edit-head>button{border:1px solid #CBD5E1;background:#fff;border-radius:8px;padding:5px 10px;font-size:18px}.tdlh-edit-panel>label{display:flex;flex-direction:column;gap:5px;color:#526987;font-size:10px;font-weight:800}.tdlh-edit-panel input:not([type=checkbox]),.tdlh-edit-panel textarea{width:100%;box-sizing:border-box;border:1px solid #CBD5E1;border-radius:8px;padding:9px;font:inherit;font-size:12px;color:#0B1D38}.tdlh-edit-panel textarea{min-height:75px;resize:vertical}.tdlh-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tdlh-edit-grid label{display:flex;flex-direction:column;gap:5px;color:#526987;font-size:10px;font-weight:800}.tdlh-check{display:flex!important;flex-direction:row!important;align-items:center}.tdlh-edit-actions{display:flex;justify-content:flex-end;gap:8px}.tdlh-edit-actions button{border:1px solid #CBD5E1;border-radius:8px;padding:9px 12px;background:#fff;font-size:10px;font-weight:900}.tdlh-edit-actions button:last-child{background:#143B73;border-color:#143B73;color:#fff}.tdlh-card{position:relative;box-sizing:border-box;width:100%;min-width:0;margin:24px 0 0;padding:24px;border:1px solid #DCE4EF;border-radius:22px;background:#FFF;color:#0B1D38;box-shadow:0 8px 24px rgba(15,35,65,.045);overflow:hidden}
 .tdlh-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:18px;border-bottom:1px solid #E5EAF1}
 .tdlh-eyebrow{margin:0 0 7px;color:#F97316;font-size:10px;font-weight:900;letter-spacing:.14em}
 .tdlh-heading h2{margin:0;color:#0B1D38;font-size:22px;line-height:1.2;font-weight:900;letter-spacing:-.35px}

@@ -279,15 +279,52 @@ export async function updateTeacherDailyLog(
     throw new Error("Supabase not configured.");
   }
 
-  const { error } = await supabase
-    .from(TABLE_NAME)
-    .update(dailyLog as never)
-    .eq("id", id);
+  const topicName = typeof dailyLog.topic_name === "string" ? dailyLog.topic_name.trim() : "";
+  const conceptsCovered = Array.isArray(dailyLog.concepts_covered)
+    ? dailyLog.concepts_covered.filter((value): value is string => typeof value === "string")
+    : [];
+  const pageFrom = dailyLog.page_from == null ? null : Number(dailyLog.page_from);
+  const pageTo = dailyLog.page_to == null ? null : Number(dailyLog.page_to);
+  const homeworkGiven = dailyLog.homework_given === true;
+  const activityConducted = dailyLog.activity_conducted === true;
+  const teacherNotes = dailyLog.teacher_notes == null ? null : String(dailyLog.teacher_notes);
 
-  if (error) {
-    throw error;
+  if (!topicName) throw new Error("Topic is required.");
+  if (pageFrom !== null && (!Number.isInteger(pageFrom) || pageFrom < 0)) {
+    throw new Error("Page from must be zero or a positive whole number.");
+  }
+  if (pageTo !== null && (!Number.isInteger(pageTo) || pageTo < 0)) {
+    throw new Error("Page to must be zero or a positive whole number.");
+  }
+  if (pageFrom !== null && pageTo !== null && pageTo < pageFrom) {
+    throw new Error("Page to cannot be less than Page from.");
   }
 
+  // Use a narrowly scoped server-side RPC. Direct table UPDATE is not granted
+  // to authenticated users in the supplied production grants export.
+  // These V10 RPCs are installed by the accompanying SQL migration but are not
+  // yet represented in the app's generated Supabase Database type. Narrowly
+  // type this call boundary instead of weakening the client or project types.
+  const updateRpc = supabase.rpc.bind(supabase) as unknown as (
+    functionName: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: unknown | null }>;
+
+  const { data, error } = await updateRpc("tp_v10_update_teacher_daily_log", {
+    p_daily_log_id: id,
+    p_topic_name: topicName,
+    p_concepts_covered: conceptsCovered,
+    p_page_from: pageFrom,
+    p_page_to: pageTo,
+    p_homework_given: homeworkGiven,
+    p_activity_conducted: activityConducted,
+    p_teacher_notes: teacherNotes,
+  });
+
+  if (error) throw error;
+  if (data !== true) {
+    throw new Error("Daily Log was not updated. It may be locked by student feedback, outside your permissions, or no longer available.");
+  }
   return true;
 }
 
@@ -297,24 +334,29 @@ DELETE DAILY LOG
 =========================================================
 */
 
-export async function deleteTeacherDailyLog(
-  id: string
-) {
+export async function deleteTeacherDailyLog(id: string) {
   const supabase = getSupabaseClient();
 
   if (!supabase) {
     throw new Error("Supabase not configured.");
   }
 
-  const { error } = await supabase
-    .from(TABLE_NAME)
-    .delete()
-    .eq("id", id);
+  // The RPC verifies auth.uid() against teachers_master and the log's assigned
+  // teacher before it performs a guarded delete under SECURITY DEFINER.
+  // Keep the type escape local to this V10 RPC; do not cast the entire client.
+  const deleteRpc = supabase.rpc.bind(supabase) as unknown as (
+    functionName: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: unknown | null }>;
 
-  if (error) {
-    throw error;
+  const { data, error } = await deleteRpc("tp_v10_delete_teacher_daily_log", {
+    p_daily_log_id: id,
+  });
+
+  if (error) throw error;
+  if (data !== true) {
+    throw new Error("Daily Log was not deleted. It may be locked by student feedback, outside your permissions, or no longer available.");
   }
-
   return true;
 }
 

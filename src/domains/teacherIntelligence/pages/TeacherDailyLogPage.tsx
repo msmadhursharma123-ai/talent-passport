@@ -20,6 +20,8 @@ loadTodaysTeacherLogsByAssignment,
 
 import {
   getTeacherDailyLogsByAssignments,
+  updateTeacherDailyLog,
+  deleteTeacherDailyLog,
 } from "../repository/TeacherDailyLogRepository";
 
 function getIndiaCalendarDateKey(value?: unknown): string {
@@ -60,6 +62,18 @@ export default function TeacherDailyLogPage() {
 
 const [logsLoading, setLogsLoading] =
 useState(true);
+
+const [historyRefreshSignal, setHistoryRefreshSignal] = useState(0);
+const [editingPublishedLog, setEditingPublishedLog] = useState<any | null>(null);
+const [editTopicName, setEditTopicName] = useState("");
+const [editConceptsText, setEditConceptsText] = useState("");
+const [editPageFrom, setEditPageFrom] = useState("");
+const [editPageTo, setEditPageTo] = useState("");
+const [editHomeworkGiven, setEditHomeworkGiven] = useState(false);
+const [editActivityConducted, setEditActivityConducted] = useState(false);
+const [editTeacherNotes, setEditTeacherNotes] = useState("");
+const [editSaving, setEditSaving] = useState(false);
+const [editError, setEditError] = useState("");
 
 useEffect(() => {
 
@@ -154,6 +168,105 @@ async function fetchLogs() {
   } finally {
     setLogsLoading(false);
   }
+}
+
+async function handleDeletePublishedLog(log: any) {
+  const confirmed = window.confirm(
+    `Delete the published log for ${log.className} ${log.sectionName} — ${log.topicName}? You can delete it only if no student has submitted feedback. If even one student has responded, deletion will be blocked.`
+  );
+  if (!confirmed) return;
+
+  try {
+    await deleteTeacherDailyLog(String(log.id));
+    // Refresh the published-record cards and the history table from the database.
+    await fetchLogs();
+    setHistoryRefreshSignal((value) => value + 1);
+  } catch (error) {
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Unable to delete this log. If student feedback exists, deletion is not permitted."
+    );
+  }
+}
+
+function handleEditPublishedLog(log: any) {
+  // Edit directly in Today's Published Lecture Records. The History editor
+  // remains independent and continues to use the same guarded repository RPC.
+  setEditingPublishedLog(log);
+  setEditTopicName(String(log.topicName ?? ""));
+  setEditConceptsText(Array.isArray(log.conceptsCovered) ? log.conceptsCovered.join("\n") : "");
+  setEditPageFrom(log.pageFrom == null ? "" : String(log.pageFrom));
+  setEditPageTo(log.pageTo == null ? "" : String(log.pageTo));
+  setEditHomeworkGiven(log.homeworkGiven === true);
+  setEditActivityConducted(log.activityConducted === true);
+  setEditTeacherNotes(String(log.teacherNotes ?? ""));
+  setEditError("");
+}
+
+function closePublishedLogEditor() {
+  if (editSaving) return;
+  setEditingPublishedLog(null);
+  setEditError("");
+}
+
+async function savePublishedLogEdit() {
+  if (!editingPublishedLog || editSaving) return;
+  const topicName = editTopicName.trim();
+  if (!topicName) {
+    setEditError("Topic is required.");
+    return;
+  }
+
+  const pageFrom = editPageFrom.trim() === "" ? null : Number(editPageFrom);
+  const pageTo = editPageTo.trim() === "" ? null : Number(editPageTo);
+  if (
+    (pageFrom !== null && (!Number.isInteger(pageFrom) || pageFrom < 0)) ||
+    (pageTo !== null && (!Number.isInteger(pageTo) || pageTo < 0))
+  ) {
+    setEditError("Page numbers must be zero or a positive whole number.");
+    return;
+  }
+  if (pageFrom !== null && pageTo !== null && pageTo < pageFrom) {
+    setEditError("Page to cannot be less than Page from.");
+    return;
+  }
+
+  // Keep repeated concept entries if the teacher has entered them; the History
+  // editor passes its concepts array through without deduplicating it.
+  const conceptsCovered = editConceptsText
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  setEditSaving(true);
+  setEditError("");
+  try {
+    await updateTeacherDailyLog(String(editingPublishedLog.id), {
+      topic_name: topicName,
+      concepts_covered: conceptsCovered,
+      page_from: pageFrom,
+      page_to: pageTo,
+      homework_given: editHomeworkGiven,
+      activity_conducted: editActivityConducted,
+      teacher_notes: editTeacherNotes,
+    });
+    setEditingPublishedLog(null);
+    // Both views refresh from persisted data after the update succeeds.
+    await Promise.allSettled([fetchLogs()]);
+    setHistoryRefreshSignal((value) => value + 1);
+  } catch (error) {
+    setEditError(
+      error instanceof Error
+        ? error.message
+        : "Unable to update this log. If student feedback exists, editing is not permitted."
+    );
+  } finally {
+    setEditSaving(false);
+  }
+}
+
+async function handleHistoryRecordChanged() {
+  await fetchLogs();
 }
 
 async function handleSave(
@@ -893,6 +1006,14 @@ async function handleSave(
 
               <div
                 style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  gap: "9px",
+                }}
+              >
+              <div
+                style={{
                   display:
                     "inline-flex",
 
@@ -928,6 +1049,41 @@ async function handleSave(
               >
                 ● ACTIVE SURVEY PUBLISHED
               </div>
+              <div style={{ display: "flex", gap: "7px", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={() => handleEditPublishedLog(log)}
+                  style={{
+                    border: "1px solid #BFDBFE",
+                    background: "#EFF6FF",
+                    color: "#1D4ED8",
+                    borderRadius: "8px",
+                    padding: "7px 12px",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleDeletePublishedLog(log)}
+                  style={{
+                    border: "1px solid #FECACA",
+                    background: "#FEF2F2",
+                    color: "#B91C1C",
+                    borderRadius: "8px",
+                    padding: "7px 12px",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+              </div>
             </div>
           )
         )}
@@ -937,7 +1093,104 @@ async function handleSave(
           DAILY LOG HISTORY — ADDITIVE FEATURE
           Existing publishing and dialog flows remain unchanged.
          ====================================================== */}
-      <TeacherDailyLogHistory />
+      <TeacherDailyLogHistory
+        refreshSignal={historyRefreshSignal}
+        onRecordsChanged={handleHistoryRecordChanged}
+      />
+
+      {editingPublishedLog && (
+        <div
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closePublishedLogEditor();
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1200,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+            background: "rgba(15, 23, 42, 0.58)",
+            backdropFilter: "blur(4px)",
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tp-published-log-edit-title"
+            className="tp-published-log-edit-dialog"
+            style={{
+              width: "100%",
+              maxWidth: "650px",
+              maxHeight: "92vh",
+              overflowY: "auto",
+              boxSizing: "border-box",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "22px",
+              boxShadow: "0 24px 70px rgba(15, 23, 42, 0.25)",
+              padding: "24px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "20px" }}>
+              <div>
+                <div style={{ color: "#F97316", fontSize: "10px", fontWeight: 800, letterSpacing: "1.5px", marginBottom: "6px" }}>
+                  EDIT PUBLISHED LECTURE
+                </div>
+                <h2 id="tp-published-log-edit-title" style={{ margin: 0, color: "#0F172A", fontSize: "21px", fontWeight: 800 }}>
+                  Update Daily Log
+                </h2>
+                <p style={{ margin: "6px 0 0", color: "#64748B", fontSize: "12px" }}>
+                  Class {editingPublishedLog.className} · Section {editingPublishedLog.sectionName} · {editingPublishedLog.subjectName}
+                </p>
+              </div>
+              <button type="button" onClick={closePublishedLogEditor} disabled={editSaving} aria-label="Close edit dialog" style={{ border: "1px solid #CBD5E1", borderRadius: "9px", background: "#FFFFFF", color: "#334155", padding: "7px 10px", cursor: editSaving ? "not-allowed" : "pointer" }}>✕</button>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: "14px" }}>
+              <label style={{ display: "grid", gap: "6px", color: "#334155", fontSize: "12px", fontWeight: 700 }}>
+                Topic
+                <input value={editTopicName} onChange={(event) => setEditTopicName(event.target.value)} maxLength={500} style={{ width: "100%", boxSizing: "border-box", border: "1px solid #CBD5E1", borderRadius: "9px", padding: "11px", font: "inherit", color: "#0F172A" }} />
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <label style={{ display: "grid", gap: "6px", color: "#334155", fontSize: "12px", fontWeight: 700 }}>
+                  Page from
+                  <input type="number" min="0" step="1" value={editPageFrom} onChange={(event) => setEditPageFrom(event.target.value)} style={{ width: "100%", boxSizing: "border-box", border: "1px solid #CBD5E1", borderRadius: "9px", padding: "11px", font: "inherit", color: "#0F172A" }} />
+                </label>
+                <label style={{ display: "grid", gap: "6px", color: "#334155", fontSize: "12px", fontWeight: 700 }}>
+                  Page to
+                  <input type="number" min="0" step="1" value={editPageTo} onChange={(event) => setEditPageTo(event.target.value)} style={{ width: "100%", boxSizing: "border-box", border: "1px solid #CBD5E1", borderRadius: "9px", padding: "11px", font: "inherit", color: "#0F172A" }} />
+                </label>
+              </div>
+              <label style={{ display: "grid", gap: "6px", color: "#334155", fontSize: "12px", fontWeight: 700, gridColumn: "1 / -1" }}>
+                Concepts / subtopics (one per line)
+                <textarea value={editConceptsText} onChange={(event) => setEditConceptsText(event.target.value)} rows={4} style={{ width: "100%", boxSizing: "border-box", resize: "vertical", border: "1px solid #CBD5E1", borderRadius: "9px", padding: "11px", font: "inherit", color: "#0F172A" }} />
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "9px", color: "#334155", fontSize: "13px", fontWeight: 700 }}>
+                <input type="checkbox" checked={editHomeworkGiven} onChange={(event) => setEditHomeworkGiven(event.target.checked)} />
+                Homework given
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "9px", color: "#334155", fontSize: "13px", fontWeight: 700 }}>
+                <input type="checkbox" checked={editActivityConducted} onChange={(event) => setEditActivityConducted(event.target.checked)} />
+                Activity conducted
+              </label>
+              <label style={{ display: "grid", gap: "6px", color: "#334155", fontSize: "12px", fontWeight: 700, gridColumn: "1 / -1" }}>
+                Teacher notes
+                <textarea value={editTeacherNotes} onChange={(event) => setEditTeacherNotes(event.target.value)} rows={3} style={{ width: "100%", boxSizing: "border-box", resize: "vertical", border: "1px solid #CBD5E1", borderRadius: "9px", padding: "11px", font: "inherit", color: "#0F172A" }} />
+              </label>
+            </div>
+
+            {editError && <div role="alert" style={{ marginTop: "14px", border: "1px solid #FECACA", borderRadius: "9px", background: "#FEF2F2", color: "#B91C1C", padding: "11px", fontSize: "12px" }}>{editError}</div>}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", flexWrap: "wrap", gap: "10px", marginTop: "20px" }}>
+              <button type="button" onClick={closePublishedLogEditor} disabled={editSaving} style={{ border: "1px solid #CBD5E1", borderRadius: "9px", background: "#FFFFFF", color: "#334155", padding: "10px 15px", fontWeight: 700, cursor: editSaving ? "not-allowed" : "pointer" }}>Cancel</button>
+              <button type="button" onClick={() => void savePublishedLogEdit()} disabled={editSaving} style={{ border: "1px solid #EA580C", borderRadius: "9px", background: editSaving ? "#FDBA74" : "#F97316", color: "#FFFFFF", padding: "10px 15px", fontWeight: 800, cursor: editSaving ? "wait" : "pointer" }}>{editSaving ? "Saving..." : "Save Changes"}</button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {/* ======================================================
           EXISTING DIALOG — FUNCTIONALITY UNCHANGED
@@ -1028,7 +1281,10 @@ async function handleSave(
   .tp-record-item > div:first-child > div:first-child { padding: 3px 6px !important; margin-bottom: 6px !important; font-size: 7px !important; }
   .tp-record-item > div:first-child > div:nth-child(3) { gap: 5px !important; margin-bottom: 6px !important; }
   .tp-record-item > div:first-child > div:nth-child(3) > div { padding: 4px 6px !important; font-size: 8px !important; }
-  .tp-record-item > div:last-child { padding: 5px 8px !important; font-size: 7px !important; }
+  /* The last child is now the status/actions wrapper; keep the original
+     compact styling on the status pill itself, not on the wrapper. */
+  .tp-record-item > div:last-child { padding: 0 !important; font-size: inherit !important; }
+  .tp-record-item > div:last-child > div:first-child { padding: 5px 8px !important; font-size: 7px !important; }
 
 }
 
@@ -1055,7 +1311,8 @@ async function handleSave(
   .tp-record-item h2 { font-size: 11px !important; }
   .tp-record-item > div:first-child > div:nth-child(3) > div { font-size: 7px !important; padding: 3px 5px !important; }
   .tp-record-item p { font-size: 8px !important; }
-  .tp-record-item > div:last-child { font-size: 6px !important; padding: 4px 6px !important; }
+  .tp-record-item > div:last-child { padding: 0 !important; font-size: inherit !important; }
+  .tp-record-item > div:last-child > div:first-child { font-size: 6px !important; padding: 4px 6px !important; }
 
 }
 `}</style>
