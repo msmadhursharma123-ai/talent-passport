@@ -654,17 +654,28 @@ export function buildStudentExamPreparationResult(
 export function buildTeacherExamPreparationResult(
   rows: CanonicalExamPreparationRow[]
 ): ExamPreparationClassroomResult[] {
-  const classroomMap = new Map<string, CanonicalExamPreparationRow[]>();
+  // Teacher projection is subject-specific: a student may have unresolved
+  // doubts in multiple subjects within the same classroom. Keep those signals
+  // in separate tables without changing canonical row reconciliation.
+  const classroomSubjectMap = new Map<string, CanonicalExamPreparationRow[]>();
 
   for (const row of rows) {
-    const key = `Class ${row.className} - Section ${row.sectionName}`;
-    const list = classroomMap.get(key) ?? [];
+    const className = String(row.className ?? "").trim();
+    const sectionName = String(row.sectionName ?? "").trim();
+    const subjectName = String(row.subjectName ?? "").trim() || "Other";
+    const key = `${className}__${sectionName}__${subjectName.toLowerCase()}`;
+    const list = classroomSubjectMap.get(key) ?? [];
     list.push(row);
-    classroomMap.set(key, list);
+    classroomSubjectMap.set(key, list);
   }
 
-  return Array.from(classroomMap.entries())
-    .map(([classroom, classroomRows]) => {
+  return Array.from(classroomSubjectMap.values())
+    .map((classroomRows) => {
+      const first = classroomRows[0];
+      const className = String(first.className ?? "").trim();
+      const sectionName = String(first.sectionName ?? "").trim();
+      const subjectName = String(first.subjectName ?? "").trim() || "Other";
+      const classroom = `Class ${className} - Section ${sectionName} · ${subjectName}`;
       const students = Array.from(
         new Set(classroomRows.map((row) => row.studentUuid))
       )

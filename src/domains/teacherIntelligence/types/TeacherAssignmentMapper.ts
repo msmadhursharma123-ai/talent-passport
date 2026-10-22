@@ -22,10 +22,16 @@ subjectName: row.subject_name,
 
     academicYear: row.academic_year,
 
+    academicYearId: row.academic_year_id ?? null,
+
     isActive: row.is_active,
 
     createdAt: row.created_at,
 
     updatedAt: row.updated_at,
+
+    endedAt: row.ended_at ?? null,
+
+    endReason: row.end_reason ?? null,
   };
 }

@@ -50,7 +50,8 @@ export async function getSchoolMorningBriefRawData(
     supabase
       .from("teacher_classroom_assignments")
       .select("id,teacher_uuid,school_uuid,academic_year,is_active,class_name,section_name,subject_name")
-      .eq("school_uuid", schoolUuid),
+      .eq("school_uuid", schoolUuid)
+      .eq("is_active", true),
     supabase
       .from("students_master")
       .select("student_uuid,student_name,school_uuid,school_name,class_name,section_name")

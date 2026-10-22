@@ -51,6 +51,11 @@ export function filterTeacherAssignmentsToSchool(
   );
 }
 
+/**
+ * Current operational assignments for a teacher.
+ * Ended assignments remain in the database for audit/history, but must not
+ * appear in current classroom selectors, daily-log forms, or active dashboards.
+ */
 export async function getTeacherAssignmentsByTeacher(
   teacherUuid: string
 ): Promise<TeacherAssignment[]> {
@@ -63,7 +68,35 @@ export async function getTeacherAssignmentsByTeacher(
   const { data, error } = await supabase
     .from(TABLE_NAME)
     .select("*")
-    .eq("teacher_uuid", teacherUuid);
+    .eq("teacher_uuid", teacherUuid)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map(mapTeacherAssignment);
+}
+
+/**
+ * Historical/audit assignments, including ended rows. Use only for screens
+ * that intentionally need to display prior assignment context for old records.
+ */
+export async function getAllTeacherAssignmentsByTeacher(
+  teacherUuid: string
+): Promise<TeacherAssignment[]> {
+  const supabase: any = getSupabaseClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select("*")
+    .eq("teacher_uuid", teacherUuid)
+    .order("created_at", { ascending: false });
 
   if (error) {
     throw error;
@@ -348,11 +381,77 @@ export async function getTeacherAssignmentsByTeacherAndSubject(
     .from(TABLE_NAME)
     .select("*")
     .eq("teacher_uuid", teacherUuid)
-    .eq("subject_name", subjectName);
+    .eq("subject_name", subjectName)
+    .eq("is_active", true);
 
   if (error) {
     throw error;
   }
 
   return (data ?? []).map(mapTeacherAssignment);
+}
+
+/*
+=========================================================
+SCHOOL ADMIN ASSIGNMENT HANDOVER — AUTHORIZED DATABASE RPCs
+---------------------------------------------------------
+These operations never delete or rewrite the previous assignment identity.
+The database validates school-admin access, active academic year, and performs
+transfer as one transaction. Do not replace these with direct table updates.
+=========================================================
+*/
+
+export async function endTeacherClassroomAssignment(
+  assignmentId: string,
+  reason: string
+): Promise<string> {
+  const supabase: any = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase not configured.");
+
+  const { data, error } = await supabase.rpc("end_teacher_classroom_assignment", {
+    p_assignment_id: assignmentId,
+    p_reason: reason,
+  });
+  if (error) throw error;
+  if (!data) throw new Error("The database did not confirm that the assignment ended.");
+  return String(data);
+}
+
+export async function transferTeacherClassroomAssignment(
+  assignmentId: string,
+  replacementTeacherUuid: string,
+  reason: string
+): Promise<string> {
+  const supabase: any = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase not configured.");
+
+  const { data, error } = await supabase.rpc("transfer_teacher_classroom_assignment", {
+    p_assignment_id: assignmentId,
+    p_replacement_teacher_uuid: replacementTeacherUuid,
+    p_reason: reason,
+  });
+  if (error) throw error;
+  if (!data) throw new Error("The database did not return the replacement assignment ID.");
+  return String(data);
+}
+
+export async function createTeacherClassroomAssignmentForAdmin(
+  schoolUuid: string,
+  teacherUuid: string,
+  className: string,
+  sectionName: string,
+  subjectName: string
+): Promise<string> {
+  const supabase: any = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase not configured.");
+  const { data, error } = await supabase.rpc("create_teacher_classroom_assignment_for_admin", {
+    p_school_uuid: schoolUuid,
+    p_teacher_uuid: teacherUuid,
+    p_class_name: className,
+    p_section_name: sectionName,
+    p_subject_name: subjectName,
+  });
+  if (error) throw error;
+  if (!data) throw new Error("The database did not return the new assignment ID.");
+  return String(data);
 }

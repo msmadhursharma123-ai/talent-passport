@@ -14,10 +14,16 @@ id: string;
 
   academicYear?: string;
 
+  academicYearId?: string | null;
+
   isActive?: boolean;
 
   createdAt?: string;
 
   updatedAt?: string;
+
+  endedAt?: string | null;
+
+  endReason?: string | null;
 
 }

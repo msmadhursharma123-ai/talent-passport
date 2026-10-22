@@ -90,11 +90,11 @@ type TeacherReport = {
 
   classrooms: SchoolDailyClassroomIntelligenceRow[];
 
-  // Canonical classroom rows are grouped by teacher + class + section. Retain
+  // Canonical classroom rows are grouped by teacher + class + section + subject.
 
-  // every active subject-assignment UUID in each group so Loop 2 doubts from
+  // Keep assignment UUIDs for the matching subject group so Loop 2 evidence from
 
-  // sibling subject assignments are not silently omitted from that classroom.
+  // different subjects is displayed separately.
 
   assignmentIdsByClassroom: Map<string, string[]>;
 
@@ -223,6 +223,9 @@ const assignmentLabel = (c: SchoolDailyClassroomIntelligenceRow) => `${clean(c.c
 const sameValue = (a: unknown, b: unknown) => String(a ?? "").trim().toLowerCase() === String(b ?? "").trim().toLowerCase();
 
 const classroomKey = (className: unknown, sectionName: unknown) => `${String(className ?? "").trim().toLowerCase()}\u0000${String(sectionName ?? "").trim().toLowerCase()}`;
+
+const classroomSubjectKey = (className: unknown, sectionName: unknown, subjectName: unknown) =>
+  `${classroomKey(className, sectionName)}\u0000${String(subjectName ?? "").trim().toLowerCase()}`;
 
 function latestLogTime(log: DailyLogRow): number {
 
@@ -358,12 +361,11 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
 
   const classes = teacher.classrooms.length ? teacher.classrooms : [];
 
-  // The Teacher Portal exposes one ledger summary per classroom, not every
-  // historical pending_teacher_doubts row. Match its visible grouping: class +
-  // section, selecting the first assignment summary for that classroom.
+  // Keep one ledger summary per class + section + subject, not every historical
+  // pending_teacher_doubts row. Select the summary for the matching subject row.
   const summaryByClassroom = new Map<string, Loop2ClassroomSummary>();
   for (const classroom of classes) {
-    const key = classroomKey(classroom.className, classroom.sectionName);
+    const key = classroomSubjectKey(classroom.className, classroom.sectionName, classroom.subjectName);
     if (summaryByClassroom.has(key)) continue;
     const assignmentIds = teacher.assignmentIdsByClassroom.get(key) ?? [String(classroom.assignmentUuid ?? "")];
     const summary = loop2Summaries.find(item => assignmentIds.includes(item.assignmentId));
@@ -406,7 +408,7 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
   const tableBody = rows || `<tr><td colspan="7">No classroom assignment found for this teacher.</td></tr>`;
 
   const loop2Rows = classes.map(c => {
-    const summary = summaryByClassroom.get(classroomKey(c.className, c.sectionName));
+    const summary = summaryByClassroom.get(classroomSubjectKey(c.className, c.sectionName, c.subjectName));
     return `<tr>
       <td><div class="sha-class">${escapeHtml(assignmentLabel(c))}</div><div class="sha-subtle">${escapeHtml(c.classroom)}</div></td>
       <td>${summary ? escapeHtml(displayDate(summary.logDate)) : "—"}</td>
@@ -436,12 +438,12 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
     c.mostDifficultConcept,
     (c.studentsRequiringAttention ?? []).join(", "),
     subtopicsByLogId.get(String(c.latestLectureUuid || "")),
-    summaryByClassroom.get(classroomKey(c.className, c.sectionName))?.previousTopic,
-    summaryByClassroom.get(classroomKey(c.className, c.sectionName))?.difficultConcept,
-    summaryByClassroom.get(classroomKey(c.className, c.sectionName))?.students,
+    summaryByClassroom.get(classroomSubjectKey(c.className, c.sectionName, c.subjectName))?.previousTopic,
+    summaryByClassroom.get(classroomSubjectKey(c.className, c.sectionName, c.subjectName))?.difficultConcept,
+    summaryByClassroom.get(classroomSubjectKey(c.className, c.sectionName, c.subjectName))?.students,
   ].reduce((n, value) => n + meaningful(value).length, 0), 0);
   const estimatedWrappedLines = classes.reduce((sum, c) => {
-    const summary = summaryByClassroom.get(classroomKey(c.className, c.sectionName));
+    const summary = summaryByClassroom.get(classroomSubjectKey(c.className, c.sectionName, c.subjectName));
     const cellLengths = [
       meaningful(c.latestTopic).length,
       meaningful(subtopicsByLogId.get(String(c.latestLectureUuid || ""))).length,
@@ -709,7 +711,7 @@ export async function downloadStudentHealthAnalysis(onProgress?: (percent: numbe
 
     for (const classroom of intelligence.classrooms ?? []) {
 
-      const key = classroomKey(classroom.className, classroom.sectionName);
+      const key = classroomSubjectKey(classroom.className, classroom.sectionName, classroom.subjectName);
 
       if (represented.has(key)) continue;
 
@@ -755,11 +757,11 @@ export async function downloadStudentHealthAnalysis(onProgress?: (percent: numbe
 
   }
 
-  // Add only genuinely missing class/section groups. This mirrors the existing
+  // Add only genuinely missing class/section/subject groups. This mirrors the
 
-  // engine's grouping and prevents multiple subject assignments from producing
+  // engine's subject-specific grouping and prevents duplicate classroom rows.
 
-  // duplicate classroom rows. If logs exist but the canonical snapshot lacks
+  // If logs exist but the canonical snapshot lacks
 
   // that classroom, fail visibly instead of claiming that no log exists.
 
@@ -767,18 +769,17 @@ export async function downloadStudentHealthAnalysis(onProgress?: (percent: numbe
 
     const teacherUuid = String(assignment.teacher_uuid);
 
-    const key = classroomKey(assignment.class_name, assignment.section_name);
+    const key = classroomSubjectKey(assignment.class_name, assignment.section_name, assignment.subject_name);
 
     const represented = representedClassroomsByTeacher.get(teacherUuid) ?? new Set<string>();
 
     if (represented.has(key)) continue;
 
     const siblingAssignments = activeAssignments.filter(a =>
-
       String(a.teacher_uuid) === teacherUuid &&
-
-      sameValue(a.class_name, assignment.class_name) && sameValue(a.section_name, assignment.section_name)
-
+      sameValue(a.class_name, assignment.class_name) &&
+      sameValue(a.section_name, assignment.section_name) &&
+      sameValue(a.subject_name, assignment.subject_name)
     );
 
     const siblingLogs = siblingAssignments.map(a => latestLogByAssignmentId.get(String(a.id))).filter((log): log is DailyLogRow => Boolean(log));
@@ -851,7 +852,7 @@ export async function downloadStudentHealthAnalysis(onProgress?: (percent: numbe
 
     const teacherUuid = String(assignment.teacher_uuid);
 
-    const key = classroomKey(assignment.class_name, assignment.section_name);
+    const key = classroomSubjectKey(assignment.class_name, assignment.section_name, assignment.subject_name);
 
     const byClassroom = assignmentIdsByTeacherAndClassroom.get(teacherUuid) ?? new Map<string, string[]>();
 

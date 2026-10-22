@@ -152,8 +152,11 @@ useState("Teacher");
       const assignment of activeAssignments
     ) {
 
+      // Loop 1 intelligence is scoped to a classroom AND subject.
+      // A teacher can teach multiple subjects in the same class/section;
+      // each assignment must retain its own log and feedback radar.
       const classroom =
-        `${assignment.className}-${assignment.sectionName}`;
+        `${assignment.className}-${assignment.sectionName} · ${assignment.subjectName}`;
 
       const group =
         classroomGroups.get(classroom) ?? [];
@@ -242,14 +245,13 @@ useState("Teacher");
     }
 
     /*
-     Keep the existing rule:
-       - If at least one classroom has a log,
-         show only classrooms that have been used.
-       - If none has a log, keep all assigned classrooms.
+     Preserve the existing visibility rule at the classroom level:
+       - If at least one class/section has a log, omit entirely unused
+         class/sections, but retain every subject assigned within a used
+         class/section so one subject cannot hide another subject's column.
+       - If no assignment has a log, keep all assigned subject columns.
 
-     Unlike the old implementation, a classroom can now have
-     multiple subject assignments and ANY of those assignments
-     can make the classroom "used".
+     Subject groups remain independent for Loop 1 radar calculation.
     */
     const usedEntries =
       classroomEntries.filter(
@@ -262,9 +264,19 @@ useState("Teacher");
           )
       );
 
+    const usedClassSections = new Set(
+      usedEntries.map(([, group]) =>
+        `${group[0].className}-${group[0].sectionName}`
+      )
+    );
+
     const entriesToAnalyse =
       usedEntries.length > 0
-        ? usedEntries
+        ? classroomEntries.filter(([, group]) =>
+            usedClassSections.has(
+              `${group[0].className}-${group[0].sectionName}`
+            )
+          )
         : classroomEntries;
 
     setTeacherAssignments(
@@ -283,8 +295,9 @@ useState("Teacher");
     );
 
     /*
-     Find the newest lecture across all subject
-     assignments belonging to each classroom.
+     Find the newest lecture within each classroom-subject
+     assignment. Subject-specific groups prevent Loop 1 feedback
+     from one subject being displayed for another subject.
     */
     const radarJobs =
       entriesToAnalyse.map(
@@ -302,17 +315,22 @@ useState("Teacher");
                 (log) => Boolean(log.id)
               )
               .sort(
-                (a, b) =>
-                  new Date(
-                    b.logDate ||
-                    b.createdAt ||
-                    ""
-                  ).getTime() -
-                  new Date(
-                    a.logDate ||
-                    a.createdAt ||
-                    ""
-                  ).getTime()
+                (a, b) => {
+                  // Prefer lecture business date, then use creation time
+                  // to order multiple logs recorded on the same day.
+                  const dateDifference =
+                    new Date(b.logDate || "").getTime() -
+                    new Date(a.logDate || "").getTime();
+
+                  if (Number.isFinite(dateDifference) && dateDifference !== 0) {
+                    return dateDifference;
+                  }
+
+                  return (
+                    new Date(b.createdAt || "").getTime() -
+                    new Date(a.createdAt || "").getTime()
+                  );
+                }
               );
 
           if (
@@ -525,7 +543,7 @@ const classroomColumns =
   teacherAssignments.map(
     (assignment) => ({
       classroom:
-        `${assignment.className}-${assignment.sectionName}`,
+        `${assignment.className}-${assignment.sectionName} · ${assignment.subjectName}`,
     })
   );
 

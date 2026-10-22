@@ -116,8 +116,13 @@ function buildDailyClassroomIntelligence(raw:SchoolIntelligenceRawData):SchoolTe
     const assignments=raw.assignments.filter(a=>
       String(a.teacher_uuid)===String(teacher.teacher_uuid) && a.is_active!==false
     );
+    // Keep each class + section + subject assignment distinct. A teacher may
+    // teach multiple subjects in the same class/section, and each assignment
+    // has its own daily-log and Loop 1 feedback evidence.
     const unique=assignments.filter((a,i,all)=>all.findIndex(x=>
-      sameValue(x.class_name,a.class_name)&&sameValue(x.section_name,a.section_name)
+      sameValue(x.class_name,a.class_name)&&
+      sameValue(x.section_name,a.section_name)&&
+      sameValue(x.subject_name,a.subject_name)
     )===i);
 
     const classrooms=unique.flatMap(a=>{

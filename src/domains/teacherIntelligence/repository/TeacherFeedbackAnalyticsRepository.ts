@@ -1214,7 +1214,8 @@ export async function getStudentsAtRisk(
         .from("teacher_classroom_assignments")
         .select("id,school_uuid")
         .eq("class_name", className)
-        .eq("section_name", sectionName);
+        .eq("section_name", sectionName)
+        .eq("is_active", true);
       const currentTeacher = getCurrentTeacher();
       if (currentTeacher?.schoolUuid) {
         assignmentQuery = assignmentQuery.eq("school_uuid", currentTeacher.schoolUuid);

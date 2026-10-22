@@ -181,7 +181,8 @@ async function getStudentAssignments(
       .select(ASSIGNMENT_SELECT)
       .eq("school_uuid", context.schoolUuid)
       .eq("class_name", context.className)
-      .eq("section_name", context.sectionName);
+      .eq("section_name", context.sectionName)
+      .eq("is_active", true);
 
     if (error) {
       console.error("ASSIGNMENT FETCH ERROR", error);

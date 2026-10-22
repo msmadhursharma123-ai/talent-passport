@@ -92,7 +92,7 @@ CLASSROOM INFORMATION
 
 const classroom =
 
-`${assignment.className}-${assignment.sectionName}`;
+`${assignment.className}-${assignment.sectionName} · ${assignment.subjectName}`;
 
 
 /*

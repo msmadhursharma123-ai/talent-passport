@@ -39,6 +39,7 @@ if (subjectName) {
         .eq("class_name", className)
         .eq("section_name", sectionName)
         .eq("subject_name", subjectName)
+        .eq("is_active", true)
     : { data: [] };
 
   const assignmentIds = (assignments.data ?? [])

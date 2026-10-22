@@ -48,7 +48,8 @@ export async function getSchoolIntelligenceRawData(
     supabase
       .from("teacher_classroom_assignments")
       .select("id,teacher_uuid,school_uuid,academic_year,is_active,class_name,section_name,subject_name")
-      .eq("school_uuid", schoolUuid),
+      .eq("school_uuid", schoolUuid)
+      .eq("is_active", true),
 
     // school_uuid is the canonical school boundary. school_name is used only
     // as a compatibility fallback for older student rows that pre-date the

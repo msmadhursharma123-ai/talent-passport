@@ -16,7 +16,8 @@ async function getSubjectScopedLogIds(
     .eq("teacher_uuid", teacher.teacherUuid)
     .eq("class_name", className)
     .eq("section_name", sectionName)
-    .eq("subject_name", subjectName);
+    .eq("subject_name", subjectName)
+    .eq("is_active", true);
 
   const assignmentIds = (assignments ?? [])
     .map((row: any) => String(row.id ?? ""))

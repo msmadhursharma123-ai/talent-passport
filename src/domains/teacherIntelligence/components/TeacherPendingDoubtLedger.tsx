@@ -114,7 +114,7 @@ export default function TeacherPendingDoubtLedger() {
           assignments
             .map(
               (assignment) =>
-                `${assignment.className}-${assignment.sectionName}`
+                `${assignment.className}-${assignment.sectionName} · ${assignment.subjectName}`
             )
             .filter(Boolean)
         )
@@ -137,7 +137,9 @@ export default function TeacherPendingDoubtLedger() {
 
       allHistoricalLogs.forEach((log: any) => {
         if (log.className && log.sectionName) {
-          usedClassrooms.add(`${log.className}-${log.sectionName}`);
+          usedClassrooms.add(
+            `${log.className}-${log.sectionName} · ${log.subjectName}`
+          );
         }
       });
 
