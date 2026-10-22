@@ -1101,6 +1101,7 @@ async function handleSave(
       {editingPublishedLog && (
         <div
           role="presentation"
+          className="tp-log-dialog-overlay"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) closePublishedLogEditor();
           }}
@@ -1120,18 +1121,18 @@ async function handleSave(
             role="dialog"
             aria-modal="true"
             aria-labelledby="tp-published-log-edit-title"
-            className="tp-published-log-edit-dialog"
+            className="tp-published-log-edit-dialog tp-log-dialog"
             style={{
               width: "100%",
               maxWidth: "650px",
               maxHeight: "92vh",
               overflowY: "auto",
               boxSizing: "border-box",
-              background: "#FFFFFF",
+              background: "linear-gradient(145deg, #FFFFFF 0%, #FFFFFF 72%, #FFFCF8 100%)",
               border: "1px solid #E2E8F0",
-              borderRadius: "22px",
-              boxShadow: "0 24px 70px rgba(15, 23, 42, 0.25)",
-              padding: "24px",
+              borderRadius: "28px",
+              boxShadow: "0 30px 80px rgba(15, 23, 42, 0.22)",
+              padding: "30px",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "20px" }}>
@@ -1188,6 +1189,17 @@ async function handleSave(
               <button type="button" onClick={closePublishedLogEditor} disabled={editSaving} style={{ border: "1px solid #CBD5E1", borderRadius: "9px", background: "#FFFFFF", color: "#334155", padding: "10px 15px", fontWeight: 700, cursor: editSaving ? "not-allowed" : "pointer" }}>Cancel</button>
               <button type="button" onClick={() => void savePublishedLogEdit()} disabled={editSaving} style={{ border: "1px solid #EA580C", borderRadius: "9px", background: editSaving ? "#FDBA74" : "#F97316", color: "#FFFFFF", padding: "10px 15px", fontWeight: 800, cursor: editSaving ? "wait" : "pointer" }}>{editSaving ? "Saving..." : "Save Changes"}</button>
             </div>
+            <style>{`
+              .tp-published-log-edit-dialog{position:relative;overflow-x:hidden;background:linear-gradient(145deg,#fff 0%,#fff 72%,#fffcf8 100%)!important}
+              .tp-published-log-edit-dialog:before{content:"";position:absolute;width:220px;height:220px;right:-75px;top:-100px;border-radius:50%;background:rgba(249,115,22,.055);pointer-events:none}
+              .tp-published-log-edit-dialog:after{content:"";position:absolute;width:180px;height:180px;left:-90px;bottom:100px;border-radius:50%;background:rgba(37,99,235,.035);pointer-events:none}
+              .tp-published-log-edit-dialog h2{font-size:23px!important;line-height:1.2!important;letter-spacing:-.35px}
+              .tp-published-log-edit-dialog input:not([type=checkbox]),.tp-published-log-edit-dialog textarea{border-color:#D5DFEB!important;border-radius:10px!important;background:#fff!important;outline:none}
+              .tp-published-log-edit-dialog input:focus,.tp-published-log-edit-dialog textarea:focus{border-color:#F97316!important;box-shadow:0 0 0 3px rgba(249,115,22,.12)}
+              .tp-published-log-edit-dialog input[type=checkbox]{accent-color:#F97316;width:17px;height:17px}
+              @media(max-width:1024px){.tp-log-dialog-overlay{padding:14px!important}.tp-published-log-edit-dialog{max-width:600px!important;max-height:94dvh!important;border-radius:20px!important;padding:20px!important}.tp-published-log-edit-dialog h2{font-size:23px!important}.tp-published-log-edit-dialog input,.tp-published-log-edit-dialog textarea{font-size:16px!important}}
+              @media(max-width:600px){.tp-log-dialog-overlay{padding:6px!important;align-items:flex-end!important}.tp-published-log-edit-dialog{max-width:none!important;max-height:96dvh!important;border-radius:18px 18px 10px 10px!important;padding:14px!important}.tp-published-log-edit-dialog h2{font-size:19px!important;line-height:1.15!important}.tp-published-log-edit-dialog p{font-size:10px!important}.tp-published-log-edit-dialog input,.tp-published-log-edit-dialog textarea{font-size:16px!important}.tp-published-log-edit-dialog button{font-size:11px!important}}
+            `}</style>
           </section>
         </div>
       )}
