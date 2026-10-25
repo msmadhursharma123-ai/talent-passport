@@ -19,6 +19,7 @@ export interface SchoolIntelligenceRawData {
   logs: any[];
   feedback: any[];
   doubts: any[];
+  doubtsLoadFailed: boolean;
   students: any[];
 }
 
@@ -90,7 +91,7 @@ export async function getSchoolIntelligenceRawData(
   if (assignmentIds.length === 0) {
     return {
       schoolUuid, schoolName, teachers, assignments, students,
-      logs: [], feedback: [], doubts: [],
+      logs: [], feedback: [], doubts: [], doubtsLoadFailed: false,
     };
   }
 
@@ -181,8 +182,43 @@ export async function getSchoolIntelligenceRawData(
   if (startDate) doubtsQuery = doubtsQuery.gte("log_date", startDate);
   if (endDate) doubtsQuery = doubtsQuery.lte("log_date", endDate);
 
-  const doubtResult = await doubtsQuery;
-  if (doubtResult.error) throw doubtResult.error;
+  // Pending doubts enrich School Intelligence; they are not the source of truth
+  // for the teacher roster or published Daily Logs. Isolate both Supabase
+  // response errors and rejected requests so optional enrichment cannot abort
+  // an otherwise successful core snapshot.
+  let doubts: any[] = [];
+  let doubtsLoadFailed = false;
+  try {
+    const doubtResult = await doubtsQuery;
+    if (doubtResult.error) {
+      doubtsLoadFailed = true;
+      console.error(
+        "SCHOOL INTELLIGENCE: pending_teacher_doubts could not be loaded; " +
+          "rendering core teacher/log intelligence without doubt enrichment.",
+        {
+          code: doubtResult.error.code,
+          message: doubtResult.error.message,
+          details: doubtResult.error.details,
+          hint: doubtResult.error.hint,
+          schoolUuid,
+        }
+      );
+    } else {
+      doubts = doubtResult.data ?? [];
+    }
+  } catch (doubtError: any) {
+    // Network failures or rejected fetch promises may throw instead of
+    // returning a Supabase { error } result. Keep the failure explicit.
+    doubtsLoadFailed = true;
+    console.error(
+      "SCHOOL INTELLIGENCE: pending_teacher_doubts request rejected; " +
+        "rendering core teacher/log intelligence without doubt enrichment.",
+      {
+        message: doubtError?.message ?? String(doubtError),
+        schoolUuid,
+      }
+    );
+  }
 
   return {
     schoolUuid,
@@ -191,7 +227,8 @@ export async function getSchoolIntelligenceRawData(
     assignments,
     logs,
     feedback,
-    doubts: doubtResult.data ?? [],
+    doubts,
+    doubtsLoadFailed,
     students,
   };
 }

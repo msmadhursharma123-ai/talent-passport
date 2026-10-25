@@ -122,6 +122,8 @@ export interface SchoolIntelligenceSnapshot {
   dailyClassroomIntelligence: SchoolTeacherDailyIntelligence[];
   teacherLiveStatus: SchoolTeacherLiveStatus[];
   examPreparation: SchoolExamPreparationClassroom[];
+  /** True when optional pending-doubt enrichment failed; doubt-derived metrics are unavailable. */
+  doubtsLoadFailed?: boolean;
 }
 
 

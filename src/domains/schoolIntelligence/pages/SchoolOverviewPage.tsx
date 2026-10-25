@@ -295,11 +295,11 @@ export default function SchoolOverviewPage() {
       "Completely understood",
       "orange",
     ],
-    ["Active Doubts", data.stats.activeDoubts, "Current learning gaps", "blue"],
+    ["Active Doubts", data.doubtsLoadFailed ? "Unavailable" : data.stats.activeDoubts, data.doubtsLoadFailed ? "Pending-doubt data failed to load" : "Current learning gaps", "blue"],
     [
       "Doubt Closure Rate",
-      `${data.stats.doubtResolutionRate}%`,
-      `Resolved ${data.stats.resolvedDoubts} of ${data.stats.doubtsAsked} doubts`,
+      data.doubtsLoadFailed ? "Unavailable" : `${data.stats.doubtResolutionRate}%`,
+      data.doubtsLoadFailed ? "Pending-doubt data failed to load" : `Resolved ${data.stats.resolvedDoubts} of ${data.stats.doubtsAsked} doubts`,
 
       "green",
     ],
@@ -325,6 +325,7 @@ export default function SchoolOverviewPage() {
 
   return (
     <main className="school-page">
+      {data.doubtsLoadFailed && <div role="status" aria-live="polite" style={{margin:"0 0 12px",padding:"12px 14px",border:"1px solid #f0c36d",borderRadius:10,background:"#fff8e8",color:"#744b00",fontSize:14,lineHeight:1.45}}><strong>Partial data warning:</strong> School and classroom intelligence loaded, but pending-doubt data could not be retrieved. Active Doubts, Doubt Closure Rate, and doubt-derived classroom metrics are unavailable—not zero. Refresh and retry.</div>}
       <style>{`
 /* =========================================================
    CONTENT ABOVE DECORATIVE CARD BACKGROUNDS
@@ -1031,8 +1032,8 @@ export default function SchoolOverviewPage() {
                             <td><span className="so-metric so-response">{row.responseRate}%</span></td>
                                                         <td><span className="so-metric so-understanding">{row.understandingRate}%</span></td>
                                                         <td><span className="so-metric so-partial">{row.partialUnderstandingRate}%</span></td>
-                                                        <td><span className="so-metric so-doubt">{row.doubtRate}%</span></td>
-                            <td><span className="so-metric so-closure">{row.doubtClosureRate}%</span></td>
+                                                        <td><span className="so-metric so-doubt">{data.doubtsLoadFailed ? "Unavailable" : `${row.doubtRate}%`}</span></td>
+                            <td><span className="so-metric so-closure">{data.doubtsLoadFailed ? "Unavailable" : `${row.doubtClosureRate}%`}</span></td>
                             <td><span className="so-metric so-understanding">{row.classHealthPercentage}%</span></td>
                           </tr>
                         ))}
@@ -1051,8 +1052,8 @@ export default function SchoolOverviewPage() {
                           <td><span className="so-metric so-response">{group.averageResponseRate}%</span></td>
                           <td><span className="so-metric so-understanding">{group.averageUnderstandingRate}%</span></td>
                           <td><span className="so-metric so-partial">{group.averagePartialUnderstandingRate}%</span></td>
-                          <td><span className="so-doubt">{group.averageDoubtRate}%</span></td>
-                           <td><span className="so-metric so-closure">{group.averageDoubtClosureRate}%</span></td>
+                          <td><span className="so-doubt">{data.doubtsLoadFailed ? "Unavailable" : `${group.averageDoubtRate}%`}</span></td>
+                           <td><span className="so-metric so-closure">{data.doubtsLoadFailed ? "Unavailable" : `${group.averageDoubtClosureRate}%`}</span></td>
                            <td><span className="so-metric so-understanding">{group.averageClassHealthPercentage}%</span></td>
                         </tr>
 
@@ -1073,8 +1074,8 @@ export default function SchoolOverviewPage() {
                             <td><span className="so-metric so-response">{row.responseRate}%</span></td>
                                                     <td><span className="so-metric so-understanding">{row.understandingRate}%</span></td>
                                                     <td><span className="so-metric so-partial">{row.partialUnderstandingRate}%</span></td>
-                                                    <td><span className="so-metric so-doubt">{row.doubtRate}%</span></td>
-                            <td><span className="so-metric so-closure">{row.doubtClosureRate}%</span></td>
+                                                    <td><span className="so-metric so-doubt">{data.doubtsLoadFailed ? "Unavailable" : `${row.doubtRate}%`}</span></td>
+                            <td><span className="so-metric so-closure">{data.doubtsLoadFailed ? "Unavailable" : `${row.doubtClosureRate}%`}</span></td>
                             <td><span className="so-metric so-understanding">{row.classHealthPercentage}%</span></td>
                       </tr>
                     ))}

@@ -18,7 +18,10 @@ async function buildSnapshotWithOptionalLiveLayer(
     customEndDate
   );
 
-  const base = buildSchoolIntelligenceSnapshot(raw);
+  const base = {
+    ...buildSchoolIntelligenceSnapshot(raw),
+    doubtsLoadFailed: raw.doubtsLoadFailed,
+  };
 
   // The live doubt layer is strictly additive. If its SQL/table is not
   // installed yet, or if it fails, the original school intelligence stays.
@@ -72,7 +75,7 @@ export async function loadSchoolIntelligence(
   const schoolUuid = getCurrentSchool()?.schoolUuid;
   const cacheKey = schoolUuid
     ? [
-        "school-intelligence-v1",
+        "school-intelligence-v2",
         schoolUuid,
         startDate ?? "default",
         endDate ?? "default",
