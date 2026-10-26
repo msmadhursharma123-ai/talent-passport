@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import jsPDF from "jspdf";
 import { getCurrentTeacher } from "../../../services/identityService";
+import { getSupabaseClient } from "../../../supabaseClient";
 import { downloadOrSharePdfBlob } from "../../../services/platform/nativeDocumentService";
 import { getAllTeacherAssignmentsByTeacher } from "../repository/TeacherAssignmentRepository";
 import { getTeacherDailyLogsByAssignmentsPaginated, updateTeacherDailyLog, deleteTeacherDailyLog } from "../repository/TeacherDailyLogRepository";
@@ -79,6 +80,8 @@ export default function TeacherDailyLogHistory({
   const [startDate, setStartDate] = useState(initialStartDate);
   const [endDate, setEndDate] = useState(todayKey);
   const [history, setHistory] = useState<TeacherDailyLog[] | null>(null);
+  const [crossQuestionFeedbackByLog, setCrossQuestionFeedbackByLog] = useState<Record<string, any[]>>({});
+  const [crossQuestionImageViewerUrl, setCrossQuestionImageViewerUrl] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -192,7 +195,63 @@ export default function TeacherDailyLogHistory({
     setHistoryLoading(true);
     try {
       const logs = await getTeacherDailyLogsByAssignmentsPaginated(assignmentIds);
-      setHistory(logs);
+      const supabase = getSupabaseClient();
+      const historyWithImageUrls = await Promise.all((logs ?? []).map(async (log: any) => {
+        if (!log.crossQuestionImagePath || !supabase) return log;
+        try {
+          const { data, error } = await supabase.storage.from("daily-log-cross-questions").createSignedUrl(String(log.crossQuestionImagePath), 60 * 60);
+          if (error) throw error;
+          return { ...log, crossQuestionImageUrl: data?.signedUrl ?? null };
+        } catch (imageError) {
+          console.warn("TEACHER HISTORY CROSS QUESTION IMAGE URL FAILED", imageError);
+          return { ...log, crossQuestionImageUrl: null };
+        }
+      }));
+      setHistory(historyWithImageUrls);
+      // Student-level results are shown only in the teacher's existing history view.
+      // Failure to load this additive panel must not fail or hide the daily-log history.
+      try {
+        const logIds = (logs ?? []).map((log: any) => String(log.id)).filter(Boolean);
+        if (supabase && logIds.length) {
+          const [{ data: feedbackRows, error: feedbackError }, { data: attemptRows, error: attemptError }] = await Promise.all([
+            (supabase as any).from("student_daily_feedback")
+              .select("daily_log_uuid,student_uuid,cross_question_selected_index,cross_question_is_correct,understanding_level,concepts_not_understood")
+              .in("daily_log_uuid", logIds),
+            (supabase as any).from("student_daily_cross_question_attempts")
+              .select("daily_log_uuid,student_uuid,selected_index,is_correct,attempted_at")
+              .in("daily_log_uuid", logIds),
+          ]);
+          if (feedbackError) throw feedbackError;
+          if (attemptError) throw attemptError;
+          const grouped: Record<string, any[]> = {};
+          for (const row of feedbackRows ?? []) {
+            const key = String(row.daily_log_uuid);
+            (grouped[key] ??= []).push({ ...row, cross_question_selected_index: row.cross_question_selected_index ?? null, cross_question_is_correct: row.cross_question_is_correct ?? null });
+          }
+          // An attempt is durable even if the student closes the page before
+          // finishing the alternate-understanding form. Keep that evidence in history.
+          for (const attempt of attemptRows ?? []) {
+            const key = String(attempt.daily_log_uuid);
+            const rows = grouped[key] ??= [];
+            const existing = rows.find((row: any) => String(row.student_uuid) === String(attempt.student_uuid));
+            if (existing) {
+              existing.cross_question_selected_index = attempt.selected_index;
+              existing.cross_question_is_correct = attempt.is_correct;
+              existing.cross_question_attempted_at = attempt.attempted_at;
+            } else {
+              rows.push({ daily_log_uuid: attempt.daily_log_uuid, student_uuid: attempt.student_uuid,
+                cross_question_selected_index: attempt.selected_index, cross_question_is_correct: attempt.is_correct,
+                cross_question_attempted_at: attempt.attempted_at, understanding_level: null, concepts_not_understood: [] });
+            }
+          }
+          setCrossQuestionFeedbackByLog(grouped);
+        } else {
+          setCrossQuestionFeedbackByLog({});
+        }
+      } catch (feedbackHistoryError) {
+        console.warn("TEACHER CROSS QUESTION FEEDBACK HISTORY UNAVAILABLE", feedbackHistoryError);
+        setCrossQuestionFeedbackByLog({});
+      }
     } catch (error) {
       setHistory(null);
       setHistoryError(error instanceof Error ? error.message : "Unable to fetch daily log history.");
@@ -418,6 +477,15 @@ export default function TeacherDailyLogHistory({
     finally { setDeleteBusyId(""); }
   }
 
+  useEffect(() => {
+    if (!crossQuestionImageViewerUrl) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setCrossQuestionImageViewerUrl(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [crossQuestionImageViewerUrl]);
+
   // Refresh the history after a delete initiated from the published-record cards.
   useEffect(() => {
     if (refreshSignal > 0 && history !== null) void fetchHistory();
@@ -507,7 +575,15 @@ export default function TeacherDailyLogHistory({
                     <td>{log.className || selectedClass?.className || "—"}</td>
                     <td>{log.sectionName || selectedClass?.sectionName || "—"}</td>
                     <td>{log.subjectName || "—"}</td>
-                    <td><strong>{log.topicName || "—"}</strong></td>
+                    <td>
+                      {log.chapterName && (
+                        <div className="tdlh-muted" style={{ marginBottom: 4, fontSize: 10, lineHeight: 1.35, overflowWrap: "anywhere" }}>
+                          Chapter: {String(log.chapterName).replace(/^__TP_MANUAL_CHAPTER__:/, "")}
+                        </div>
+                      )}
+                      <strong>Topic: {log.topicName || "—"}</strong>
+                      {(log.crossQuestionText || log.crossQuestionImagePath) && <div style={{ marginTop: 6, padding: 7, border: "1px solid #CBD5E1", borderRadius: 7, fontSize: 12 }}><strong>Cross Question:</strong> {log.crossQuestionText || "Image-based question"}{log.crossQuestionImageUrl && <button type="button" onClick={() => setCrossQuestionImageViewerUrl(log.crossQuestionImageUrl ?? null)} aria-label="Enlarge cross-question image" style={{ display: "block", marginTop: 5, padding: 0, border: 0, background: "transparent", cursor: "zoom-in" }}><img src={log.crossQuestionImageUrl} alt="Cross question (select to enlarge)" style={{ display: "block", maxWidth: 180, maxHeight: 110, objectFit: "contain" }} /></button>}<div>4 options saved · Correct option {Number.isInteger(log.crossQuestionCorrectIndex) ? String.fromCharCode(65 + Number(log.crossQuestionCorrectIndex)) : "—"}</div>{(crossQuestionFeedbackByLog[String(log.id)] ?? []).filter((row: any) => row.cross_question_selected_index !== null && row.cross_question_selected_index !== undefined).map((row: any) => <div key={`${log.id}-${row.student_uuid}`} style={{ marginTop: 5, paddingTop: 5, borderTop: "1px solid #E2E8F0" }}><strong>Student {String(row.student_uuid).slice(0, 8)}:</strong> Option {String.fromCharCode(65 + Number(row.cross_question_selected_index))} · {row.cross_question_is_correct ? "Correct" : "Incorrect"}<div>Understanding: {row.understanding_level || "—"}</div><div>Concepts not understood: {Array.isArray(row.concepts_not_understood) && row.concepts_not_understood.length ? row.concepts_not_understood.join(", ") : "—"}</div></div>)}</div>}
+                    </td>
                     <td>
                       {Array.isArray(log.conceptsCovered) && log.conceptsCovered.length
                         ? <div className="tdlh-chips">{log.conceptsCovered.map((concept, index) => <span key={`${log.id}-concept-${index}`}>{concept}</span>)}</div>
@@ -526,6 +602,7 @@ export default function TeacherDailyLogHistory({
         </>
       )}
       {editingLog && <div className="tdlh-edit-overlay" role="dialog" aria-modal="true" aria-label="Edit daily log"><div className="tdlh-edit-panel"><div className="tdlh-edit-head"><div><h3>Edit Daily Log</h3><p>{classLabel({className:editingLog.className,sectionName:editingLog.sectionName})} · {displayDate(logDateKey(editingLog))} · {editingLog.subjectName}</p></div><button type="button" onClick={()=>{if(!editSaving)setEditingLog(null)}} disabled={editSaving} aria-label="Close edit dialog">×</button></div>{editError&&<div className="tdlh-error">{editError}</div>}<label>Topic taught<input value={editingLog.topicName} onChange={e=>setEditingLog({...editingLog,topicName:e.target.value})}/></label><label>Subtopics / concepts (one per line)<textarea value={editingLog.conceptsCovered.join("\n")} onChange={e=>setEditingLog({...editingLog,conceptsCovered:e.target.value.split("\n").map(v=>v.trim()).filter(Boolean)})}/></label><div className="tdlh-edit-grid"><label>Page from<input type="number" min="0" value={editingLog.pageFrom ?? ""} onChange={e=>setEditingLog({...editingLog,pageFrom:e.target.value===""?null:Number(e.target.value)})}/></label><label>Page to<input type="number" min="0" value={editingLog.pageTo ?? ""} onChange={e=>setEditingLog({...editingLog,pageTo:e.target.value===""?null:Number(e.target.value)})}/></label></div><label className="tdlh-check"><input type="checkbox" checked={editingLog.homeworkGiven} onChange={e=>setEditingLog({...editingLog,homeworkGiven:e.target.checked})}/> Homework given</label><label className="tdlh-check"><input type="checkbox" checked={editingLog.activityConducted} onChange={e=>setEditingLog({...editingLog,activityConducted:e.target.checked})}/> Activity conducted</label><label>Teacher notes<textarea value={editingLog.teacherNotes} onChange={e=>setEditingLog({...editingLog,teacherNotes:e.target.value})}/></label><div className="tdlh-edit-actions"><button type="button" onClick={()=>setEditingLog(null)} disabled={editSaving}>Cancel</button><button type="button" onClick={()=>void saveEditedLog()} disabled={editSaving}>{editSaving?"Saving…":"Save changes"}</button></div></div></div>}
+      {crossQuestionImageViewerUrl && <div role="dialog" aria-modal="true" aria-label="Cross-question image preview" onClick={(event) => { if (event.target === event.currentTarget) setCrossQuestionImageViewerUrl(null); }} style={{ position: "fixed", inset: 0, zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "rgba(2,6,23,.88)" }}><button type="button" onClick={() => setCrossQuestionImageViewerUrl(null)} aria-label="Close enlarged image" style={{ position: "absolute", top: 16, right: 16, zIndex: 1, width: 42, height: 42, border: "1px solid rgba(255,255,255,.65)", borderRadius: 999, background: "#fff", color: "#0f172a", fontSize: 26, cursor: "pointer" }}>×</button><img src={crossQuestionImageViewerUrl} alt="Enlarged cross question" onClick={(event) => event.stopPropagation()} style={{ display: "block", maxWidth: "100%", maxHeight: "90vh", objectFit: "contain", borderRadius: 8 }} /></div>}
     </section>
   );
 }

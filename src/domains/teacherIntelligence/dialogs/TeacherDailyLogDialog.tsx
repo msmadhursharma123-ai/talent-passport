@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import {
   getCurrentTeacher,
@@ -15,6 +15,9 @@ import {
 import {
   getLessonPlannerDailyLogReference,
 } from "../repository/LessonPlannerDailyLogBridgeRepository";
+
+import { getStudyMaterialChaptersForTeacher } from "../../studyMaterial/common/studyMaterialRepository";
+import { getSupabaseClient } from "../../../supabaseClient";
 
 interface Props {
   open: boolean;
@@ -38,6 +41,23 @@ export default function TeacherDailyLogDialog({
 
   const [assignments, setAssignments] =
     useState<any[]>([]);
+  const [guidedStep, setGuidedStep] = useState<
+    "classroom" | "chapter" | "manualChapter" | "topic" | "subtopics" | "question" | "options" | "done"
+  >("classroom");
+
+  // Additive Cross Question state. Existing lesson-planner and previous-log
+  // state remains independent and unchanged.
+  const [chapterOptions, setChapterOptions] = useState<any[]>([]);
+  const [selectedChapter, setSelectedChapter] = useState("");
+  const [manualChapterName, setManualChapterName] = useState("");
+  const OTHER_CHAPTER_VALUE = "__TP_OTHER_CHAPTER__";
+  const [crossQuestionText, setCrossQuestionText] = useState("");
+  const [crossQuestionImage, setCrossQuestionImage] = useState<File | null>(null);
+  const [crossQuestionImagePreview, setCrossQuestionImagePreview] = useState("");
+  const [crossQuestionImageViewerOpen, setCrossQuestionImageViewerOpen] = useState(false);
+  const [crossQuestionOptions, setCrossQuestionOptions] = useState(["", "", "", ""]);
+  const [crossQuestionCorrectIndex, setCrossQuestionCorrectIndex] = useState("0");
+
 
   const [topicName, setTopicName] =
     useState("");
@@ -191,6 +211,46 @@ export default function TeacherDailyLogDialog({
     };
   }, [selectedAssignmentId, assignments, dailyLogBusinessDate]);
 
+  useEffect(() => {
+    let active = true;
+    const assignment = assignments.find(
+      (item) => String(item.id) === selectedAssignmentId
+    );
+    setChapterOptions([]);
+    setSelectedChapter("");
+    setManualChapterName("");
+    if (!assignment) return () => { active = false; };
+    void getStudyMaterialChaptersForTeacher(
+      String(assignment.className ?? ""),
+      String(assignment.subjectName ?? "")
+    ).then((chapters) => {
+      if (active) setChapterOptions(chapters);
+    }).catch((error) => {
+      console.warn("DAILY LOG CHAPTER OPTIONS LOAD FAILED", error);
+      if (active) setChapterOptions([]);
+    });
+    return () => { active = false; };
+  }, [selectedAssignmentId, assignments]);
+
+  useEffect(() => {
+    if (!crossQuestionImage) {
+      setCrossQuestionImagePreview("");
+      return;
+    }
+    const url = URL.createObjectURL(crossQuestionImage);
+    setCrossQuestionImagePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [crossQuestionImage]);
+
+  useEffect(() => {
+    if (!crossQuestionImageViewerOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setCrossQuestionImageViewerOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [crossQuestionImageViewerOpen]);
+
   function resetForm() {
     setSelectedAssignmentId("");
     setTopicName("");
@@ -201,6 +261,14 @@ export default function TeacherDailyLogDialog({
     setTeacherNotes("");
     setConceptInput("");
     setConceptsCovered([]);
+    setSelectedChapter("");
+    setManualChapterName("");
+    setCrossQuestionText("");
+    setCrossQuestionImage(null);
+    setCrossQuestionImagePreview("");
+    setCrossQuestionImageViewerOpen(false);
+    setCrossQuestionOptions(["", "", "", ""]);
+    setCrossQuestionCorrectIndex("0");
     setPreviousLog(null);
     setPreviousLogLoading(false);
     setDailyLogBusinessDate("");
@@ -237,6 +305,70 @@ export default function TeacherDailyLogDialog({
     normalizedSubjectName.includes("हिंदी") ||
     normalizedSubjectName.includes("हिन्दी");
 
+  useEffect(() => {
+    if (!open) return;
+    setGuidedStep("classroom");
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("tp-daily-log-classroom")?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const targetIds: Record<typeof guidedStep, string> = {
+      classroom: "tp-daily-log-classroom",
+      chapter: "tp-daily-log-chapter",
+      manualChapter: "tp-daily-log-manual-chapter",
+      topic: "tp-daily-log-topic",
+      subtopics: "tp-daily-log-subtopics",
+      question: "tp-daily-log-question",
+      options: "tp-daily-log-options",
+      done: "tp-daily-log-options",
+    };
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(targetIds[guidedStep])?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, guidedStep]);
+
+  useEffect(() => {
+    if (!open || guidedStep !== "manualChapter" || !manualChapterName.trim()) return;
+    const timeout = window.setTimeout(() => setGuidedStep("topic"), 2000);
+    return () => window.clearTimeout(timeout);
+  }, [open, guidedStep, manualChapterName]);
+
+  useEffect(() => {
+    if (!open || guidedStep !== "topic" || !topicName.trim()) return;
+    const timeout = window.setTimeout(() => setGuidedStep("subtopics"), 2000);
+    return () => window.clearTimeout(timeout);
+  }, [open, guidedStep, topicName]);
+
+  useEffect(() => {
+    if (open && guidedStep === "subtopics" && conceptsCovered.length >= 3) {
+      setGuidedStep("question");
+    }
+  }, [open, guidedStep, conceptsCovered.length]);
+
+  useEffect(() => {
+    if (!open || guidedStep !== "question" || !crossQuestionText.trim()) return;
+    const timeout = window.setTimeout(() => setGuidedStep("options"), 2000);
+    return () => window.clearTimeout(timeout);
+  }, [open, guidedStep, crossQuestionText]);
+
+  const guidedHighlightStyle: CSSProperties = {
+    border: "2px solid #2563EB",
+    boxShadow: "0 0 0 4px rgba(37, 99, 235, 0.16)",
+    outline: "none",
+    transition: "border-color 160ms ease, box-shadow 160ms ease",
+  };
+
   if (!open) {
     return null;
   }
@@ -253,10 +385,11 @@ export default function TeacherDailyLogDialog({
     );
 
     if (!alreadyExists) {
-      setConceptsCovered([
-        ...conceptsCovered,
-        normalizedConcept,
-      ]);
+      const nextConcepts = [...conceptsCovered, normalizedConcept];
+      setConceptsCovered(nextConcepts);
+      if (nextConcepts.length >= 3) setGuidedStep("question");
+    } else if (conceptsCovered.length >= 3) {
+      setGuidedStep("question");
     }
 
     setConceptInput("");
@@ -392,6 +525,82 @@ export default function TeacherDailyLogDialog({
       return;
     }
 
+    const questionText = crossQuestionText.trim();
+    const normalizedQuestionOptions = crossQuestionOptions.map((option) => option.trim());
+    const hasCrossQuestion = Boolean(questionText || crossQuestionImage);
+    // A Cross Question is chapter-scoped in the approved lesson flow. Keep
+    // chapter optional for legacy/no-question daily logs, but do not publish a
+    // question that cannot be associated with the selected Study Material chapter.
+    const resolvedChapterName =
+      selectedChapter === OTHER_CHAPTER_VALUE
+        ? manualChapterName.trim()
+        : selectedChapter.trim();
+
+    if (hasCrossQuestion && !resolvedChapterName) {
+      alert(
+        selectedChapter === OTHER_CHAPTER_VALUE
+          ? "Please enter the chapter name before adding a Cross Question."
+          : "Please select a chapter before adding a Cross Question."
+      );
+      return;
+    }
+    if (hasCrossQuestion) {
+      if (!questionText && !crossQuestionImage) {
+        alert("Enter a cross-question or attach an image.");
+        return;
+      }
+      if (questionText && crossQuestionImage) {
+        alert("Use either question text or an image, not both.");
+        return;
+      }
+      if (crossQuestionImage) {
+        const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+        if (!allowedTypes.includes(crossQuestionImage.type)) {
+          alert("Please use a JPG, PNG, or WebP image.");
+          return;
+        }
+        if (crossQuestionImage.size > 5 * 1024 * 1024) {
+          alert("The question image must be 5 MB or smaller.");
+          return;
+        }
+      }
+      if (normalizedQuestionOptions.some((option) => !option)) {
+        alert("Please enter all four cross-question options.");
+        return;
+      }
+      if (new Set(normalizedQuestionOptions.map((option) => option.toLocaleLowerCase())).size !== 4) {
+        alert("All four cross-question options must be unique.");
+        return;
+      }
+    }
+
+    let uploadedImagePath: string | null = null;
+    if (hasCrossQuestion && crossQuestionImage) {
+      const supabase = getSupabaseClient();
+      const teacherUuid = String(getCurrentTeacher()?.teacherUuid ?? "").trim();
+      if (!supabase || !teacherUuid) {
+        alert("Your teacher session could not be verified. Please sign in again.");
+        return;
+      }
+      const extension = crossQuestionImage.type === "image/png" ? "png" : crossQuestionImage.type === "image/webp" ? "webp" : "jpg";
+      const safeToken = typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      uploadedImagePath = `${teacherUuid}/${String(selectedAssignment.id)}/${safeToken}.${extension}`;
+      const { error: uploadError } = await supabase.storage
+        .from("daily-log-cross-questions")
+        .upload(uploadedImagePath, crossQuestionImage, {
+          contentType: crossQuestionImage.type,
+          upsert: false,
+          cacheControl: "3600",
+        });
+      if (uploadError) {
+        console.error("CROSS QUESTION IMAGE UPLOAD FAILED", uploadError);
+        alert("The question image could not be uploaded. Please try again.");
+        return;
+      }
+    }
+
     await onSave({
       teacher_assignment_uuid:
         selectedAssignment.id,
@@ -410,6 +619,16 @@ export default function TeacherDailyLogDialog({
 
       concepts_covered:
         normalizedConcepts,
+
+      chapter_name: resolvedChapterName
+        ? selectedChapter === OTHER_CHAPTER_VALUE
+          ? `__TP_MANUAL_CHAPTER__:${resolvedChapterName}`
+          : resolvedChapterName
+        : null,
+      cross_question_text: questionText || null,
+      cross_question_image_path: uploadedImagePath,
+      cross_question_options: hasCrossQuestion ? normalizedQuestionOptions : null,
+      cross_question_correct_index: hasCrossQuestion ? Number(crossQuestionCorrectIndex) : null,
 
       page_from:
         Number(pageFrom),
@@ -735,14 +954,14 @@ export default function TeacherDailyLogDialog({
             </div>
 
             <select
-              style={inputStyle}
+              id="tp-daily-log-classroom"
+              style={{ ...inputStyle, ...(guidedStep === "classroom" ? guidedHighlightStyle : {}) }}
               value={
                 selectedAssignmentId
               }
               onChange={(e) => {
-                setSelectedAssignmentId(
-                  e.target.value
-                );
+                setSelectedAssignmentId(e.target.value);
+                if (e.target.value) setGuidedStep("chapter");
               }}
             >
               <option value="">
@@ -776,23 +995,61 @@ export default function TeacherDailyLogDialog({
             </select>
 
             <div style={fieldLabelStyle}>
+              Chapter
+            </div>
+            <select
+              id="tp-daily-log-chapter"
+              style={{ ...inputStyle, ...(guidedStep === "chapter" ? guidedHighlightStyle : {}) }}
+              value={selectedChapter}
+              onChange={(e) => {
+                const nextChapter = e.target.value;
+                setSelectedChapter(nextChapter);
+                if (nextChapter !== OTHER_CHAPTER_VALUE) {
+                  setManualChapterName("");
+                }
+                if (nextChapter === OTHER_CHAPTER_VALUE) setGuidedStep("manualChapter");
+                else if (nextChapter) setGuidedStep("topic");
+              }}
+            >
+              <option value="">Select Chapter </option>
+              {chapterOptions.map((chapter: any) => (
+                <option key={String(chapter.id)} value={String(chapter.chapterName ?? chapter.chapter_name ?? "")}>
+                  {String(chapter.chapterName ?? chapter.chapter_name ?? "")}
+                </option>
+              ))}
+              <option value={OTHER_CHAPTER_VALUE}>Other — enter chapter name</option>
+            </select>
+            {selectedChapter === OTHER_CHAPTER_VALUE && (
+              <input
+                id="tp-daily-log-manual-chapter"
+                style={{ ...inputStyle, marginTop: 10, ...(guidedStep === "manualChapter" ? guidedHighlightStyle : {}) }}
+                value={manualChapterName}
+                onChange={(e) => setManualChapterName(e.target.value)}
+                placeholder="Enter chapter name"
+                aria-label="Manually enter chapter name"
+                required
+              />
+            )}
+
+            <div style={fieldLabelStyle}>
               Topic Covered
             </div>
 
             <input
+              id="tp-daily-log-topic"
               style={{
                 ...inputStyle,
                 marginBottom: 0,
+                ...(guidedStep === "topic" ? guidedHighlightStyle : {}),
               }}
               placeholder="Enter today's main topic"
               lang={isHindiSubject ? "hi" : "en"}
               inputMode="text"
               value={topicName}
-              onChange={(e) =>
-                setTopicName(
-                  e.target.value
-                )
-              }
+              onChange={(e) => {
+                setTopicName(e.target.value);
+                setGuidedStep("topic");
+              }}
             />
             {selectedAssignmentId && previousLogLoading && (
               <div
@@ -869,7 +1126,7 @@ export default function TeacherDailyLogDialog({
               CONCEPTS COVERED
              ========================================= */}
 
-          <div style={sectionCardStyle}>
+          <div id="tp-daily-log-subtopics" style={{ ...sectionCardStyle, ...(guidedStep === "subtopics" ? guidedHighlightStyle : {}) }}>
             <div style={sectionLabelStyle}>
               CONCEPT INTELLIGENCE
             </div>
@@ -1225,6 +1482,69 @@ export default function TeacherDailyLogDialog({
           {/* =========================================
               PAGE COVERAGE
              ========================================= */}
+
+          {/* Additive Cross Question section; existing Pages Covered fields are untouched. */}
+          <div id="tp-daily-log-question" style={{ ...sectionCardStyle, ...(guidedStep === "question" ? guidedHighlightStyle : {}) }}>
+            <div style={sectionLabelStyle}>Cross Question (Optional)</div>
+            <div style={fieldLabelStyle}>Question text</div>
+            <textarea
+              style={{ ...inputStyle, minHeight: "84px", resize: "vertical" }}
+              value={crossQuestionText}
+              onChange={(e) => setCrossQuestionText(e.target.value)}
+              placeholder="Type the question, or attach a question image below"
+              disabled={!!crossQuestionImage}
+            />
+            <div style={fieldLabelStyle}>Attach or capture question image (optional)</div>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              capture="environment"
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                if (file && !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+                  alert("Please use a JPG, PNG, or WebP image.");
+                  e.currentTarget.value = "";
+                  setCrossQuestionImage(null);
+                  return;
+                }
+                if (file && file.size > 5 * 1024 * 1024) {
+                  alert("The question image must be 5 MB or smaller.");
+                  e.currentTarget.value = "";
+                  setCrossQuestionImage(null);
+                  return;
+                }
+                setCrossQuestionImage(file);
+                if (file) setCrossQuestionText("");
+              }}
+              style={{ ...inputStyle, padding: "10px" }}
+            />
+            {crossQuestionImage && <button type="button" onClick={() => { setCrossQuestionImage(null); setCrossQuestionImageViewerOpen(false); }} style={{ marginTop: 6 }}>Remove image</button>}
+            {crossQuestionImagePreview && (
+              <button type="button" onClick={() => setCrossQuestionImageViewerOpen(true)} aria-label="Enlarge selected cross-question image" style={{ display: "block", maxWidth: "100%", marginTop: "10px", padding: 0, border: 0, background: "transparent", cursor: "zoom-in" }}>
+                <img src={crossQuestionImagePreview} alt="Cross-question preview (select to enlarge)" style={{ display: "block", maxWidth: "100%", maxHeight: "260px", objectFit: "contain", borderRadius: "12px" }} />
+              </button>
+            )}
+            <div style={{ fontSize: "12px", color: "#64748B", marginTop: "6px" }}>
+              Use one image (JPG, PNG, or WebP, up to 5 MB) or question text. Students will see the image instead of text when an image is attached.
+            </div>
+            <div id="tp-daily-log-options" style={guidedStep === "options" ? guidedHighlightStyle : undefined}>
+            {crossQuestionOptions.map((option, index) => (
+              <div key={index} style={{ marginTop: "10px" }}>
+                <div style={fieldLabelStyle}>Option {index + 1}</div>
+                <input
+                  style={inputStyle}
+                  value={option}
+                  onChange={(e) => setCrossQuestionOptions((current) => current.map((value, i) => i === index ? e.target.value : value))}
+                  placeholder={`Enter option ${index + 1}`}
+                />
+                <label style={{ display: "inline-flex", gap: "8px", alignItems: "center", fontSize: "13px", color: "#334155" }}>
+                  <input type="radio" name="cross-question-correct-option" checked={crossQuestionCorrectIndex === String(index)} onChange={() => setCrossQuestionCorrectIndex(String(index))} />
+                  Correct answer
+                </label>
+              </div>
+            ))}
+            </div>
+          </div>
 
           <div style={sectionCardStyle}>
             <div style={sectionLabelStyle}>
@@ -1632,6 +1952,12 @@ export default function TeacherDailyLogDialog({
  .tp-log-previous-reference-loading div,.tp-log-previous-reference>div{font-size:7.8px !important}
 }
 `}</style>
+      {crossQuestionImageViewerOpen && crossQuestionImagePreview && (
+        <div role="dialog" aria-modal="true" aria-label="Selected cross-question image preview" onClick={(event) => { if (event.target === event.currentTarget) setCrossQuestionImageViewerOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 1300, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "rgba(2, 6, 23, 0.88)" }}>
+          <button type="button" onClick={() => setCrossQuestionImageViewerOpen(false)} aria-label="Close enlarged image" style={{ position: "absolute", top: 16, right: 16, zIndex: 1, width: 42, height: 42, border: "1px solid rgba(255,255,255,.65)", borderRadius: 999, background: "#fff", color: "#0f172a", fontSize: 26, cursor: "pointer" }}>×</button>
+          <img src={crossQuestionImagePreview} alt="Enlarged selected cross question" onClick={(event) => event.stopPropagation()} style={{ display: "block", maxWidth: "100%", maxHeight: "90vh", objectFit: "contain", borderRadius: 8 }} />
+        </div>
+      )}
 </div>
   );
 }

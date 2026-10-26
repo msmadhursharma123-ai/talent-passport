@@ -31,6 +31,7 @@ import {
 import {
   requireIdentity,
 } from "../services/identityService";
+import { getSupabaseClient } from "../supabaseClient";
 
 import {
   calculateDailyFeedbackCreditSummaryFromLogs,
@@ -43,6 +44,7 @@ interface FeedbackStatementRow {
   subjectName: string;
   date: string;
   topic: string;
+  chapter: string | null;
   subtopics: string[];
   response: string | null;
   difficultConcepts: string[];
@@ -165,6 +167,10 @@ export default function DailyLectureFeedback() {
   const [pendingDoubts, setPendingDoubts] = useState<any[]>([]);
   const [selectedResponse, setSelectedResponse] = useState<Record<string, string>>({});
   const [submittedFeedback, setSubmittedFeedback] = useState<Record<string, any>>({});
+  const [crossQuestionAnswers, setCrossQuestionAnswers] = useState<Record<string, number>>({});
+  const [crossQuestionResults, setCrossQuestionResults] = useState<Record<string, boolean>>({});
+  const [crossQuestionImageViewerUrl, setCrossQuestionImageViewerUrl] = useState<string | null>(null);
+  const [guidedScrollTarget, setGuidedScrollTarget] = useState<{ logId: string; section: "understanding" | "concepts" | "question" | "credits" } | null>(null);
 
   const [isSubmittingFeedbackId, setIsSubmittingFeedbackId] = useState<string | null>(null);
   const [feedbackSubmitError, setFeedbackSubmitError] = useState<string | null>(null);
@@ -185,9 +191,37 @@ export default function DailyLectureFeedback() {
   const [isGeneratingStatementPdf, setIsGeneratingStatementPdf] = useState(false);
 
   useEffect(() => {
+    if (!crossQuestionImageViewerUrl) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setCrossQuestionImageViewerUrl(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [crossQuestionImageViewerUrl]);
+
+  useEffect(() => {
     void loadPageData();
     void loadDailyFeedbackCreditSummary();
   }, []);
+
+  useEffect(() => {
+    if (!guidedScrollTarget) return;
+    const targetId = guidedScrollTarget.section === "understanding"
+      ? `dlf-understanding-${guidedScrollTarget.logId}`
+      : guidedScrollTarget.section === "concepts"
+        ? `dlf-concepts-${guidedScrollTarget.logId}`
+        : guidedScrollTarget.section === "question"
+          ? `dlf-question-${guidedScrollTarget.logId}`
+          : "dlf-credit-section";
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      setGuidedScrollTarget(null);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [guidedScrollTarget, understandingLevel, conceptsNotUnderstood, somethingElse]);
 
   async function loadPageData() {
     setIsLoadingLogs(true);
@@ -199,6 +233,32 @@ export default function DailyLectureFeedback() {
 
       setLectureLogs(todaysLogs ?? []);
       setIsLoadingLogs(false);
+
+      // Restore the one-attempt lock after a refresh. The table's SELECT RLS
+      // exposes only the signed-in student's own attempt rows.
+      if ((todaysLogs ?? []).length > 0) {
+        try {
+          const supabase = getSupabaseClient();
+          const ids = (todaysLogs ?? []).map((log: any) => log.id).filter(Boolean);
+          if (supabase && ids.length) {
+            const { data: attempts, error: attemptsError } = await (supabase as any)
+              .from("student_daily_cross_question_attempts")
+              .select("daily_log_uuid,selected_index,is_correct")
+              .in("daily_log_uuid", ids);
+            if (attemptsError) throw attemptsError;
+            const answerMap: Record<string, number> = {};
+            const resultMap: Record<string, boolean> = {};
+            for (const attempt of attempts ?? []) {
+              answerMap[String(attempt.daily_log_uuid)] = Number(attempt.selected_index);
+              resultMap[String(attempt.daily_log_uuid)] = attempt.is_correct === true;
+            }
+            setCrossQuestionAnswers(answerMap);
+            setCrossQuestionResults(resultMap);
+          }
+        } catch (attemptLoadError) {
+          console.warn("CROSS QUESTION ATTEMPT HISTORY LOAD FAILED", attemptLoadError);
+        }
+      }
 
       // These are secondary data loads and run together. None of them blocks
       // the initial daily-log render above.
@@ -277,18 +337,16 @@ export default function DailyLectureFeedback() {
         getStudentFeedbackCreditStartDate(),
       ]);
 
-      if (
-        logsResult.status === "rejected" ||
-        feedbackResult.status === "rejected" ||
-        creditStartResult.status === "rejected"
-      ) {
-        throw (
-          logsResult.status === "rejected"
-            ? logsResult.reason
-            : feedbackResult.status === "rejected"
-              ? feedbackResult.reason
-              : creditStartResult.reason
-        );
+      if (logsResult.status === "rejected") {
+        throw logsResult.reason;
+      }
+
+      if (feedbackResult.status === "rejected") {
+        throw feedbackResult.reason;
+      }
+
+      if (creditStartResult.status === "rejected") {
+        throw creditStartResult.reason;
       }
 
       const allLectureLogs = logsResult.value ?? [];
@@ -348,17 +406,41 @@ export default function DailyLectureFeedback() {
     setFeedbackSubmitError(null);
   }
 
-  async function submitFeedback(log: any) {
+  async function submitFeedback(
+    log: any,
+    understandingOverride?: string,
+    crossQuestionSelectedIndex?: number | null,
+    crossQuestionIsCorrect?: boolean | null
+  ) {
     if (isSubmittingFeedbackId) return;
+    const effectiveUnderstandingLevel = understandingOverride ?? understandingLevel;
 
-    if (understandingLevel.length === 0) {
+    // A Cross Question is mandatory only for the existing “I completely understood.”
+    // path. Never allow the ordinary submit button to bypass the one-attempt MCQ.
+    const hasCrossQuestion = Boolean(
+      (log.cross_question_text || log.cross_question_image_path) &&
+      Array.isArray(log.cross_question_options) &&
+      log.cross_question_options.length === 4
+    );
+    const attemptedCrossQuestion = crossQuestionSelectedIndex != null || log.id in crossQuestionAnswers;
+    const effectiveCrossQuestionCorrect = crossQuestionIsCorrect ?? crossQuestionResults[log.id];
+    if (hasCrossQuestion && effectiveUnderstandingLevel === "I completely understood." && !attemptedCrossQuestion) {
+      setFeedbackSubmitError("Please answer the Cross Question first.");
+      return;
+    }
+    if (hasCrossQuestion && effectiveUnderstandingLevel === "I completely understood." && effectiveCrossQuestionCorrect !== true) {
+      setFeedbackSubmitError("The Cross Question was answered incorrectly. Please choose your understanding level and submit the usual feedback.");
+      return;
+    }
+
+    if (effectiveUnderstandingLevel.length === 0) {
       alert("Please select your understanding level.");
       return;
     }
 
     if (
-      understandingLevel !== "I completely understood." &&
-      understandingLevel !== ABSENT_FEEDBACK_OPTION &&
+      effectiveUnderstandingLevel !== "I completely understood." &&
+      effectiveUnderstandingLevel !== ABSENT_FEEDBACK_OPTION &&
       conceptsNotUnderstood.length === 0 &&
       !somethingElse
     ) {
@@ -366,7 +448,9 @@ export default function DailyLectureFeedback() {
       return;
     }
 
-    const isAbsent = understandingLevel === ABSENT_FEEDBACK_OPTION;
+    const isAbsent = effectiveUnderstandingLevel === ABSENT_FEEDBACK_OPTION;
+    const effectiveCrossQuestionSelectedIndex = crossQuestionSelectedIndex ?? crossQuestionAnswers[log.id] ?? null;
+    const effectiveCrossQuestionIsCorrect = crossQuestionIsCorrect ?? (effectiveCrossQuestionSelectedIndex === null ? null : crossQuestionResults[log.id] ?? null);
     const submissionConcepts = isAbsent ? [] : conceptsNotUnderstood;
     let finalAdditionalNote = isAbsent ? null : additionalNote;
 
@@ -388,11 +472,13 @@ export default function DailyLectureFeedback() {
         log.section_name,
         log.subject_name,
         log.topic_name,
-        understandingLevel,
+        effectiveUnderstandingLevel,
         submissionConcepts,
         finalAdditionalNote && finalAdditionalNote.trim().length > 0
           ? finalAdditionalNote
-          : null
+          : null,
+        effectiveCrossQuestionSelectedIndex,
+        effectiveCrossQuestionIsCorrect
       );
 
       // Keep the existing repository return contract (true), but update
@@ -407,7 +493,9 @@ export default function DailyLectureFeedback() {
         section_name: log.section_name,
         subject_name: log.subject_name,
         topic_name: log.topic_name,
-        understanding_level: understandingLevel,
+        understanding_level: effectiveUnderstandingLevel,
+        cross_question_selected_index: effectiveCrossQuestionSelectedIndex,
+        cross_question_is_correct: effectiveCrossQuestionIsCorrect,
         concepts_not_understood: [...submissionConcepts],
         has_doubt: submissionConcepts.length > 0,
         additional_note:
@@ -431,6 +519,25 @@ export default function DailyLectureFeedback() {
       }
 
       resetFeedbackForm();
+
+      // Continue the guided journey through today's remaining unsubmitted
+      // subject feedbacks in the existing lectureLogs order. The current log
+      // is excluded explicitly because React state updates are asynchronous.
+      const nextUnsubmittedLog = lectureLogs.find(
+        (candidate) =>
+          candidate.id !== log.id && !submittedFeedback[candidate.id]
+      );
+
+      if (nextUnsubmittedLog) {
+        setExpandedCard(nextUnsubmittedLog.id);
+        setGuidedScrollTarget({
+          logId: nextUnsubmittedLog.id,
+          section: "understanding",
+        });
+      } else {
+        // Every feedback currently listed for today has now been handled.
+        setGuidedScrollTarget({ logId: "", section: "credits" });
+      }
     } catch (error) {
       console.error("DAILY FEEDBACK SUBMISSION FAILED", error);
       setFeedbackSubmitError(
@@ -580,6 +687,9 @@ export default function DailyLectureFeedback() {
               "Subject not available",
             date: dateKey,
             topic: log.topic_name ?? "Topic not available",
+            chapter: log.chapter_name
+              ? String(log.chapter_name).replace(/^__TP_MANUAL_CHAPTER__:/, "").trim() || null
+              : null,
             subtopics: Array.isArray(log.concepts_covered)
               ? log.concepts_covered
               : [],
@@ -660,6 +770,7 @@ export default function DailyLectureFeedback() {
             date: toDateKey(
               row.revision_checked_at || row.created_at || row.log_date
             ),
+            chapter: null,
             topic: row.previous_topic_name
               ? `Student-raised: ${row.previous_topic_name}`
               : "Student-raised topic not available",
@@ -3324,7 +3435,7 @@ return (
           DAILY FEEDBACK CREDIT LEDGER
       ===================================================== */}
 
-      <section className="dlf-surface dlf-credit-section">
+      <section id="dlf-credit-section" className="dlf-surface dlf-credit-section">
         <div className="dlf-section-head">
           <div>
             <div className="dlf-eyebrow">DAILY FEEDBACK CREDITS</div>
@@ -3506,9 +3617,30 @@ return (
                         </div>
 
 
+                        {log.chapter_name && (
+                          <div
+                            className="dlf-chapter-name"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              marginTop: 8,
+                              padding: "3px 8px",
+                              border: "1px solid #BFDBFE",
+                              borderRadius: 7,
+                              background: "#EFF6FF",
+                              color: "#1D4ED8",
+                              fontSize: 10,
+                              fontWeight: 800,
+                              lineHeight: 1.35,
+                              maxWidth: "100%",
+                              overflowWrap: "anywhere",
+                            }}
+                          >
+                            Chapter: {String(log.chapter_name).replace(/^__TP_MANUAL_CHAPTER__:/, "")}
+                          </div>
+                        )}
                         <h3 className="dlf-topic">
-                          {log.topic_name ??
-                            "Topic Not Available"}
+                          Topic: {log.topic_name ?? "Topic Not Available"}
                         </h3>
 
                       </div>
@@ -3730,6 +3862,23 @@ return (
                         </div>
 
 
+                        {(log.cross_question_text || log.cross_question_image_path) && (
+                          <div className="dlf-feedback-info">
+                            <div className="dlf-feedback-info-title">Cross Question</div>
+                            {log.cross_question_image_path
+                              ? (log.cross_question_image_url ? <button type="button" onClick={() => setCrossQuestionImageViewerUrl(log.cross_question_image_url)} aria-label="Enlarge cross-question image" style={{ display: "block", maxWidth: "100%", margin: 0, padding: 0, border: 0, background: "transparent", cursor: "zoom-in" }}><img src={log.cross_question_image_url} alt="Cross question (select to enlarge)" style={{ display: "block", maxWidth: "100%", maxHeight: 260, objectFit: "contain" }} /></button> : <div>Question image unavailable.</div>)
+                              : <div className="dlf-feedback-info-value">{log.cross_question_text}</div>}
+                          </div>
+                        )}
+                        {submittedFeedback[log.id]?.cross_question_selected_index != null && (
+                          <div className="dlf-feedback-info">
+                            <div className="dlf-feedback-info-title">Cross Question Result</div>
+                            <div className="dlf-feedback-info-value">
+                              Option {String.fromCharCode(65 + Number(submittedFeedback[log.id].cross_question_selected_index))} · {submittedFeedback[log.id].cross_question_is_correct ? "Correct" : "Incorrect"}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="dlf-feedback-info">
 
                           <div className="dlf-feedback-info-title">
@@ -3884,7 +4033,28 @@ return (
 
                     {/* UNDERSTANDING OPTIONS */}
 
-                    <div className="dlf-option-grid">
+                    {log.id in crossQuestionAnswers &&
+                      crossQuestionResults[log.id] === false &&
+                      !submittedFeedback[log.id] && (
+                        <div
+                          role="status"
+                          style={{
+                            margin: "10px 0",
+                            padding: 12,
+                            borderRadius: 10,
+                            background: "#EFF6FF",
+                            color: "#1D4ED8",
+                            border: "1px solid #BFDBFE",
+                          }}
+                        >
+                          Please choose your understanding level again and submit the usual feedback.
+                        </div>
+                      )}
+
+                    <div
+                      id={`dlf-understanding-${log.id}`}
+                      className="dlf-option-grid"
+                    >
 
                       {UNDERSTANDING_OPTIONS.map(
                         (option) => (
@@ -3898,12 +4068,23 @@ return (
                               type="radio"
                               name={`understanding-${log.id}`}
                               value={option}
+                              disabled={(option === "I completely understood." || option === ABSENT_FEEDBACK_OPTION) && log.id in crossQuestionAnswers && crossQuestionResults[log.id] === false}
                               checked={
                                 understandingLevel ===
                                 option
                               }
                               onChange={() => {
+                                if (option === "I completely understood." && log.id in crossQuestionAnswers && crossQuestionResults[log.id] === false) return;
                                 setUnderstandingLevel(option);
+
+                                if (option === "I completely understood.") {
+                                  setGuidedScrollTarget({ logId: log.id, section: "question" });
+                                } else if (
+                                  option === "I partially understood." ||
+                                  option === "I didn't understand."
+                                ) {
+                                  setGuidedScrollTarget({ logId: log.id, section: "concepts" });
+                                }
 
                                 if (option === ABSENT_FEEDBACK_OPTION) {
                                   setConceptsNotUnderstood([]);
@@ -3926,6 +4107,59 @@ return (
                     </div>
 
 
+                    {(understandingLevel === "I completely understood." || (log.id in crossQuestionAnswers && !submittedFeedback[log.id])) &&
+                      Array.isArray(log.cross_question_options) &&
+                      log.cross_question_options.length === 4 &&
+                      (log.cross_question_text || log.cross_question_image_path) && (
+                      <div id={`dlf-question-${log.id}`} className="dlf-form-section" style={{ marginTop: 16, padding: 14, border: "1px solid #CBD5E1", borderRadius: 12 }}>
+                        <div className="dlf-form-label">Cross Question{log.chapter_name ? ` · ${String(log.chapter_name).replace(/^__TP_MANUAL_CHAPTER__:/, "")}` : ""}</div>
+                        {log.cross_question_image_path ? (
+                          log.cross_question_image_url ? <button type="button" onClick={() => setCrossQuestionImageViewerUrl(log.cross_question_image_url)} aria-label="Enlarge cross-question image" style={{ display: "block", maxWidth: "100%", margin: "10px auto", padding: 0, border: 0, background: "transparent", cursor: "zoom-in" }}><img src={log.cross_question_image_url} alt="Cross question (select to enlarge)" style={{ display: "block", maxWidth: "100%", maxHeight: 320, objectFit: "contain" }} /></button> : <div>Question image is unavailable. Please contact your teacher.</div>
+                        ) : <div style={{ whiteSpace: "pre-wrap", margin: "10px 0", fontWeight: 600 }}>{log.cross_question_text}</div>}
+                        {log.cross_question_options.map((option: string, index: number) => (
+                          <button key={`${log.id}-cross-${index}`} type="button"
+                            disabled={log.id in crossQuestionAnswers || isSubmittingFeedbackId === log.id}
+                            onClick={async () => {
+                              if (log.id in crossQuestionAnswers) return;
+                              const selected = Number(index);
+                              const supabase = getSupabaseClient();
+                              if (!supabase) {
+                                setFeedbackSubmitError("Your session is unavailable. Please sign in again.");
+                                return;
+                              }
+                              try {
+                                const { data, error } = await (supabase as any).rpc("tp_record_daily_cross_question_attempt", {
+                                  p_daily_log_uuid: log.id,
+                                  p_selected_index: selected,
+                                });
+                                if (error) throw error;
+                                const attempt = Array.isArray(data) ? data[0] : data;
+                                const correct = attempt?.is_correct === true;
+                                setCrossQuestionAnswers((previous) => ({ ...previous, [log.id]: selected }));
+                                setCrossQuestionResults((previous) => ({ ...previous, [log.id]: correct }));
+                                if (correct) {
+                                  void submitFeedback(log, "I completely understood.", selected, true);
+                                } else {
+                                  setUnderstandingLevel("");
+                                  setGuidedScrollTarget({ logId: log.id, section: "understanding" });
+                                }
+                              } catch (error: any) {
+                                console.error("CROSS QUESTION ATTEMPT FAILED", error);
+                                setFeedbackSubmitError(String(error?.message ?? "Your answer could not be recorded. Refresh the page to check whether it was already attempted."));
+                              }
+                            }}
+                            style={{ display: "block", width: "100%", textAlign: "left", padding: "11px 12px", marginTop: 8, borderRadius: 9, border: "1px solid #CBD5E1", background: (log.id in crossQuestionAnswers && crossQuestionAnswers[log.id] === index) ? "#FEE2E2" : "#FFFFFF", cursor: log.id in crossQuestionAnswers ? "default" : "pointer" }}>
+                            {String.fromCharCode(65 + index)}. {option}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {log.id in crossQuestionAnswers && crossQuestionResults[log.id] === false && !submittedFeedback[log.id] && (
+                      <div role="status" style={{ margin: "10px 0", padding: 12, borderRadius: 10, background: "#FFF7ED", color: "#9A3412" }}>
+                        That answer is incorrect. You cannot try again.
+                      </div>
+                    )}
+
                     {/* =====================================
                         DIFFICULT CONCEPTS
                     ===================================== */}
@@ -3937,7 +4171,10 @@ return (
 
                       <>
 
-                        <div className="dlf-form-section">
+                        <div
+                          id={`dlf-concepts-${log.id}`}
+                          className="dlf-form-section"
+                        >
 
                           <div className="dlf-form-label">
                             Which concepts were difficult today?
@@ -4331,7 +4568,19 @@ return (
                             </span>
                           </td>
                           <td className="dlf-statement-topic">
-                            {row.topic}
+                            {row.chapter && (
+                              <div style={{
+                                marginBottom: 4,
+                                color: "#1D4ED8",
+                                fontSize: 10,
+                                lineHeight: 1.35,
+                                fontWeight: 800,
+                                overflowWrap: "anywhere",
+                              }}>
+                                Chapter: {row.chapter}
+                              </div>
+                            )}
+                            <div>Topic: {row.topic}</div>
                           </td>
                           <td>
                             {row.subtopics.length > 0 ? (
@@ -4398,6 +4647,12 @@ return (
         )}
       </section>
 
+      {crossQuestionImageViewerUrl && (
+        <div role="dialog" aria-modal="true" aria-label="Cross-question image preview" onClick={(event) => { if (event.target === event.currentTarget) setCrossQuestionImageViewerUrl(null); }} style={{ position: "fixed", inset: 0, zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "rgba(2, 6, 23, 0.88)" }}>
+          <button type="button" onClick={() => setCrossQuestionImageViewerUrl(null)} aria-label="Close enlarged image" style={{ position: "absolute", top: 16, right: 16, zIndex: 1, border: "1px solid rgba(255,255,255,.65)", borderRadius: 999, width: 42, height: 42, background: "#fff", color: "#0f172a", fontSize: 26, lineHeight: 1, cursor: "pointer" }}>×</button>
+          <img src={crossQuestionImageViewerUrl} alt="Enlarged cross question" onClick={(event) => event.stopPropagation()} style={{ display: "block", maxWidth: "100%", maxHeight: "90vh", objectFit: "contain", borderRadius: 8 }} />
+        </div>
+      )}
     </div>
   </>
 );

@@ -30,4 +30,11 @@ export interface TeacherDailyLog {
 
   updatedAt: string;
 
+  chapterName?: string | null;
+  crossQuestionText?: string | null;
+  crossQuestionImagePath?: string | null;
+  crossQuestionImageUrl?: string | null;
+  crossQuestionOptions?: string[] | null;
+  crossQuestionCorrectIndex?: number | null;
+
 }

@@ -36,7 +36,9 @@ export async function submitStudentDailyFeedback(
   topicName: string,
   understandingLevel: string,
   conceptsNotUnderstood: string[],
-  additionalNote: string | null
+  additionalNote: string | null,
+  crossQuestionSelectedIndex: number | null = null,
+  crossQuestionIsCorrect: boolean | null = null
 ) {
   console.log("REPOSITORY HIT");
 
@@ -72,6 +74,8 @@ export async function submitStudentDailyFeedback(
       concepts_not_understood: normalizedConceptsNotUnderstood,
       has_doubt: hasDoubt,
       additional_note: normalizedAdditionalNote,
+      cross_question_selected_index: crossQuestionSelectedIndex,
+      cross_question_is_correct: crossQuestionIsCorrect,
     });
 
   if (error) {
@@ -245,7 +249,7 @@ export async function getStudentFeedbackForLectures(
 
     .select(
 
-      "id,daily_log_uuid,student_uuid,teacher_uuid,school_uuid,class_name,section_name,subject_name,topic_name,understanding_level,concepts_not_understood,has_doubt,additional_note,submitted_at"
+      "id,daily_log_uuid,student_uuid,teacher_uuid,school_uuid,class_name,section_name,subject_name,topic_name,understanding_level,concepts_not_understood,has_doubt,additional_note,submitted_at,cross_question_selected_index,cross_question_is_correct"
 
     )
 

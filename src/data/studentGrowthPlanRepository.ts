@@ -19,6 +19,12 @@ export interface StudentDailyLectureLog {
 
   subject_name?: string;
   topic_name?: string;
+  chapter_name?: string | null;
+  cross_question_text?: string | null;
+  cross_question_image_path?: string | null;
+  cross_question_image_url?: string | null;
+  cross_question_options?: string[] | null;
+  cross_question_correct_index?: number | null;
   concepts_covered?: string[];
 
   page_from?: number;
@@ -44,6 +50,10 @@ interface StudentAcademicContext {
 const LOG_SELECT = `
   id,
   teacher_assignment_uuid,
+  chapter_name,
+  cross_question_text,
+  cross_question_image_path,
+  cross_question_options,
   topic_name,
   concepts_covered,
   page_from,
@@ -251,7 +261,21 @@ async function enrichLogsWithTeacherNames(
     }
   }
 
-  return logs.map((log: any) => {
+  const imageLogs = await Promise.all((logs ?? []).map(async (log: any) => {
+    if (!log.cross_question_image_path) return log;
+    try {
+      const { data, error } = await supabase.storage
+        .from("daily-log-cross-questions")
+        .createSignedUrl(String(log.cross_question_image_path), 60 * 60);
+      if (error) throw error;
+      return { ...log, cross_question_image_url: data?.signedUrl ?? null };
+    } catch (error) {
+      console.warn("CROSS QUESTION SIGNED IMAGE URL FAILED", error);
+      return { ...log, cross_question_image_url: null };
+    }
+  }));
+
+  return imageLogs.map((log: any) => {
     const assignment = assignmentMap.get(
       String(log.teacher_assignment_uuid)
     );

@@ -47,5 +47,11 @@ export function mapTeacherDailyLog(
 
     updatedAt:
       data.updated_at ?? "",
+
+    chapterName: data.chapter_name ? String(data.chapter_name).replace(/^__TP_MANUAL_CHAPTER__:/, "") : null,
+    crossQuestionText: data.cross_question_text ?? null,
+    crossQuestionImagePath: data.cross_question_image_path ?? null,
+    crossQuestionOptions: Array.isArray(data.cross_question_options) ? data.cross_question_options : null,
+    crossQuestionCorrectIndex: Number.isInteger(data.cross_question_correct_index) ? data.cross_question_correct_index : null,
   };
 }
