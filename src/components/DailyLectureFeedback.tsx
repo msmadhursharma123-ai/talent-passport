@@ -170,7 +170,8 @@ export default function DailyLectureFeedback() {
   const [crossQuestionAnswers, setCrossQuestionAnswers] = useState<Record<string, number>>({});
   const [crossQuestionResults, setCrossQuestionResults] = useState<Record<string, boolean>>({});
   const [crossQuestionImageViewerUrl, setCrossQuestionImageViewerUrl] = useState<string | null>(null);
-  const [guidedScrollTarget, setGuidedScrollTarget] = useState<{ logId: string; section: "understanding" | "concepts" | "question" | "credits" } | null>(null);
+  const [guidedScrollTarget, setGuidedScrollTarget] = useState<{ logId: string; section: "understanding" | "concepts" | "question" | "credits" | "doubt" } | null>(null);
+  const [guidedDoubtHighlightId, setGuidedDoubtHighlightId] = useState<string | null>(null);
 
   const [isSubmittingFeedbackId, setIsSubmittingFeedbackId] = useState<string | null>(null);
   const [feedbackSubmitError, setFeedbackSubmitError] = useState<string | null>(null);
@@ -212,7 +213,9 @@ export default function DailyLectureFeedback() {
         ? `dlf-concepts-${guidedScrollTarget.logId}`
         : guidedScrollTarget.section === "question"
           ? `dlf-question-${guidedScrollTarget.logId}`
-          : "dlf-credit-section";
+          : guidedScrollTarget.section === "doubt"
+            ? `dlf-pending-doubt-${guidedScrollTarget.logId}`
+            : "dlf-credit-section";
     const frame = window.requestAnimationFrame(() => {
       document.getElementById(targetId)?.scrollIntoView({
         behavior: "smooth",
@@ -221,7 +224,7 @@ export default function DailyLectureFeedback() {
       setGuidedScrollTarget(null);
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [guidedScrollTarget, understandingLevel, conceptsNotUnderstood, somethingElse]);
+  }, [guidedScrollTarget, understandingLevel, conceptsNotUnderstood, somethingElse, pendingDoubts, lectureLogs, submittedFeedback]);
 
   async function loadPageData() {
     setIsLoadingLogs(true);
@@ -386,13 +389,16 @@ export default function DailyLectureFeedback() {
     }
   }
 
-  async function loadPendingDoubts() {
+  async function loadPendingDoubts(): Promise<any[] | null> {
     try {
       const doubts = await loadPendingDoubtsData();
-      setPendingDoubts(doubts ?? []);
+      const nextDoubts = doubts ?? [];
+      setPendingDoubts(nextDoubts);
+      return nextDoubts;
     } catch (error) {
       console.error("PENDING DOUBTS LOAD FAILED", error);
       setPendingDoubts([]);
+      return null;
     }
   }
 
@@ -557,10 +563,34 @@ export default function DailyLectureFeedback() {
     }
 
     await submitStudentPendingDoubtResponse(doubt.id, response);
-    await loadPendingDoubts();
+    const remainingDoubts = await loadPendingDoubts();
     // Recalculate the shared credit ledger so the successful Loop-2 response
     // receives the same +1 treatment as a Loop-1 feedback submission.
     await loadDailyFeedbackCreditSummary();
+
+    // Continue the guided journey through the remaining day-before-yesterday
+    // doubt responses first. Only after that queue is complete do we move to
+    // today's pending lecture feedback, or to credits if nothing remains.
+    if (remainingDoubts === null) return;
+
+    const nextPendingDoubt = remainingDoubts[0];
+    if (nextPendingDoubt) {
+      setGuidedDoubtHighlightId(nextPendingDoubt.id);
+      setGuidedScrollTarget({ logId: nextPendingDoubt.id, section: "doubt" });
+      return;
+    }
+
+    setGuidedDoubtHighlightId(null);
+    const nextTodayLog = lectureLogs.find(
+      (candidate) => !submittedFeedback[candidate.id]
+    );
+
+    if (nextTodayLog) {
+      setExpandedCard(nextTodayLog.id);
+      setGuidedScrollTarget({ logId: nextTodayLog.id, section: "understanding" });
+    } else {
+      setGuidedScrollTarget({ logId: "", section: "credits" });
+    }
   }
 
   async function fetchFeedbackStatement() {
@@ -1147,6 +1177,12 @@ return (
         border: 1px solid #fed7aa;
         border-radius: 16px;
         background: #fffaf5;
+        transition: border-color 180ms ease, box-shadow 180ms ease;
+      }
+
+      .dlf-gap-card-guided {
+        border: 2px solid #f97316;
+        box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.16);
       }
 
       .dlf-gap-meta-grid {
@@ -3253,7 +3289,8 @@ return (
 
               <div
                 key={doubt.id}
-                className="dlf-gap-card"
+                id={`dlf-pending-doubt-${doubt.id}`}
+                className={`dlf-gap-card${guidedDoubtHighlightId === doubt.id ? " dlf-gap-card-guided" : ""}`}
               >
 
                 <div className="dlf-gap-meta-grid">
