@@ -80,7 +80,6 @@ export default function TeacherDailyLogHistory({
   const [startDate, setStartDate] = useState(initialStartDate);
   const [endDate, setEndDate] = useState(todayKey);
   const [history, setHistory] = useState<TeacherDailyLog[] | null>(null);
-  const [crossQuestionFeedbackByLog, setCrossQuestionFeedbackByLog] = useState<Record<string, any[]>>({});
   const [crossQuestionImageViewerUrl, setCrossQuestionImageViewerUrl] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
@@ -208,50 +207,6 @@ export default function TeacherDailyLogHistory({
         }
       }));
       setHistory(historyWithImageUrls);
-      // Student-level results are shown only in the teacher's existing history view.
-      // Failure to load this additive panel must not fail or hide the daily-log history.
-      try {
-        const logIds = (logs ?? []).map((log: any) => String(log.id)).filter(Boolean);
-        if (supabase && logIds.length) {
-          const [{ data: feedbackRows, error: feedbackError }, { data: attemptRows, error: attemptError }] = await Promise.all([
-            (supabase as any).from("student_daily_feedback")
-              .select("daily_log_uuid,student_uuid,cross_question_selected_index,cross_question_is_correct,understanding_level,concepts_not_understood")
-              .in("daily_log_uuid", logIds),
-            (supabase as any).from("student_daily_cross_question_attempts")
-              .select("daily_log_uuid,student_uuid,selected_index,is_correct,attempted_at")
-              .in("daily_log_uuid", logIds),
-          ]);
-          if (feedbackError) throw feedbackError;
-          if (attemptError) throw attemptError;
-          const grouped: Record<string, any[]> = {};
-          for (const row of feedbackRows ?? []) {
-            const key = String(row.daily_log_uuid);
-            (grouped[key] ??= []).push({ ...row, cross_question_selected_index: row.cross_question_selected_index ?? null, cross_question_is_correct: row.cross_question_is_correct ?? null });
-          }
-          // An attempt is durable even if the student closes the page before
-          // finishing the alternate-understanding form. Keep that evidence in history.
-          for (const attempt of attemptRows ?? []) {
-            const key = String(attempt.daily_log_uuid);
-            const rows = grouped[key] ??= [];
-            const existing = rows.find((row: any) => String(row.student_uuid) === String(attempt.student_uuid));
-            if (existing) {
-              existing.cross_question_selected_index = attempt.selected_index;
-              existing.cross_question_is_correct = attempt.is_correct;
-              existing.cross_question_attempted_at = attempt.attempted_at;
-            } else {
-              rows.push({ daily_log_uuid: attempt.daily_log_uuid, student_uuid: attempt.student_uuid,
-                cross_question_selected_index: attempt.selected_index, cross_question_is_correct: attempt.is_correct,
-                cross_question_attempted_at: attempt.attempted_at, understanding_level: null, concepts_not_understood: [] });
-            }
-          }
-          setCrossQuestionFeedbackByLog(grouped);
-        } else {
-          setCrossQuestionFeedbackByLog({});
-        }
-      } catch (feedbackHistoryError) {
-        console.warn("TEACHER CROSS QUESTION FEEDBACK HISTORY UNAVAILABLE", feedbackHistoryError);
-        setCrossQuestionFeedbackByLog({});
-      }
     } catch (error) {
       setHistory(null);
       setHistoryError(error instanceof Error ? error.message : "Unable to fetch daily log history.");
@@ -582,7 +537,25 @@ export default function TeacherDailyLogHistory({
                         </div>
                       )}
                       <strong>Topic: {log.topicName || "—"}</strong>
-                      {(log.crossQuestionText || log.crossQuestionImagePath) && <div style={{ marginTop: 6, padding: 7, border: "1px solid #CBD5E1", borderRadius: 7, fontSize: 12 }}><strong>Cross Question:</strong> {log.crossQuestionText || "Image-based question"}{log.crossQuestionImageUrl && <button type="button" onClick={() => setCrossQuestionImageViewerUrl(log.crossQuestionImageUrl ?? null)} aria-label="Enlarge cross-question image" style={{ display: "block", marginTop: 5, padding: 0, border: 0, background: "transparent", cursor: "zoom-in" }}><img src={log.crossQuestionImageUrl} alt="Cross question (select to enlarge)" style={{ display: "block", maxWidth: 180, maxHeight: 110, objectFit: "contain" }} /></button>}<div>4 options saved · Correct option {Number.isInteger(log.crossQuestionCorrectIndex) ? String.fromCharCode(65 + Number(log.crossQuestionCorrectIndex)) : "—"}</div>{(crossQuestionFeedbackByLog[String(log.id)] ?? []).filter((row: any) => row.cross_question_selected_index !== null && row.cross_question_selected_index !== undefined).map((row: any) => <div key={`${log.id}-${row.student_uuid}`} style={{ marginTop: 5, paddingTop: 5, borderTop: "1px solid #E2E8F0" }}><strong>Student {String(row.student_uuid).slice(0, 8)}:</strong> Option {String.fromCharCode(65 + Number(row.cross_question_selected_index))} · {row.cross_question_is_correct ? "Correct" : "Incorrect"}<div>Understanding: {row.understanding_level || "—"}</div><div>Concepts not understood: {Array.isArray(row.concepts_not_understood) && row.concepts_not_understood.length ? row.concepts_not_understood.join(", ") : "—"}</div></div>)}</div>}
+                      {(log.crossQuestionText || log.crossQuestionImagePath) && (
+                        <div style={{ marginTop: 6, padding: 6, border: "1px solid #CBD5E1", borderRadius: 7, fontSize: 11, overflowWrap: "anywhere" }}>
+                          <strong>Cross Question:</strong> {log.crossQuestionText || "Image-based question"}
+                          {log.crossQuestionImageUrl && (
+                            <button type="button" onClick={() => setCrossQuestionImageViewerUrl(log.crossQuestionImageUrl ?? null)} aria-label="Enlarge cross-question image" style={{ display: "block", marginTop: 5, padding: 0, border: 0, background: "transparent", cursor: "zoom-in" }}>
+                              <img src={log.crossQuestionImageUrl} alt="Cross question (select to enlarge)" style={{ display: "block", maxWidth: 180, maxHeight: 110, objectFit: "contain" }} />
+                            </button>
+                          )}
+                          {Array.isArray(log.crossQuestionOptions) && log.crossQuestionOptions.length > 0 && (
+                            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", columnGap: 8, rowGap: 2, marginTop: 4, fontSize: 11, lineHeight: 1.35 }}>
+                              {log.crossQuestionOptions.map((option, index) => (
+                                <span key={`${log.id}-cross-option-${index}`} style={{ display: "inline", overflowWrap: "anywhere", fontWeight: index === log.crossQuestionCorrectIndex ? 700 : 400, color: index === log.crossQuestionCorrectIndex ? "#166534" : "inherit" }}>
+                                  {String.fromCharCode(65 + index)}. {option}{index === log.crossQuestionCorrectIndex ? " ✓" : ""}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td>
                       {Array.isArray(log.conceptsCovered) && log.conceptsCovered.length
