@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import { Capacitor } from "@capacitor/core";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { downloadOrSharePdfBlob } from "../services/platform/nativeDocumentService";
 
 import {
@@ -165,12 +165,24 @@ export default function DailyLectureFeedback() {
   const [additionalNote, setAdditionalNote] = useState("");
 
   const [pendingDoubts, setPendingDoubts] = useState<any[]>([]);
+  const [historicalLectureLogs, setHistoricalLectureLogs] = useState<any[]>([]);
+  const [loop2QuestionDoubtId, setLoop2QuestionDoubtId] = useState<string | null>(null);
+  // Synchronous ownership guard for the currently open guided Cross Question.
+  const activeLoop2QuestionDoubtRef = useRef<string | null>(null);
+  const [loop2QuestionAnswers, setLoop2QuestionAnswers] = useState<Record<string, number>>({});
+  const [loop2QuestionBusyId, setLoop2QuestionBusyId] = useState<string | null>(null);
+  const [pendingDoubtAutoSubmittingId, setPendingDoubtAutoSubmittingId] = useState<string | null>(null);
+  // Synchronous guard prevents same-tick double submissions before React rerenders.
+  const pendingDoubtAutoSubmitLockRef = useRef<Set<string>>(new Set());
+  const [loop2QuestionImageFailedIds, setLoop2QuestionImageFailedIds] = useState<Record<string, boolean>>({});
+  const [loop2QuestionImageLoadedIds, setLoop2QuestionImageLoadedIds] = useState<Record<string, boolean>>({});
+  const [loop2QuestionMessage, setLoop2QuestionMessage] = useState<{ doubtId: string; correct: boolean; text: string } | null>(null);
   const [selectedResponse, setSelectedResponse] = useState<Record<string, string>>({});
   const [submittedFeedback, setSubmittedFeedback] = useState<Record<string, any>>({});
   const [crossQuestionAnswers, setCrossQuestionAnswers] = useState<Record<string, number>>({});
   const [crossQuestionResults, setCrossQuestionResults] = useState<Record<string, boolean>>({});
   const [crossQuestionImageViewerUrl, setCrossQuestionImageViewerUrl] = useState<string | null>(null);
-  const [guidedScrollTarget, setGuidedScrollTarget] = useState<{ logId: string; section: "understanding" | "concepts" | "question" | "credits" | "doubt" } | null>(null);
+  const [guidedScrollTarget, setGuidedScrollTarget] = useState<{ logId: string; section: "understanding" | "concepts" | "question" | "credits" | "doubt" | "loop2question" } | null>(null);
   const [guidedDoubtHighlightId, setGuidedDoubtHighlightId] = useState<string | null>(null);
 
   const [isSubmittingFeedbackId, setIsSubmittingFeedbackId] = useState<string | null>(null);
@@ -215,7 +227,9 @@ export default function DailyLectureFeedback() {
           ? `dlf-question-${guidedScrollTarget.logId}`
           : guidedScrollTarget.section === "doubt"
             ? `dlf-pending-doubt-${guidedScrollTarget.logId}`
-            : "dlf-credit-section";
+            : guidedScrollTarget.section === "loop2question"
+              ? `dlf-loop2-question-${guidedScrollTarget.logId}`
+              : "dlf-credit-section";
     const frame = window.requestAnimationFrame(() => {
       document.getElementById(targetId)?.scrollIntoView({
         behavior: "smooth",
@@ -274,11 +288,12 @@ export default function DailyLectureFeedback() {
       // Secondary loads must not be allowed to erase an otherwise healthy
       // daily feed. A failure in doubts, subjects, or feedback status is
       // isolated to that feature instead of triggering the page-level catch.
-      const [doubtsResult, subjectsResult, feedbackResult] =
+      const [doubtsResult, subjectsResult, feedbackResult, historicalLogsResult] =
         await Promise.allSettled([
           loadPendingDoubtsData(),
           getStudentSubjects(),
           feedbackPromise,
+          getStudentDailyLectureLogs(),
         ]);
 
       if (doubtsResult.status === "fulfilled") {
@@ -293,6 +308,13 @@ export default function DailyLectureFeedback() {
       } else {
         console.error("STUDENT SUBJECT OPTIONS LOAD FAILED", subjectsResult.reason);
         setSubjectOptions([]);
+      }
+
+      if (historicalLogsResult.status === "fulfilled") {
+        setHistoricalLectureLogs(historicalLogsResult.value ?? []);
+      } else {
+        console.error("HISTORICAL LECTURE LOG LOAD FAILED", historicalLogsResult.reason);
+        setHistoricalLectureLogs([]);
       }
 
       if (feedbackResult.status === "fulfilled") {
@@ -313,6 +335,7 @@ export default function DailyLectureFeedback() {
       console.error("DAILY LECTURE FEEDBACK PAGE LOAD FAILED", error);
       setLectureLogs([]);
       setPendingDoubts([]);
+      setHistoricalLectureLogs([]);
       setSubjectOptions([]);
     } finally {
       setIsLoadingLogs(false);
@@ -554,23 +577,19 @@ export default function DailyLectureFeedback() {
     }
   }
 
-  async function submitPendingDoubt(doubt: any) {
-    const response = selectedResponse[doubt.id];
-
-    if (!response) {
-      alert("Please select your response.");
-      return;
+  async function continueAfterPendingDoubt(strictQueueRefresh = false) {
+    // The legacy auto-submit path needs to distinguish a successful save from
+    // a failed queue refresh. Use the throwing loader only for that path so
+    // existing Loop 2 response behavior remains unchanged elsewhere.
+    let remainingDoubts: any[] | null;
+    if (strictQueueRefresh) {
+      remainingDoubts = await loadPendingDoubtsData();
+      setPendingDoubts(remainingDoubts ?? []);
+    } else {
+      remainingDoubts = await loadPendingDoubts();
     }
-
-    await submitStudentPendingDoubtResponse(doubt.id, response);
-    const remainingDoubts = await loadPendingDoubts();
-    // Recalculate the shared credit ledger so the successful Loop-2 response
-    // receives the same +1 treatment as a Loop-1 feedback submission.
     await loadDailyFeedbackCreditSummary();
 
-    // Continue the guided journey through the remaining day-before-yesterday
-    // doubt responses first. Only after that queue is complete do we move to
-    // today's pending lecture feedback, or to credits if nothing remains.
     if (remainingDoubts === null) return;
 
     const nextPendingDoubt = remainingDoubts[0];
@@ -581,6 +600,8 @@ export default function DailyLectureFeedback() {
     }
 
     setGuidedDoubtHighlightId(null);
+    activeLoop2QuestionDoubtRef.current = null;
+    setLoop2QuestionDoubtId(null);
     const nextTodayLog = lectureLogs.find(
       (candidate) => !submittedFeedback[candidate.id]
     );
@@ -590,6 +611,317 @@ export default function DailyLectureFeedback() {
       setGuidedScrollTarget({ logId: nextTodayLog.id, section: "understanding" });
     } else {
       setGuidedScrollTarget({ logId: "", section: "credits" });
+    }
+  }
+
+  // Legacy Loop 2 records created before Cross Questions were introduced do
+  // not have an answer key. Only an exact original-log date before the local
+  // current date qualifies for the compatibility path; missing/invalid dates
+  // must never silently bypass the question check.
+  function isLegacyLoop2Log(doubt: any): boolean {
+    const log = historicalLectureLogs.find(
+      (item: any) => String(item.id) === String(doubt.daily_log_uuid)
+    );
+    const rawDate = typeof log?.log_date === "string" ? log.log_date : "";
+    const match = rawDate.match(/^(\d{4}-\d{2}-\d{2})(?:$|T|\s)/);
+    if (!match) return false;
+
+    // Validate the date itself rather than accepting malformed date prefixes.
+    const [year, month, day] = match[1].split("-").map(Number);
+    const parsedDate = new Date(Date.UTC(year, month - 1, day));
+    if (
+      parsedDate.getUTCFullYear() !== year ||
+      parsedDate.getUTCMonth() !== month - 1 ||
+      parsedDate.getUTCDate() !== day
+    ) {
+      return false;
+    }
+
+    // Use the app's established India-calendar helper, not the device timezone.
+    return match[1] < getIndiaTodayKey();
+  }
+
+  async function handlePendingDoubtDiscussed(doubt: any) {
+    // The guided queue must remain sequential. A synchronous global guard
+    // prevents a second card from starting another save before React rerenders.
+    // Also keep the student on the currently open Cross Question until it is
+    // completed; another card must not replace or bypass that guided step.
+    if (pendingDoubtAutoSubmitLockRef.current.size > 0) return;
+    if (
+      activeLoop2QuestionDoubtRef.current !== null &&
+      activeLoop2QuestionDoubtRef.current !== String(doubt.id)
+    ) return;
+
+    if (isLegacyLoop2Log(doubt)) {
+      const doubtId = String(doubt.id);
+      if (pendingDoubtAutoSubmitLockRef.current.has(doubtId)) return;
+      pendingDoubtAutoSubmitLockRef.current.add(doubtId);
+      setPendingDoubtAutoSubmittingId(doubtId);
+      try {
+        // Backward compatibility: logs dated before today predate the required
+        // Cross Question, so preserve the original one-tap Yes -> DISCUSSED flow.
+        setFeedbackSubmitError(null);
+        try {
+          await submitStudentPendingDoubtResponse(doubt.id, "DISCUSSED");
+        } catch (error) {
+          console.error("LEGACY PENDING DOUBT RESPONSE SUBMISSION FAILED", error);
+          setFeedbackSubmitError("We could not save your response. Your doubt has not been marked resolved. Please try again.");
+          return;
+        }
+
+        // A refresh/navigation error after a successful save must not be
+        // misreported as a failed save, which could encourage duplicate retries.
+        try {
+          await continueAfterPendingDoubt(true);
+        } catch (error) {
+          console.error("LEGACY DOUBT SAVED BUT QUEUE REFRESH FAILED", error);
+          // The response has already been saved successfully. Remove this
+          // card from the local queue so a stale render cannot offer a second
+          // submission while the student refreshes to recover the queue.
+          setPendingDoubts((previous) =>
+            previous.filter((item: any) => String(item.id) !== doubtId)
+          );
+          setFeedbackSubmitError("Your response was saved, but we could not refresh the next item. This doubt has been removed from the current view to prevent a duplicate submission. Please refresh the page to continue.");
+        }
+      } finally {
+        pendingDoubtAutoSubmitLockRef.current.delete(doubtId);
+        setPendingDoubtAutoSubmittingId(null);
+      }
+      return;
+    }
+
+    // Today's and future logs must use the Cross Question verification flow.
+    openLoop2CrossQuestion(doubt);
+  }
+
+  function openLoop2CrossQuestion(doubt: any) {
+    // Always resolve the question through the exact original Daily Log linked
+    // to this doubt; never substitute a question from another lecture.
+    const log = historicalLectureLogs.find(
+      (item: any) => String(item.id) === String(doubt.daily_log_uuid)
+    );
+    const options = log?.cross_question_options;
+    const rawCorrectIndex = log?.cross_question_correct_index;
+    const correctIndex = Number(rawCorrectIndex);
+    if (
+      !log ||
+      rawCorrectIndex === null ||
+      rawCorrectIndex === undefined ||
+      rawCorrectIndex === "" ||
+      !(log.cross_question_text || log.cross_question_image_path) ||
+      !Array.isArray(options) ||
+      options.length !== 4 ||
+      options.some((option: unknown) => typeof option !== "string" || !option.trim()) ||
+      !Number.isInteger(correctIndex) ||
+      correctIndex < 0 ||
+      correctIndex > 3
+    ) {
+      setFeedbackSubmitError(
+        "The original Cross Question for this lecture is unavailable. Your doubt has not been marked resolved. Please try again later or contact your teacher."
+      );
+      return;
+    }
+    setFeedbackSubmitError(null);
+    setLoop2QuestionMessage(null);
+    setLoop2QuestionImageFailedIds((previous) => ({ ...previous, [doubt.id]: false }));
+    setLoop2QuestionImageLoadedIds((previous) => ({ ...previous, [doubt.id]: false }));
+    setLoop2QuestionAnswers((previous) => ({ ...previous, [doubt.id]: -1 }));
+    activeLoop2QuestionDoubtRef.current = String(doubt.id);
+    setLoop2QuestionDoubtId(String(doubt.id));
+    setGuidedDoubtHighlightId(doubt.id);
+    setGuidedScrollTarget({ logId: doubt.id, section: "loop2question" });
+  }
+
+  async function submitPendingDoubt(doubt: any) {
+    // While a response is saving, block submissions from every card. If a
+    // Cross Question is open, only that doubt may be acted on until the guided
+    // question step completes. Keep the guard here as well as in the UI.
+    if (
+      (activeLoop2QuestionDoubtRef.current !== null && activeLoop2QuestionDoubtRef.current !== String(doubt.id)) ||
+      pendingDoubtAutoSubmitLockRef.current.size > 0 ||
+      pendingDoubtAutoSubmittingId === String(doubt.id) ||
+      pendingDoubtAutoSubmitLockRef.current.has(String(doubt.id))
+    ) return;
+    const response = selectedResponse[doubt.id];
+
+    if (!response) {
+      alert("Please select your response.");
+      return;
+    }
+
+    // “Yes, discussed today” opens the original question before any Loop 2
+    // response is saved. The same handler is called directly from the Yes radio.
+    if (response === "DISCUSSED") {
+      await handlePendingDoubtDiscussed(doubt);
+      return;
+    }
+
+    const responseLockKey = `response:${String(doubt.id)}`;
+    if (pendingDoubtAutoSubmitLockRef.current.size > 0) return;
+    pendingDoubtAutoSubmitLockRef.current.add(responseLockKey);
+    setPendingDoubtAutoSubmittingId(String(doubt.id));
+    try {
+      setFeedbackSubmitError(null);
+      // Keep persistence failure distinct from a queue-refresh failure. A
+      // successfully saved NOT DISCUSSED response must not be described as
+      // unsaved merely because the follow-up queue read fails.
+      await submitStudentPendingDoubtResponse(doubt.id, response);
+      try {
+        await continueAfterPendingDoubt(true);
+      } catch (refreshError) {
+        console.error("NOT-DISCUSSED RESPONSE SAVED BUT QUEUE REFRESH FAILED", refreshError);
+        // The response is already persisted and this status is no longer PENDING.
+        // Remove it from the stale local queue to prevent a duplicate action.
+        const remainingLocalDoubts = pendingDoubts.filter(
+          (item: any) => String(item.id) !== String(doubt.id)
+        );
+        setPendingDoubts(remainingLocalDoubts);
+        setGuidedDoubtHighlightId(null);
+        setFeedbackSubmitError(
+          "Your response was saved, but we could not refresh the next item. This doubt has been removed from the current view to prevent a duplicate submission. Please refresh the page to continue."
+        );
+        await loadDailyFeedbackCreditSummary();
+
+        // Keep the guided journey usable using only locally known items, while
+        // clearly asking for a refresh before trusting the authoritative queue.
+        const nextLocalDoubt = remainingLocalDoubts[0];
+        if (nextLocalDoubt) {
+          setGuidedDoubtHighlightId(nextLocalDoubt.id);
+          setGuidedScrollTarget({ logId: nextLocalDoubt.id, section: "doubt" });
+        } else {
+          const nextTodayLog = lectureLogs.find(
+            (candidate) => !submittedFeedback[candidate.id]
+          );
+          if (nextTodayLog) {
+            setExpandedCard(nextTodayLog.id);
+            setGuidedScrollTarget({ logId: nextTodayLog.id, section: "understanding" });
+          } else {
+            setGuidedScrollTarget({ logId: "", section: "credits" });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("PENDING DOUBT RESPONSE SUBMISSION FAILED", error);
+      setFeedbackSubmitError("We could not save your response. Your doubt has not been marked resolved. Please try again.");
+    } finally {
+      pendingDoubtAutoSubmitLockRef.current.delete(responseLockKey);
+      setPendingDoubtAutoSubmittingId(null);
+    }
+  }
+
+  async function submitLoop2CrossQuestion(doubt: any) {
+    // All Loop 2 response paths share one synchronous lock. This blocks a
+    // legacy Yes save, a Not-discussed save, or another question submission
+    // from racing this question's response and guided queue transition.
+    // A question answer may only be submitted for the currently open doubt.
+    if (
+      activeLoop2QuestionDoubtRef.current !== String(doubt.id) ||
+      loop2QuestionDoubtId !== String(doubt.id) ||
+      pendingDoubtAutoSubmitLockRef.current.size > 0
+    ) return;
+    const selectedIndex = loop2QuestionAnswers[doubt.id];
+    if (selectedIndex === undefined || selectedIndex < 0) {
+      setFeedbackSubmitError("Please select an answer before submitting.");
+      return;
+    }
+
+    const log = historicalLectureLogs.find(
+      (item: any) => String(item.id) === String(doubt.daily_log_uuid)
+    );
+    if (
+      log?.cross_question_image_path &&
+      (!log?.cross_question_image_url || loop2QuestionImageFailedIds[doubt.id] || !loop2QuestionImageLoadedIds[doubt.id])
+    ) {
+      setFeedbackSubmitError(
+        "The original question image could not be loaded. Your doubt has not been marked resolved. Please refresh the page to reload the image, or contact your teacher."
+      );
+      return;
+    }
+    const rawCorrectIndex = log?.cross_question_correct_index;
+    const correctIndex = Number(rawCorrectIndex);
+    if (!log || rawCorrectIndex === null || rawCorrectIndex === undefined || rawCorrectIndex === "" || !Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex > 3) {
+      setFeedbackSubmitError("The original answer key is unavailable. Your doubt has not been marked resolved.");
+      return;
+    }
+
+    const isCorrect = selectedIndex === correctIndex;
+    const questionLockKey = `question:${String(doubt.id)}`;
+    if (pendingDoubtAutoSubmitLockRef.current.size > 0) return;
+    pendingDoubtAutoSubmitLockRef.current.add(questionLockKey);
+    setLoop2QuestionBusyId(doubt.id);
+    setFeedbackSubmitError(null);
+    let responseSaved = false;
+    try {
+      // Reuse the existing Loop 2 response mechanism. Correct answer maps to
+      // DISCUSSED; wrong answer maps to NOT DISCUSSED. The original Loop 1
+      // attempt is never overwritten and no migration/RPC is introduced.
+      await submitStudentPendingDoubtResponse(
+        doubt.id,
+        isCorrect ? "DISCUSSED" : "NOT DISCUSSED"
+      );
+      responseSaved = true;
+      setLoop2QuestionMessage({
+        doubtId: doubt.id,
+        correct: isCorrect,
+        text: isCorrect
+          ? "Your doubt has been resolved."
+          : "Your answer is incorrect. This doubt is not yet resolved.",
+      });
+      await new Promise((resolve) => window.setTimeout(resolve, 1000));
+      setLoop2QuestionMessage(null);
+      // Both correct and incorrect answers have now been recorded. Release
+      // question ownership only after the feedback message finishes, so the
+      // next doubt can proceed without leaving the queue locked to this one.
+      activeLoop2QuestionDoubtRef.current = null;
+      setLoop2QuestionDoubtId(null);
+
+      // Unlike the ordinary loader, the strict loader throws on a queue
+      // refresh failure. Keep that failure separate from the already-successful
+      // response save so it cannot be reported as if answer verification failed.
+      try {
+        await continueAfterPendingDoubt(true);
+      } catch (refreshError) {
+        console.error("CROSS QUESTION SAVED BUT QUEUE REFRESH FAILED", refreshError);
+        // The response has already been persisted. Remove this doubt from the
+        // stale local queue immediately to prevent a duplicate answer/save.
+        const remainingLocalDoubts = pendingDoubts.filter(
+          (item: any) => String(item.id) !== String(doubt.id)
+        );
+        setPendingDoubts(remainingLocalDoubts);
+        setGuidedDoubtHighlightId(null);
+        setFeedbackSubmitError(
+          "Your answer was saved, but we could not refresh the next item. This doubt has been removed from the current view to prevent a duplicate submission. Please refresh the page to continue."
+        );
+        await loadDailyFeedbackCreditSummary();
+
+        // Continue to the next locally known item, if any, while clearly
+        // telling the student that a refresh is required for authoritative state.
+        const nextLocalDoubt = remainingLocalDoubts[0];
+        if (nextLocalDoubt) {
+          setGuidedDoubtHighlightId(nextLocalDoubt.id);
+          setGuidedScrollTarget({ logId: nextLocalDoubt.id, section: "doubt" });
+        } else {
+          const nextTodayLog = lectureLogs.find(
+            (candidate) => !submittedFeedback[candidate.id]
+          );
+          if (nextTodayLog) {
+            setExpandedCard(nextTodayLog.id);
+            setGuidedScrollTarget({ logId: nextTodayLog.id, section: "understanding" });
+          } else {
+            setGuidedScrollTarget({ logId: "", section: "credits" });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("LOOP-2 CROSS QUESTION RECHECK FAILED", error);
+      setFeedbackSubmitError(
+        responseSaved
+          ? "Your answer was saved, but the next step could not be completed. Please refresh the page before continuing."
+          : "We could not verify this answer. Your doubt has not been marked resolved. Please try again."
+      );
+    } finally {
+      pendingDoubtAutoSubmitLockRef.current.delete(questionLockKey);
+      setLoop2QuestionBusyId(null);
     }
   }
 
@@ -3265,7 +3597,7 @@ return (
               <div className="dlf-eyebrow"></div>
 
               <h2 className="dlf-title">
-                Day Before Yesterday's Doubt Feedback
+                Last Lecture's Doubt Feedback
               </h2>
 
               <p className="dlf-copy">
@@ -3283,9 +3615,28 @@ return (
           </div>
 
 
+          {feedbackSubmitError && (
+            <p role="alert" style={{ margin: "10px 0 0", color: "#b91c1c", fontWeight: 700 }}>
+              {feedbackSubmitError}
+            </p>
+          )}
+
           <div className="dlf-gap-grid">
 
-            {pendingDoubts.map((doubt: any) => (
+            {pendingDoubts.map((doubt: any) => {
+              const originalLog = historicalLectureLogs.find(
+                (item: any) => String(item.id) === String(doubt.daily_log_uuid)
+              );
+              // Only the original Daily Log's date is authoritative here.
+              // Do not substitute the pending-doubt creation date.
+              const originalDate = originalLog?.log_date;
+              const originalSubtopics = Array.isArray(originalLog?.concepts_covered)
+                ? originalLog.concepts_covered.filter(Boolean)
+                : [];
+              const questionOpen = loop2QuestionDoubtId === String(doubt.id);
+              const anotherQuestionActive =
+                loop2QuestionDoubtId !== null && !questionOpen;
+              return (
 
               <div
                 key={doubt.id}
@@ -3315,22 +3666,30 @@ return (
                     </span>
 
                     <div className="dlf-value">
-                      {doubt.teacher_name}
+                      {originalLog?.teacher_name || doubt.teacher_name || "Teacher name unavailable"}
                     </div>
 
                   </div>
 
 
                   <div className="dlf-gap-meta">
-
-                    <span className="dlf-label">
-                      Previous Topic
-                    </span>
-
+                    <span className="dlf-label">Original Lecture Date</span>
                     <div className="dlf-value">
-                      {doubt.previous_topic_name}
+                      {originalDate ? formatStatementDate(toDateKey(originalDate)) : "Date unavailable"}
                     </div>
+                  </div>
 
+                  <div className="dlf-gap-meta">
+                    <span className="dlf-label">Previous Topic</span>
+                    <div className="dlf-value">
+                      {originalLog?.topic_name || doubt.previous_topic_name || "Topic unavailable"}
+                    </div>
+                    {originalSubtopics.length > 0 && (
+                      <div className="dlf-value" style={{ marginTop: 7, fontWeight: 600 }}>
+                        <span className="dlf-label">Subtopics taught</span>
+                        {originalSubtopics.join(" · ")}
+                      </div>
+                    )}
                   </div>
 
 
@@ -3355,26 +3714,92 @@ return (
                 </p>
 
 
-                <div className="dlf-response-options">
+                {questionOpen && originalLog && (
+                  <div
+                    id={`dlf-loop2-question-${doubt.id}`}
+                    className="dlf-gap-meta"
+                    style={{ marginTop: 12, border: "2px solid #2563eb", boxShadow: "0 0 0 3px rgba(37,99,235,.12)" }}
+                  >
+                    <div className="dlf-label">Recheck the original Cross Question</div>
+                    {originalLog.cross_question_image_path ? (
+                      originalLog.cross_question_image_url ? (
+                        <button type="button" onClick={() => setCrossQuestionImageViewerUrl(originalLog.cross_question_image_url)} aria-label="Enlarge original cross-question image" style={{ display: "block", maxWidth: "100%", margin: "8px auto", padding: 0, border: 0, background: "transparent", cursor: "zoom-in" }}>
+                          <img
+                            src={originalLog.cross_question_image_url}
+                            alt="Original Cross Question"
+                            onError={() => {
+                              setLoop2QuestionImageFailedIds((previous) => ({ ...previous, [doubt.id]: true }));
+                              setLoop2QuestionImageLoadedIds((previous) => ({ ...previous, [doubt.id]: false }));
+                            }}
+                            onLoad={() => {
+                              setLoop2QuestionImageFailedIds((previous) => ({ ...previous, [doubt.id]: false }));
+                              setLoop2QuestionImageLoadedIds((previous) => ({ ...previous, [doubt.id]: true }));
+                            }}
+                            style={{ display: "block", maxWidth: "100%", maxHeight: 260, objectFit: "contain" }}
+                          />
+                        </button>
+                      ) : <div role="alert">Question image unavailable. Your doubt has not been resolved.</div>
+                    ) : <div style={{ whiteSpace: "pre-wrap", margin: "8px 0", fontWeight: 700 }}>{originalLog.cross_question_text}</div>}
+                    {originalLog.cross_question_image_path && loop2QuestionImageFailedIds[doubt.id] && (
+                      <p role="alert" style={{ color: "#b91c1c", fontWeight: 700 }}>
+                        The question image has not loaded successfully. Your answer cannot be submitted until the image is visible.
+                      </p>
+                    )}
+                    {originalLog.cross_question_image_path && originalLog.cross_question_image_url && !loop2QuestionImageFailedIds[doubt.id] && !loop2QuestionImageLoadedIds[doubt.id] && (
+                      <p role="status" style={{ color: "#475569", fontWeight: 600 }}>
+                        Loading the original question image… Answer options will be enabled when it is visible.
+                      </p>
+                    )}
+                    {(originalLog.cross_question_options ?? []).map((option: string, index: number) => (
+                      <label key={`${doubt.id}-loop2-option-${index}`} className="dlf-choice" style={{ marginTop: 7, cursor: loop2QuestionBusyId === doubt.id ? "wait" : "pointer" }}>
+                        <input
+                          type="radio"
+                          name={`loop2-question-${doubt.id}`}
+                          disabled={pendingDoubtAutoSubmitLockRef.current.size > 0 || loop2QuestionBusyId === doubt.id || Boolean(originalLog.cross_question_image_path && (!originalLog.cross_question_image_url || loop2QuestionImageFailedIds[doubt.id] || !loop2QuestionImageLoadedIds[doubt.id]))}
+                          checked={loop2QuestionAnswers[doubt.id] === index}
+                          onChange={() => setLoop2QuestionAnswers((previous) => ({ ...previous, [doubt.id]: index }))}
+                        />
+                        <span>{String.fromCharCode(65 + index)}. {option}</span>
+                      </label>
+                    ))}
+                    <button
+                      type="button"
+                      className="dlf-submit-gap"
+                      disabled={pendingDoubtAutoSubmitLockRef.current.size > 0 || loop2QuestionBusyId === doubt.id || Boolean(originalLog.cross_question_image_path && (!originalLog.cross_question_image_url || loop2QuestionImageFailedIds[doubt.id] || !loop2QuestionImageLoadedIds[doubt.id]))}
+                      onClick={() => void submitLoop2CrossQuestion(doubt)}
+                      style={{ opacity: pendingDoubtAutoSubmitLockRef.current.size > 0 || loop2QuestionBusyId === doubt.id || Boolean(originalLog.cross_question_image_path && (!originalLog.cross_question_image_url || loop2QuestionImageFailedIds[doubt.id] || !loop2QuestionImageLoadedIds[doubt.id])) ? 0.65 : 1 }}
+                    >
+                      {loop2QuestionBusyId === doubt.id ? "CHECKING ANSWER…" : "SUBMIT ANSWER"}
+                    </button>
+                    {loop2QuestionMessage?.doubtId === doubt.id && (
+                      <p role="status" style={{ margin: "10px 0 0", fontWeight: 800, color: loop2QuestionMessage.correct ? "#166534" : "#b91c1c" }}>
+                        {loop2QuestionMessage.text}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {!questionOpen && <div className="dlf-response-options">
 
                   <label className="dlf-choice">
 
                     <input
                       type="radio"
                       name={doubt.id}
+                      disabled={anotherQuestionActive || pendingDoubtAutoSubmittingId !== null || pendingDoubtAutoSubmitLockRef.current.size > 0}
                       checked={
                         selectedResponse[doubt.id] ===
                         "DISCUSSED"
                       }
                       onChange={() => {
-
-                        setSelectedResponse(
-                          (previous) => ({
-                            ...previous,
-                            [doubt.id]: "DISCUSSED",
-                          })
-                        );
-
+                        if (anotherQuestionActive || pendingDoubtAutoSubmitLockRef.current.size > 0) return;
+                        setSelectedResponse((previous) => ({
+                          ...previous,
+                          [doubt.id]: "DISCUSSED",
+                        }));
+                        // The requested guided flow starts immediately on Yes;
+                        // no extra SUBMIT RESPONSE click is required.
+                        void handlePendingDoubtDiscussed(doubt);
                       }}
                     />
 
@@ -3390,19 +3815,20 @@ return (
                     <input
                       type="radio"
                       name={doubt.id}
+                      disabled={anotherQuestionActive || pendingDoubtAutoSubmittingId !== null || pendingDoubtAutoSubmitLockRef.current.size > 0}
                       checked={
                         selectedResponse[doubt.id] ===
                         "NOT DISCUSSED"
                       }
                       onChange={() => {
-
+                        if (anotherQuestionActive || pendingDoubtAutoSubmitLockRef.current.size > 0) return;
+                        setFeedbackSubmitError(null);
                         setSelectedResponse(
                           (previous) => ({
                             ...previous,
                             [doubt.id]: "NOT DISCUSSED",
                           })
                         );
-
                       }}
                     />
 
@@ -3412,21 +3838,23 @@ return (
 
                   </label>
 
-                </div>
+                </div>}
 
-
-                <button
-                  onClick={() => {
-                    submitPendingDoubt(doubt);
-                  }}
-                  className="dlf-submit-gap"
-                >
-                  SUBMIT RESPONSE
-                </button>
+                {!questionOpen && (
+                  <button
+                    type="button"
+                    disabled={anotherQuestionActive || pendingDoubtAutoSubmittingId !== null || pendingDoubtAutoSubmitLockRef.current.size > 0}
+                    onClick={() => { void submitPendingDoubt(doubt); }}
+                    className="dlf-submit-gap"
+                    style={anotherQuestionActive || pendingDoubtAutoSubmittingId !== null || pendingDoubtAutoSubmitLockRef.current.size > 0 ? { opacity: 0.65, cursor: "wait" } : undefined}
+                  >
+                    {pendingDoubtAutoSubmittingId === String(doubt.id) ? "SAVING RESPONSE…" : "SUBMIT RESPONSE"}
+                  </button>
+                )}
 
               </div>
 
-            ))}
+            ); })}
 
           </div>
 

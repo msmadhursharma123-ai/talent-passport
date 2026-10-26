@@ -54,6 +54,7 @@ const LOG_SELECT = `
   cross_question_text,
   cross_question_image_path,
   cross_question_options,
+  cross_question_correct_index,
   topic_name,
   concepts_covered,
   page_from,
