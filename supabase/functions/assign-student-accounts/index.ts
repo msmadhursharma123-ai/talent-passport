@@ -56,7 +56,74 @@ async function getCapacity(schoolUuid: string) {
   return row ?? null;
 }
 
-async function createOne(schoolUuid: string, schoolName: string, row: any, rowNumber: number) {
+/**
+ * Resolve the real school-specific academic-year row before creating any
+ * accounts. Never infer school_academic_year_id from the year label/code.
+ */
+async function getCurrentAcademicYear(schoolUuid: string) {
+  const { data, error } = await admin
+    .from("school_academic_years")
+    .select("id,school_uuid,status,is_current,academic_year_code")
+    .eq("school_uuid", schoolUuid)
+    .eq("status", "ACTIVE")
+    .eq("is_current", true)
+    .limit(2);
+
+  if (error) throw error;
+  const years = data ?? [];
+  if (years.length !== 1 || !years[0]?.id) {
+    throw new Error(
+      years.length === 0
+        ? "The school must have exactly one ACTIVE current academic year before student accounts can be created. No accounts were created."
+        : "The school has multiple ACTIVE current academic years. Resolve the academic-year configuration before creating student accounts. No accounts were created."
+    );
+  }
+  return years[0];
+}
+
+async function cleanupCreatedStudent(
+  studentUuid: string | null,
+  authUserId: string | null,
+) {
+  const failures: string[] = [];
+
+  // Continue each cleanup independently so one failure does not prevent the
+  // remaining newly-created records from being cleaned up.
+  if (studentUuid) {
+    const { error } = await admin
+      .from("student_academic_enrollments")
+      .delete()
+      .eq("student_uuid", studentUuid);
+    if (error) failures.push(`enrollment cleanup failed: ${error.message}`);
+
+    const { error: masterError } = await admin
+      .from("students_master")
+      .delete()
+      .eq("student_uuid", studentUuid);
+    if (masterError) failures.push(`students_master cleanup failed: ${masterError.message}`);
+
+    const { error: studentError } = await admin
+      .from("students")
+      .delete()
+      .eq("student_uuid", studentUuid);
+    if (studentError) failures.push(`students cleanup failed: ${studentError.message}`);
+  }
+
+  if (authUserId) {
+    const { error } = await admin.auth.admin.deleteUser(authUserId);
+    if (error) failures.push(`Auth cleanup failed: ${error.message}`);
+  }
+
+  return failures;
+}
+
+async function createOne(
+  schoolUuid: string,
+  schoolName: string,
+  schoolAcademicYearId: string,
+  row: any,
+  rowNumber: number,
+) {
   const normalizedRoll = roll(row.rollNumber);
   const studentEmail = email(row.email);
   const password = text(row.password);
@@ -143,11 +210,39 @@ async function createOne(schoolUuid: string, schoolName: string, row: any, rowNu
 
     if (masterError) throw masterError;
 
+    // Account creation is not complete until the student is enrolled in the
+    // school's actual current academic-year row. This uses the row UUID, not
+    // academic_year_id (which may be nullable) or the displayed year code.
+    const { error: enrollmentError } = await admin
+      .from("student_academic_enrollments")
+      .insert([{
+        student_uuid: studentUuid,
+        school_uuid: schoolUuid,
+        school_academic_year_id: schoolAcademicYearId,
+        class_name: normalizedClassName,
+        section_name: normalizedSection,
+        roll_number: normalizedRoll,
+        status: "ACTIVE",
+      }]);
+
+    if (enrollmentError) {
+      throw new Error(`Academic-year enrollment could not be created: ${enrollmentError.message}`);
+    }
+
     return { rowNumber, rollNumber: normalizedRoll, email: studentEmail, studentName: text(row.studentName), success: true };
   } catch (error) {
-    if (studentUuid) await admin.from("students").delete().eq("student_uuid", studentUuid);
-    if (authUserId) await admin.auth.admin.deleteUser(authUserId);
-    return { rowNumber, rollNumber: normalizedRoll, email: studentEmail, success: false, error: error?.message ?? "Unable to create this student account." };
+    const cleanupFailures = await cleanupCreatedStudent(studentUuid, authUserId);
+    const baseError = error?.message ?? "Unable to create this student account.";
+    return {
+      rowNumber,
+      rollNumber: normalizedRoll,
+      email: studentEmail,
+      success: false,
+      error: cleanupFailures.length
+        ? `${baseError} Cleanup needs administrator attention: ${cleanupFailures.join("; ")}`
+        : baseError,
+      ...(cleanupFailures.length ? { cleanupFailed: true, cleanupFailures } : {}),
+    };
   }
 }
 
@@ -254,9 +349,29 @@ Deno.serve(async (req) => {
       return json({ success: false, error: `The school has capacity for ${remaining} more student profile${remaining === 1 ? "" : "s"}, but ${eligible.length} approved and otherwise valid rows were submitted. No accounts were created.` }, 409);
     }
 
+    // Fail closed before creating any Auth/profile records if the school has
+    // no unambiguous ACTIVE current academic year.
+    let currentAcademicYear: any = null;
+    if (eligible.length > 0) {
+      try {
+        currentAcademicYear = await getCurrentAcademicYear(schoolUuid);
+      } catch (yearError) {
+        return json({
+          success: false,
+          error: yearError?.message ?? "Unable to verify the school's current academic year. No accounts were created.",
+        }, 409);
+      }
+    }
+
     const createdResults: any[] = [];
     for (const item of eligible) {
-      createdResults.push(await createOne(schoolUuid, schoolAdmin.school_name ?? "", item.row, item.rowNumber));
+      createdResults.push(await createOne(
+        schoolUuid,
+        schoolAdmin.school_name ?? "",
+        currentAcademicYear.id,
+        item.row,
+        item.rowNumber,
+      ));
     }
 
     const results = [...preliminaryResults, ...createdResults].sort((a, b) => a.rowNumber - b.rowNumber);
