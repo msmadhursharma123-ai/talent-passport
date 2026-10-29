@@ -400,6 +400,63 @@ export async function createStudent(
 
   /*
    * ============================================================
+   * ENSURE CURRENT ACADEMIC-YEAR ENROLLMENT
+   * ============================================================
+   *
+   * The authenticated student profile is now persisted in both legacy
+   * `students` and canonical `students_master`. Complete the matching
+   * school-year enrollment through a server-side function because the
+   * student browser session must not receive direct enrollment-write
+   * privileges. The function derives the student from the verified JWT
+   * and `students_master.auth_user_id`; it does not trust a client-supplied
+   * student UUID or school/year ID.
+   *
+   * This is safe to retry: the function verifies an existing enrollment
+   * before inserting one.
+   */
+  const {
+    data: enrollmentResult,
+    error: enrollmentInvokeError
+  } = await supabase.functions.invoke(
+    "ensure-student-academic-enrollment",
+    {
+      body: {}
+    }
+  );
+
+  if (enrollmentInvokeError) {
+    console.error(
+      "STUDENT ACADEMIC-YEAR ENROLLMENT ERROR:",
+      enrollmentInvokeError
+    );
+    throw new Error(
+      enrollmentInvokeError.message ||
+      "Student profile was saved, but academic-year enrollment could not be verified. Please retry onboarding or contact your school administrator."
+    );
+  }
+
+  if (!enrollmentResult?.success) {
+    console.error(
+      "STUDENT ACADEMIC-YEAR ENROLLMENT REJECTED:",
+      enrollmentResult
+    );
+    throw new Error(
+      enrollmentResult?.error ||
+      "Student profile was saved, but academic-year enrollment could not be verified."
+    );
+  }
+
+  console.log(
+    "STUDENT ACADEMIC-YEAR ENROLLMENT VERIFIED",
+    {
+      schoolAcademicYearId: enrollmentResult.schoolAcademicYearId,
+      enrollmentId: enrollmentResult.enrollmentId,
+      created: enrollmentResult.created
+    }
+  );
+
+  /*
+   * ============================================================
    * RETURN COMPLETE IDENTITY
    * ============================================================
    *
