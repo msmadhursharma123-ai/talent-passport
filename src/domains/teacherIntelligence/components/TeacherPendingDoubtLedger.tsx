@@ -267,7 +267,7 @@ export default function TeacherPendingDoubtLedger() {
                 letterSpacing: "-0.3px",
               }}
             >
-              ❌ Day Before Yesterday's Not discussed Doubt Ledger ❌
+              ❌ Open Issues: Previous-to-Previous Lecture ❌
             </h2>
 
             <p

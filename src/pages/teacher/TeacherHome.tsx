@@ -1396,16 +1396,20 @@ Welcome Back, {teacherName}!
 
                 classroomColumns.map(
                   (item) => {
-                    const data =
-                      getDashboardItem(
-                        item.classroom
-                      );
-
-                    return data
-                      ? `${data.feedbackRemaining}${data.pendingStudentNames.length ? `\n${data.pendingStudentNames.join(", ")}` : ""}`
-                      : "-";
+                    const data = getDashboardItem(item.classroom);
+                    return data ? String(data.feedbackRemaining) : "-";
                   }
-                )
+                ),
+                (index) => {
+                  const data = getDashboardItem(classroomColumns[index].classroom);
+                  if (data) {
+                    setResponsePopup({
+                      title: "Students with feedback remaining",
+                      students: data.pendingStudentNames,
+                      color: "#DC2626",
+                    });
+                  }
+                }
               )}
 
               {renderTableRow(
@@ -1847,7 +1851,9 @@ function renderTableRow(
               textUnderlineOffset: onCellClick ? "4px" : undefined,
 
               color:
-                metricName ===
+                metricName === "Feedback Remaining"
+                  ? "#DC2626"
+                  : metricName ===
                 "Completely Understood"
                   ? "#16A34A"
                   : metricName ===
@@ -1865,6 +1871,7 @@ function renderTableRow(
                   : "#475569",
 
               fontWeight:
+                metricName === "Feedback Remaining" ||
                 metricName ===
                   "Completely Understood" ||
                 metricName ===
@@ -1875,7 +1882,7 @@ function renderTableRow(
                   : 500,
             }}
           >
-            {metricName === "Feedback Remaining" && value.includes("\n") ? <><span style={{ color: "#DC2626", fontWeight: 800 }}>{value.split("\n")[0]}</span><div style={{ color: "#111827", fontSize: "inherit", fontWeight: 500, lineHeight: 1.5, marginTop: 5, overflowWrap: "anywhere" }}>{value.split("\n").slice(1).join("\n")}</div></> : value || "-"}
+            {metricName === "Feedback Remaining" && value !== "-" ? <span style={{ color: "#DC2626", fontWeight: 800 }}>{value || "-"}</span> : value || "-"}
           </td>
         )
       )}
