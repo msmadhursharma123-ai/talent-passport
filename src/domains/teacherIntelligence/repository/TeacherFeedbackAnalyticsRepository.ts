@@ -398,14 +398,16 @@ item.understanding_level !==
 );
 
 
+// Resolve names for both the existing attention-student calculation and the
+// new response-detail lists. Keep the original attention UUIDs in this lookup
+// so this display-only upgrade cannot regress existing attention names.
 const studentUuids =
 Array.from(
   new Set(
-    attentionStudents
-      .map(
-        (item)=>item.student_uuid
-      )
+    [...attentionStudents, ...effectiveFeedback]
+      .map((item)=>item.student_uuid)
       .filter(Boolean)
+      .map((studentUuid) => String(studentUuid))
   )
 );
 
@@ -424,31 +426,42 @@ studentSource.forEach(
   }
 );
 
-if(
-  !context?.allStudents &&
-  studentUuids.length > 0
-){
-
-const { data: students } =
-await (supabase as any)
-.from("students_master")
-.select(
-"student_uuid,student_name"
-)
-.in(
-"student_uuid",
-studentUuids
+// A preloaded roster can be empty or incomplete. Resolve any response UUIDs
+// that are still missing from the name map so the detail popup never silently
+// substitutes placeholder names when the canonical student record exists.
+const missingStudentUuids = studentUuids.filter(
+  (studentUuid) => !studentNameMap.get(String(studentUuid))
 );
 
-students?.forEach((student:any)=>{
+if (missingStudentUuids.length > 0) {
+  // Optional display-only name enrichment must never block the existing
+  // Teacher Home intelligence, attention-student list, or feedback flow.
+  // Names already present in context?.allStudents remain available if this
+  // best-effort lookup fails.
+  try {
+    const { data: students, error: studentsError } = await (supabase as any)
+      .from("students_master")
+      .select("student_uuid,student_name")
+      .in("student_uuid", missingStudentUuids);
 
-studentNameMap.set(
-student.student_uuid,
-student.student_name
-);
-
-});
-
+    if (studentsError) {
+      console.warn(
+        "[TeacherFeedbackAnalyticsRepository] Optional student-name lookup failed; continuing with available names.",
+        studentsError,
+      );
+    } else {
+      students?.forEach((student: any) => {
+        if (student?.student_uuid && student?.student_name) {
+          studentNameMap.set(String(student.student_uuid), String(student.student_name));
+        }
+      });
+    }
+  } catch (error) {
+    console.warn(
+      "[TeacherFeedbackAnalyticsRepository] Optional student-name lookup failed; continuing with available names.",
+      error,
+    );
+  }
 }
 console.log("STUDENT NAME MAP");
 
@@ -778,6 +791,22 @@ commonConcepts
       FINAL RESPONSE
   */
 
+// Build each response list by student UUID, not by display name. Two students
+// can legitimately share a name, so deduplicating names would hide a student.
+// A missing name is surfaced explicitly rather than silently labeling them
+// with the misleading generic name "Student".
+const getResponseStudentNames = (understandingLevel: string): string[] => {
+  const studentsByUuid = new Map<string, string>();
+  for (const item of effectiveFeedback as any[]) {
+    if (item.understanding_level !== understandingLevel || !item.student_uuid) continue;
+    const studentUuid = String(item.student_uuid);
+    if (studentsByUuid.has(studentUuid)) continue;
+    const resolvedName = studentNameMap.get(studentUuid)?.trim();
+    studentsByUuid.set(studentUuid, resolvedName || "Student name unavailable");
+  }
+  return Array.from(studentsByUuid.values());
+};
+
 const radar = {
 
 classroomHealthScore,
@@ -802,6 +831,12 @@ totalStudents: totalStudentsInClass,
 pendingStudentsCount,
 
 pendingStudents,
+
+completelyUnderstoodStudents: getResponseStudentNames("I completely understood."),
+
+partiallyUnderstoodStudents: getResponseStudentNames("I partially understood."),
+
+didNotUnderstandStudents: getResponseStudentNames("I didn't understand."),
 
 };
 

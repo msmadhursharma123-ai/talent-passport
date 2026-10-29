@@ -58,6 +58,12 @@ pendingStudentsCount:number;
 
 pendingStudents:any[];
 
+completelyUnderstoodStudents?: string[];
+
+partiallyUnderstoodStudents?: string[];
+
+didNotUnderstandStudents?: string[];
+
 }
 
 export interface StudentFeedbackRow {

@@ -39,6 +39,16 @@ interface ClassroomDashboardData {
 
   latestTopic: string;
 
+  latestTopicDate: string;
+
+  pendingStudentNames: string[];
+
+  completelyUnderstoodStudents: string[];
+
+  partiallyUnderstoodStudents: string[];
+
+  didNotUnderstandStudents: string[];
+
   studentsFilledFeedback: string;
 
   feedbackRemaining: number;
@@ -85,6 +95,12 @@ useState<string[]>([]);
 
 const [teacherName, setTeacherName] =
 useState("Teacher");
+
+  const [responsePopup, setResponsePopup] = useState<{
+    title: string;
+    students: string[];
+    color: string;
+  } | null>(null);
 
   useEffect(() => {
 
@@ -476,6 +492,16 @@ useState("Teacher");
 
         latestTopic:
           result.latestLecture.topicName,
+
+        latestTopicDate: result.latestLecture.logDate || result.latestLecture.createdAt || "",
+
+        pendingStudentNames: (radar.pendingStudents ?? []).map((student: any) => String(student.student_name ?? student.studentName ?? "").trim()).filter(Boolean),
+
+        completelyUnderstoodStudents: radar.completelyUnderstoodStudents ?? [],
+
+        partiallyUnderstoodStudents: radar.partiallyUnderstoodStudents ?? [],
+
+        didNotUnderstandStudents: radar.didNotUnderstandStudents ?? [],
 
         studentsFilledFeedback:
           `${
@@ -1343,10 +1369,13 @@ Welcome Back, {teacherName}!
                 "Latest Topic",
 
                 classroomColumns.map(
-                  (item) =>
-                    getDashboardItem(
-                      item.classroom
-                    )?.latestTopic ?? "-"
+                  (item) => {
+                    const data = getDashboardItem(item.classroom);
+                    if (!data) return "-";
+                    const date = data.latestTopicDate ? new Date(data.latestTopicDate) : null;
+                    const formattedDate = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" }) : "Date unavailable";
+                    return `${formattedDate} : ${data.latestTopic}`;
+                  }
                 )
               )}
 
@@ -1373,9 +1402,7 @@ Welcome Back, {teacherName}!
                       );
 
                     return data
-                      ? String(
-                          data.feedbackRemaining
-                        )
+                      ? `${data.feedbackRemaining}${data.pendingStudentNames.length ? `\n${data.pendingStudentNames.join(", ")}` : ""}`
                       : "-";
                   }
                 )
@@ -1385,35 +1412,27 @@ Welcome Back, {teacherName}!
                 "Completely Understood",
 
                 classroomColumns.map(
-                  (item) =>
-                    getDashboardItem(
-                      item.classroom
-                    )?.completelyUnderstood ??
-                    "-"
-                )
+                  (item) => getDashboardItem(item.classroom)?.completelyUnderstood ?? "-"
+                ),
+                (index) => { const data = getDashboardItem(classroomColumns[index].classroom); if (data) setResponsePopup({ title: "Students who completely understood", students: data.completelyUnderstoodStudents, color: "#16A34A" }); }
               )}
 
               {renderTableRow(
                 "Partially Understood",
 
                 classroomColumns.map(
-                  (item) =>
-                    getDashboardItem(
-                      item.classroom
-                    )?.partiallyUnderstood ??
-                    "-"
-                )
+                  (item) => getDashboardItem(item.classroom)?.partiallyUnderstood ?? "-"
+                ),
+                (index) => { const data = getDashboardItem(classroomColumns[index].classroom); if (data) setResponsePopup({ title: "Students who partially understood", students: data.partiallyUnderstoodStudents, color: "#D97706" }); }
               )}
 
               {renderTableRow(
                 "Didn't Understand",
 
                 classroomColumns.map(
-                  (item) =>
-                    getDashboardItem(
-                      item.classroom
-                    )?.didNotUnderstand ?? "-"
-                )
+                  (item) => getDashboardItem(item.classroom)?.didNotUnderstand ?? "-"
+                ),
+                (index) => { const data = getDashboardItem(classroomColumns[index].classroom); if (data) setResponsePopup({ title: "Students who did not understand", students: data.didNotUnderstandStudents, color: "#DC2626" }); }
               )}
 
               {renderTableRow(
@@ -1673,6 +1692,18 @@ Welcome Back, {teacherName}!
       <TeacherPendingDoubtLedger />
 
       <StudentLearningIntelligence assignments={learningAssignments} />
+      {responsePopup && (
+        <div role="presentation" onClick={() => setResponsePopup(null)} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,23,42,0.42)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div role="dialog" aria-modal="true" aria-label={responsePopup.title} onClick={(event) => event.stopPropagation()} style={{ width: "min(520px, 100%)", maxHeight: "min(80vh, 680px)", overflowY: "auto", background: "linear-gradient(180deg, #FFFBF5 0%, #FFFFFF 38%)", border: "1px solid #FED7AA", borderRadius: 20, boxShadow: "0 24px 80px rgba(15,23,42,.22)", padding: 22 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16, paddingBottom: 14, borderBottom: "1px solid #FFEDD5" }}>
+              <div><div style={{ color: "#C2410C", fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 7 }}>CLASSROOM INTELLIGENCE</div><h3 style={{ margin: 0, color: "#111827", fontSize: 20, lineHeight: 1.35 }}>{responsePopup.title}</h3><p style={{ margin: "7px 0 0", color: "#64748B", fontSize: 13 }}>{responsePopup.students.length} student(s)</p></div>
+              <button type="button" aria-label="Close popup" onClick={() => setResponsePopup(null)} style={{ border: "1px solid #FED7AA", borderRadius: 10, background: "#FFF7ED", color: "#9A3412", padding: "7px 11px", cursor: "pointer", fontSize: 18 }}>✕</button>
+            </div>
+            {responsePopup.students.length ? <ol style={{ margin: 0, paddingLeft: 24, color: "#334155", lineHeight: 1.9 }}>{responsePopup.students.map((name, i) => <li key={`${name}-${i}`}>{name}</li>)}</ol> : <p style={{ color: "#64748B" }}>No students in this response category yet.</p>}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}><button type="button" onClick={() => setResponsePopup(null)} style={{ border: 0, borderRadius: 12, background: "linear-gradient(135deg, #F97316 0%, #C2410C 100%)", color: "#FFFFFF", padding: "11px 16px", fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(194,65,12,.18)" }}>← Back to Teacher Home</button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1759,7 +1790,8 @@ const legendPillStyle = {
 
 function renderTableRow(
   metricName: string,
-  values: string[]
+  values: string[],
+  onCellClick?: (index: number) => void
 ) {
   return (
     <tr>
@@ -1797,8 +1829,22 @@ function renderTableRow(
         (value, index) => (
           <td
             key={index}
+            onClick={onCellClick ? () => onCellClick(index) : undefined}
+            onKeyDown={onCellClick ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onCellClick(index);
+              }
+            } : undefined}
+            role={onCellClick ? "button" : undefined}
+            tabIndex={onCellClick ? 0 : undefined}
+            title={onCellClick ? "Click to view student names" : undefined}
             style={{
               ...tableCellStyle,
+              whiteSpace: "pre-line",
+              cursor: onCellClick ? "pointer" : undefined,
+              textDecoration: onCellClick ? "underline" : undefined,
+              textUnderlineOffset: onCellClick ? "4px" : undefined,
 
               color:
                 metricName ===
@@ -1829,7 +1875,7 @@ function renderTableRow(
                   : 500,
             }}
           >
-            {value || "-"}
+            {metricName === "Feedback Remaining" && value.includes("\n") ? <><span style={{ color: "#DC2626", fontWeight: 800 }}>{value.split("\n")[0]}</span><div style={{ color: "#111827", fontSize: "inherit", fontWeight: 500, lineHeight: 1.5, marginTop: 5, overflowWrap: "anywhere" }}>{value.split("\n").slice(1).join("\n")}</div></> : value || "-"}
           </td>
         )
       )}
