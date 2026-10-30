@@ -1,12 +1,10 @@
 import {
   aggregateLearningLectureMetrics,
   calculateLearningLectureMetrics,
-} from "../../../utils/learningFeedbackAnalytics";
-import {
   calculateDoubtClosureRate,
   calculateLearningDoubtRate,
   countResolvedDoubts,
-} from "../../../utils/analyticsConsistency";
+} from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import { getSupabaseClient } from "../../../supabaseClient";
 import {
   getLiveDoubtsForTeacherAssignments,

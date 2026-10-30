@@ -7,7 +7,7 @@ TopicLearningHistory,
 } from "../types/TeacherAcademicHistoryModels";
 
 import { getCurrentTeacher } from "../../../services/identityService";
-import { calculateLearningLectureMetrics } from "../../../utils/learningFeedbackAnalytics";
+import { calculateLearningLectureMetrics } from "../../../domains/learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 
 
 export async function getTeacherLectureHistory(){

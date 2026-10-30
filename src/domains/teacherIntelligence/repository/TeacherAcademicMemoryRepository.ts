@@ -1,4 +1,4 @@
-import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
+import { isLearningUnderstandingLevel } from "../../../domains/learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getCurrentTeacher } from "../../../services/identityService";
 

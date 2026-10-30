@@ -1,7 +1,7 @@
 import {
   calculateLearningLectureMetrics,
   isLearningUnderstandingLevel,
-} from "../../../utils/learningFeedbackAnalytics";
+} from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getCurrentTeacher } from "../../../services/identityService";
 import {

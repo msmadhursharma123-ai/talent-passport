@@ -1,3 +1,4 @@
+import { isDoubtResolved } from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import {
   aggregateLearningLectureMetrics,
   calculateLearningLectureMetrics,
@@ -326,15 +327,7 @@ function getEffectiveUnderstandingLevel(
 
       if (doubtConcept !== normalizedConcept) return false;
 
-      const response = String(
-        doubt.student_response ?? ""
-      ).trim().toUpperCase();
-
-      return !(
-        response === "DISCUSSED" ||
-        doubt.doubt_resolved === true ||
-        String(doubt.status ?? "").trim().toUpperCase() === "RESOLVED"
-      );
+      return !isDoubtResolved(doubt);
     });
   });
 

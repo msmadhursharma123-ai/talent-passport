@@ -1,3 +1,4 @@
+import { isDoubtResolved } from "../../../domains/learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import type {
   SchoolAcademicTrendPoint,
   SchoolClassroomHealthRow,
@@ -64,7 +65,7 @@ function effectiveUnderstanding(raw: SchoolIntelligenceRawData, feedback: any) {
   const unresolved = concepts.filter((concept: string) =>
     !matches.some((doubt: any) =>
       normalizeConcept(doubt.previous_difficult_concept ?? doubt.doubt_concept ?? doubt.previous_topic_name) === normalizeConcept(concept) &&
-      !(String(doubt.student_response ?? "").trim().toUpperCase() === "DISCUSSED" || doubt.doubt_resolved === true || String(doubt.status ?? "").trim().toUpperCase() === "RESOLVED")
+      !isDoubtResolved(doubt)
     )
   );
   return unresolved.length === 0 ? COMPLETE : original;
@@ -266,7 +267,7 @@ function buildSchoolExamPreparation(raw:SchoolIntelligenceRawData):SchoolExamPre
     const className=String(a.class_name??""),sectionName=String(a.section_name??""),key=`${className}__${sectionName}`;
     if(!classrooms.has(key))classrooms.set(key,{classroomKey:key,classroom:`Class ${className} - Section ${sectionName}`,className,sectionName,subjects:[]});
     const assignmentUuid=String(a.id??"");
-    const records=raw.doubts.filter((d:any)=>String(d.teacher_assignment_uuid??"")===assignmentUuid&&String(d.status??"").trim().toUpperCase()==="NOT DISCUSSED"&&d.doubt_resolved!==true);
+    const records=raw.doubts.filter((d:any)=>String(d.teacher_assignment_uuid??"")===assignmentUuid&&String(d.status??"").trim().toUpperCase()==="NOT DISCUSSED"&&!isDoubtResolved(d));
     const sm=new Map<string,any>();
     for(const r of records){
       const id=String(r.student_uuid??"");
@@ -493,9 +494,7 @@ export function buildSchoolIntelligenceSnapshot(
       ),
       doubtsAsked: allDoubtsMetrics.doubtsAsked,
       activeDoubts: raw.doubts.filter(
-        x =>
-          x.doubt_resolved !== true &&
-          String(x.status ?? "").trim().toUpperCase() !== "RESOLVED"
+        x => !isDoubtResolved(x)
       ).length,
       resolvedDoubts: allDoubtsMetrics.doubtsResolved,
       doubtResolutionRate: allDoubtsMetrics.doubtClosureRate,

@@ -1,3 +1,4 @@
+import { isDoubtResolved } from "../../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import {
   aggregateLearningLectureMetrics,
   calculateLearningLectureMetrics,
@@ -154,7 +155,7 @@ function effectiveUnderstanding(raw: any, feedback: any) {
   const unresolved = concepts.filter((concept: string) =>
     !matches.some((d: any) =>
       normalizeConcept(d.previous_difficult_concept ?? d.doubt_concept ?? d.previous_topic_name) === normalizeConcept(concept) &&
-      !(String(d.student_response ?? "").trim().toUpperCase() === "DISCUSSED" || d.doubt_resolved === true || String(d.status ?? "").trim().toUpperCase() === "RESOLVED")
+      !isDoubtResolved(d)
     )
   );
   return unresolved.length === 0 ? COMPLETE : original;

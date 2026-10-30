@@ -1,4 +1,4 @@
-import { isLearningUnderstandingLevel } from "../../../utils/learningFeedbackAnalytics";
+import { isLearningUnderstandingLevel } from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getStudentProgressTracker, type StudentProgressTracker } from "../../teacherIntelligence/repository/StudentProgressTrackerRepository";
 import { requireIdentity } from "../../../services/identityService";
