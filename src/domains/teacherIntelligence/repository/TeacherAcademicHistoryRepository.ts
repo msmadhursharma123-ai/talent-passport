@@ -1,3 +1,4 @@
+import { calculateLearningDoubtRate } from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import { getSupabaseClient } from "../../../supabaseClient";
 
 import {
@@ -176,10 +177,11 @@ export async function getTopicLearningHistory(
     0,
   );
 
-  const difficultyPercentage =
-    eligibleObservations === 0
-      ? 0
-      : Math.round((totalStudentsFacedDifficulty / eligibleObservations) * 100);
+  const difficultyPercentage = calculateLearningDoubtRate(
+    lectureMetrics.reduce((sum, metric) => sum + metric.partialStudents, 0),
+    lectureMetrics.reduce((sum, metric) => sum + metric.didntUnderstandStudents, 0),
+    eligibleObservations,
+  );
 
   return {
     topicName,

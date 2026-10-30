@@ -1,4 +1,8 @@
 import "./schoolIntelligence.css";
+import {
+  calculateUnweightedAveragePercentage,
+  calculateUnweightedAveragePercentageFromSum,
+} from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
 import type {
@@ -176,10 +180,10 @@ export default function SchoolOverviewPage() {
       })
       .map(row => ({
         ...row,
-        classHealthPercentage:
-          row.healthLectureCount === 0
-            ? 0
-            : Math.round(row.healthPercentageSum / row.healthLectureCount),
+        classHealthPercentage: calculateUnweightedAveragePercentageFromSum(
+          row.healthPercentageSum,
+          row.healthLectureCount,
+        ),
       }));
 
     return [...rows].sort((a, b) => {
@@ -208,9 +212,7 @@ export default function SchoolOverviewPage() {
       if (rows.length === 0) return [];
 
       const average = (values: number[]) =>
-        values.length === 0
-          ? 0
-          : Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+        calculateUnweightedAveragePercentage(values);
 
       return [{
         key: classKey,

@@ -1,4 +1,8 @@
-import { isLearningUnderstandingLevel } from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
+import {
+  isLearningUnderstandingLevel,
+  calculateStudentLearningHealthPercentage,
+  calculatePooledPercentage,
+} from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getStudentProgressTracker, type StudentProgressTracker } from "../../teacherIntelligence/repository/StudentProgressTrackerRepository";
 import { requireIdentity } from "../../../services/identityService";
@@ -158,12 +162,10 @@ export async function getStudentProgressTrackerWithLiveLayer(
       isLearningUnderstandingLevel(row.understanding_level)
     );
 
-    const satisfactionRate =
-      learningRows.length === 0
-        ? 0
-        : Math.round(
-            (completelyUnderstood / learningRows.length) * 100
-          );
+    const satisfactionRate = calculatePooledPercentage(
+      completelyUnderstood,
+      learningRows.length,
+    );
 
     const weekMap = new Map<number, any[]>();
 
@@ -192,18 +194,9 @@ export async function getStudentProgressTrackerWithLiveLayer(
         (row: any) => row.understanding_level === NONE
       ).length;
 
-      const learningItems = items.filter((row: any) =>
-        isLearningUnderstandingLevel(row.understanding_level)
+      const healthScore = calculateStudentLearningHealthPercentage(
+        items.map((row: any) => row.understanding_level),
       );
-
-      const healthScore =
-        learningItems.length === 0
-          ? 0
-          : Math.round(
-              ((complete + partial * 0.5) /
-                learningItems.length) *
-                100
-            );
 
       return {
         week: `Week ${week}`,

@@ -71,6 +71,21 @@ export function isLearningUnderstandingLevel(value: unknown): boolean {
   );
 }
 
+/**
+ * Student-personal learning health for a sequence of submitted feedback levels.
+ * Unlike class/lecture metrics, the student denominator is the number of valid
+ * learning responses in that sequence; absence and blank values are excluded.
+ * This keeps the base Student Progress Tracker and its Live overlay consistent.
+ */
+export function calculateStudentLearningHealthPercentage(levels: unknown[]): number {
+  const learningLevels = (levels ?? []).map(value => String(value ?? "").trim());
+  const eligible = learningLevels.filter(isLearningUnderstandingLevel);
+  if (eligible.length === 0) return 0;
+  const complete = eligible.filter(level => level === COMPLETE_FEEDBACK_OPTION).length;
+  const partial = eligible.filter(level => level === PARTIAL_FEEDBACK_OPTION).length;
+  return Math.round(((complete + partial * 0.5) / eligible.length) * 100);
+}
+
 export function isAbsentFeedback(value: unknown): boolean {
   return String(value ?? "").trim() === ABSENT_FEEDBACK_OPTION;
 }
@@ -234,8 +249,10 @@ export function aggregateLearningLectureMetrics(
       totals.didntUnderstandStudentObservations,
       totals.eligibleStudentObservations,
     ),
-    classHealthPercentage:
-      lectures.length === 0 ? 0 : Math.round(totals.healthPercentageSum / lectures.length),
+    classHealthPercentage: calculateUnweightedAveragePercentageFromSum(
+      totals.healthPercentageSum,
+      lectures.length,
+    ),
   };
 }
 
@@ -255,6 +272,11 @@ export function isDoubtUnresolved(doubt: any): boolean {
 export function calculatePooledPercentage(numerator: number, denominator: number): number {
   if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) return 0;
   return Math.round((numerator / denominator) * 100);
+}
+
+export function calculateUnweightedAveragePercentageFromSum(sum: number, count: number): number {
+  if (!Number.isFinite(sum) || !Number.isFinite(count) || count <= 0) return 0;
+  return Math.round(sum / count);
 }
 
 export function calculateUnweightedAveragePercentage(values: number[]): number {

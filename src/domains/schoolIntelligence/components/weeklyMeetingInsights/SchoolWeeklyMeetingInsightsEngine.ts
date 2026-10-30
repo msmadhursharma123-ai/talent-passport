@@ -1,24 +1,18 @@
-import { isDoubtResolved } from "../../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import {
+  isDoubtResolved,
   aggregateLearningLectureMetrics,
   calculateLearningLectureMetrics,
-} from "../../../../utils/learningFeedbackAnalytics";
+  calculateDoubtClosureRate,
+  countResolvedDoubts,
+} from "../../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import type {
   SchoolWeeklyMeetingHoliday,
   SchoolWeeklyMeetingInsights,
   SchoolWeeklyMeetingTeacherMetric,
 } from "./SchoolWeeklyMeetingInsightsModels";
-import {
-  calculateDoubtClosureRate,
-  countResolvedDoubts,
-} from "../../../../utils/analyticsConsistency";
-
 const COMPLETE = "I completely understood.";
 const PARTIAL = "I partially understood.";
 const NONE = "I didn't understand.";
-
-const pct = (part: number, total: number): number | null =>
-  total === 0 ? null : Math.round((part / total) * 100);
 
 function dateKeyFromParts(date: Date) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -243,8 +237,8 @@ function metricBase(
     ),
     feedbackEligible: aggregate.eligibleStudentObservations,
     feedbackResponses: aggregate.responseStudentObservations,
-    feedbackRate: pct(aggregate.responseStudentObservations, aggregate.eligibleStudentObservations),
-    understandingRate: pct(aggregate.completeStudentObservations, aggregate.eligibleStudentObservations),
+    feedbackRate: aggregate.eligibleStudentObservations === 0 ? null : aggregate.responseRate,
+    understandingRate: aggregate.eligibleStudentObservations === 0 ? null : aggregate.understandingRate,
     doubtsAsked: teacherDoubts.length,
     doubtsResolved: resolved,
     doubtClosureRate: calculateDoubtClosureRate(teacherDoubts),

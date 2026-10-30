@@ -1,17 +1,16 @@
-import { isDoubtResolved } from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import {
+  isDoubtResolved,
   aggregateLearningLectureMetrics,
   calculateLearningLectureMetrics,
-} from "../../../utils/learningFeedbackAnalytics";
+  calculateDoubtClosureRate,
+  countResolvedDoubts,
+  calculateUnweightedAveragePercentage,
+} from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import type {
   SchoolMorningBrief,
   SchoolMorningBriefClassroomMetric,
   SchoolMorningBriefTeacherDailyMetric,
 } from "../types/SchoolMorningBriefModels";
-import {
-  calculateDoubtClosureRate,
-  countResolvedDoubts,
-} from "../../../utils/analyticsConsistency";
 import type { SchoolMorningBriefRawData } from "../repository/SchoolMorningBriefRepository";
 
 const COMPLETE = "I completely understood.";
@@ -293,10 +292,10 @@ export function buildSchoolMorningBrief(
     .filter((value): value is number => value !== null);
 
   const yesterdayLearningHealth = understandingValues.length
-    ? Math.round(understandingValues.reduce((sum, value) => sum + value, 0) / understandingValues.length)
+    ? calculateUnweightedAveragePercentage(understandingValues)
     : null;
   const yesterdayDoubtClosureRate = closureValues.length
-    ? Math.round(closureValues.reduce((sum, value) => sum + value, 0) / closureValues.length)
+    ? calculateUnweightedAveragePercentage(closureValues)
     : null;
 
   const ranked = classroomMetrics(raw, period.start, period.end);

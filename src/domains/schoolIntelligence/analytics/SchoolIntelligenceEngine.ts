@@ -1,4 +1,14 @@
-import { isDoubtResolved } from "../../../domains/learningAnalytics/canonical/LearningAnalyticsCanonicalService";
+import {
+  isDoubtResolved,
+  aggregateLearningLectureMetrics,
+  calculateLearningLectureMetrics,
+  isLearningUnderstandingLevel,
+  calculatePooledPercentage,
+  calculateDoubtClosureRate,
+  countResolvedDoubts,
+  calculateLearningDoubtRate,
+  calculateUnweightedAveragePercentage,
+} from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import type {
   SchoolAcademicTrendPoint,
   SchoolClassroomHealthRow,
@@ -9,25 +19,9 @@ import type {
 } from "../types/SchoolIntelligenceModels";
 import type { SchoolIntelligenceRawData } from "../repository/SchoolIntelligenceRepository";
 
-import {
-  aggregateLearningLectureMetrics,
-  calculateLearningLectureMetrics,
-  isLearningUnderstandingLevel,
-} from "../../../utils/learningFeedbackAnalytics";
-import {
-  calculateDoubtClosureRate,
-  countResolvedDoubts,
-  calculateLearningDoubtRate,
-} from "../../../utils/analyticsConsistency";
-
 const COMPLETE = "I completely understood.";
 const PARTIAL = "I partially understood.";
 const NONE = "I didn't understand.";
-
-const pct = (part: number, total: number) =>
-  total === 0 ? 0 : Math.round((part / total) * 100);
-
-
 
 const isLearningFeedback = (feedback: any) =>
   isLearningUnderstandingLevel(feedback?.effective_understanding_level ?? feedback?.understanding_level);
@@ -102,9 +96,7 @@ function averageDailyResponseRate(
     return lectureMetrics.responseRate;
   });
 
-  return Math.round(
-    dailyRates.reduce((sum, rate) => sum + rate, 0) / dailyRates.length
-  );
+  return calculateUnweightedAveragePercentage(dailyRates);
 }
 
 
@@ -162,9 +154,9 @@ function buildDailyClassroomIntelligence(raw:SchoolIntelligenceRawData):SchoolTe
         latestLectureUuid:String(latest.id??""),latestLectureDate:String(latest.log_date??""),
         latestTopic:latest.topic_name??"-",totalStudents,feedbackSubmitted:submitted,
         feedbackRemaining:Math.max(0,totalStudents-submitted),completelyUnderstood:full,
-        completelyUnderstoodRate:pct(full,latestMetrics.eligibleStudents),partiallyUnderstood:partial,
-        partiallyUnderstoodRate:pct(partial,latestMetrics.eligibleStudents),didntUnderstand:none,
-        didntUnderstandRate:pct(none,latestMetrics.eligibleStudents),classHealthScore:score,classHealthStatus:status,
+        completelyUnderstoodRate:calculatePooledPercentage(full,latestMetrics.eligibleStudents),partiallyUnderstood:partial,
+        partiallyUnderstoodRate:calculatePooledPercentage(partial,latestMetrics.eligibleStudents),didntUnderstand:none,
+        didntUnderstandRate:calculatePooledPercentage(none,latestMetrics.eligibleStudents),classHealthScore:score,classHealthStatus:status,
         mostDifficultConcept:[...conceptMap.entries()].sort((x,y)=>y[1]-x[1])[0]?.[0]??"-",
         studentsRequiringAttention:attention
       }];

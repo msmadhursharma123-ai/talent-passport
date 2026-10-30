@@ -1,9 +1,8 @@
-import { isDoubtResolved } from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import {
+  isDoubtResolved,
   aggregateLearningLectureMetrics,
   calculateLearningLectureMetrics,
-} from "../../../utils/learningFeedbackAnalytics";
-
+} from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import { getSupabaseClient } from "../../../supabaseClient";
 import { requireSchoolIdentity } from "../../../services/identityService";
 import {

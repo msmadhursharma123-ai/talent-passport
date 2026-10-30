@@ -1,6 +1,6 @@
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getCurrentTeacher } from "../../../services/identityService";
-import { calculateDoubtClosureRateFromCounts } from "../../../utils/analyticsConsistency";
+import { calculateDoubtClosureRateFromCounts, isDoubtResolved } from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import {
   getTeacherAssignmentsByTeacher,
   filterTeacherAssignmentsToSchool,
@@ -230,10 +230,7 @@ export async function getTeacherLiveDoubtClosureForAssignments(
     const resolved = doubts.filter((row: any) => {
       const live = isPendingDoubtLiveResolved(row, liveRows as LiveDoubtRow[]);
       if (live !== null) return live;
-      return (
-        row.doubt_resolved === true ||
-        String(row.status ?? "").trim().toUpperCase() === "RESOLVED"
-      );
+      return isDoubtResolved(row);
     }).length;
 
     result.set(assignmentId, {

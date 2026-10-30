@@ -1,12 +1,13 @@
 import {
   aggregateLearningLectureMetrics,
   calculateLearningLectureMetrics,
-} from "../../../utils/learningFeedbackAnalytics";
-import {
   calculateDoubtClosureRate,
   calculateDoubtClosureRateFromCounts,
   countResolvedDoubts,
-} from "../../../utils/analyticsConsistency";
+  calculatePooledPercentage,
+  calculateUnweightedAveragePercentageFromSum,
+  isDoubtResolved,
+} from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import type {
   StarPerformerPeriod,
   StarPerformerRow,
@@ -64,7 +65,7 @@ function getEffectiveUnderstandingLevel(feedback: any, doubts: any[]) {
   const unresolved = concepts.filter((concept: string) =>
     !matches.some((doubt: any) =>
       normalizeConcept(doubt?.previous_difficult_concept ?? doubt?.doubt_concept ?? doubt?.previous_topic_name) === normalizeConcept(concept) &&
-      !(doubt?.doubt_resolved === true || String(doubt?.status ?? "").trim().toUpperCase() === "RESOLVED" || String(doubt?.student_response ?? "").trim().toUpperCase() === "DISCUSSED")
+      !isDoubtResolved(doubt)
     )
   );
   return unresolved.length === 0 ? COMPLETE : original;
@@ -376,9 +377,9 @@ export function buildStarPerformerRows(
         const healthSum = classMetrics.reduce((sum, item) => sum + item.healthPercentageSum, 0);
         const doubtsAsked = classMetrics.reduce((sum, item) => sum + item.doubtsAsked, 0);
         const doubtsResolved = classMetrics.reduce((sum, item) => sum + item.doubtsResolved, 0);
-        const understandingPercentage = eligible === 0 ? 0 : Math.round((complete / eligible) * 100);
-        const studentFeedbackPercentage = eligible === 0 ? 0 : Math.round((responses / eligible) * 100);
-        const classHealthPercentage = healthLectureCount === 0 ? 0 : Math.round(healthSum / healthLectureCount);
+        const understandingPercentage = calculatePooledPercentage(complete, eligible);
+        const studentFeedbackPercentage = calculatePooledPercentage(responses, eligible);
+        const classHealthPercentage = calculateUnweightedAveragePercentageFromSum(healthSum, healthLectureCount);
         const doubtClosurePercentage = calculateDoubtClosureRateFromCounts(doubtsAsked, doubtsResolved);
         const combinedScore = Math.round(
           (understandingPercentage + doubtClosurePercentage + classHealthPercentage + studentFeedbackPercentage) / 4,

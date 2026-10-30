@@ -1,5 +1,5 @@
 /** Deterministic regression vectors usable by any test runner; no runtime side effects. */
-import { isDoubtResolved, classifyDoubtResolution, isDoubtUnresolved, calculateDoubtClosureRate, calculateDoubtClosureRateFromCounts, calculateLearningDoubtRate, calculatePooledPercentage, calculateUnweightedAveragePercentage, calculateLearningLectureMetrics, aggregateLearningLectureMetrics, COMPLETE_FEEDBACK_OPTION, PARTIAL_FEEDBACK_OPTION, DID_NOT_UNDERSTAND_FEEDBACK_OPTION, ABSENT_FEEDBACK_OPTION } from "./LearningAnalyticsCanonicalService";
+import { isDoubtResolved, calculateStudentLearningHealthPercentage, calculateUnweightedAveragePercentageFromSum, classifyDoubtResolution, isDoubtUnresolved, calculateDoubtClosureRate, calculateDoubtClosureRateFromCounts, calculateLearningDoubtRate, calculatePooledPercentage, calculateUnweightedAveragePercentage, calculateLearningLectureMetrics, aggregateLearningLectureMetrics, COMPLETE_FEEDBACK_OPTION, PARTIAL_FEEDBACK_OPTION, DID_NOT_UNDERSTAND_FEEDBACK_OPTION, ABSENT_FEEDBACK_OPTION } from "./LearningAnalyticsCanonicalService";
 
 export const DOUBT_RESOLUTION_VECTORS = [
   { name: "resolved flag", row: { doubt_resolved: true }, expected: true },
@@ -25,8 +25,21 @@ export function runLearningAnalyticsCanonicalVectors(): string[] {
     ],
   });
   if (lecture.eligibleStudents !== 3 || lecture.responseRate !== 100 || lecture.understandingRate !== 33 || lecture.healthPercentage !== 50) failures.push("learning:eligible-denominator-and-health");
+  if (lecture.partialRate !== 33 || lecture.didntUnderstandRate !== 33) failures.push("learning:partial-and-didnt-understand-rates");
+
   const aggregate = aggregateLearningLectureMetrics([lecture, { ...lecture, healthPercentage: 0 }]);
   if (aggregate.classHealthPercentage !== 25) failures.push("learning:lecture-average-health");
+  if (calculateUnweightedAveragePercentageFromSum(150, 2) !== 75) failures.push("learning:class-health-average-from-sum");
+  if (calculateUnweightedAveragePercentageFromSum(150, 0) !== 0) failures.push("learning:class-health-zero-lectures");
+  if (calculateStudentLearningHealthPercentage([
+    COMPLETE_FEEDBACK_OPTION, PARTIAL_FEEDBACK_OPTION, DID_NOT_UNDERSTAND_FEEDBACK_OPTION,
+    ABSENT_FEEDBACK_OPTION, "",
+  ]) !== 50) failures.push("student:health-excludes-absence-and-empty");
+  if (calculateStudentLearningHealthPercentage([
+    COMPLETE_FEEDBACK_OPTION, PARTIAL_FEEDBACK_OPTION,
+  ]) !== 75) failures.push("student:health-complete-plus-half-partial");
+  if (calculateStudentLearningHealthPercentage([ABSENT_FEEDBACK_OPTION, ""]) !== 0) failures.push("student:health-zero-eligible");
+
 
   // Adversarial roster/feedback cases: duplicates, unknown students, no response,
   // duplicate roster IDs, zero denominator, and latest-row precedence.

@@ -1,4 +1,8 @@
-import { isLearningUnderstandingLevel } from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
+import {
+  isLearningUnderstandingLevel,
+  calculateStudentLearningHealthPercentage,
+  calculatePooledPercentage,
+} from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import { getSupabaseClient } from "../../../supabaseClient";
 
 import {
@@ -345,15 +349,10 @@ export async function getStudentProgressTracker(
     partiallyUnderstood +
     didntUnderstand;
 
-  const satisfactionRate =
-    learningRows.length === 0
-      ? 0
-      : Math.round(
-          (
-            completelyUnderstood /
-            learningRows.length
-          ) * 100
-        );
+  const satisfactionRate = calculatePooledPercentage(
+    completelyUnderstood,
+    learningRows.length,
+  );
 
   /*
   --------------------------------------
@@ -429,18 +428,9 @@ export async function getStudentProgressTracker(
               "I didn't understand."
           ).length;
 
-        const healthScore =
-          items.length === 0
-            ? 0
-            : Math.round(
-                (
-                  (
-                    complete +
-                    partial * 0.5
-                  ) /
-                  items.length
-                ) * 100
-              );
+        const healthScore = calculateStudentLearningHealthPercentage(
+          items.map((item: any) => item.understanding_level),
+        );
 
         return {
           week:

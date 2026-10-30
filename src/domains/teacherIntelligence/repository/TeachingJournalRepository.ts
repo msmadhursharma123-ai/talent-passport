@@ -8,6 +8,7 @@ import {
 import { getSupabaseClient } from "../../../supabaseClient";
 import {
   getLiveDoubtsForTeacherAssignments,
+  filterLiveRowsForCurrentState,
   mergeFeedbackUnderstandingLevels,
   mergePendingDoubtsWithLiveLedger,
 } from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
@@ -343,20 +344,13 @@ export async function getOverallClassroomComparison(
     throw doubtError;
   }
 
-  const liveRows = (
-    await getLiveDoubtsForTeacherAssignments(
-      assignmentIds
-    )
-  ).filter((row) => {
-    const sourceDate = String(
-      row.first_seen_at ??
-        row.latest_source_submitted_at ??
-        row.source_submitted_at ??
-        row.last_seen_at ??
-        ""
-    ).slice(0, 10);
-    return sourceDate >= monthStartDate && sourceDate < nextMonthDate;
-  });
+  const liveRows = filterLiveRowsForCurrentState(
+    await getLiveDoubtsForTeacherAssignments(assignmentIds),
+    {
+      startDate: monthStartDate,
+      endDateExclusive: nextMonthDate,
+    }
+  );
 
   const effectiveDoubtRows =
     mergePendingDoubtsWithLiveLedger(
@@ -622,6 +616,33 @@ export async function getCurrentMonthClassroomMetrics(
           currentMonth + 2
         ).padStart(2, "0")}-01`;
 
+  /*
+   * Keep the Monthly Classroom Pulse doubt figures on the exact same
+   * repository/evidence path as Overall Classroom Performance Comparison.
+   * The two sections previously assembled their doubt populations separately,
+   * which allowed assignment-scope and effective-row differences to produce
+   * different closure rates for the same classroom and month.
+   *
+   * Other reward metrics continue to use this function's existing calculations.
+   */
+  const comparisonMonth = new Date(
+    currentYear,
+    currentMonth,
+    1
+  ).toLocaleString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+  const comparisonMetrics = await getOverallClassroomComparison(
+    comparisonMonth
+  );
+  const comparisonDoubtMetricsByClassroom = new Map<string, any>(
+    comparisonMetrics.map((item: any) => [
+      String(item.classroom ?? "").trim(),
+      item,
+    ])
+  );
+
   const assignmentIds =
     classroomGroups
       .flatMap(
@@ -688,36 +709,6 @@ export async function getCurrentMonthClassroomMetrics(
     );
 
   /*
-   One doubt query for all assignments.
-  */
-  const {
-    data:doubtRows,
-    error:doubtError,
-  } = await (supabase as any)
-    .from(
-      "pending_teacher_doubts"
-    )
-    .select(
-      "id,status,doubt_resolved,student_uuid,teacher_assignment_uuid,daily_log_uuid,previous_topic_name,previous_difficult_concept,log_date,revision_checked_at,student_response"
-    )
-    .in(
-      "teacher_assignment_uuid",
-      assignmentIds
-    )
-    .gte(
-      "log_date",
-      monthStartDate
-    )
-    .lt(
-      "log_date",
-      nextMonthDate
-    );
-
-  if (doubtError) {
-    throw doubtError;
-  }
-
-  /*
      LIVE DOUBT RECONCILIATION OVERLAY
      ---------------------------------
      Keep pending_teacher_doubts as the authoritative Loop-2 ledger,
@@ -725,26 +716,13 @@ export async function getCurrentMonthClassroomMetrics(
      for the analytics layer. This is intentionally additive: the
      original query and classroom grouping remain unchanged.
   */
-  const liveRows = (
-    await getLiveDoubtsForTeacherAssignments(
-      assignmentIds
-    )
-  ).filter((row) => {
-    const sourceDate = String(
-      row.first_seen_at ??
-        row.latest_source_submitted_at ??
-        row.source_submitted_at ??
-        row.last_seen_at ??
-        ""
-    ).slice(0, 10);
-    return sourceDate >= monthStartDate && sourceDate < nextMonthDate;
-  });
-
-  const effectiveDoubtRows =
-    mergePendingDoubtsWithLiveLedger(
-      doubtRows ?? [],
-      liveRows
-    );
+  const liveRows = filterLiveRowsForCurrentState(
+    await getLiveDoubtsForTeacherAssignments(assignmentIds),
+    {
+      startDate: monthStartDate,
+      endDateExclusive: nextMonthDate,
+    }
+  );
 
   const effectiveFeedback =
     mergeFeedbackUnderstandingLevels(
@@ -801,20 +779,18 @@ export async function getCurrentMonthClassroomMetrics(
             )
         );
 
-      const classroomDoubts =
-        effectiveDoubtRows.filter(
-          (doubt:any) =>
-            groupIds.includes(
-              doubt.teacher_assignment_uuid
-            )
+      const comparisonDoubtMetrics =
+        comparisonDoubtMetricsByClassroom.get(`Class ${classroom}`);
+
+      if (!comparisonDoubtMetrics) {
+        throw new Error(
+          `Monthly Classroom Pulse is missing the shared doubt metrics for Class ${classroom}.`
         );
+      }
 
-      const doubtsAsked =
-        classroomDoubts.length;
-
-      const doubtsResolved = countResolvedDoubts(classroomDoubts);
-
-      const doubtClosureRate = calculateDoubtClosureRate(classroomDoubts);
+      const doubtsAsked = comparisonDoubtMetrics.doubtsAsked;
+      const doubtsResolved = comparisonDoubtMetrics.doubtsResolved;
+      const doubtClosureRate = comparisonDoubtMetrics.doubtClosureRate;
 
       const roster = rosterByClassroom.get(classroom) ?? new Set<string>();
       const lectureMetrics = classroomLogs.map((log: any) =>
