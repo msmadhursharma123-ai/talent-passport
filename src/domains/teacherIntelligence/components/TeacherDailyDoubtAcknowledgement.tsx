@@ -145,7 +145,7 @@ function buildClassroomReferences(
 ): TeacherDoubtReferenceClassroom[] {
   const grouped = new Map<
     string,
-    Map<string, Map<string, number>>
+    { classroom: string; topicMap: Map<string, Map<string, number>> }
   >();
 
   for (const item of Array.isArray(rows) ? rows : []) {
@@ -154,23 +154,37 @@ function buildClassroomReferences(
 
     const className = String(row?.class_name ?? '').trim();
     const sectionName = String(row?.section_name ?? '').trim();
-    const classroom = className || sectionName
-      ? `Class ${className} - Section ${sectionName}`
-      : 'Classroom';
+    const subjectName = String(row?.subject_name ?? '').trim() || 'Subject not recorded';
+    const classroomParts = [
+      className ? `Class ${className}` : 'Class not recorded',
+      sectionName ? `Section ${sectionName}` : 'Section not recorded',
+      subjectName,
+    ];
+    const classroom = classroomParts.join(' - ');
+    const groupKey = [
+      className,
+      sectionName,
+      subjectName,
+    ]
+      .map((value) => value.trim().replace(/\s+/g, ' ').toLocaleLowerCase())
+      .join('::');
     const exactDoubt = String(row?.doubt_concept ?? '').trim();
     const topic = String(item?.topic ?? '').trim() || 'Topic not recorded';
 
     if (!exactDoubt) continue;
 
-    const topicMap = grouped.get(classroom) ?? new Map<string, Map<string, number>>();
-    const doubtMap = topicMap.get(topic) ?? new Map<string, number>();
+    const group = grouped.get(groupKey) ?? {
+      classroom,
+      topicMap: new Map<string, Map<string, number>>(),
+    };
+    const doubtMap = group.topicMap.get(topic) ?? new Map<string, number>();
     doubtMap.set(exactDoubt, (doubtMap.get(exactDoubt) ?? 0) + 1);
-    topicMap.set(topic, doubtMap);
-    grouped.set(classroom, topicMap);
+    group.topicMap.set(topic, doubtMap);
+    grouped.set(groupKey, group);
   }
 
-  return Array.from(grouped.entries())
-    .map(([classroom, topicMap]) => {
+  return Array.from(grouped.values())
+    .map(({ classroom, topicMap }) => {
       const topics = Array.from(topicMap.entries())
         .map(([topic, doubtMap]) => {
           const doubts = Array.from(doubtMap.entries())
@@ -636,7 +650,7 @@ export default function TeacherDailyDoubtAcknowledgement() {
             Unresolved Doubts — Daily Review
           </h2>
           <p className="teacher-doubt-ack-copy">
-            Review each classroom by topic, then expand a topic to see the exact student-originated doubt signals. Acknowledge each classroom before continuing.
+            Review each class, section and subject group by topic, then expand a topic to see the exact student-originated doubt signals. Acknowledge each subject group before continuing.
           </p>
 
           <div className="teacher-doubt-ack-filter">
@@ -769,8 +783,8 @@ export default function TeacherDailyDoubtAcknowledgement() {
             {classrooms.length === 0
               ? "Choose another date range to review unresolved doubts."
               : allAcknowledged
-              ? "All classrooms acknowledged."
-              : `Acknowledge ${classrooms.length} classroom${classrooms.length === 1 ? "" : "s"} to continue.`}
+              ? "All class/section/subject groups acknowledged."
+              : `Acknowledge ${classrooms.length} class/section/subject group${classrooms.length === 1 ? "" : "s"} to continue.`}
           </div>
 
           <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
