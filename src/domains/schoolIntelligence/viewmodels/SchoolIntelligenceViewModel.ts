@@ -75,7 +75,7 @@ export async function loadSchoolIntelligence(
   const schoolUuid = getCurrentSchool()?.schoolUuid;
   const cacheKey = schoolUuid
     ? [
-        "school-intelligence-v2",
+        "school-intelligence-v3",
         schoolUuid,
         startDate ?? "default",
         endDate ?? "default",

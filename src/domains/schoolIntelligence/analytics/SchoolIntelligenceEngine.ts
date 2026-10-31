@@ -8,6 +8,8 @@ import {
   countResolvedDoubts,
   calculateLearningDoubtRate,
   calculateUnweightedAveragePercentage,
+  isAbsentFeedback,
+  latestFeedbackByStudent,
 } from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import type {
   SchoolAcademicTrendPoint,
@@ -127,6 +129,16 @@ function buildDailyClassroomIntelligence(raw:SchoolIntelligenceRawData):SchoolTe
       const students=raw.students.filter(s=>
         sameValue(s.class_name,a.class_name)&&sameValue(s.section_name,a.section_name)
       );
+      const rosterByUuid = new Map<string, string>();
+      students.forEach((student: any) => {
+        const uuid = String(student?.student_uuid ?? "").trim();
+        if (!uuid) return;
+        const name = String(student?.student_name ?? "Student name unavailable").trim() || "Student name unavailable";
+        rosterByUuid.set(uuid, name);
+      });
+      // Preserve the pre-existing daily classroom metric calculation:
+      // counts and percentages are based on raw understanding_level values.
+      // Popup names must use the same rows and classification as those counts.
       const latestMetrics = calculateLearningLectureMetrics({
         studentUuids: students.map(s => s.student_uuid),
         feedback,
@@ -147,6 +159,30 @@ function buildDailyClassroomIntelligence(raw:SchoolIntelligenceRawData):SchoolTe
         f.understanding_level===PARTIAL||f.understanding_level===NONE
       ).map(f=>names.get(String(f.student_uuid??""))??"Student")));
 
+      // Student-name detail is presentation enrichment only. Keep the same
+      // latest-lecture roster and canonical understanding classifications.
+      const latestFeedbackRows = latestFeedbackByStudent(feedback).filter((row: any) =>
+        rosterByUuid.has(String(row?.student_uuid ?? "").trim())
+      );
+      const namesForLevel = (level: string) => latestFeedbackRows
+        .filter((row: any) => String(row?.understanding_level ?? "").trim() === level)
+        .map((row: any) => rosterByUuid.get(String(row.student_uuid).trim()) ?? "Student name unavailable");
+      const absentStudentUuids = new Set(latestFeedbackRows
+        .filter((row: any) => isAbsentFeedback(row?.understanding_level))
+        .map((row: any) => String(row.student_uuid).trim()));
+      const respondedStudentUuids = new Set(latestFeedbackRows
+        .filter((row: any) => {
+          const level = String(row?.understanding_level ?? "").trim();
+          return level === COMPLETE || level === PARTIAL || level === NONE;
+        })
+        .map((row: any) => String(row.student_uuid).trim()));
+      const pendingStudentNames = students
+        .filter((student: any) => {
+          const id = String(student?.student_uuid ?? "").trim();
+          return id && !absentStudentUuids.has(id) && !respondedStudentUuids.has(id);
+        })
+        .map((student: any) => String(student.student_name ?? "Student name unavailable").trim() || "Student name unavailable");
+
       return [{
         assignmentUuid:String(a.id??""),teacherUuid:String(teacher.teacher_uuid??""),
         teacherName:teacher.full_name??"Teacher",classroom:`${a.class_name}-${a.section_name}`,
@@ -158,7 +194,11 @@ function buildDailyClassroomIntelligence(raw:SchoolIntelligenceRawData):SchoolTe
         partiallyUnderstoodRate:calculatePooledPercentage(partial,latestMetrics.eligibleStudents),didntUnderstand:none,
         didntUnderstandRate:calculatePooledPercentage(none,latestMetrics.eligibleStudents),classHealthScore:score,classHealthStatus:status,
         mostDifficultConcept:[...conceptMap.entries()].sort((x,y)=>y[1]-x[1])[0]?.[0]??"-",
-        studentsRequiringAttention:attention
+        studentsRequiringAttention:attention,
+        pendingStudentNames,
+        completelyUnderstoodStudents:namesForLevel(COMPLETE),
+        partiallyUnderstoodStudents:namesForLevel(PARTIAL),
+        didntUnderstandStudents:namesForLevel(NONE)
       }];
     });
     return {teacherUuid:String(teacher.teacher_uuid??""),teacherName:teacher.full_name??"Teacher",classrooms};

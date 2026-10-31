@@ -93,6 +93,10 @@ export interface SchoolDailyClassroomIntelligenceRow {
   didntUnderstand:number; didntUnderstandRate:number;
   classHealthScore:number; classHealthStatus:string;
   mostDifficultConcept:string; studentsRequiringAttention:string[];
+  pendingStudentNames?:string[];
+  completelyUnderstoodStudents?:string[];
+  partiallyUnderstoodStudents?:string[];
+  didntUnderstandStudents?:string[];
 }
 export interface SchoolTeacherDailyIntelligence {
   teacherUuid:string; teacherName:string;

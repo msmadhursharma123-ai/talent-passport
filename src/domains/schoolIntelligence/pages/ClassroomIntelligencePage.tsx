@@ -102,6 +102,7 @@ export default function ClassroomIntelligencePage(){
       .ci-ch{min-width:185px;text-align:left;font-size:11px!important;font-weight:900}.ci-sub{display:block;margin-top:3px;opacity:.72;font-size:9px;font-weight:750}
       .ci-metric{position:sticky;left:0;z-index:2;background:#fbfcfe;color:#334155;font-weight:800}.ci-v{color:#475569;font-weight:600}.ci-green{color:#16a34a;font-weight:850}.ci-yellow{color:#d97706;font-weight:850}.ci-red{color:#dc2626;font-weight:850}.ci-blue{color:#1d4ed8;font-weight:800}
       .ci-legend{display:flex;flex-wrap:wrap;gap:7px;padding:12px 18px;border-top:1px solid #eef2f7;background:#fcfdfe}.ci-legend span{padding:5px 8px;border-radius:999px;font-size:9px;font-weight:800}
+      .ci-detail-trigger{border:0;background:transparent;padding:2px 5px;border-radius:7px;color:inherit;font:inherit;font-weight:850;text-decoration:underline;text-underline-offset:3px;cursor:pointer}.ci-detail-trigger:disabled{cursor:default;text-decoration:none;opacity:.65}.ci-red .ci-detail-trigger{color:#dc2626}.ci-green .ci-detail-trigger{color:#16a34a}.ci-yellow .ci-detail-trigger{color:#d97706}.ci-popup-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.48);backdrop-filter:blur(3px)}.ci-popup{position:relative;width:min(620px,100%);max-height:min(82vh,760px);overflow:auto;padding:28px;border:1px solid #fed7aa;border-radius:24px;background:linear-gradient(145deg,#fff 0%,#fffaf5 100%);box-shadow:0 24px 70px rgba(15,23,42,.24);color:#0f172a}.ci-popup-close{position:absolute;right:18px;top:16px;width:42px;height:42px;border:1px solid #fed7aa;border-radius:12px;background:#fff7ed;color:#9a3412;font-size:27px;line-height:1;cursor:pointer}.ci-popup-kicker{padding-right:52px;color:#c2410c;font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.ci-popup h3{margin:12px 52px 6px 0;font-size:clamp(19px,3vw,25px);line-height:1.25;font-weight:850}.ci-popup-count{margin:8px 0 14px;color:#64748b;font-size:14px;font-weight:750}.ci-popup-list{display:grid;gap:8px;margin:0 0 22px;padding:0 0 0 22px;color:#1e293b;font-size:15px;font-weight:650;line-height:1.45}.ci-popup-empty{color:#64748b;font-size:14px}.ci-popup-back{display:block;width:100%;min-height:48px;border:0;border-radius:12px;padding:12px 18px;background:#f97316;color:#fff;font-size:14px;font-weight:850;cursor:pointer;box-shadow:0 5px 14px rgba(249,115,22,.2)}@media(max-width:600px){.ci-popup{padding:24px 20px 20px;border-radius:20px}.ci-popup-list{font-size:14px}.ci-popup-back{font-size:13px}}
       @media(max-width:760px){.ci-filter-row{align-items:stretch;flex-direction:column}.ci-field{width:100%}.ci-download-btn{width:100%}.ci-summary{text-align:left}.ci-head{align-items:flex-start}.ci-name{font-size:16px}.ci-mh,.ci-metric{width:155px;min-width:155px}.ci-table{min-width:760px}.ci-table th,.ci-table td{padding:9px 10px;font-size:9px}}
     `}</style>
     <div className="school-stack">
@@ -176,19 +177,25 @@ export default function ClassroomIntelligencePage(){
 
 function TeacherCard({teacher,toneIndex}:{teacher:SchoolTeacherDailyIntelligence;toneIndex:number}){
   const tone=tones[toneIndex%tones.length];
-  const rows=[
-    ["📅","Latest Lecture Date",teacher.classrooms.map(x=>dateLabel(x.latestLectureDate)),"ci-v"],
-    ["📘","Latest Topic",teacher.classrooms.map(x=>x.latestTopic),"ci-v"],
-    ["📝","Students Filled Feedback",teacher.classrooms.map(x=>`${x.feedbackSubmitted} / ${x.totalStudents}`),"ci-blue"],
-    ["⏳","Feedback Remaining",teacher.classrooms.map(x=>String(x.feedbackRemaining)),"ci-v"],
-    ["😊","Completely Understood",teacher.classrooms.map(x=>`${x.completelyUnderstood} (${x.completelyUnderstoodRate}%)`),"ci-green"],
-    ["😐","Partially Understood",teacher.classrooms.map(x=>`${x.partiallyUnderstood} (${x.partiallyUnderstoodRate}%)`),"ci-yellow"],
-    ["☹️","Didn't Understand",teacher.classrooms.map(x=>`${x.didntUnderstand} (${x.didntUnderstandRate}%)`),"ci-red"],
-    ["🛡️","Class Health Score",teacher.classrooms.map(x=>`${x.classHealthScore} /100 — ${x.classHealthStatus}`),"ci-v"],
-    ["⚠️","Most Difficult Concept",teacher.classrooms.map(x=>x.mostDifficultConcept),"ci-blue"],
-    ["👤","Students Requiring Attention",teacher.classrooms.map(x=>x.studentsRequiringAttention.length?x.studentsRequiringAttention.join(", "):"-"),"ci-red"],
-  ] as const;
-
+  const [studentPopup,setStudentPopup]=useState<{title:string;students:string[];color:string}|null>(null);
+  useEffect(()=>{
+    if(!studentPopup)return;
+    const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape")setStudentPopup(null);};
+    document.addEventListener("keydown",onKey);
+    return()=>document.removeEventListener("keydown",onKey);
+  },[studentPopup]);
+  const rows: Array<{icon:string;name:string;values:string[];cls:string;students?:string[][];color?:string;title?:string}>=[
+    {icon:"📅",name:"Latest Lecture Date",values:teacher.classrooms.map(x=>dateLabel(x.latestLectureDate)),cls:"ci-v"},
+    {icon:"📘",name:"Latest Topic",values:teacher.classrooms.map(x=>x.latestTopic),cls:"ci-v"},
+    {icon:"📝",name:"Students Filled Feedback",values:teacher.classrooms.map(x=>`${x.feedbackSubmitted} / ${x.totalStudents}`),cls:"ci-blue"},
+    {icon:"⏳",name:"Feedback Remaining",values:teacher.classrooms.map(x=>String(x.feedbackRemaining)),cls:"ci-red",students:teacher.classrooms.map(x=>x.pendingStudentNames??[]),color:"#DC2626",title:"Students with feedback remaining"},
+    {icon:"😊",name:"Completely Understood",values:teacher.classrooms.map(x=>`${x.completelyUnderstood} (${x.completelyUnderstoodRate}%)`),cls:"ci-green",students:teacher.classrooms.map(x=>x.completelyUnderstoodStudents??[]),color:"#16A34A",title:"Students who completely understood"},
+    {icon:"😐",name:"Partially Understood",values:teacher.classrooms.map(x=>`${x.partiallyUnderstood} (${x.partiallyUnderstoodRate}%)`),cls:"ci-yellow",students:teacher.classrooms.map(x=>x.partiallyUnderstoodStudents??[]),color:"#D97706",title:"Students who partially understood"},
+    {icon:"☹️",name:"Didn't Understand",values:teacher.classrooms.map(x=>`${x.didntUnderstand} (${x.didntUnderstandRate}%)`),cls:"ci-red",students:teacher.classrooms.map(x=>x.didntUnderstandStudents??[]),color:"#DC2626",title:"Students who did not understand"},
+    {icon:"🛡️",name:"Class Health Score",values:teacher.classrooms.map(x=>`${x.classHealthScore} /100 — ${x.classHealthStatus}`),cls:"ci-v"},
+    {icon:"⚠️",name:"Most Difficult Concept",values:teacher.classrooms.map(x=>x.mostDifficultConcept),cls:"ci-blue"},
+    {icon:"👤",name:"Students Requiring Attention",values:teacher.classrooms.map(x=>x.studentsRequiringAttention.length?x.studentsRequiringAttention.join(", "):"-"),cls:"ci-red"},
+  ];
   return <article className="ci-card">
     <div className="ci-head" style={{background:`linear-gradient(135deg,${tone[0]},#fff 72%)`}}>
       <div><div className="ci-kicker" style={{color:tone[3]}}>Teacher Classroom Ledger</div><h3 className="ci-name">{teacher.teacherName}</h3>
@@ -198,12 +205,32 @@ function TeacherCard({teacher,toneIndex}:{teacher:SchoolTeacherDailyIntelligence
     <div className="ci-scroll"><table className="ci-table"><thead><tr><th className="ci-mh">METRICS</th>
       {teacher.classrooms.map((x,i)=>{const c=tones[i%tones.length];return <th className="ci-ch" key={x.assignmentUuid} style={{background:`linear-gradient(135deg,${c[0]},${c[1]})`,color:c[3]}}>{x.classroom}<span className="ci-sub">{x.subjectName||"Subject"} · Latest lecture</span></th>})}
     </tr></thead><tbody>
-      {rows.map(([icon,name,values,cls])=><tr key={name}><td className="ci-metric">{icon} {name}</td>{values.map((v,i)=><td className={cls} key={`${name}-${i}`}>{v||"-"}</td>)}</tr>)}
+      {rows.map(row=><tr key={row.name}><td className="ci-metric">{row.icon} {row.name}</td>{row.values.map((value,i)=>{
+        const students=row.students?.[i]??[];
+        const clickable=Boolean(row.students);
+        return <td className={row.cls} key={`${row.name}-${i}`}>
+          {clickable
+            ? <button type="button" className="ci-detail-trigger" aria-label={`View ${students.length} students: ${row.name} for ${teacher.classrooms[i].classroom}`} onClick={()=>setStudentPopup({title:row.title!,students,color:row.color!})}>{value||"0"}</button>
+            : value||"-"}
+        </td>;
+      })}</tr>)}
     </tbody></table></div>
     <div className="ci-legend">
       <span style={{background:"#f0fdf4",border:"1px solid #bbf7d0",color:"#15803d"}}>● Completely Understood</span>
       <span style={{background:"#fffbeb",border:"1px solid #fde68a",color:"#b45309"}}>● Partially Understood</span>
       <span style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626"}}>● Didn&apos;t Understand / Attention</span>
     </div>
+    {studentPopup&&<div className="ci-popup-backdrop" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setStudentPopup(null);}}>
+      <section className="ci-popup" role="dialog" aria-modal="true" aria-labelledby="ci-popup-title">
+        <button type="button" className="ci-popup-close" aria-label="Close student list" onClick={()=>setStudentPopup(null)}>×</button>
+        <div className="ci-popup-kicker">Classroom Intelligence · {teacher.teacherName}</div>
+        <h3 id="ci-popup-title" style={{color:studentPopup.color}}>{studentPopup.title}</h3>
+        <p className="ci-popup-count">{studentPopup.students.length} student(s)</p>
+        {studentPopup.students.length
+          ? <ul className="ci-popup-list">{studentPopup.students.map((student,index)=><li key={`${index}-${student}`}>{student}</li>)}</ul>
+          : <p className="ci-popup-empty">No students in this category.</p>}
+        <button type="button" className="ci-popup-back" onClick={()=>setStudentPopup(null)}>← Back to Classroom Intelligence</button>
+      </section>
+    </div>}
   </article>;
 }
