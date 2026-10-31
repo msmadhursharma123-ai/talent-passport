@@ -422,34 +422,14 @@ useState("Teacher");
       const totalStudents =
         radar.totalStudents || 0;
 
-      const percentageBase =
-        totalStudents > 0
-          ? totalStudents
-          : 1;
-
       const completelyPercentage =
-        Math.round(
-          (
-            radar.completelyUnderstood /
-            percentageBase
-          ) * 100
-        );
+        radar.understandingRate ?? 0;
 
       const partiallyPercentage =
-        Math.round(
-          (
-            radar.partiallyUnderstood /
-            percentageBase
-          ) * 100
-        );
+        radar.partialRate ?? 0;
 
       const didNotPercentage =
-        Math.round(
-          (
-            radar.didNotUnderstand /
-            percentageBase
-          ) * 100
-        );
+        radar.didntUnderstandRate ?? 0;
 
       const difficultConcept =
         radar.commonConcepts?.length > 0

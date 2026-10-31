@@ -54,6 +54,14 @@ NEW FIELDS
 
 totalStudents:number;
 
+eligibleStudents:number;
+
+understandingRate:number;
+
+partialRate:number;
+
+didntUnderstandRate:number;
+
 pendingStudentsCount:number;
 
 pendingStudents:any[];

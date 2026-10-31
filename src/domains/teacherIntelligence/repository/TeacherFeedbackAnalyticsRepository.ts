@@ -1,6 +1,10 @@
 import {
   calculateLearningLectureMetrics,
   isLearningUnderstandingLevel,
+  latestFeedbackByStudent,
+  isAbsentFeedback,
+  PARTIAL_FEEDBACK_OPTION,
+  DID_NOT_UNDERSTAND_FEEDBACK_OPTION,
 } from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getCurrentTeacher } from "../../../services/identityService";
@@ -252,44 +256,11 @@ UNDERSTANDING BREAKDOWN
 
 ****************************************/
 
-const completelyUnderstood =
-
-effectiveFeedback.filter(
-
-(item)=>
-
-item.understanding_level ===
-"I completely understood."
-
-).length;
-
-
-const partiallyUnderstood =
-
-effectiveFeedback.filter(
-
-(item)=>
-
-item.understanding_level ===
-"I partially understood."
-
-).length;
-
-
-const didNotUnderstand =
-
-effectiveFeedback.filter(
-
-(item)=>
-
-item.understanding_level ===
-"I didn't understand."
-
-).length;
-
-const learningFeedback = effectiveFeedback.filter((item:any) =>
-  isLearningUnderstandingLevel(item.understanding_level)
-);
+// Learning-response metrics are populated from the canonical service after
+// the authoritative classroom roster is loaded.
+let completelyUnderstood = 0;
+let partiallyUnderstood = 0;
+let didNotUnderstand = 0;
 
 const actualDailyLogUuid =
 
@@ -385,16 +356,14 @@ STUDENTS REQUIRING ATTENTION
 
 ****************************************/
 
-const attentionStudents =
-
-effectiveFeedback.filter(
-
-(item)=>
-
-item.understanding_level !==
-
-"I completely understood."
-
+// Only students with a learning response that signals a doubt require
+// attention. Absence is an attendance response, not a learning outcome.
+// Use the same latest-per-student rule as the canonical classroom metrics so
+// an older response cannot keep a student on the attention list.
+const attentionStudents = latestFeedbackByStudent(effectiveFeedback).filter(
+  (item: any) =>
+    item?.understanding_level === PARTIAL_FEEDBACK_OPTION ||
+    item?.understanding_level === DID_NOT_UNDERSTAND_FEEDBACK_OPTION,
 );
 
 
@@ -661,6 +630,15 @@ classroomRosterStudentUuids = Array.from(
 
 totalStudentsInClass = classroomRosterStudentUuids.length;
 
+// Keep the display-name lookup aligned with the authoritative school-scoped
+// roster used by the canonical calculation.
+(allStudents ?? []).forEach((student: any) => {
+  const studentUuid = String(student?.student_uuid ?? "").trim();
+  const studentName = String(student?.student_name ?? "").trim();
+  if (studentUuid && studentName) studentNameMap.set(studentUuid, studentName);
+});
+
+
 
 /*
 ---------------------------------------
@@ -668,37 +646,44 @@ PENDING STUDENTS
 ---------------------------------------
 */
 
-const submittedStudentUuids =
-
-effectiveFeedback.map(
-
-(item)=>item.student_uuid
-
+const latestClassroomFeedback = latestFeedbackByStudent(effectiveFeedback).filter(
+  (row: any) => classroomRosterStudentUuids.includes(String(row?.student_uuid ?? "").trim()),
 );
 
-
-pendingStudents =
-
-(allStudents ?? []).filter(
-
-(student:any)=>{
-
-return !submittedStudentUuids.includes(
-
-student.student_uuid
-
+const absentStudentUuids = new Set(
+  latestClassroomFeedback
+    .filter((row: any) => isAbsentFeedback(row?.understanding_level))
+    .map((row: any) => String(row.student_uuid ?? "").trim()),
 );
+
+const recognizedResponseUuids = new Set(
+  latestClassroomFeedback
+    .filter((row: any) => isLearningUnderstandingLevel(row?.understanding_level))
+    .map((row: any) => String(row.student_uuid ?? "").trim()),
+);
+
+pendingStudents = (allStudents ?? []).filter((student: any) => {
+  const studentUuid = String(student?.student_uuid ?? "").trim();
+  return studentUuid &&
+    !absentStudentUuids.has(studentUuid) &&
+    !recognizedResponseUuids.has(studentUuid);
+});
 
 }
 
-);
 
-}
+// One canonical result drives Teacher Home response counts, percentages,
+// health score, and the denominator used by all learning-response metrics.
+const canonicalLearningMetrics = calculateLearningLectureMetrics({
+  studentUuids: classroomRosterStudentUuids,
+  feedback: effectiveFeedback,
+});
 
+completelyUnderstood = canonicalLearningMetrics.completeStudents;
+partiallyUnderstood = canonicalLearningMetrics.partialStudents;
+didNotUnderstand = canonicalLearningMetrics.didntUnderstandStudents;
 
-const pendingStudentsCount =
-
-pendingStudents.length;
+const pendingStudentsCount = pendingStudents.length;
 
 /****************************************
 
@@ -706,10 +691,7 @@ CLASSROOM HEALTH SCORE
 
 ****************************************/
 
-const classroomLearningMetrics = calculateLearningLectureMetrics({
-  studentUuids: classroomRosterStudentUuids,
-  feedback: effectiveFeedback,
-});
+const classroomLearningMetrics = canonicalLearningMetrics;
 
 const healthScore = classroomLearningMetrics.healthPercentage;
 
@@ -796,10 +778,13 @@ commonConcepts
 // A missing name is surfaced explicitly rather than silently labeling them
 // with the misleading generic name "Student".
 const getResponseStudentNames = (understandingLevel: string): string[] => {
+  const latestRows = latestFeedbackByStudent(effectiveFeedback).filter((item: any) =>
+    classroomRosterStudentUuids.includes(String(item?.student_uuid ?? "").trim()),
+  );
   const studentsByUuid = new Map<string, string>();
-  for (const item of effectiveFeedback as any[]) {
+  for (const item of latestRows) {
     if (item.understanding_level !== understandingLevel || !item.student_uuid) continue;
-    const studentUuid = String(item.student_uuid);
+    const studentUuid = String(item.student_uuid).trim();
     if (studentsByUuid.has(studentUuid)) continue;
     const resolvedName = studentNameMap.get(studentUuid)?.trim();
     studentsByUuid.set(studentUuid, resolvedName || "Student name unavailable");
@@ -827,6 +812,14 @@ teachingRecommendation,
 // NEW
 
 totalStudents: totalStudentsInClass,
+
+eligibleStudents: canonicalLearningMetrics.eligibleStudents,
+
+understandingRate: canonicalLearningMetrics.understandingRate,
+
+partialRate: canonicalLearningMetrics.partialRate,
+
+didntUnderstandRate: canonicalLearningMetrics.didntUnderstandRate,
 
 pendingStudentsCount,
 
