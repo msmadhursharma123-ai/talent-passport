@@ -20,6 +20,10 @@ type DoubtRow = {
 
   teacher_assignment_uuid?: string | null;
 
+  daily_log_uuid?: string | null;
+
+  created_at?: string | null;
+
   student_uuid?: string | null;
 
   class_name?: string | null;
@@ -57,6 +61,16 @@ type Loop2ClassroomSummary = {
   difficultConcept: string;
 
   students: string;
+
+  studentUuids: string[];
+
+  studentNamesByUuid: Map<string, string>;
+
+  previousTopics: string[];
+
+  difficultConcepts: string[];
+
+  logDates: string[];
 
   logDate: string;
 
@@ -204,19 +218,60 @@ const displayDate = (value: string) => {
 
 };
 
-// Match the existing SchoolIntelligenceEngine's Loop 2 definition exactly:
-
-// status must be NOT DISCUSSED and the explicit resolved flag must not be true.
-
-// Do not infer resolution from student_response; the canonical engine does not.
-
-// Exact parity with TeacherPendingDoubtRepository.getTeacherPendingDoubtLedger():
-// the Teacher Portal ledger selects rows by assignment UUID + status only.
-// It deliberately has NO log_date filter and does not additionally filter
-// doubt_resolved/student_response. "Day before yesterday" describes the
-// revision workflow, not a report-date restriction.
-const isUnresolved = (row: DoubtRow) =>
-  String(row.status ?? "").trim().toUpperCase() === "NOT DISCUSSED";
+// Match TeacherPendingDoubtRepository: select the newest Loop-2 cycle with
+// actionable NOT DISCUSSED rows, then keep only its most-common unresolved concept.
+const cleanString = (value: unknown) => String(value ?? "").trim();
+const timestamp = (value: unknown) => {
+  const parsed = Date.parse(cleanString(value));
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+const isNotDiscussed = (row: DoubtRow) => cleanString(row.status).toUpperCase() === "NOT DISCUSSED";
+function selectRecentLoop2Cycles(rows: DoubtRow[]): DoubtRow[] {
+  const cycles = new Map<string, { rows: DoubtRow[]; date: string; latestCreatedAt: number }>();
+  for (const row of rows) {
+    const dailyLogUuid = cleanString(row.daily_log_uuid);
+    const date = cleanString(row.log_date);
+    const topic = cleanString(row.previous_topic_name);
+    const concept = cleanString(row.previous_difficult_concept);
+    const key = dailyLogUuid || `legacy:${date}:${topic}:${concept}`;
+    let cycle = cycles.get(key);
+    if (!cycle) { cycle = { rows: [], date, latestCreatedAt: 0 }; cycles.set(key, cycle); }
+    cycle.rows.push(row);
+    if (date && (!cycle.date || date > cycle.date)) cycle.date = date;
+    cycle.latestCreatedAt = Math.max(cycle.latestCreatedAt, timestamp(row.created_at));
+  }
+  const ordered = Array.from(cycles.values()).sort((a, b) => {
+    const aTime = a.latestCreatedAt || timestamp(a.date);
+    const bTime = b.latestCreatedAt || timestamp(b.date);
+    return bTime - aTime || timestamp(b.date) - timestamp(a.date);
+  });
+  const latest = ordered.find(cycle => cycle.rows.some(isNotDiscussed));
+  return latest ? latest.rows.filter(isNotDiscussed) : [];
+}
+function selectMostCommonLoop2Doubt(rows: DoubtRow[]): DoubtRow[] {
+  const groups = new Map<string, { students: Set<string>; latestCreatedAt: number; label: string }>();
+  for (const row of rows) {
+    const label = cleanString(row.previous_difficult_concept) || cleanString(row.previous_topic_name);
+    if (!label || label === "-") continue;
+    const key = label.toLocaleLowerCase();
+    let group = groups.get(key);
+    if (!group) { group = { students: new Set<string>(), latestCreatedAt: 0, label }; groups.set(key, group); }
+    const uuid = cleanString(row.student_uuid);
+    if (uuid) group.students.add(uuid);
+    group.latestCreatedAt = Math.max(group.latestCreatedAt, timestamp(row.created_at));
+    if (label.localeCompare(group.label) < 0) group.label = label;
+  }
+  const winner = Array.from(groups.entries()).sort((a, b) =>
+    b[1].students.size - a[1].students.size ||
+    b[1].latestCreatedAt - a[1].latestCreatedAt ||
+    a[1].label.localeCompare(b[1].label),
+  )[0];
+  if (!winner) return [];
+  return rows.filter(row => {
+    const label = cleanString(row.previous_difficult_concept) || cleanString(row.previous_topic_name);
+    return label !== "" && label !== "-" && label.toLocaleLowerCase() === winner[0] && isNotDiscussed(row);
+  });
+}
 
 const assignmentLabel = (c: SchoolDailyClassroomIntelligenceRow) => `${clean(c.className)}${c.sectionName ? `-${clean(c.sectionName)}` : ""} · ${clean(c.subjectName)}`;
 
@@ -315,6 +370,9 @@ function reportCss(): string {
   .sha-page tbody tr:nth-child(odd) td{background:#f8fafc}.sha-page tbody tr:nth-child(even) td{background:#fff}
 
   .sha-page .sha-class{font-weight:800;color:#0f172a}.sha-page .sha-subtle{color:#64748b;font-size:9px}.sha-page .sha-attention{color:#9a3412}
+  .sha-page .sha-feedback-row td{padding:3px 6px 5px;background:#fff!important;border-top:0;border-bottom:1px solid #dbe3ea}
+  .sha-page .sha-feedback-strip{display:block;width:100%;padding:5px 8px;border-radius:5px;background:#fff1e5;color:#1e293b;font-size:9px;line-height:1.3;overflow-wrap:anywhere;word-break:normal}
+  .sha-page .sha-feedback-strip strong{color:#c2410c;font-weight:900}
 
   .sha-page .sha-doubts{margin-top:6px;flex-shrink:0;width:100%}.sha-page .sha-doubt-grid{display:block;width:100%;padding-top:4px;max-height:none;overflow:visible}
 
@@ -357,42 +415,76 @@ function reportCss(): string {
 
 }
 
-function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogoUrl: string, generatedDate: string, loop2Summaries: Loop2ClassroomSummary[], subtopicsByLogId: Map<string, string>): string {
+function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogoUrl: string, generatedDate: string, loop2Summaries: Loop2ClassroomSummary[], subtopicsByLogId: Map<string, string>, pendingFeedbackNamesByAssignment: Map<string, string[]>): string {
 
   const classes = teacher.classrooms.length ? teacher.classrooms : [];
 
   // Keep one ledger summary per class + section + subject, not every historical
   // pending_teacher_doubts row. Select the summary for the matching subject row.
   const summaryByClassroom = new Map<string, Loop2ClassroomSummary>();
+  const loop2SummaryByAssignment = new Map(loop2Summaries.map(item => [item.assignmentId, item]));
+  const uniqueLabels = (values: string[]) => Array.from(new Map(
+    values.map(value => cleanString(value)).filter(value => value && value !== "-")
+      .map(value => [value.toLocaleLowerCase(), value]),
+  ).values()).sort((a, b) => a.localeCompare(b));
   for (const classroom of classes) {
     const key = classroomSubjectKey(classroom.className, classroom.sectionName, classroom.subjectName);
     if (summaryByClassroom.has(key)) continue;
     const assignmentIds = teacher.assignmentIdsByClassroom.get(key) ?? [String(classroom.assignmentUuid ?? "")];
-    const summary = loop2Summaries.find(item => assignmentIds.includes(item.assignmentId));
-    if (summary) summaryByClassroom.set(key, summary);
+    const summaries = assignmentIds
+      .map(assignmentId => loop2SummaryByAssignment.get(assignmentId))
+      .filter((item): item is Loop2ClassroomSummary => Boolean(item));
+    if (!summaries.length) continue;
+
+    // The Teacher Pending Doubt Ledger merges sibling assignment UUIDs into
+    // one class + section + subject row. Reproduce that identity-based union
+    // here instead of displaying only the first matching assignment summary.
+    const studentNamesByUuid = new Map<string, string>();
+    const studentUuids = new Set<string>();
+    for (const summary of summaries) {
+      for (const uuid of summary.studentUuids) studentUuids.add(uuid);
+      for (const [uuid, name] of summary.studentNamesByUuid) {
+        if (!studentNamesByUuid.has(uuid)) studentNamesByUuid.set(uuid, name);
+      }
+    }
+    const previousTopics = uniqueLabels(summaries.flatMap(item => item.previousTopics));
+    const difficultConcepts = uniqueLabels(summaries.flatMap(item => item.difficultConcepts));
+    const logDates = uniqueLabels(summaries.flatMap(item => item.logDates));
+    const students = Array.from(studentNamesByUuid.values()).sort((a, b) => a.localeCompare(b));
+    summaryByClassroom.set(key, {
+      assignmentId: assignmentIds.find(id => summaries.some(item => item.assignmentId === id)) ?? summaries[0].assignmentId,
+      classroom: `${clean(classroom.className)}-${clean(classroom.sectionName)}`,
+      pendingCount: studentUuids.size,
+      previousTopic: previousTopics.join(" / ") || "-",
+      difficultConcept: difficultConcepts.join(" / ") || "-",
+      students: students.join(", ") || "-",
+      studentUuids: Array.from(studentUuids),
+      studentNamesByUuid,
+      previousTopics,
+      difficultConcepts,
+      logDates,
+      logDate: logDates.join(" / ") || "-",
+      status: "Needs Revision",
+    });
   }
 
   const rows = classes.map(c => {
 
     const attention = c.studentsRequiringAttention?.length ? c.studentsRequiringAttention.map(escapeHtml).join(", ") : "None flagged";
-
-    return `<tr>
-
+    const pendingNames = pendingFeedbackNamesByAssignment.get(String(c.assignmentUuid ?? "")) ?? [];
+    const mainRow = `<tr>
       <td><div class="sha-class">${escapeHtml(assignmentLabel(c))}</div><div class="sha-subtle">${escapeHtml(c.classroom)}</div></td>
-
       <td>${escapeHtml(displayDate(c.latestLectureDate))}</td>
-
-      <td>${escapeHtml(`${Number(c.feedbackSubmitted ?? 0)} / ${Number(c.totalStudents ?? 0)}`)}</td>
-
+      <td><strong>${Number(c.feedbackSubmitted ?? 0)} / ${Number(c.totalStudents ?? 0)}</strong></td>
       <td>${escapeHtml(c.latestTopic)}</td>
-
       <td>${escapeHtml(subtopicsByLogId.get(String(c.latestLectureUuid || "")) || "—")}</td>
-
       <td>${escapeHtml(c.mostDifficultConcept)}</td>
-
       <td class="sha-attention">${attention}</td>
-
     </tr>`;
+    const feedbackRow = pendingNames.length
+      ? `<tr class="sha-feedback-row"><td colspan="7"><div class="sha-feedback-strip"><strong>FEEDBACK NOT SUBMITTED (${pendingNames.length}):</strong> ${pendingNames.map(escapeHtml).join(", ")}</div></td></tr>`
+      : "";
+    return mainRow + feedbackRow;
 
   }).join("");
 
@@ -436,6 +528,7 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
   const contentVolume = classes.reduce((sum, c) => sum + [
     c.latestTopic,
     c.mostDifficultConcept,
+    (pendingFeedbackNamesByAssignment.get(String(c.assignmentUuid ?? "")) ?? []).join(", "),
     (c.studentsRequiringAttention ?? []).join(", "),
     subtopicsByLogId.get(String(c.latestLectureUuid || "")),
     summaryByClassroom.get(classroomSubjectKey(c.className, c.sectionName, c.subjectName))?.previousTopic,
@@ -448,6 +541,7 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
       meaningful(c.latestTopic).length,
       meaningful(subtopicsByLogId.get(String(c.latestLectureUuid || ""))).length,
       meaningful(c.mostDifficultConcept).length,
+      meaningful((pendingFeedbackNamesByAssignment.get(String(c.assignmentUuid ?? "")) ?? []).join(", ")).length,
       meaningful((c.studentsRequiringAttention ?? []).join(", ")).length,
       meaningful(summary?.previousTopic).length,
       meaningful(summary?.difficultConcept).length,
@@ -472,7 +566,7 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
 
     <div class="sha-table-wrap"><table>${sharedColumnWidths}<thead><tr><th>Class / Subject</th><th>Latest log date</th><th>Students Response</th><th>Topic taught</th><th>Subtopics taught</th><th>Most difficult concept</th><th>Students requiring attention</th></tr></thead><tbody>${tableBody}</tbody></table></div>
 
-    <section class="sha-doubts"><div class="sha-section"> Open Issues: Previous-to-Previous Lecture </div><div class="sha-doubt-grid">${allDoubts}</div></section>
+    <section class="sha-doubts"><div class="sha-section">❌ Open Issues: Previous-to-Previous Lecture ❌</div><div class="sha-doubt-grid">${allDoubts}</div></section>
 
     <footer class="sha-footer"><span>Confidential school-use report · Talent Passport</span><span>Teacher report</span></footer>
 
@@ -913,30 +1007,51 @@ export async function downloadStudentHealthAnalysis(onProgress?: (percent: numbe
   const generatedDate = dateKey(new Date());
 
 
-  // Match TeacherPendingDoubtRepository.getTeacherPendingDoubtLedger(): query
-  // each assignment independently with status = NOT DISCUSSED and no date
-  // filter. The portal displays one summary per classroom, based on data[0],
-  // distinct student UUIDs, canonical student names, and the same log date.
+  // Mirror TeacherPendingDoubtRepository: fully page each assignment's Loop-2
+  // rows, select its latest actionable cycle, then the most-common unresolved doubt.
   const doubtsByAssignmentId = new Map<string, DoubtRow[]>();
   const assignmentChunks = chunks(activeAssignments, 10);
   for (const assignmentChunk of assignmentChunks) {
     const assignmentResults = await Promise.all(assignmentChunk.map(async assignment => {
       const assignmentId = String(assignment.id);
-      const rows = await fetchAllRows<DoubtRow>(
-        (from, to) => supabase.from("pending_teacher_doubts")
-          .select("id,teacher_assignment_uuid,student_uuid,class_name,section_name,subject_name,student_name,previous_topic_name,previous_difficult_concept,student_response,log_date,status,doubt_resolved")
-          .eq("teacher_assignment_uuid", assignmentId).eq("status", "NOT DISCUSSED").range(from, to),
-        `Could not load Loop 2 ledger for assignment ${assignmentId}`,
-      );
-      return [assignmentId, rows.filter(isUnresolved)] as const;
+      const rows: DoubtRow[] = [];
+      let offset = 0;
+      let expectedCount: number | null = null;
+      while (true) {
+        const { data: page, error, count } = await supabase.from("pending_teacher_doubts")
+          .select("id,teacher_assignment_uuid,daily_log_uuid,created_at,student_uuid,class_name,section_name,subject_name,student_name,previous_topic_name,previous_difficult_concept,student_response,log_date,status,doubt_resolved", { count: "exact" })
+          .eq("teacher_assignment_uuid", assignmentId)
+          .order("log_date", { ascending: false }).order("created_at", { ascending: false }).order("id", { ascending: false })
+          .range(offset, offset + QUERY_PAGE_SIZE - 1);
+        if (error) throw new Error(`Could not load Loop 2 ledger for assignment ${assignmentId}: ${error.message || "query failed"}`);
+        if (expectedCount === null) {
+          if (typeof count !== "number" || !Number.isFinite(count) || count < 0) throw new Error(`Could not verify the complete Loop 2 ledger for assignment ${assignmentId}.`);
+          expectedCount = count;
+        }
+        const pageRows = Array.isArray(page) ? page as DoubtRow[] : [];
+        if (pageRows.length === 0 && offset < expectedCount) throw new Error(`Loop 2 ledger pagination ended early for assignment ${assignmentId}.`);
+        rows.push(...pageRows);
+        offset += pageRows.length;
+        if (offset >= expectedCount) break;
+      }
+      if (expectedCount === null || rows.length !== expectedCount) throw new Error(`Loop 2 ledger row count mismatch for assignment ${assignmentId}.`);
+      return [assignmentId, rows] as const;
     }));
     for (const [assignmentId, rows] of assignmentResults) doubtsByAssignmentId.set(assignmentId, rows);
   }
 
-  const allDoubts = Array.from(doubtsByAssignmentId.values()).flat();
-  const studentUuids = Array.from(new Set(allDoubts.map(row => String(row.student_uuid ?? "").trim()).filter(Boolean)));
+  const selectedLoop2RowsByAssignment = new Map<string, DoubtRow[]>();
+  const loop2StudentUuids = new Set<string>();
+  for (const [assignmentId, rows] of doubtsByAssignmentId) {
+    const selected = selectMostCommonLoop2Doubt(selectRecentLoop2Cycles(rows));
+    selectedLoop2RowsByAssignment.set(assignmentId, selected);
+    for (const row of selected) {
+      const uuid = cleanString(row.student_uuid);
+      if (uuid) loop2StudentUuids.add(uuid);
+    }
+  }
   const studentNamesByUuid = new Map<string, string>();
-  for (const studentChunk of chunks(studentUuids, QUERY_IN_CHUNK_SIZE)) {
+  for (const studentChunk of chunks(Array.from(loop2StudentUuids), QUERY_IN_CHUNK_SIZE)) {
     const result = await fetchAllRows<{ student_uuid: string | null; student_name: string | null }>(
       (from, to) => supabase.from("students_master").select("student_uuid,student_name")
         .eq("school_uuid", school.schoolUuid).in("student_uuid", studentChunk)
@@ -944,8 +1059,8 @@ export async function downloadStudentHealthAnalysis(onProgress?: (percent: numbe
       "Could not resolve Loop 2 student names",
     );
     for (const student of result) {
-      const uuid = String(student.student_uuid ?? "").trim();
-      const name = String(student.student_name ?? "").trim();
+      const uuid = cleanString(student.student_uuid);
+      const name = cleanString(student.student_name);
       if (uuid && name && !studentNamesByUuid.has(uuid)) studentNamesByUuid.set(uuid, name);
     }
   }
@@ -953,28 +1068,100 @@ export async function downloadStudentHealthAnalysis(onProgress?: (percent: numbe
   const loop2Summaries: Loop2ClassroomSummary[] = [];
   for (const assignment of activeAssignments) {
     const assignmentId = String(assignment.id);
-    const rows = doubtsByAssignmentId.get(assignmentId) ?? [];
-    if (!rows.length) continue;
-    const first = rows[0]; // same first-row semantics as the Teacher Portal repository
-    const studentIds = Array.from(new Set(rows.map(row => String(row.student_uuid ?? "").trim()).filter(Boolean)));
-    const students = Array.from(new Set(rows.map(row => {
-      const uuid = String(row.student_uuid ?? "").trim();
+    const data = selectedLoop2RowsByAssignment.get(assignmentId) ?? [];
+    if (!data.length) continue;
+    const studentIds = Array.from(new Set(data.map(row => cleanString(row.student_uuid)).filter(Boolean)));
+    const studentsByUuid = new Map<string, string>();
+    for (const row of data) {
+      const uuid = cleanString(row.student_uuid);
+      if (!uuid || studentsByUuid.has(uuid)) continue;
       const canonicalName = studentNamesByUuid.get(uuid) ?? "";
-      const storedName = String(row.student_name ?? "").trim();
-      if (canonicalName) return canonicalName;
-      if (storedName && !/^glps\d+$/i.test(storedName)) return storedName;
-      return "";
-    }).filter(Boolean))).join(", ");
+      const storedName = cleanString(row.student_name);
+      const name = canonicalName || (storedName && !/^glps\d+$/i.test(storedName) ? storedName : "");
+      if (name) studentsByUuid.set(uuid, name);
+    }
+    const labels = (values: unknown[]) => Array.from(new Map(values.map(value => cleanString(value)).filter(value => value && value !== "-").map(value => [value.toLocaleLowerCase(), value])).values()).sort((a,b) => a.localeCompare(b)).join(" / ") || "-";
     loop2Summaries.push({
       assignmentId,
       classroom: `${assignment.class_name ?? ""}-${assignment.section_name ?? ""}`,
       pendingCount: studentIds.length,
-      previousTopic: String(first.previous_topic_name ?? "-"),
-      difficultConcept: String(first.previous_difficult_concept ?? "-"),
-      students: students || "-",
-      logDate: String(first.log_date ?? "-"),
+      previousTopic: labels(data.map(row => row.previous_topic_name)),
+      difficultConcept: labels(data.map(row => row.previous_difficult_concept)),
+      students: Array.from(studentsByUuid.values()).sort((a,b) => a.localeCompare(b)).join(", ") || "-",
+      studentUuids: studentIds,
+      studentNamesByUuid: studentsByUuid,
+      previousTopics: Array.from(new Set(data.map(row => cleanString(row.previous_topic_name)).filter(value => value && value !== "-"))),
+      difficultConcepts: Array.from(new Set(data.map(row => cleanString(row.previous_difficult_concept)).filter(value => value && value !== "-"))),
+      logDates: Array.from(new Set(data.map(row => cleanString(row.log_date)).filter(value => value && value !== "-"))),
+      logDate: labels(data.map(row => row.log_date)),
       status: "Needs Revision",
     });
+  }
+
+  // Resolve pending feedback names for the latest lecture in each assignment.
+  // This is read-only and does not alter the canonical metrics or download flow.
+  const pendingFeedbackNamesByAssignment = new Map<string, string[]>();
+  const canonicalLatestLogIdByAssignment = new Map<string, string>();
+  for (const intelligence of snapshot.dailyClassroomIntelligence ?? []) {
+    for (const classroom of intelligence.classrooms ?? []) {
+      if (classroom.assignmentUuid && classroom.latestLectureUuid) {
+        canonicalLatestLogIdByAssignment.set(String(classroom.assignmentUuid), String(classroom.latestLectureUuid));
+      }
+    }
+  }
+  for (const assignment of activeAssignments) {
+    const assignmentId = String(assignment.id);
+    const latestLogId = canonicalLatestLogIdByAssignment.get(assignmentId) || String(latestLogByAssignmentId.get(assignmentId)?.id ?? "");
+    if (!latestLogId) continue;
+    // This lookup only enriches the existing report with optional names. If either
+    // query fails, keep PDF generation and the original report/download path alive.
+    try {
+      let roster = await fetchAllRows<{ student_uuid: string | null; student_name: string | null; school_name?: string | null; class_name?: string | null; section_name?: string | null }>(
+        (from, to) => supabase.from("students_master").select("student_uuid,student_name,school_uuid,school_name,class_name,section_name")
+          .eq("school_uuid", school.schoolUuid)
+          .order("student_uuid", { ascending: true }).range(from, to),
+        `Could not load classroom roster for assignment ${assignmentId}`,
+      );
+      // Match SchoolIntelligenceRepository's legacy compatibility fallback:
+      // older student records may have school_name but no school_uuid. Only use
+      // this fallback when the canonical school_uuid lookup returns no rows.
+      if (roster.length === 0 && school.schoolName) {
+        roster = await fetchAllRows<{ student_uuid: string | null; student_name: string | null; school_name?: string | null; class_name?: string | null; section_name?: string | null }>(
+          (from, to) => supabase.from("students_master").select("student_uuid,student_name,school_uuid,school_name,class_name,section_name")
+            .eq("school_name", school.schoolName)
+            .order("student_uuid", { ascending: true }).range(from, to),
+          `Could not load legacy classroom roster for assignment ${assignmentId}`,
+        );
+      }
+      const submitted = await fetchAllRows<{ student_uuid: string | null }>(
+        (from, to) => supabase.from("student_daily_feedback").select("student_uuid")
+          .eq("daily_log_uuid", latestLogId).range(from, to),
+        `Could not load submitted feedback for assignment ${assignmentId}`,
+      );
+      const submittedIds = new Set(submitted.map(row => String(row.student_uuid ?? "").trim()).filter(Boolean));
+      // Keep one entry per pending student UUID. Do not deduplicate by display name:
+      // two different students may legitimately share the same name.
+      // Match the canonical roster identity rule: one roster entry per student UUID.
+      // Keep distinct students with the same display name, but never repeat one
+      // student because the roster query returned duplicate rows.
+      const pendingNamesByStudentUuid = new Map<string, string>();
+      const targetSection = String(assignment.section_name ?? "").trim().toLocaleLowerCase();
+      const targetClass = String(assignment.class_name ?? "").trim().toLocaleLowerCase();
+      for (const student of roster) {
+        const uuid = String(student.student_uuid ?? "").trim();
+        const rosterSection = String((student as any).section_name ?? "").trim().toLocaleLowerCase();
+        const rosterClass = String((student as any).class_name ?? "").trim().toLocaleLowerCase();
+        if (!uuid || submittedIds.has(uuid) || rosterSection !== targetSection || rosterClass !== targetClass || pendingNamesByStudentUuid.has(uuid)) continue;
+        const name = String(student.student_name ?? "").trim();
+        if (name) pendingNamesByStudentUuid.set(uuid, name);
+      }
+      const pendingNames = Array.from(pendingNamesByStudentUuid.values()).sort((a, b) => a.localeCompare(b));
+      pendingFeedbackNamesByAssignment.set(assignmentId, pendingNames);
+    } catch (error) {
+      // Name enrichment is best-effort; never let it cancel the existing PDF.
+      console.warn(`[StudentHealthAnalysisPdfService] Pending feedback names unavailable for assignment ${assignmentId}; continuing report generation.`, error);
+      pendingFeedbackNamesByAssignment.set(assignmentId, []);
+    }
   }
 
   reportProgress(32);
@@ -1005,7 +1192,7 @@ export async function downloadStudentHealthAnalysis(onProgress?: (percent: numbe
 
   host.setAttribute("aria-hidden", "true");
 
-  host.innerHTML = `<style>${reportCss()}</style>${teachers.map(t => buildTeacherPage(t, school.schoolName || "School", schoolLogoUrl, generatedDate, loop2Summaries.filter(summary => Array.from(t.assignmentIdsByClassroom.values()).some(ids => ids.includes(summary.assignmentId))), subtopicsByLogId)).join("")}`;
+  host.innerHTML = `<style>${reportCss()}</style>${teachers.map(t => buildTeacherPage(t, school.schoolName || "School", schoolLogoUrl, generatedDate, loop2Summaries.filter(summary => Array.from(t.assignmentIdsByClassroom.values()).some(ids => ids.includes(summary.assignmentId))), subtopicsByLogId, pendingFeedbackNamesByAssignment)).join("")}`;
 
   document.body.appendChild(host);
 
