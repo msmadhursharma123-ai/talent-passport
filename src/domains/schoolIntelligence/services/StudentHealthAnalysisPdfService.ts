@@ -361,11 +361,14 @@ function reportCss(): string {
 
   .sha-page .sha-table-wrap{min-height:0;overflow:visible;flex:initial;display:block}
 
-  .sha-page table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px;line-height:1.25}
+  .sha-page table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px;line-height:1.3}
 
-  .sha-page th{background:linear-gradient(135deg,#fff7ed,#fffbf5);color:#c2410c;font-weight:900;text-align:left;padding:5px 5px;border:1px solid #fed7aa}
+  /* Keep wrapped header labels and body text fully visible in the rasterized PDF.
+     Explicit vertical spacing prevents glyph ascenders/descenders being clipped
+     by compact density rules or browser table-row height calculations. */
+  .sha-page th{background:linear-gradient(135deg,#fff7ed,#fffbf5);color:#c2410c;font-weight:900;text-align:left;padding:6px 6px;border:1px solid #fed7aa;vertical-align:middle;white-space:normal;overflow:visible;line-height:1.3;height:auto;min-height:28px;overflow-wrap:break-word;word-break:normal}
 
-  .sha-page td{padding:4px 5px;border:1px solid #dbe3ea;vertical-align:top;overflow-wrap:anywhere;word-break:normal}
+  .sha-page td{padding:5px 6px;border:1px solid #dbe3ea;vertical-align:top;overflow:visible;overflow-wrap:anywhere;word-break:normal;line-height:1.3}
 
   .sha-page tbody tr:nth-child(odd) td{background:#f8fafc}.sha-page tbody tr:nth-child(even) td{background:#fff}
 
@@ -394,22 +397,24 @@ function reportCss(): string {
   .sha-page.sha-density-compact .sha-title{font-size:22px}
   .sha-page.sha-density-compact .sha-meta{padding:3px 0 4px;font-size:10px}
   .sha-page.sha-density-compact .sha-section{padding:4px 7px;font-size:11px}
-  .sha-page.sha-density-compact table{font-size:9px;line-height:1.15}
-  .sha-page.sha-density-compact th{padding:3px 4px}
-  .sha-page.sha-density-compact td{padding:3px 4px}
+  .sha-page.sha-density-compact table{font-size:9px;line-height:1.25}
+  .sha-page.sha-density-compact th{padding:5px 5px;line-height:1.25;min-height:26px}
+  .sha-page.sha-density-compact td{padding:4px 5px;line-height:1.25}
   .sha-page.sha-density-compact .sha-loop2-table th,
-  .sha-page.sha-density-compact .sha-loop2-table td{font-size:8px;padding:2px 3px;line-height:1.1}
+  .sha-page.sha-density-compact .sha-loop2-table td{font-size:8px;padding:4px 4px;line-height:1.25}
   .sha-page.sha-density-compact .sha-doubts{margin-top:4px}
   .sha-page.sha-density-compact .sha-doubt-grid{padding-top:3px}
   .sha-page.sha-density-ultra .sha-title{font-size:19px}
   .sha-page.sha-density-ultra .sha-school{font-size:12px}
-  .sha-page.sha-density-ultra table{font-size:8px;line-height:1.08}
-  .sha-page.sha-density-ultra th{font-size:8px;padding:2px 3px}
-  .sha-page.sha-density-ultra td{font-size:8px;padding:2px 3px}
+  .sha-page.sha-density-ultra table{font-size:8px;line-height:1.2}
+  .sha-page.sha-density-ultra th{font-size:8px;padding:4px 4px;line-height:1.2;min-height:24px}
+  .sha-page.sha-density-ultra td{font-size:8px;padding:3px 4px;line-height:1.2}
   .sha-page.sha-density-ultra .sha-loop2-table th,
-  .sha-page.sha-density-ultra .sha-loop2-table td{font-size:7px;padding:2px;line-height:1.05}
+  .sha-page.sha-density-ultra .sha-loop2-table td{font-size:7px;padding:3px 3px;line-height:1.2}
   .sha-page.sha-density-ultra .sha-section{font-size:10px;padding:3px 6px}
   .sha-page .sha-footer{margin-top:auto;padding-top:5px;border-top:1px solid #e2e8f0;font-size:9px;color:#64748b;display:flex;justify-content:space-between;flex-shrink:0}
+  .sha-page table th{line-height:1.25!important;vertical-align:middle!important;white-space:normal!important;overflow:visible!important}
+  .sha-page table td{line-height:1.25!important;overflow:visible!important}
 
   `;
 
@@ -435,6 +440,24 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
       .map(assignmentId => loop2SummaryByAssignment.get(assignmentId))
       .filter((item): item is Loop2ClassroomSummary => Boolean(item));
     if (!summaries.length) continue;
+    if (summaries.some(item => item.status.startsWith("Temporarily unavailable"))) {
+      summaryByClassroom.set(key, {
+        assignmentId: summaries[0].assignmentId,
+        classroom: `${clean(classroom.className)}-${clean(classroom.sectionName)}`,
+        pendingCount: 0,
+        previousTopic: "—",
+        difficultConcept: "—",
+        students: "—",
+        studentUuids: [],
+        studentNamesByUuid: new Map<string, string>(),
+        previousTopics: [],
+        difficultConcepts: [],
+        logDates: [],
+        logDate: "—",
+        status: "Temporarily unavailable — retry later",
+      });
+      continue;
+    }
 
     // The Teacher Pending Doubt Ledger merges sibling assignment UUIDs into
     // one class + section + subject row. Reproduce that identity-based union
@@ -504,7 +527,7 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
     return `<tr>
       <td><div class="sha-class">${escapeHtml(assignmentLabel(c))}</div><div class="sha-subtle">${escapeHtml(c.classroom)}</div></td>
       <td>${summary ? escapeHtml(displayDate(summary.logDate)) : "—"}</td>
-      <td>${summary ? escapeHtml(String(summary.pendingCount)) : "—"}</td>
+      <td>${summary ? (summary.status.startsWith("Temporarily unavailable") ? "—" : escapeHtml(String(summary.pendingCount))) : "—"}</td>
       <td>${summary ? escapeHtml(summary.previousTopic) : "—"}</td>
       <td>${summary ? escapeHtml(summary.status) : "—"}</td>
       <td>${summary ? escapeHtml(summary.difficultConcept) : "—"}</td>
@@ -514,7 +537,7 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
   // Both tables deliberately use the exact same column partitions. The final
   // column gets the largest share for student names; class/subject and topic
   // columns remain compact while the date and status columns stay readable.
-  const sharedColumnWidths = `<colgroup><col style="width:10%"><col style="width:9%"><col style="width:8%"><col style="width:12%"><col style="width:13%"><col style="width:8%"><col style="width:40%"></colgroup>`;
+  const sharedColumnWidths = `<colgroup><col style="width:12%"><col style="width:10%"><col style="width:10%"><col style="width:12%"><col style="width:14%"><col style="width:11%"><col style="width:31%"></colgroup>`;
   const allDoubts = `<table class="sha-loop2-table">${sharedColumnWidths}<thead><tr><th>Class / Subject</th><th>Discussion date</th><th>Students with doubts</th><th>Topic taught</th><th>Status</th><th>Most difficult concept</th><th>Students requiring attention</th></tr></thead><tbody>${loop2Rows || `<tr><td colspan="7">No classroom assignment found for this teacher.</td></tr>`}</tbody></table>`;
 
   // Density is decided independently for each teacher page from meaningful cell
@@ -566,7 +589,7 @@ function buildTeacherPage(teacher: TeacherReport, schoolName: string, schoolLogo
 
     <div class="sha-table-wrap"><table>${sharedColumnWidths}<thead><tr><th>Class / Subject</th><th>Latest log date</th><th>Students Response</th><th>Topic taught</th><th>Subtopics taught</th><th>Most difficult concept</th><th>Students requiring attention</th></tr></thead><tbody>${tableBody}</tbody></table></div>
 
-    <section class="sha-doubts"><div class="sha-section">❌ Open Issues: Previous-to-Previous Lecture ❌</div><div class="sha-doubt-grid">${allDoubts}</div></section>
+    <section class="sha-doubts"><div class="sha-section">Day before Yesterday's Lecture Unresolved Doubts</div><div class="sha-doubt-grid">${allDoubts}</div></section>
 
     <footer class="sha-footer"><span>Confidential school-use report · Talent Passport</span><span>Teacher report</span></footer>
 
@@ -1007,37 +1030,38 @@ export async function downloadStudentHealthAnalysis(onProgress?: (percent: numbe
   const generatedDate = dateKey(new Date());
 
 
-  // Mirror TeacherPendingDoubtRepository: fully page each assignment's Loop-2
-  // rows, select its latest actionable cycle, then the most-common unresolved doubt.
+  // Fetch only actionable Loop-2 rows. The teacher ledger's latest actionable
+  // cycle is determined exclusively from NOT DISCUSSED rows, so fetching other
+  // statuses cannot change the selected cycle or its student/concept evidence.
+  // Keep requests sequential: a large Promise.all fan-out caused avoidable load
+  // on schools with many assignments and made one timeout abort the whole PDF.
   const doubtsByAssignmentId = new Map<string, DoubtRow[]>();
-  const assignmentChunks = chunks(activeAssignments, 10);
-  for (const assignmentChunk of assignmentChunks) {
-    const assignmentResults = await Promise.all(assignmentChunk.map(async assignment => {
-      const assignmentId = String(assignment.id);
-      const rows: DoubtRow[] = [];
-      let offset = 0;
-      let expectedCount: number | null = null;
-      while (true) {
-        const { data: page, error, count } = await supabase.from("pending_teacher_doubts")
-          .select("id,teacher_assignment_uuid,daily_log_uuid,created_at,student_uuid,class_name,section_name,subject_name,student_name,previous_topic_name,previous_difficult_concept,student_response,log_date,status,doubt_resolved", { count: "exact" })
+  const loop2UnavailableAssignmentIds = new Set<string>();
+  for (const assignment of activeAssignments) {
+    const assignmentId = String(assignment.id);
+    try {
+      const rows = await fetchAllRows<DoubtRow>(
+        (from, to) => supabase.from("pending_teacher_doubts")
+          .select("id,teacher_assignment_uuid,daily_log_uuid,created_at,student_uuid,class_name,section_name,subject_name,student_name,previous_topic_name,previous_difficult_concept,log_date,status")
           .eq("teacher_assignment_uuid", assignmentId)
-          .order("log_date", { ascending: false }).order("created_at", { ascending: false }).order("id", { ascending: false })
-          .range(offset, offset + QUERY_PAGE_SIZE - 1);
-        if (error) throw new Error(`Could not load Loop 2 ledger for assignment ${assignmentId}: ${error.message || "query failed"}`);
-        if (expectedCount === null) {
-          if (typeof count !== "number" || !Number.isFinite(count) || count < 0) throw new Error(`Could not verify the complete Loop 2 ledger for assignment ${assignmentId}.`);
-          expectedCount = count;
-        }
-        const pageRows = Array.isArray(page) ? page as DoubtRow[] : [];
-        if (pageRows.length === 0 && offset < expectedCount) throw new Error(`Loop 2 ledger pagination ended early for assignment ${assignmentId}.`);
-        rows.push(...pageRows);
-        offset += pageRows.length;
-        if (offset >= expectedCount) break;
-      }
-      if (expectedCount === null || rows.length !== expectedCount) throw new Error(`Loop 2 ledger row count mismatch for assignment ${assignmentId}.`);
-      return [assignmentId, rows] as const;
-    }));
-    for (const [assignmentId, rows] of assignmentResults) doubtsByAssignmentId.set(assignmentId, rows);
+          // Preserve the case-insensitive status semantics used by the shared
+          // Loop-2 selector while filtering at the database to reduce row load.
+          .ilike("status", "NOT DISCUSSED")
+          // Stable ordering is required for reliable range pagination.
+          .order("log_date", { ascending: false })
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(from, to),
+        `Could not load Loop 2 ledger for assignment ${assignmentId}`,
+      );
+      doubtsByAssignmentId.set(assignmentId, rows);
+    } catch (error) {
+      // Loop 2 is an enrichment section. Preserve the verified Classroom
+      // Intelligence report and mark this classroom's ledger unavailable;
+      // never fabricate a zero count or silently merge partial sibling data.
+      console.warn("STUDENT HEALTH ANALYSIS: Loop 2 unavailable for assignment", assignmentId, error);
+      loop2UnavailableAssignmentIds.add(assignmentId);
+    }
   }
 
   const selectedLoop2RowsByAssignment = new Map<string, DoubtRow[]>();
@@ -1052,20 +1076,43 @@ export async function downloadStudentHealthAnalysis(onProgress?: (percent: numbe
   }
   const studentNamesByUuid = new Map<string, string>();
   for (const studentChunk of chunks(Array.from(loop2StudentUuids), QUERY_IN_CHUNK_SIZE)) {
-    const result = await fetchAllRows<{ student_uuid: string | null; student_name: string | null }>(
-      (from, to) => supabase.from("students_master").select("student_uuid,student_name")
-        .eq("school_uuid", school.schoolUuid).in("student_uuid", studentChunk)
-        .order("student_uuid", { ascending: true }).range(from, to),
-      "Could not resolve Loop 2 student names",
-    );
-    for (const student of result) {
-      const uuid = cleanString(student.student_uuid);
-      const name = cleanString(student.student_name);
-      if (uuid && name && !studentNamesByUuid.has(uuid)) studentNamesByUuid.set(uuid, name);
+    try {
+      const result = await fetchAllRows<{ student_uuid: string | null; student_name: string | null }>(
+        (from, to) => supabase.from("students_master").select("student_uuid,student_name")
+          .eq("school_uuid", school.schoolUuid).in("student_uuid", studentChunk)
+          .order("student_uuid", { ascending: true }).range(from, to),
+        "Could not resolve Loop 2 student names",
+      );
+      for (const student of result) {
+        const uuid = cleanString(student.student_uuid);
+        const name = cleanString(student.student_name);
+        if (uuid && name && !studentNamesByUuid.has(uuid)) studentNamesByUuid.set(uuid, name);
+      }
+    } catch (error) {
+      // Stored student labels remain available below as a safe display fallback.
+      console.warn("STUDENT HEALTH ANALYSIS: canonical Loop 2 name lookup unavailable; using valid stored labels", error);
     }
   }
 
   const loop2Summaries: Loop2ClassroomSummary[] = [];
+  for (const assignmentId of loop2UnavailableAssignmentIds) {
+    const assignment = activeAssignments.find(item => String(item.id) === assignmentId);
+    loop2Summaries.push({
+      assignmentId,
+      classroom: assignment ? `${assignment.class_name ?? ""}-${assignment.section_name ?? ""}` : "",
+      pendingCount: 0,
+      previousTopic: "—",
+      difficultConcept: "—",
+      students: "—",
+      studentUuids: [],
+      studentNamesByUuid: new Map<string, string>(),
+      previousTopics: [],
+      difficultConcepts: [],
+      logDates: [],
+      logDate: "—",
+      status: "Temporarily unavailable — retry later",
+    });
+  }
   for (const assignment of activeAssignments) {
     const assignmentId = String(assignment.id);
     const data = selectedLoop2RowsByAssignment.get(assignmentId) ?? [];
