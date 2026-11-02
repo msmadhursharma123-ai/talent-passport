@@ -218,7 +218,7 @@ export default function StudentStarPerformersPanel({
           <p className="student-sp-eyebrow">Academic Recognition</p>
           <h2 className="student-sp-launch-title">Student Star Performers</h2>
           <p className="student-sp-launch-copy">
-            View the top two Daily Feedback credit holders in every class and section.
+            View the top five combined Loop 1 + Loop 2 credit holders in every class and section.
           </p>
         </div>
         <button
@@ -243,10 +243,10 @@ export default function StudentStarPerformersPanel({
           >
             <div className="student-sp-modal-head">
               <div>
-                <p className="student-sp-eyebrow">Daily Feedback · Live Academic Scorecard</p>
+                <p className="student-sp-eyebrow">Loop 1 + Loop 2 · Live Academic Scorecard</p>
                 <h2 id="student-star-performer-title">Student Star Performers</h2>
                 <p>
-                  Top two students per class + section, using Daily Feedback credits only.
+                  Top five students per class + section, ranked using combined Loop 1 + Loop 2 credits.
                 </p>
               </div>
               <button type="button" className="student-sp-close" onClick={() => setOpen(false)} aria-label="Close">
@@ -312,14 +312,14 @@ export default function StudentStarPerformersPanel({
                     <th>Class + Section</th>
                     <th>Rank</th>
                     <th>Student</th>
-                    <th>Daily Feedback Credits</th>
-                    <th>Submitted</th>
-                    <th>Missed</th>
+                    <th>Total Credits (Loop 1 + 2)</th>
+                    <th>Responses Submitted</th>
+                    <th>Responses Missed</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading && !result ? (
-                    <tr><td colSpan={6} className="student-sp-empty">Calculating live Daily Feedback scorecard…</td></tr>
+                    <tr><td colSpan={6} className="student-sp-empty">Calculating combined Loop 1 + Loop 2 scorecard…</td></tr>
                   ) : error ? (
                     <tr><td colSpan={6} className="student-sp-empty">{error}</td></tr>
                   ) : result?.rows.length ? (
@@ -329,12 +329,12 @@ export default function StudentStarPerformersPanel({
                         <td><span className={`student-sp-rank rank-${row.rank}`}>#{row.rank}</span></td>
                         <td><strong>{row.studentName}</strong></td>
                         <td><span className="student-sp-credit">{row.dailyFeedbackCredits}</span></td>
-                        <td>{row.submittedFeedbackCount}</td>
-                        <td>{row.missedFeedbackCount}</td>
+                        <td>{row.submittedFeedbackCount + row.submittedLoop2ResponseCount}</td>
+                        <td>{row.missedFeedbackCount + row.missedLoop2ResponseCount}</td>
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan={6} className="student-sp-empty">No Daily Feedback credit activity matches the selected filters.</td></tr>
+                    <tr><td colSpan={6} className="student-sp-empty">No Loop 1 or Loop 2 credit activity matches the selected filters.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -342,7 +342,7 @@ export default function StudentStarPerformersPanel({
 
             <div className="student-sp-footer">
               <span>
-                Daily Feedback only: <b>+1</b> for each submitted teacher-log feedback and <b>-10</b> for each missed teacher-log feedback after the day is complete. No competition, portfolio, achievement, consultation or other wallet credits are included.
+                Combined Loop 1 + Loop 2 credits: <b>+1</b> for each eligible submitted Daily Feedback response and <b>-10</b> for each eligible missed teacher-log feedback after the day is complete; Loop 2 uses the shared credit engine’s student-response and pending-due-date rules. No competition, portfolio, achievement, consultation or other wallet credits are included.
               </span>
               <span>{result ? `${result.studentCount} students evaluated` : ""}</span>
             </div>

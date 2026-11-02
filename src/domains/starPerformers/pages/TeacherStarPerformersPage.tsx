@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { loadStarPerformerViewModel } from "../viewmodels/StarPerformerViewModel";
+import { loadTeacherStarPerformerViewModel } from "../viewmodels/StarPerformerViewModel";
 import type { StarPerformerPeriod, StarPerformerRow } from "../types/StarPerformerModels";
 
 import StudentStarPerformersPanel from "../components/StudentStarPerformersPanel";
@@ -46,7 +46,7 @@ export default function TeacherStarPerformersPage() {
       setError("");
 
       try {
-        const viewModel = await loadStarPerformerViewModel(year);
+        const viewModel = await loadTeacherStarPerformerViewModel(year);
 
         if (cancelled) return;
         setPeriods(viewModel.periods);

@@ -14,7 +14,7 @@ export interface StudentStarPerformerClassroom {
 }
 
 export interface StudentStarPerformerRow {
-  rank: 1 | 2;
+  rank: 1 | 2 | 3 | 4 | 5;
   studentUuid: string;
   studentName: string;
   className: string;
@@ -22,6 +22,8 @@ export interface StudentStarPerformerRow {
   dailyFeedbackCredits: number;
   submittedFeedbackCount: number;
   missedFeedbackCount: number;
+  submittedLoop2ResponseCount: number;
+  missedLoop2ResponseCount: number;
 }
 
 export interface StudentStarPerformerResult {
@@ -42,6 +44,7 @@ export interface StudentStarPerformerSourceData {
     school_uuid: string;
     class_name: string | null;
     section_name: string | null;
+    created_at?: string | null;
   }>;
   assignments: Array<{
     id: string;
@@ -63,5 +66,15 @@ export interface StudentStarPerformerSourceData {
     daily_log_uuid: string;
     student_uuid: string;
     submitted_at?: string | null;
+    understanding_level?: string | null;
+  }>;
+  loop2History: Array<{
+    id: string;
+    student_uuid: string;
+    student_response: string | null;
+    status: string | null;
+    created_at: string | null;
+    revision_checked_at: string | null;
+    log_date: string | null;
   }>;
 }

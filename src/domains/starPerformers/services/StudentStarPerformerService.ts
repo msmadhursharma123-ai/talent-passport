@@ -17,6 +17,22 @@ function classroomKey(className: unknown, sectionName: unknown) {
   return `${String(className ?? "").trim()}::${String(sectionName ?? "").trim()}`;
 }
 
+function indiaDateKey(value: unknown) {
+  if (value === null || value === undefined) return "";
+  const raw = String(value).trim();
+  if (!raw) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return raw.slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(parsed);
+  return `${parts.find(part => part.type === "year")?.value ?? ""}-${parts.find(part => part.type === "month")?.value ?? ""}-${parts.find(part => part.type === "day")?.value ?? ""}`;
+}
+
 function classroomLabel(className: unknown, sectionName: unknown) {
   const classNameText = String(className ?? "").trim();
   const sectionText = String(sectionName ?? "").trim();
@@ -24,10 +40,10 @@ function classroomLabel(className: unknown, sectionName: unknown) {
 }
 
 /**
- * Daily Feedback-only Star Performer calculation.
+ * Combined Loop 1 + Loop 2 Star Performer calculation.
  *
- * The calculation delegates the +1 / -10 rules to the existing pure credit
- * engine. No combined wallet credits are included.
+ * All credit rules and Loop 2 student-response safeguards are delegated to
+ * the existing pure credit engine. Wallet/top-up credits are not included.
  */
 export async function calculateStudentStarPerformers(
   input: StudentStarPerformerCalculationInput,
@@ -65,6 +81,17 @@ export async function calculateStudentStarPerformers(
     feedbackByStudent.set(feedback.student_uuid, existing);
   }
 
+  const loop2ByStudent = new Map<string, any[]>();
+  for (const row of raw.loop2History) {
+    const dueDate = row.created_at ?? row.revision_checked_at ?? row.log_date;
+    const dueDateKey = indiaDateKey(dueDate);
+    // Restrict earned/lost Loop 2 credits to the selected scorecard period.
+    if (!dueDateKey || dueDateKey < input.startDate || dueDateKey > input.endDate) continue;
+    const existing = loop2ByStudent.get(row.student_uuid) ?? [];
+    existing.push(row);
+    loop2ByStudent.set(row.student_uuid, existing);
+  }
+
   const selectedClassroom = input.classroomFilter && input.classroomFilter !== "ALL"
     ? input.classroomFilter
     : "ALL";
@@ -77,11 +104,16 @@ export async function calculateStudentStarPerformers(
 
     const logs = logByClassroom.get(studentClassroom) ?? [];
     const feedbackHistory = feedbackByStudent.get(student.student_uuid) ?? [];
+    const loop2History = loop2ByStudent.get(student.student_uuid) ?? [];
 
     const summary = calculateDailyFeedbackCreditSummaryFromLogs(
       logs,
       feedbackHistory,
       input.asOfDate,
+      {
+        studentCreatedAt: student.created_at ?? null,
+        loop2History,
+      },
     );
 
     scored.push({
@@ -92,10 +124,12 @@ export async function calculateStudentStarPerformers(
       dailyFeedbackCredits: summary.totalCredits,
       submittedFeedbackCount: summary.submittedFeedbackCount,
       missedFeedbackCount: summary.missedFeedbackCount,
+      submittedLoop2ResponseCount: summary.submittedLoop2ResponseCount,
+      missedLoop2ResponseCount: summary.missedLoop2ResponseCount,
     });
   }
 
-  // The scorecard is explicitly two winners PER class + section.
+  // The scorecard is explicitly five winners PER class + section.
   const grouped = new Map<string, Array<Omit<StudentStarPerformerRow, "rank">>>();
   for (const row of scored) {
     const key = classroomKey(row.className, row.sectionName);
@@ -104,30 +138,30 @@ export async function calculateStudentStarPerformers(
     grouped.set(key, bucket);
   }
 
-  const topTwo: StudentStarPerformerRow[] = [];
+  const topFive: StudentStarPerformerRow[] = [];
   for (const bucket of grouped.values()) {
     bucket.sort((a, b) => {
       if (b.dailyFeedbackCredits !== a.dailyFeedbackCredits) {
         return b.dailyFeedbackCredits - a.dailyFeedbackCredits;
       }
-      if (b.submittedFeedbackCount !== a.submittedFeedbackCount) {
-        return b.submittedFeedbackCount - a.submittedFeedbackCount;
-      }
-      if (a.missedFeedbackCount !== b.missedFeedbackCount) {
-        return a.missedFeedbackCount - b.missedFeedbackCount;
-      }
+      const aSubmitted = a.submittedFeedbackCount + a.submittedLoop2ResponseCount;
+      const bSubmitted = b.submittedFeedbackCount + b.submittedLoop2ResponseCount;
+      if (bSubmitted !== aSubmitted) return bSubmitted - aSubmitted;
+      const aMissed = a.missedFeedbackCount + a.missedLoop2ResponseCount;
+      const bMissed = b.missedFeedbackCount + b.missedLoop2ResponseCount;
+      if (aMissed !== bMissed) return aMissed - bMissed;
       return a.studentName.localeCompare(b.studentName);
     });
 
-    bucket.slice(0, 2).forEach((row, index) => {
-      topTwo.push({
+    bucket.slice(0, 5).forEach((row, index) => {
+      topFive.push({
         ...row,
-        rank: (index + 1) as 1 | 2,
+        rank: (index + 1) as 1 | 2 | 3 | 4 | 5,
       });
     });
   }
 
-  topTwo.sort((a, b) => {
+  topFive.sort((a, b) => {
     const classroomCompare = classroomLabel(a.className, a.sectionName).localeCompare(
       classroomLabel(b.className, b.sectionName),
       undefined,
@@ -144,7 +178,7 @@ export async function calculateStudentStarPerformers(
     startDate: input.startDate,
     endDate: input.endDate,
     classroomFilter: selectedClassroom,
-    rows: topTwo,
+    rows: topFive,
     classrooms,
     studentCount: scored.length,
     calculatedAt: new Date().toISOString(),
