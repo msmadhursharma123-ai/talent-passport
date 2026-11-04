@@ -776,6 +776,16 @@ totalScore / count
 
 const summary = getMonthSummary();
 
+// Each comparison column represents one class + section + subject record.
+// Subject-level values come from the same repository result used by Monthly Pulse.
+const comparisonSubjectColumns = overallClassroomComparison.flatMap((item: any) =>
+  (item.doubtClosureBySubject ?? []).map((subject: any) => ({
+    ...subject,
+    classroom: `Class ${subject.className || item.className}-${subject.sectionName || item.sectionName}`,
+    classroomStudentsAtRisk: item.studentsAtRisk,
+  })),
+);
+
 return (
   <div
       className="tp-compact-page"
@@ -1983,7 +1993,7 @@ return (
             {currentRewardMonth} Doubt Closure %
           </h2>
           <p>
-            Live monthly doubt closure across every classroom you currently teach.
+            Live monthly doubt closure for every class, section and subject you currently teach.
           </p>
         </div>
 
@@ -2005,13 +2015,19 @@ return (
             <span>PROGRESS</span>
           </div>
 
-          {voucherClassrooms.map((item:any) => (
+          {voucherClassrooms.flatMap((item:any) =>
+            (item.doubtClosureBySubject ?? []).map((subject:any) => ({
+              ...subject,
+              classroom: item.classroom,
+              rowKey: `${item.assignmentId}-${String(subject.subjectKey ?? "")}`,
+            }))
+          ).map((item:any) => (
             <div
               className="tp-reward-class-row"
-              key={item.assignmentId}
+              key={item.rowKey}
             >
               <div className="tp-reward-class-name">
-                <strong>{item.classroom}</strong>
+                <strong>{item.classroom} · {item.subjectName}</strong>
                 <span>
                   {item.doubtsAsked} {item.doubtsAsked === 1 ? "doubt" : "doubts"} raised · {item.doubtsResolved} resolved
                 </span>
@@ -3304,13 +3320,12 @@ return (
           </div>
 
           <h2 style={sectionTitleStyle}>
-            Overall Classroom Performance
-            Comparison
+            Overall Class, Section & Subject
+            Performance Comparison
           </h2>
 
           <p style={sectionDescriptionStyle}>
-            Compare every classroom taught
-            by you during the selected month.
+            Compare every class, section and subject taught by you during the selected month.
           </p>
         </div>
 
@@ -3319,167 +3334,61 @@ return (
         </div>
       </div>
 
-      {overallClassroomComparison.length >
+      {comparisonSubjectColumns.length >
       0 ? (
         <>
         <div className="teacher-table-swipe-hint">
           <span> </span>
-          <strong>Swipe left or right to compare classrooms →</strong>
+          <strong>Swipe left or right to compare class, section and subject →</strong>
         </div>
 
         <div
           className="tp-comparison-scroll"
-          style={{
-            overflowX: "auto",
-            paddingBottom: "3px",
-          }}
+          style={{ overflowX: "auto", paddingBottom: "3px" }}
         >
           <div
             style={{
-              minWidth:
-                overallClassroomComparison.length >
-                4
-                  ? "900px"
-                  : "100%",
+              minWidth: comparisonSubjectColumns.length > 4 ? "900px" : "100%",
             }}
           >
-            {/* CLASSROOM HEADER */}
-
             <div
               style={{
                 display: "grid",
-
-                gridTemplateColumns: `190px repeat(${overallClassroomComparison.length}, minmax(120px, 1fr))`,
-
+                gridTemplateColumns: `190px repeat(${comparisonSubjectColumns.length}, minmax(150px, 1fr))`,
                 gap: "6px",
               }}
             >
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "10px 12px",
-                  color: "#94A3B8",
-                  fontSize: "12px",
-                  fontWeight: 800,
-                  letterSpacing:
-                    "0.8px",
+                  display: "flex", alignItems: "center", padding: "10px 12px",
+                  color: "#94A3B8", fontSize: "12px", fontWeight: 800,
+                  letterSpacing: "0.8px",
                 }}
               >
                 PERFORMANCE METRIC
               </div>
-
-              {overallClassroomComparison.map(
-                (item: any) => (
-                  <div
-                    key={
-                      item.classroom
-                    }
-                    style={
-                      comparisonHeaderStyle
-                    }
-                  >
-                    <div
-                      style={{
-                        color:
-                          "#F97316",
-                        fontSize:
-                          "11px",
-                        fontWeight:
-                          800,
-                        letterSpacing:
-                          "0.8px",
-                        marginBottom:
-                          "3px",
-                      }}
-                    >
-                      CLASSROOM
-                    </div>
-
-                    <div
-                      style={{
-                        overflow:
-                          "hidden",
-                        textOverflow:
-                          "ellipsis",
-                        whiteSpace:
-                          "nowrap",
-                      }}
-                    >
-                      {
-                        item.classroom
-                      }
-                    </div>
+              {comparisonSubjectColumns.map((item: any, index: number) => (
+                <div key={`${item.classroom}-${item.subjectKey}-${index}`} style={comparisonHeaderStyle}>
+                  <div style={{ color: "#F97316", fontSize: "11px", fontWeight: 800, letterSpacing: "0.8px", marginBottom: "3px" }}>
+                    CLASS · SECTION · SUBJECT
                   </div>
-                )
-              )}
+                  <div style={{ whiteSpace: "normal", overflowWrap: "anywhere" }}>
+                    {item.classroom} · {item.subjectName}
+                  </div>
+                </div>
+              ))}
             </div>
 
-            <ComparisonRow
-              title="Average Learning Health %"
-              data={overallClassroomComparison.map(
-                (item: any) =>
-                  `${item.averageHealthScore}%`
-              )}
-            />
-
-            <ComparisonRow
-              title="Average Understanding %"
-              data={overallClassroomComparison.map(
-                (item: any) =>
-                  `${item.averageUnderstandingPercentage}%`
-              )}
-            />
-
-            <ComparisonRow
-              title="Average Partial Understanding %"
-              data={overallClassroomComparison.map(
-                (item: any) =>
-                  `${item.averagePartialPercentage}%`
-              )}
-            />
-
-            <ComparisonRow
-              title="Average Didn't Understand %"
-              data={overallClassroomComparison.map(
-                (item: any) =>
-                  `${item.averageDidntUnderstandPercentage}%`
-              )}
-            />
-
-            <ComparisonRow
-              title="Average Doubt %"
-              data={overallClassroomComparison.map(
-                (item: any) =>
-                  `${item.averageDoubtPercentage}%`
-              )}
-            />
-             <ComparisonRow
-               title="Doubt Closure Rate %"
-               data={overallClassroomComparison.map(
-                 (item: any) =>
-                   `${item.doubtClosureRate}%`
-               )}
-             />
-
-
-            <ComparisonRow
-              title="Average Feedback %"
-              data={overallClassroomComparison.map(
-                (item: any) =>
-                  `${item.averageFeedbackPercentage}%`
-              )}
-            />
-
-            <ComparisonRow
-              title="Low Understanding Student %"
-              data={overallClassroomComparison.map(
-                (item: any) =>
-                  String(
-                    item.studentsAtRisk
-                  )
-              )}
-            />
+            <ComparisonRow title="Average Learning Health %" data={comparisonSubjectColumns.map((item: any) => `${item.averageHealthScore ?? 0}%`)} />
+            <ComparisonRow title="Average Understanding %" data={comparisonSubjectColumns.map((item: any) => `${item.averageUnderstandingPercentage ?? 0}%`)} />
+            <ComparisonRow title="Average Partial Understanding %" data={comparisonSubjectColumns.map((item: any) => `${item.averagePartialPercentage ?? 0}%`)} />
+            <ComparisonRow title="Average Didn't Understand %" data={comparisonSubjectColumns.map((item: any) => `${item.averageDidntUnderstandPercentage ?? 0}%`)} />
+            <ComparisonRow title="Average Doubt %" data={comparisonSubjectColumns.map((item: any) => `${item.averageDoubtPercentage ?? 0}%`)} />
+            <ComparisonRow title="Doubt Closure Rate %" data={comparisonSubjectColumns.map((item: any) =>
+              item.hasDoubtData ? `${item.doubtClosureRate}% (${item.doubtsResolved}/${item.doubtsAsked})` : "No doubts recorded"
+            )} />
+            <ComparisonRow title="Average Feedback %" data={comparisonSubjectColumns.map((item: any) => `${item.averageFeedbackPercentage ?? 0}%`)} />
+            <ComparisonRow title="Classroom Students at Risk" data={comparisonSubjectColumns.map((item: any) => String(item.classroomStudentsAtRisk ?? 0))} />
           </div>
         </div>
       </>
@@ -4257,6 +4166,29 @@ function ComparisonRow(props: any) {
     margin: 10px 0 6px !important;
     padding: 7px 8px !important;
     font-size: 8px !important;
+  }
+}
+
+/* V50.1 — keep all three hero controls inside the available mobile/tablet width.
+   Preserve V49 padding/card sizing; adjust typography and allow equal flex shrink. */
+@media (max-width: 1024px) {
+  .tp-page-hero > div:last-child > div:first-child > div:last-child {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    gap: 5px !important;
+  }
+  .tp-page-hero > div:last-child > div:first-child > div:last-child > div,
+  .tp-page-hero > div:last-child > div:first-child > div:last-child > button {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    font-size: 8px !important;
+    line-height: 1.15 !important;
   }
 }
 `}</style>

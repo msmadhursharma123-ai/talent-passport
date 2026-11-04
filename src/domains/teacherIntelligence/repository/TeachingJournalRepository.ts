@@ -126,6 +126,17 @@ function parseSelectedMonth(
   };
 }
 
+function normalizeClassroomDimension(value: unknown): string {
+  return String(value ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function normalizeClassroomKey(className: unknown, sectionName: unknown): string {
+  return JSON.stringify([
+    normalizeClassroomDimension(className),
+    normalizeClassroomDimension(sectionName),
+  ]);
+}
+
 function groupAssignmentsByClassroom(
   assignments: any[]
 ) {
@@ -145,8 +156,10 @@ function groupAssignmentsByClassroom(
       continue;
     }
 
+    // Use the same normalized class + section identity for grouping and joins.
+    // Keep original assignment values for display; the key is internal only.
     const classroom =
-      `${assignment.className}-${assignment.sectionName}`;
+      normalizeClassroomKey(assignment.className, assignment.sectionName);
 
     const group =
       groups.get(classroom) ?? [];
@@ -374,7 +387,7 @@ export async function getOverallClassroomComparison(
   if (teachingJournalStudentsError) throw teachingJournalStudentsError;
   const teachingJournalRosterByClassroom = new Map<string, Set<string>>();
   for (const student of teachingJournalStudents ?? []) {
-    const key = `${String(student.class_name ?? "").trim()}-${String(student.section_name ?? "").trim()}`;
+    const key = normalizeClassroomKey(student.class_name, student.section_name);
     const set = teachingJournalRosterByClassroom.get(key) ?? new Set<string>();
     if (student.student_uuid) set.add(String(student.student_uuid));
     teachingJournalRosterByClassroom.set(key, set);
@@ -433,8 +446,70 @@ export async function getOverallClassroomComparison(
 
           const doubtClosureRate = calculateDoubtClosureRate(classroomDoubts);
 
+          // Subject-level closure uses the same Live-reconciled Loop-2 evidence as the
+          // existing classroom aggregate above, scoped to each subject assignment.
+          // Group assignments using the same normalized subject identity used by Track Record.
+          const subjectAssignments = new Map<string, { subjectName: string; assignments: any[] }>();
+          for (const assignment of group) {
+            const normalizedSubjectName = String(assignment.subjectName ?? "").trim().replace(/\s+/g, " ");
+            const subjectKey = normalizedSubjectName.toLowerCase();
+            const subjectName = normalizedSubjectName || "Unspecified subject";
+            const existingSubject = subjectAssignments.get(subjectKey) ?? { subjectName, assignments: [] };
+            existingSubject.assignments.push(assignment);
+            subjectAssignments.set(subjectKey, existingSubject);
+          }
+
           const eligibleStudents =
             teachingJournalRosterByClassroom.get(classroom) ?? new Set<string>();
+
+          const doubtClosureBySubject = Array.from(subjectAssignments.entries()).map(
+            ([subjectKey, { subjectName, assignments: subjectGroup }]) => {
+              const subjectAssignmentIds = new Set(
+                subjectGroup.map((assignment: any) => String(assignment.id ?? "")).filter(Boolean)
+              );
+              const subjectLogs = classroomLogs.filter((log: any) =>
+                subjectAssignmentIds.has(String(log.teacher_assignment_uuid ?? "")),
+              );
+              const subjectLogIds = new Set(subjectLogs.map((log: any) => String(log.id)));
+              const subjectFeedback = classroomFeedback.filter((item: any) =>
+                subjectLogIds.has(String(item.daily_log_uuid)),
+              );
+              const subjectLedgerRows = effectiveDoubtRows.filter(
+                (doubt: any) => subjectAssignmentIds.has(String(doubt.teacher_assignment_uuid ?? ""))
+              );
+              const subjectLectureMetrics = subjectLogs.map((log: any) =>
+                calculateLearningLectureMetrics({
+                  studentUuids: eligibleStudents,
+                  feedback: subjectFeedback.filter(
+                    (item: any) => String(item.daily_log_uuid) === String(log.id),
+                  ),
+                  getUnderstandingLevel: (item: any) => item.understanding_level,
+                }),
+              );
+              const subjectAggregate = aggregateLearningLectureMetrics(subjectLectureMetrics);
+              return {
+                subjectName,
+                subjectKey,
+                className: String(subjectGroup[0]?.className ?? group[0]?.className ?? ""),
+                sectionName: String(subjectGroup[0]?.sectionName ?? group[0]?.sectionName ?? ""),
+                assignmentIds: Array.from(subjectAssignmentIds),
+                averageHealthScore: subjectAggregate.classHealthPercentage,
+                averageUnderstandingPercentage: subjectAggregate.understandingRate,
+                averagePartialPercentage: subjectAggregate.partialRate,
+                averageDidntUnderstandPercentage: subjectAggregate.didntUnderstandRate,
+                averageDoubtPercentage: calculateLearningDoubtRate(
+                  subjectAggregate.partialStudentObservations,
+                  subjectAggregate.didntUnderstandStudentObservations,
+                  subjectAggregate.eligibleStudentObservations,
+                ),
+                averageFeedbackPercentage: subjectAggregate.responseRate,
+                doubtsAsked: subjectLedgerRows.length,
+                doubtsResolved: countResolvedDoubts(subjectLedgerRows),
+                doubtClosureRate: calculateDoubtClosureRate(subjectLedgerRows),
+                hasDoubtData: subjectLedgerRows.length > 0,
+              };
+            }
+          );
 
           const lectureMetrics = classroomLogs.map((log: any) =>
             calculateLearningLectureMetrics({
@@ -485,7 +560,10 @@ export async function getOverallClassroomComparison(
 
           return {
             classroom:
-              `Class ${classroom}`,
+              `Class ${group[0]?.className ?? ""}-${group[0]?.sectionName ?? ""}`,
+
+            className: group[0]?.className ?? "",
+            sectionName: group[0]?.sectionName ?? "",
 
             averageHealthScore,
             averageUnderstandingPercentage,
@@ -503,6 +581,8 @@ export async function getOverallClassroomComparison(
             doubtsResolved,
 
             doubtClosureRate,
+
+            doubtClosureBySubject,
           };
 
         }
@@ -541,6 +621,20 @@ export interface CurrentMonthClassroomMetric {
   doubtClosureRate: number;
 
   hasDoubtData: boolean;
+
+  // Display-only subject closure rows. Reward qualification continues to use
+  // the unchanged classroom-level fields above.
+  doubtClosureBySubject: Array<{
+    subjectName: string;
+    subjectKey: string;
+    className: string;
+    sectionName: string;
+    assignmentIds: string[];
+    doubtsAsked: number;
+    doubtsResolved: number;
+    doubtClosureRate: number;
+    hasDoubtData: boolean;
+  }>;
 
 }
 
@@ -638,7 +732,7 @@ export async function getCurrentMonthClassroomMetrics(
   );
   const comparisonDoubtMetricsByClassroom = new Map<string, any>(
     comparisonMetrics.map((item: any) => [
-      String(item.classroom ?? "").trim(),
+      normalizeClassroomKey(item.className, item.sectionName),
       item,
     ])
   );
@@ -739,7 +833,7 @@ export async function getCurrentMonthClassroomMetrics(
 
   const rosterByClassroom = new Map<string, Set<string>>();
   for (const student of rosterStudents ?? []) {
-    const key = `${String(student.class_name ?? "").trim()}-${String(student.section_name ?? "").trim()}`;
+    const key = normalizeClassroomKey(student.class_name, student.section_name);
     const set = rosterByClassroom.get(key) ?? new Set<string>();
     if (student.student_uuid) set.add(String(student.student_uuid));
     rosterByClassroom.set(key, set);
@@ -780,7 +874,9 @@ export async function getCurrentMonthClassroomMetrics(
         );
 
       const comparisonDoubtMetrics =
-        comparisonDoubtMetricsByClassroom.get(`Class ${classroom}`);
+        comparisonDoubtMetricsByClassroom.get(
+          normalizeClassroomKey(group[0]?.className, group[0]?.sectionName)
+        );
 
       if (!comparisonDoubtMetrics) {
         throw new Error(
@@ -843,6 +939,9 @@ export async function getCurrentMonthClassroomMetrics(
 
         hasDoubtData:
           doubtsAsked > 0,
+
+        doubtClosureBySubject:
+          comparisonDoubtMetrics.doubtClosureBySubject ?? [],
 
       };
 
