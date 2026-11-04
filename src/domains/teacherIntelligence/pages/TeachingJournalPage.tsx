@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import TrackRecordModal from "../../trackRecord/TrackRecordModal";
 
 import {
 getCurrentTeacher,
@@ -36,6 +37,7 @@ getCurrentMonthClassroomMetrics,
 from "../repository/TeachingJournalRepository";
 
 export default function TeachingJournalPage() {
+  const [showTrackRecord, setShowTrackRecord] = useState(false);
 
     const [assignments,setAssignments] =
 useState<TeacherAssignment[]>([]);
@@ -1921,6 +1923,24 @@ return (
             <div style={bluePillStyle}>
               CLASSROOM HEALTH
             </div>
+            <button
+              type="button"
+              onClick={() => setShowTrackRecord(true)}
+              style={{
+                border: "1px solid #FDBA74",
+                borderRadius: 999,
+                background: "linear-gradient(135deg,#FFF7ED,#FFFFFF)",
+                color: "#C2410C",
+                padding: "7px 13px",
+                fontSize: "10px",
+                fontWeight: 900,
+                letterSpacing: ".04em",
+                cursor: "pointer",
+                boxShadow: "0 5px 14px rgba(249,115,22,.10)",
+              }}
+            >
+              TRACK RECORD
+            </button>
           </div>
         </div>
 
@@ -3509,6 +3529,9 @@ return (
         </div>
       )}
     </div>
+  {showTrackRecord && (
+    <TrackRecordModal audience="teacher" onClose={() => setShowTrackRecord(false)} />
+  )}
   </div>
 );
 }

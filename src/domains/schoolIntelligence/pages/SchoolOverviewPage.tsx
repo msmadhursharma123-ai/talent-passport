@@ -15,6 +15,7 @@ import SchoolStudentAccessManager from "./SchoolStudentAccessManager";
 import SchoolMorningBrief from "../components/SchoolMorningBrief";
 import SchoolWeeklyMeetingInsights from "../components/weeklyMeetingInsights/SchoolWeeklyMeetingInsights";
 import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
+import TrackRecordModal from "../../trackRecord/TrackRecordModal";
 
 type RangeValue = "30" | "60" | "90" | "custom";
 type SortKey =
@@ -45,6 +46,7 @@ export default function SchoolOverviewPage() {
   const [showPostManager, setShowPostManager] = useState(false);
   const [showTeacherAccessManager, setShowTeacherAccessManager] = useState(false);
   const [showStudentAccessManager, setShowStudentAccessManager] = useState(false);
+  const [showTrackRecord, setShowTrackRecord] = useState(false);
   const [data, setData] = useState<SchoolIntelligenceSnapshot | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -741,6 +743,23 @@ export default function SchoolOverviewPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setShowTrackRecord(true)}
+                style={{
+                  border: "1px solid #BFDBFE",
+                  borderRadius: 12,
+                  background: "linear-gradient(135deg,#EFF6FF,#FFFFFF)",
+                  color: "#1D4ED8",
+                  padding: "10px 14px",
+                  fontSize: 11,
+                  fontWeight: 900,
+                  cursor: "pointer",
+                  boxShadow: "0 6px 16px rgba(37,99,235,.08)",
+                }}
+              >
+                Track Record
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowStudentAccessManager(true)}
                 style={{
                   border: "1px solid #C7D2FE",
@@ -1133,6 +1152,10 @@ export default function SchoolOverviewPage() {
 
       {showStudentAccessManager && (
         <SchoolStudentAccessManager onClose={() => setShowStudentAccessManager(false)} />
+      )}
+
+      {showTrackRecord && (
+        <TrackRecordModal audience="school" onClose={() => setShowTrackRecord(false)} />
       )}
     </main>
   );
