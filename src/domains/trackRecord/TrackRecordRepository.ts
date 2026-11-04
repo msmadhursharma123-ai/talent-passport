@@ -17,6 +17,7 @@ import {
 import { buildVerifiedEnrollmentRoster, classroomRosterKey } from "../learningEvidenceEngine/repository/EnrollmentRoster";
 import {
   mergeFeedbackUnderstandingLevels,
+  mergePendingDoubtsWithLiveLedger,
   reconcilePendingDoubtsWithLiveLedger,
 } from "../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 import { enumerateCalendarDays, getAssignmentEffectiveEndDate, isAssignmentActiveOnDate, getResolvedDoubtDate, getStudentUnderstandingPercentage, getEffectivePeriodEndExclusive, hasUnverifiableAssignmentInterval, buildAssignmentIntervalWarning, buildTrackRecordPeriods, selectSchoolOverviewDoubtClosureCohort, getSchoolOverviewDoubtClosureStartDate } from "./TrackRecordCalculations";
@@ -392,7 +393,7 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
   let liveRows: any[] = [];
   let liveDoubtFailed = false;
   try {
-    for (const part of chunk(assignmentIds, 10)) {
+    for (const part of chunk(closureQueryAssignmentIds, 10)) {
       liveRows.push(...await readAllLiveDoubtsForAssignments(part));
     }
     liveRows = liveRows.filter((row: any) =>
@@ -404,8 +405,18 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
     liveDoubtFailed = true;
     warnings.push("Live doubt overlay could not be loaded. Doubt-derived metrics are unavailable rather than presenting a potentially stale Loop-2-only result.");
   }
-  // Track Record includes teacher closure/performance metrics. The shared
-  // reconciliation contract excludes unmatched live-only rows in this mode.
+  // Keep event-history reconciliation separate from the closure cohort.
+  // Track Record's closure metric must match School Overview and Teaching
+  // Journal: reconcile the raw assignment-scoped Loop-2 ledger with the same
+  // Live rows and retain unmatched Live-only rows as unresolved evidence.
+  // The existing false-mode reconciliation below remains unchanged for the
+  // historical event metrics, preventing Loop-1-only rows from inflating
+  // opening/new/resolved/closing event counts.
+  const closureEffectiveDoubts = mergePendingDoubtsWithLiveLedger(
+    closureLedgerDoubts,
+    liveRows,
+    { includeUnmatchedLive: true },
+  );
   const reconciledDoubts = reconcilePendingDoubtsWithLiveLedger(ledgerDoubts, liveRows, {
     includeUnmatchedLive: false,
   });
@@ -581,7 +592,7 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
     const groupClosureAssignmentIds = new Set<string>([
       ...ids, ...activeGroupClosureAssignmentIds,
     ]);
-    const groupClosureDoubts = closureLedgerDoubts.filter((x: any) =>
+    const groupClosureDoubts = closureEffectiveDoubts.filter((x: any) =>
       groupClosureAssignmentIds.has(clean(x.teacher_assignment_uuid))
     );
     const feedbackByLog = new Map<string, any[]>();
