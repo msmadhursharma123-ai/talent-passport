@@ -18,17 +18,51 @@ function htmlEscape(value: unknown) {
   return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
+function hasPdfMetricData(cell: TrackRecordCell): boolean {
+  return METRICS.some(({ id }) => {
+    const display = String(cell.metrics[id]?.display ?? "").trim();
+    return display !== "" && display !== "—";
+  });
+}
+
+/**
+ * GOLDEN RULE — WEEKLY PDF LAYOUT ONLY:
+ * When the Weekly PDF is generated for all periods, remove only trailing
+ * weekly columns that contain no metric data for this group. Never remove a
+ * week that contains an explicit value such as 0 or 0%, and never alter the
+ * monthly PDF path. This is presentation-only; the Track Record data model,
+ * repository, canonical calculations, reconciliation and on-screen tables
+ * remain untouched.
+ */
+function getPdfCells(
+  group: TrackRecordGroup,
+  view: TrackRecordView,
+  focusPeriod: string,
+): TrackRecordCell[] {
+  const allViewCells = group.cells.filter(cell => cell.period.view === view);
+  const selectedCells = allViewCells.filter(cell =>
+    focusPeriod === "ALL" || cell.period.id === focusPeriod,
+  );
+
+  if (view !== "weekly" || focusPeriod !== "ALL") return selectedCells;
+
+  let lastDataIndex = -1;
+  allViewCells.forEach((cell, index) => {
+    if (hasPdfMetricData(cell)) lastDataIndex = index;
+  });
+
+  return lastDataIndex >= 0 ? allViewCells.slice(0, lastDataIndex + 1) : [];
+}
+
 function buildPdfBody(groups: TrackRecordGroup[], view: TrackRecordView, focusPeriod: string, audience: TrackRecordAudience) {
   const sections = groups.map(group => {
-    const cells = group.cells.filter(cell => cell.period.view === view &&
-      (focusPeriod === "ALL" || cell.period.id === focusPeriod));
+    const cells = getPdfCells(group, view, focusPeriod);
+    const allCells = group.cells.filter(x => x.period.view === view);
     const headers = cells.map(cell => `<th>${htmlEscape(cell.period.label)}</th>`).join("");
     const rows = METRICS.map(row => {
-      const values = cells.map((cell, index) => {
+      const values = cells.map(cell => {
         const current = cell.metrics[row.id];
-        const previousCell = group.cells.filter(x => x.period.view === view)
-          .findIndex(x => x.period.id === cell.period.id);
-        const allCells = group.cells.filter(x => x.period.view === view);
+        const previousCell = allCells.findIndex(x => x.period.id === cell.period.id);
         const previous = previousCell > 0 ? allCells[previousCell - 1].metrics[row.id] : undefined;
         const comparable = previousCell > 0 && canCompareTrackRecordMetricPeriods(
           cell.period, allCells[previousCell - 1].period, row.id,
@@ -40,9 +74,12 @@ function buildPdfBody(groups: TrackRecordGroup[], view: TrackRecordView, focusPe
       }).join("");
       return `<tr><th>${htmlEscape(row.label)}</th>${values}</tr>`;
     }).join("");
-    return `<section class="group"><h2>${audience === "school" ? `${htmlEscape(group.teacherName)} · ` : ""}Class ${htmlEscape(group.className)} · Section ${htmlEscape(group.sectionName)} · ${htmlEscape(group.subjectName)}</h2><table><thead><tr><th>Performance parameter</th>${headers}</tr></thead><tbody>${rows}</tbody></table></section>`;
+    const noWeeklyData = view === "weekly" && cells.length === 0
+      ? `<div class="weekly-no-data">No recorded weekly data for this teaching assignment yet.</div>`
+      : `<table><thead><tr><th>Performance parameter</th>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+    return `<section class="group"><h2>${audience === "school" ? `${htmlEscape(group.teacherName)} · ` : ""}Class ${htmlEscape(group.className)} · Section ${htmlEscape(group.sectionName)} · ${htmlEscape(group.subjectName)}</h2>${noWeeklyData}</section>`;
   }).join("");
-  return `<main><h1>${audience === "school" ? "School Teaching Track Record" : "My Teaching Track Record"}</h1><p>${view === "monthly" ? "Monthly comparison" : "Weekly comparison"} · Generated ${htmlEscape(new Date().toLocaleString())}</p>${sections}</main>`;
+  return `<main${view === "weekly" ? ` class="tr-pdf-weekly"` : ""}><h1>${audience === "school" ? "School Teaching Track Record" : "My Teaching Track Record"}</h1><p>${view === "monthly" ? "Monthly comparison" : "Weekly comparison"} · Generated ${htmlEscape(new Date().toLocaleString())}</p>${sections}</main>`;
 }
 
 function trendClass(metricId: TrackRecordMetricId, current: TrackRecordMetric, previous?: TrackRecordMetric, comparable = false) {
@@ -110,6 +147,14 @@ export default function TrackRecordModal({ audience, onClose }: Props) {
         th,td{border:1px solid #CBD5E1;padding:4px;text-align:center;white-space:normal}
         th:first-child{text-align:left;min-width:120px}thead th{background:#E2E8F0}
         td.up{background:#DCFCE7;color:#166534}td.down{background:#FEF3C7;color:#92400E}td.neutral{background:#F8FAFC;color:#475569}
+        ${view === "weekly" ? `
+          .tr-pdf-weekly .group{break-inside:avoid}
+          .tr-pdf-weekly table{table-layout:fixed;font-size:8px}
+          .tr-pdf-weekly th,.tr-pdf-weekly td{padding:5px 6px;line-height:1.15;vertical-align:middle}
+          .tr-pdf-weekly th:first-child{width:145px;min-width:145px}
+          .tr-pdf-weekly thead th:not(:first-child){font-size:8px;font-weight:800}
+          .tr-pdf-weekly .weekly-no-data{border:1px solid #CBD5E1;background:#F8FAFC;color:#64748B;padding:12px;font-size:9px}
+        ` : ""}
       `;
       await printHtmlAsPdf({
         bodyHtml, css,
