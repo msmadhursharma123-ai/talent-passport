@@ -280,32 +280,32 @@ export default function SchoolMorningBrief() {
             <article className="school-morning-brief-metric">
               <small> School's Learning Health %</small>
               <strong>{score(brief.yesterdayLearningHealth)}</strong>
-              <em> Class health metrics for yesterday's active subjects.</em>
+              <em></em>
             </article>
             <article className="school-morning-brief-metric">
               <small>Full Understanding %</small>
               <strong>{score(brief.yesterdayUnderstandingRate)}</strong>
-              <em>Students who completely understood yesterday.</em>
+              <em></em>
             </article>
             <article className="school-morning-brief-metric">
               <small>Partial Understanding %</small>
               <strong>{score(brief.yesterdayPartialUnderstandingRate)}</strong>
-              <em>Students who understood only part of yesterday's learning.</em>
+              <em></em>
             </article>
             <article className="school-morning-brief-metric">
-              <small>Didn't Understand %</small>
+              <small>Did Not Understand %</small>
               <strong>{score(brief.yesterdayDidntUnderstandRate)}</strong>
-              <em>Students who did not understand yesterday's learning.</em>
+              <em></em>
             </article>
             <article className="school-morning-brief-metric">
               <small>Yesterday's Raised Doubt %</small>
               <strong>{score(brief.yesterdayDoubtRate)}</strong>
-              <em>Students with a partial or didn't-understand learning signal.</em>
+              <em></em>
             </article>
             <article className="school-morning-brief-metric">
               <small>Yesterday's Doubt Closure</small>
               <strong>{score(brief.yesterdayDoubtClosureRate)}</strong>
-              <em>Canonical resolved-doubt rate for yesterday's doubt ledger.</em>
+              <em></em>
             </article>
           </section>
 
