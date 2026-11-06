@@ -1,4 +1,4 @@
-import { calculateDailyFeedbackCreditSummaryFromLogs } from "../../../data/creditEngine";
+import { calculateDailyFeedbackCreditSummaryFromLogs } from "../../../data/creditEngine.js";
 import type {
   StudentStarPerformerClassroom,
   StudentStarPerformerResult,

@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { calculateStudentStarPerformersFromSource } from "../../src/domains/starPerformers/services/StudentStarPerformerCalculator";
-import type { StudentStarPerformerSourceData } from "../../src/domains/starPerformers/types/StudentStarPerformerModels";
+import { calculateStudentStarPerformersFromSource } from "../../src/domains/starPerformers/services/StudentStarPerformerCalculator.js";
+import type { StudentStarPerformerSourceData } from "../../src/domains/starPerformers/types/StudentStarPerformerModels.js";
 
 const PAGE_SIZE = 1000;
 const CHUNK_SIZE = 100;
