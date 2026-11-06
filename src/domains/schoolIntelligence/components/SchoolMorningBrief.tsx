@@ -4,7 +4,12 @@ import html2canvas from "html2canvas";
 import { requireSchoolIdentity } from "../../../services/identityService";
 import { getSchoolMorningBriefRawData } from "../repository/SchoolMorningBriefRepository";
 import { buildSchoolMorningBrief, getMorningBriefPeriod, getTodayIndiaDateKey } from "../analytics/SchoolMorningBriefEngine";
-import type { SchoolMorningBrief as SchoolMorningBriefModel, SchoolMorningBriefClassroomMetric } from "../types/SchoolMorningBriefModels";
+import type {
+  SchoolMorningBrief as SchoolMorningBriefModel,
+  SchoolMorningBriefClassroomMetric,
+  SchoolMorningBriefDoubtClassMetric,
+  SchoolMorningBriefMissingDailyLog,
+} from "../types/SchoolMorningBriefModels";
 import { downloadOrSharePdfBlob } from "../../../services/platform/nativeDocumentService";
 
 const STORAGE_PREFIX = "schoolAdminMorningBriefAcknowledgement";
@@ -245,12 +250,16 @@ export default function SchoolMorningBrief() {
         .school-morning-brief-modal{width:min(820px,100%);max-height:min(88vh,760px);overflow:hidden;display:flex;flex-direction:column;background:#FFF;border:1px solid #E2E8F0;border-radius:24px;box-shadow:0 24px 70px rgba(15,23,42,.22)}
         .school-morning-brief-head{padding:20px 22px 14px;border-bottom:1px solid #EEF2F7}.school-morning-brief-kicker{margin:0;color:#EA580C;font-size:10px;font-weight:900;letter-spacing:1.6px}.school-morning-brief-title{margin:6px 0 3px;color:#07142D;font-size:24px;line-height:1.12;font-weight:900}.school-morning-brief-date{margin:0;color:#64748B;font-size:11px;font-weight:800}.school-morning-brief-copy{margin:7px 0 0;color:#64748B;font-size:11px;line-height:1.4;font-weight:600}
         .school-morning-brief-body{min-height:0;overflow-y:auto;padding:14px 16px}.school-morning-brief-banner{padding:10px 12px;border:1px solid #FED7AA;background:#FFF7ED;border-radius:13px;color:#9A3412;font-size:10px;line-height:1.35;font-weight:900}.school-morning-brief-banner span{display:block;margin-top:3px;color:#C2410C;font-size:8px;font-weight:800}
-        .school-morning-brief-metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.school-morning-brief-metric{border:1px solid #E2E8F0;border-radius:13px;padding:11px;background:#FCFCFB}.school-morning-brief-metric small{display:block;color:#64748B;font-size:8px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}.school-morning-brief-metric strong{display:block;margin-top:5px;color:#0F172A;font-size:24px;line-height:1;font-weight:950}.school-morning-brief-metric em{display:block;margin-top:5px;color:#94A3B8;font-size:8px;line-height:1.3;font-style:normal;font-weight:700}
-        .school-morning-brief-section{margin-top:11px}.school-morning-brief-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-bottom:6px}.school-morning-brief-section-head h3{margin:0;color:#0F172A;font-size:11px;font-weight:950}.school-morning-brief-section-head span{color:#94A3B8;font-size:7px;font-weight:800;text-align:right}.school-morning-brief-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.school-morning-brief-card{min-width:0;border:1px solid #BBF7D0;background:#F0FDF4;border-radius:12px;padding:9px}.school-morning-brief-card.attention{border-color:#FED7AA;background:#FFF7ED}.school-morning-brief-card h4{margin:0;color:#0F172A;font-size:10px;font-weight:950;overflow-wrap:anywhere}.school-morning-brief-score{margin-top:4px;color:#15803D;font-size:15px;font-weight:950}.attention .school-morning-brief-score{color:#C2410C}.school-morning-brief-sub{margin-top:3px;color:#64748B;font-size:7.5px;line-height:1.35;font-weight:700}.school-morning-brief-breakdown{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}.school-morning-brief-pill{padding:3px 5px;border-radius:999px;background:#FFF;border:1px solid #DDE5EA;color:#475569;font-size:6.5px;font-weight:850}
+        .school-morning-brief-metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin-top:10px}.school-morning-brief-metric{border:1px solid #E2E8F0;border-radius:13px;padding:11px;background:#FCFCFB}.school-morning-brief-metric small{display:block;color:#64748B;font-size:8px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}.school-morning-brief-metric strong{display:block;margin-top:5px;color:#0F172A;font-size:24px;line-height:1;font-weight:950}.school-morning-brief-metric em{display:block;margin-top:5px;color:#94A3B8;font-size:8px;line-height:1.3;font-style:normal;font-weight:700}
+        .school-morning-brief-section{margin-top:11px}.school-morning-brief-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-bottom:6px}.school-morning-brief-section-head h3{margin:0;color:#0F172A;font-size:11px;font-weight:950}.school-morning-brief-section-head span{color:#94A3B8;font-size:7px;font-weight:800;text-align:right}
+        .school-morning-brief-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.school-morning-brief-card{min-width:0;border:1px solid #BBF7D0;background:#F0FDF4;border-radius:12px;padding:9px}.school-morning-brief-card.attention{border-color:#FED7AA;background:#FFF7ED}.school-morning-brief-card h4{margin:0;color:#0F172A;font-size:10px;font-weight:950;overflow-wrap:anywhere}.school-morning-brief-score{margin-top:4px;color:#15803D;font-size:15px;font-weight:950}.attention .school-morning-brief-score{color:#C2410C}.school-morning-brief-sub{margin-top:3px;color:#64748B;font-size:7.5px;line-height:1.35;font-weight:700}.school-morning-brief-breakdown{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}.school-morning-brief-pill{padding:3px 5px;border-radius:999px;background:#FFF;border:1px solid #DDE5EA;color:#475569;font-size:6.5px;font-weight:850}
+        .school-morning-brief-doubt-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.school-morning-brief-doubt-card{min-width:0;border:1px solid #FED7AA;background:#FFF7ED;border-radius:12px;padding:9px}.school-morning-brief-doubt-card h4{margin:0;color:#0F172A;font-size:10px;font-weight:950;overflow-wrap:anywhere}.school-morning-brief-doubt-score{margin-top:4px;color:#C2410C;font-size:16px;font-weight:950}.school-morning-brief-doubt-teacher{margin-top:3px;color:#475569;font-size:7.5px;line-height:1.35;font-weight:800}.school-morning-brief-doubt-breakdown{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}
+        .school-morning-brief-missed{border:1px solid #FDE2E2;background:#FFFDFD;border-radius:12px;overflow:hidden}.school-morning-brief-missed-row{display:grid;grid-template-columns:minmax(120px,.8fr) auto minmax(220px,1.8fr);gap:9px;align-items:start;padding:8px 10px;border-bottom:1px solid #F1F5F9}.school-morning-brief-missed-row:last-child{border-bottom:0}.school-morning-brief-missed-teacher{color:#0F172A;font-size:8.5px;font-weight:950}.school-morning-brief-missed-count{justify-self:start;padding:3px 6px;border-radius:999px;background:#FFF1F2;border:1px solid #FECDD3;color:#BE123C;font-size:7px;font-weight:950;white-space:nowrap}.school-morning-brief-assignment-list{display:flex;flex-wrap:wrap;gap:3px}.school-morning-brief-assignment{padding:3px 5px;border:1px solid #E2E8F0;border-radius:999px;background:#FFF;color:#475569;font-size:6.5px;font-weight:800;line-height:1.2}
+        .school-morning-brief-empty{border:1px solid #E2E8F0;background:#FCFCFB;border-radius:12px;padding:9px;color:#64748B;font-size:8px;font-weight:800}
         .school-morning-brief-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 16px;border-top:1px solid #EEF2F7;background:#FCFCFB}.school-morning-brief-note{color:#94A3B8;font-size:8px;line-height:1.3;font-weight:700}.school-morning-brief-actions{display:flex;align-items:center;gap:6px}.school-morning-brief-download,.school-morning-brief-btn{border-radius:10px;padding:8px 11px;font-size:9px;font-weight:900;cursor:pointer}.school-morning-brief-download{border:1px solid #FED7AA;background:#FFF7ED;color:#C2410C}.school-morning-brief-download:disabled{opacity:.65;cursor:wait}.school-morning-brief-btn{border:1px solid #F97316;background:#F97316;color:#FFF}.school-morning-brief-btn:disabled{opacity:.45;cursor:not-allowed}
         .school-morning-brief-ack{display:flex;align-items:center;gap:6px;margin-top:9px;padding-top:8px;border-top:1px solid rgba(251,146,60,.2);color:#334155;font-size:9px;font-weight:900;cursor:pointer}.school-morning-brief-ack input{width:14px;height:14px;margin:0;accent-color:#F97316}
-        @media(max-width:1024px){.school-morning-brief-overlay{padding:10px}.school-morning-brief-modal{width:min(650px,100%);max-height:90vh;border-radius:18px}.school-morning-brief-head{padding:13px 14px 10px}.school-morning-brief-title{font-size:18px}.school-morning-brief-copy{font-size:9px}.school-morning-brief-body{padding:9px}.school-morning-brief-metric{padding:9px}.school-morning-brief-metric strong{font-size:20px}.school-morning-brief-list{gap:5px}.school-morning-brief-card{padding:7px}.school-morning-brief-card h4{font-size:9px}.school-morning-brief-foot{padding:8px 9px}.school-morning-brief-note{font-size:7px}.school-morning-brief-download,.school-morning-brief-btn{padding:6px 8px;font-size:7px}}
-        @media(max-width:600px){.school-morning-brief-overlay{padding:7px}.school-morning-brief-modal{max-height:93vh;border-radius:14px}.school-morning-brief-head{padding:10px 11px 8px}.school-morning-brief-kicker{font-size:6.5px;letter-spacing:.85px}.school-morning-brief-title{font-size:15px}.school-morning-brief-date{font-size:8px}.school-morning-brief-copy{font-size:7.5px}.school-morning-brief-body{padding:7px}.school-morning-brief-banner{padding:7px 8px;font-size:7.5px}.school-morning-brief-banner span{font-size:6.5px}.school-morning-brief-metrics{gap:5px;margin-top:6px}.school-morning-brief-metric{padding:7px;border-radius:10px}.school-morning-brief-metric small{font-size:6px}.school-morning-brief-metric strong{font-size:16px}.school-morning-brief-metric em{font-size:6px}.school-morning-brief-section{margin-top:7px}.school-morning-brief-section-head h3{font-size:8px}.school-morning-brief-section-head span{font-size:5.5px}.school-morning-brief-list{grid-template-columns:1fr 1fr;gap:4px}.school-morning-brief-card{padding:6px;border-radius:9px}.school-morning-brief-card h4{font-size:7.5px}.school-morning-brief-score{font-size:12px}.school-morning-brief-sub{font-size:6px}.school-morning-brief-pill{font-size:5.5px;padding:2px 4px}.school-morning-brief-ack{margin-top:5px;padding-top:5px;font-size:6.5px}.school-morning-brief-ack input{width:11px;height:11px}.school-morning-brief-foot{gap:5px;padding:6px 7px}.school-morning-brief-note{max-width:42%;font-size:6px}.school-morning-brief-actions{gap:4px}.school-morning-brief-download,.school-morning-brief-btn{padding:5px 6px;font-size:6px;border-radius:7px}}
+        @media(max-width:1024px){.school-morning-brief-overlay{padding:10px}.school-morning-brief-modal{width:min(650px,100%);max-height:90vh;border-radius:18px}.school-morning-brief-head{padding:13px 14px 10px}.school-morning-brief-title{font-size:18px}.school-morning-brief-copy{font-size:9px}.school-morning-brief-body{padding:9px}.school-morning-brief-metrics{grid-template-columns:1fr 1fr;gap:5px}.school-morning-brief-metric{padding:9px}.school-morning-brief-metric strong{font-size:20px}.school-morning-brief-list,.school-morning-brief-doubt-list{gap:5px}.school-morning-brief-card,.school-morning-brief-doubt-card{padding:7px}.school-morning-brief-card h4,.school-morning-brief-doubt-card h4{font-size:9px}.school-morning-brief-foot{padding:8px 9px}.school-morning-brief-note{font-size:7px}}
+        @media(max-width:600px){.school-morning-brief-overlay{padding:7px}.school-morning-brief-modal{max-height:93vh;border-radius:14px}.school-morning-brief-head{padding:10px 11px 8px}.school-morning-brief-kicker{font-size:6.5px;letter-spacing:.85px}.school-morning-brief-title{font-size:15px}.school-morning-brief-date{font-size:8px}.school-morning-brief-copy{font-size:7.5px}.school-morning-brief-body{padding:7px}.school-morning-brief-banner{padding:7px 8px;font-size:7.5px}.school-morning-brief-banner span{font-size:6.5px}.school-morning-brief-metrics{gap:5px;margin-top:6px}.school-morning-brief-metric{padding:7px;border-radius:10px}.school-morning-brief-metric small{font-size:6px}.school-morning-brief-metric strong{font-size:16px}.school-morning-brief-metric em{font-size:6px}.school-morning-brief-section{margin-top:7px}.school-morning-brief-section-head h3{font-size:8px}.school-morning-brief-section-head span{font-size:5.5px}.school-morning-brief-list,.school-morning-brief-doubt-list{grid-template-columns:1fr 1fr;gap:4px}.school-morning-brief-card,.school-morning-brief-doubt-card{padding:6px;border-radius:9px}.school-morning-brief-card h4,.school-morning-brief-doubt-card h4{font-size:7.5px}.school-morning-brief-score{font-size:12px}.school-morning-brief-doubt-score{font-size:12px}.school-morning-brief-sub,.school-morning-brief-doubt-teacher{font-size:6px}.school-morning-brief-pill{font-size:5.5px;padding:2px 4px}.school-morning-brief-missed-row{grid-template-columns:minmax(80px,1fr) auto;gap:5px;padding:7px}.school-morning-brief-assignment-list{grid-column:1/-1}.school-morning-brief-missed-teacher{font-size:7.5px}.school-morning-brief-missed-count{font-size:6px;padding:2px 5px}.school-morning-brief-assignment{font-size:5.5px;padding:2px 4px}.school-morning-brief-empty{font-size:6.5px;padding:7px}.school-morning-brief-ack{margin-top:5px;padding-top:5px;font-size:6.5px}.school-morning-brief-ack input{width:11px;height:11px}.school-morning-brief-foot{gap:5px;padding:6px 7px}.school-morning-brief-note{max-width:42%;font-size:6px}.school-morning-brief-actions{gap:4px}.school-morning-brief-download,.school-morning-brief-btn{padding:5px 6px;font-size:6px;border-radius:7px}}
       `}</style>
 
       <div ref={modalRef} className="school-morning-brief-modal">
@@ -264,20 +273,56 @@ export default function SchoolMorningBrief() {
         <main className="school-morning-brief-body">
           <div className="school-morning-brief-banner">
             THIS IS WHAT HAPPENED IN YOUR SCHOOL ON {brief.yesterdayDay.toUpperCase()}, {brief.yesterdayDate.toUpperCase()}
-            <span>Yesterday figures are calculated independently from the existing School Overview calculations.</span>
+            <span></span>
           </div>
 
           <section className="school-morning-brief-metrics">
             <article className="school-morning-brief-metric">
-              <small>Yesterday School Learning Health</small>
+              <small> School's Learning Health %</small>
               <strong>{score(brief.yesterdayLearningHealth)}</strong>
-              <em>Average of the understanding percentages of teachers who taught yesterday.</em>
+              <em> Class health metrics for yesterday's active subjects.</em>
             </article>
             <article className="school-morning-brief-metric">
-              <small>Yesterday Doubt Resolution</small>
-              <strong>{score(brief.yesterdayDoubtClosureRate)}</strong>
-              <em>Average of the doubt-closure percentages of teachers with doubts yesterday.</em>
+              <small>Full Understanding %</small>
+              <strong>{score(brief.yesterdayUnderstandingRate)}</strong>
+              <em>Students who completely understood yesterday.</em>
             </article>
+            <article className="school-morning-brief-metric">
+              <small>Partial Understanding %</small>
+              <strong>{score(brief.yesterdayPartialUnderstandingRate)}</strong>
+              <em>Students who understood only part of yesterday's learning.</em>
+            </article>
+            <article className="school-morning-brief-metric">
+              <small>Didn't Understand %</small>
+              <strong>{score(brief.yesterdayDidntUnderstandRate)}</strong>
+              <em>Students who did not understand yesterday's learning.</em>
+            </article>
+            <article className="school-morning-brief-metric">
+              <small>Yesterday's Raised Doubt %</small>
+              <strong>{score(brief.yesterdayDoubtRate)}</strong>
+              <em>Students with a partial or didn't-understand learning signal.</em>
+            </article>
+            <article className="school-morning-brief-metric">
+              <small>Yesterday's Doubt Closure</small>
+              <strong>{score(brief.yesterdayDoubtClosureRate)}</strong>
+              <em>Canonical resolved-doubt rate for yesterday's doubt ledger.</em>
+            </article>
+          </section>
+
+          <section className="school-morning-brief-section">
+            <div className="school-morning-brief-section-head"><h3>YESTERDAY'S CLASSES WITH MAXIMUM DOUBTS</h3><span>Top 3 class · section · subject by doubt %</span></div>
+            <div className="school-morning-brief-doubt-list">
+              {brief.yesterdayTopDoubtClasses.length ? brief.yesterdayTopDoubtClasses.map((row) => <DoubtClassCard key={row.key} row={row} />) : <div className="school-morning-brief-empty">No yesterday classroom doubt signal was recorded.</div>}
+            </div>
+          </section>
+
+          <section className="school-morning-brief-section">
+            <div className="school-morning-brief-section-head"><h3>TEACHERS WHO MISSED YESTERDAY'S DAILY LOGS</h3><span>Active assignments · Sunday and school holidays excluded</span></div>
+            {brief.missingDailyLogs.length ? (
+              <div className="school-morning-brief-missed">
+                {brief.missingDailyLogs.map((row) => <MissingLogRow key={row.teacherUuid} row={row} />)}
+              </div>
+            ) : <div className="school-morning-brief-empty">No missed Daily Logs were identified for yesterday.</div>}
           </section>
 
           <section className="school-morning-brief-section">
@@ -317,13 +362,43 @@ function ClassroomCard({ row, attention = false }: { row: SchoolMorningBriefClas
     <article className={`school-morning-brief-card${attention ? " attention" : ""}`}>
       <h4>{row.classroom}</h4>
       <div className="school-morning-brief-score">{row.combinedScore}% combined</div>
-      <div className="school-morning-brief-sub">Based on classroom performance across the selected week.</div>
+      <div className="school-morning-brief-sub">Teacher: {row.teacherNames.length ? row.teacherNames.join(", ") : "Teacher unavailable"}</div>
       <div className="school-morning-brief-breakdown">
         <span className="school-morning-brief-pill">Feedback {row.responseRate}%</span>
         <span className="school-morning-brief-pill">Understanding {row.understandingRate}%</span>
         <span className="school-morning-brief-pill">Closure {row.doubtClosureRate}%</span>
       </div>
     </article>
+  );
+}
+
+function DoubtClassCard({ row }: { row: SchoolMorningBriefDoubtClassMetric }) {
+  return (
+    <article className="school-morning-brief-doubt-card">
+      <h4>{row.classroom}</h4>
+      <div className="school-morning-brief-doubt-score">{row.doubtRate}% doubt</div>
+      <div className="school-morning-brief-doubt-teacher">Teacher: {row.teacherNames.length ? row.teacherNames.join(", ") : "Teacher unavailable"}</div>
+      <div className="school-morning-brief-doubt-breakdown">
+        <span className="school-morning-brief-pill">Partial {row.partialRate}%</span>
+        <span className="school-morning-brief-pill">Didn't understand {row.didntUnderstandRate}%</span>
+      </div>
+    </article>
+  );
+}
+
+function MissingLogRow({ row }: { row: SchoolMorningBriefMissingDailyLog }) {
+  return (
+    <div className="school-morning-brief-missed-row">
+      <div className="school-morning-brief-missed-teacher">{row.teacherName}</div>
+      <div className="school-morning-brief-missed-count">{row.missedLogs} log{row.missedLogs === 1 ? "" : "s"} missed</div>
+      <div className="school-morning-brief-assignment-list">
+        {row.assignments.map((assignment) => (
+          <span key={`${assignment.className}|${assignment.sectionName}|${assignment.subjectName}`} className="school-morning-brief-assignment">
+            {assignment.className} · {assignment.sectionName} · {assignment.subjectName}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 

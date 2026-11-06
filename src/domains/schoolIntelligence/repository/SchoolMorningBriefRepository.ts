@@ -15,6 +15,7 @@ export interface SchoolMorningBriefRawData {
   logs: any[];
   feedback: any[];
   doubts: any[];
+  schoolHolidays: string[];
 }
 
 function getClient() {
@@ -49,7 +50,7 @@ export async function getSchoolMorningBriefRawData(
       .eq("school_uuid", schoolUuid),
     supabase
       .from("teacher_classroom_assignments")
-      .select("id,teacher_uuid,school_uuid,academic_year,is_active,class_name,section_name,subject_name")
+      .select("id,teacher_uuid,school_uuid,academic_year,is_active,class_name,section_name,subject_name,created_at")
       .eq("school_uuid", schoolUuid)
       .eq("is_active", true),
     supabase
@@ -70,6 +71,25 @@ export async function getSchoolMorningBriefRawData(
   const students = studentResult.data ?? [];
   const assignmentIds = assignments.map((row: any) => String(row.id ?? "")).filter(Boolean);
 
+  let schoolHolidays: string[] = [];
+  try {
+    const holidayResult = await supabase
+      .from("school_calendar_holidays")
+      .select("holiday_date")
+      .eq("school_uuid", schoolUuid)
+      .gte("holiday_date", startDate)
+      .lte("holiday_date", endDate);
+    if (!holidayResult.error) {
+      schoolHolidays = (holidayResult.data ?? [])
+        .map((row: any) => String(row.holiday_date ?? "").slice(0, 10))
+        .filter(Boolean);
+    } else {
+      console.warn("SCHOOL MORNING BRIEF SCHOOL CALENDAR READ FAILED", holidayResult.error);
+    }
+  } catch (error) {
+    console.warn("SCHOOL MORNING BRIEF SCHOOL CALENDAR READ FAILED", error);
+  }
+
   if (assignmentIds.length === 0) {
     return {
       schoolUuid,
@@ -80,6 +100,7 @@ export async function getSchoolMorningBriefRawData(
       logs: [],
       feedback: [],
       doubts: [],
+      schoolHolidays,
     };
   }
 
@@ -146,5 +167,6 @@ export async function getSchoolMorningBriefRawData(
     logs,
     feedback: mergeFeedbackUnderstandingLevels(feedback, scopedLiveRows),
     doubts: mergePendingDoubtsWithLiveLedger(rawDoubts, scopedLiveRows, { includeUnmatchedLive: true }),
+    schoolHolidays,
   };
 }

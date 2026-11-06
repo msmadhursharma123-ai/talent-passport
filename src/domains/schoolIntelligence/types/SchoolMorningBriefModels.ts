@@ -13,6 +13,8 @@ export interface SchoolMorningBriefClassroomMetric {
   classroom: string;
   className: string;
   sectionName: string;
+  subjectName: string;
+  teacherNames: string[];
   responseRate: number;
   understandingRate: number;
   doubtClosureRate: number;
@@ -23,6 +25,33 @@ export interface SchoolMorningBriefClassroomMetric {
   doubtsResolved: number;
 }
 
+
+export interface SchoolMorningBriefDoubtClassMetric {
+  key: string;
+  className: string;
+  sectionName: string;
+  subjectName: string;
+  classroom: string;
+  teacherNames: string[];
+  doubtRate: number;
+  partialRate: number;
+  didntUnderstandRate: number;
+  eligibleStudentObservations: number;
+  doubtSignals: number;
+  logsCount: number;
+}
+
+export interface SchoolMorningBriefMissingDailyLog {
+  teacherUuid: string;
+  teacherName: string;
+  missedLogs: number;
+  assignments: Array<{
+    className: string;
+    sectionName: string;
+    subjectName: string;
+  }>;
+}
+
 export interface SchoolMorningBrief {
   schoolUuid: string;
   schoolName: string;
@@ -31,7 +60,13 @@ export interface SchoolMorningBrief {
   yesterdayDate: string;
   yesterdayDay: string;
   yesterdayLearningHealth: number | null;
+  yesterdayUnderstandingRate: number | null;
   yesterdayDoubtClosureRate: number | null;
+  yesterdayPartialUnderstandingRate: number | null;
+  yesterdayDidntUnderstandRate: number | null;
+  yesterdayDoubtRate: number | null;
+  yesterdayTopDoubtClasses: SchoolMorningBriefDoubtClassMetric[];
+  missingDailyLogs: SchoolMorningBriefMissingDailyLog[];
   yesterdayTeacherCount: number;
   yesterdayTeachers: SchoolMorningBriefTeacherDailyMetric[];
   periodStart: string;

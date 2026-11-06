@@ -3,6 +3,7 @@ import {
   aggregateLearningLectureMetrics,
   calculateLearningLectureMetrics,
   calculateDoubtClosureRate,
+  calculateLearningDoubtRate,
   countResolvedDoubts,
   calculateUnweightedAveragePercentage,
 } from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
@@ -207,13 +208,18 @@ function teacherDailyMetrics(raw: SchoolMorningBriefRawData, yesterday: string) 
 }
 
 function classroomMetrics(raw: SchoolMorningBriefRawData, start: string, end: string) {
-  const classroomMap = new Map<string, { className: string; sectionName: string }>();
+  const groupMap = new Map<string, { className: string; sectionName: string; subjectName: string; assignmentIds: string[] }>();
 
   raw.assignments.forEach((assignment: any) => {
     const className = String(assignment.class_name ?? "").trim();
     const sectionName = String(assignment.section_name ?? "").trim();
-    if (!className || !sectionName) return;
-    classroomMap.set(`${className}|||${sectionName}`, { className, sectionName });
+    const subjectName = String(assignment.subject_name ?? "").trim();
+    if (!className || !sectionName || !subjectName) return;
+    const key = `${className}|||${sectionName}|||${subjectName}`;
+    const current = groupMap.get(key) ?? { className, sectionName, subjectName, assignmentIds: [] };
+    const id = String(assignment.id ?? "").trim();
+    if (id && !current.assignmentIds.includes(id)) current.assignmentIds.push(id);
+    groupMap.set(key, current);
   });
 
   const rows: SchoolMorningBriefClassroomMetric[] = [];
@@ -221,18 +227,8 @@ function classroomMetrics(raw: SchoolMorningBriefRawData, start: string, end: st
     raw.assignments.map((assignment: any) => [String(assignment.id ?? ""), assignment]),
   );
 
-  for (const [classroomKey, classroom] of classroomMap) {
-    const assignmentIds = new Set(
-      raw.assignments
-        .filter(
-          (assignment: any) =>
-            same(assignment.class_name, classroom.className) &&
-            same(assignment.section_name, classroom.sectionName),
-        )
-        .map((assignment: any) => String(assignment.id ?? ""))
-        .filter(Boolean),
-    );
-
+  for (const [classroomKey, classroom] of groupMap) {
+    const assignmentIds = new Set(classroom.assignmentIds);
     const logs = raw.logs.filter((log: any) =>
       assignmentIds.has(String(log.teacher_assignment_uuid ?? "")) &&
       String(log.log_date ?? "") >= start &&
@@ -251,12 +247,21 @@ function classroomMetrics(raw: SchoolMorningBriefRawData, start: string, end: st
     const combinedScore = Math.round(
       (aggregate.responseRate + aggregate.understandingRate + doubtClosureRate) / 3,
     );
+    const teacherNames = Array.from(new Set(
+      raw.assignments
+        .filter((assignment: any) => assignmentIds.has(String(assignment.id ?? "")))
+        .map((assignment: any) => raw.teachers.find((teacher: any) => String(teacher.teacher_uuid ?? "") === String(assignment.teacher_uuid ?? ""))?.full_name)
+        .map((value: unknown) => String(value ?? "").trim())
+        .filter(Boolean),
+    )).sort((a, b) => a.localeCompare(b));
 
     rows.push({
       classroomKey,
-      classroom: `Class ${classroom.className} · Section ${classroom.sectionName}`,
+      classroom: `Class ${classroom.className} · Section ${classroom.sectionName} · ${classroom.subjectName}`,
       className: classroom.className,
       sectionName: classroom.sectionName,
+      subjectName: classroom.subjectName,
+      teacherNames,
       responseRate: aggregate.responseRate,
       understandingRate: aggregate.understandingRate,
       doubtClosureRate,
@@ -272,8 +277,197 @@ function classroomMetrics(raw: SchoolMorningBriefRawData, start: string, end: st
   return rows.sort((a, b) =>
     b.combinedScore - a.combinedScore ||
     a.className.localeCompare(b.className, undefined, { numeric: true }) ||
-    a.sectionName.localeCompare(b.sectionName),
+    a.sectionName.localeCompare(b.sectionName) ||
+    a.subjectName.localeCompare(b.subjectName),
   );
+}
+
+function yesterdaySchoolLearningMetrics(raw: SchoolMorningBriefRawData, yesterday: string) {
+  // Match School Overview's displayed classroom semantics: calculate the
+  // canonical metrics per active assignment (Class + Section + Subject),
+  // including assignments with no published lecture yesterday as 0%, then
+  // take an unweighted average across those subject rows. This prevents a
+  // missing Daily Log from disappearing from the school-level Morning Brief.
+  const assignmentById = new Map(
+    raw.assignments.map((assignment: any) => [String(assignment.id ?? ""), assignment]),
+  );
+
+  const assignmentMetrics = raw.assignments.map((assignment: any) => {
+    const assignmentId = String(assignment.id ?? "").trim();
+    const logs = raw.logs.filter(
+      (log: any) =>
+        String(log.teacher_assignment_uuid ?? "") === assignmentId &&
+        String(log.log_date ?? "") === yesterday,
+    );
+    const logIds = new Set(logs.map((log: any) => String(log.id ?? "")));
+    const feedback = raw.feedback.filter((row: any) =>
+      logIds.has(String(row.daily_log_uuid ?? "")),
+    );
+    const doubts = raw.doubts.filter(
+      (doubt: any) =>
+        String(doubt.teacher_assignment_uuid ?? "") === assignmentId &&
+        String(doubt.log_date ?? "") === yesterday,
+    );
+
+    const lectureMetrics = metricsForLogs(
+      raw,
+      logs,
+      feedback,
+      assignmentById,
+      raw.doubts,
+    );
+    const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
+
+    return {
+      learningHealth: aggregate.classHealthPercentage,
+      understandingRate: aggregate.understandingRate,
+      partialRate: aggregate.partialRate,
+      didntUnderstandRate: aggregate.didntUnderstandRate,
+      doubtRate: calculateLearningDoubtRate(
+        aggregate.partialStudentObservations,
+        aggregate.didntUnderstandStudentObservations,
+        aggregate.eligibleStudentObservations,
+      ),
+      doubtClosureRate: calculateDoubtClosureRate(doubts),
+    };
+  });
+
+  if (assignmentMetrics.length === 0) {
+    return {
+      learningHealth: null,
+      understandingRate: null,
+      partialRate: null,
+      didntUnderstandRate: null,
+      doubtRate: null,
+      doubtClosureRate: null,
+    };
+  }
+
+  return {
+    learningHealth: calculateUnweightedAveragePercentage(
+      assignmentMetrics.map((row) => row.learningHealth),
+    ),
+    understandingRate: calculateUnweightedAveragePercentage(
+      assignmentMetrics.map((row) => row.understandingRate),
+    ),
+    partialRate: calculateUnweightedAveragePercentage(
+      assignmentMetrics.map((row) => row.partialRate),
+    ),
+    didntUnderstandRate: calculateUnweightedAveragePercentage(
+      assignmentMetrics.map((row) => row.didntUnderstandRate),
+    ),
+    doubtRate: calculateUnweightedAveragePercentage(
+      assignmentMetrics.map((row) => row.doubtRate),
+    ),
+    doubtClosureRate: calculateUnweightedAveragePercentage(
+      assignmentMetrics.map((row) => row.doubtClosureRate),
+    ),
+  };
+}
+
+function yesterdayDoubtClassMetrics(raw: SchoolMorningBriefRawData, yesterday: string) {
+  const groups = new Map<string, { className: string; sectionName: string; subjectName: string; assignmentIds: Set<string> }>();
+  raw.assignments.forEach((assignment: any) => {
+    const className = String(assignment.class_name ?? "").trim();
+    const sectionName = String(assignment.section_name ?? "").trim();
+    const subjectName = String(assignment.subject_name ?? "").trim();
+    const id = String(assignment.id ?? "").trim();
+    if (!className || !sectionName || !subjectName || !id) return;
+    const key = `${className}|||${sectionName}|||${subjectName}`;
+    const current = groups.get(key) ?? { className, sectionName, subjectName, assignmentIds: new Set<string>() };
+    current.assignmentIds.add(id);
+    groups.set(key, current);
+  });
+
+  const assignmentById = new Map(
+    raw.assignments.map((assignment: any) => [String(assignment.id ?? ""), assignment]),
+  );
+  const rows: import("../types/SchoolMorningBriefModels").SchoolMorningBriefDoubtClassMetric[] = [];
+
+  for (const [key, group] of groups) {
+    const assignmentIds = group.assignmentIds;
+    const logs = raw.logs.filter((log: any) =>
+      assignmentIds.has(String(log.teacher_assignment_uuid ?? "")) && String(log.log_date ?? "") === yesterday,
+    );
+    if (!logs.length) continue;
+    const logIds = new Set(logs.map((log: any) => String(log.id ?? "")));
+    const feedback = raw.feedback.filter((row: any) => logIds.has(String(row.daily_log_uuid ?? "")));
+    const lectureMetrics = metricsForLogs(raw, logs, feedback, assignmentById, raw.doubts);
+    const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
+    const teacherNames = Array.from(new Set(
+      raw.assignments
+        .filter((assignment: any) => assignmentIds.has(String(assignment.id ?? "")))
+        .map((assignment: any) => raw.teachers.find((teacher: any) => String(teacher.teacher_uuid ?? "") === String(assignment.teacher_uuid ?? ""))?.full_name)
+        .map((value: unknown) => String(value ?? "").trim())
+        .filter(Boolean),
+    )).sort((a, b) => a.localeCompare(b));
+    const doubtSignals = aggregate.partialStudentObservations + aggregate.didntUnderstandStudentObservations;
+    rows.push({
+      key,
+      className: group.className,
+      sectionName: group.sectionName,
+      subjectName: group.subjectName,
+      classroom: `Class ${group.className} · Section ${group.sectionName} · ${group.subjectName}`,
+      teacherNames,
+      doubtRate: calculateLearningDoubtRate(
+        aggregate.partialStudentObservations,
+        aggregate.didntUnderstandStudentObservations,
+        aggregate.eligibleStudentObservations,
+      ),
+      partialRate: aggregate.partialRate,
+      didntUnderstandRate: aggregate.didntUnderstandRate,
+      eligibleStudentObservations: aggregate.eligibleStudentObservations,
+      doubtSignals,
+      logsCount: logs.length,
+    });
+  }
+
+  return rows.sort((a, b) =>
+    b.doubtRate - a.doubtRate ||
+    b.doubtSignals - a.doubtSignals ||
+    a.className.localeCompare(b.className, undefined, { numeric: true }) ||
+    a.sectionName.localeCompare(b.sectionName) ||
+    a.subjectName.localeCompare(b.subjectName),
+  ).slice(0, 3);
+}
+
+function missingDailyLogs(raw: SchoolMorningBriefRawData, yesterday: string) {
+  if (new Date(`${yesterday}T00:00:00Z`).getUTCDay() === 0 || raw.schoolHolidays.includes(yesterday)) return [];
+
+  const activeTeachers = raw.teachers.filter((teacher: any) => teacher.is_active !== false);
+  const rows: import("../types/SchoolMorningBriefModels").SchoolMorningBriefMissingDailyLog[] = [];
+
+  for (const teacher of activeTeachers) {
+    const teacherUuid = String(teacher.teacher_uuid ?? "").trim();
+    if (!teacherUuid) continue;
+    const assignments = raw.assignments.filter((assignment: any) =>
+      assignment.is_active !== false &&
+      String(assignment.teacher_uuid ?? "") === teacherUuid &&
+      (!assignment.created_at || String(assignment.created_at).slice(0, 10) <= yesterday),
+    );
+    const missingAssignments = assignments.filter((assignment: any) =>
+      !raw.logs.some((log: any) =>
+        String(log.teacher_assignment_uuid ?? "") === String(assignment.id ?? "") &&
+        String(log.log_date ?? "") === yesterday,
+      ),
+    );
+    if (!missingAssignments.length) continue;
+
+    rows.push({
+      teacherUuid,
+      teacherName: String(teacher.full_name ?? "Teacher"),
+      missedLogs: missingAssignments.length,
+      assignments: missingAssignments
+        .map((assignment: any) => ({
+          className: String(assignment.class_name ?? "—"),
+          sectionName: String(assignment.section_name ?? "—"),
+          subjectName: String(assignment.subject_name ?? "—"),
+        }))
+        .sort((a: any, b: any) => `${a.className}-${a.sectionName}-${a.subjectName}`.localeCompare(`${b.className}-${b.sectionName}-${b.subjectName}`)),
+    });
+  }
+
+  return rows.sort((a, b) => b.missedLogs - a.missedLogs || a.teacherName.localeCompare(b.teacherName));
 }
 
 export function buildSchoolMorningBrief(
@@ -283,22 +477,17 @@ export function buildSchoolMorningBrief(
   const todayKey = indiaDateKey(today);
   const period = getMorningBriefPeriod(todayKey);
   const teacherMetrics = teacherDailyMetrics(raw, period.yesterday);
-
-  const understandingValues = teacherMetrics
-    .map((metric) => metric.understandingRate)
-    .filter((value): value is number => value !== null);
-  const closureValues = teacherMetrics
-    .map((metric) => metric.doubtClosureRate)
-    .filter((value): value is number => value !== null);
-
-  const yesterdayLearningHealth = understandingValues.length
-    ? calculateUnweightedAveragePercentage(understandingValues)
-    : null;
-  const yesterdayDoubtClosureRate = closureValues.length
-    ? calculateUnweightedAveragePercentage(closureValues)
-    : null;
+  const yesterdayMetrics = yesterdaySchoolLearningMetrics(raw, period.yesterday);
+  const yesterdayLearningHealth = yesterdayMetrics.learningHealth;
+  const yesterdayUnderstandingRate = yesterdayMetrics.understandingRate;
+  const yesterdayDoubtClosureRate = yesterdayMetrics.doubtClosureRate;
+  const yesterdayPartialUnderstandingRate = yesterdayMetrics.partialRate;
+  const yesterdayDidntUnderstandRate = yesterdayMetrics.didntUnderstandRate;
+  const yesterdayDoubtRate = yesterdayMetrics.doubtRate;
 
   const ranked = classroomMetrics(raw, period.start, period.end);
+  const yesterdayTopDoubtClasses = yesterdayDoubtClassMetrics(raw, period.yesterday);
+  const missingLogs = missingDailyLogs(raw, period.yesterday);
 
   return {
     schoolUuid: raw.schoolUuid,
@@ -308,7 +497,13 @@ export function buildSchoolMorningBrief(
     yesterdayDate: displayDate(period.yesterday),
     yesterdayDay: displayDay(period.yesterday),
     yesterdayLearningHealth,
+    yesterdayUnderstandingRate,
     yesterdayDoubtClosureRate,
+    yesterdayPartialUnderstandingRate,
+    yesterdayDidntUnderstandRate,
+    yesterdayDoubtRate,
+    yesterdayTopDoubtClasses,
+    missingDailyLogs: missingLogs,
     yesterdayTeacherCount: teacherMetrics.length,
     yesterdayTeachers: teacherMetrics,
     periodStart: period.start,
