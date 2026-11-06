@@ -17,6 +17,7 @@ export interface StudentStarPerformerRow {
   rank: 1 | 2 | 3 | 4 | 5;
   studentUuid: string;
   studentName: string;
+  rollNumber: string;
   className: string;
   sectionName: string;
   dailyFeedbackCredits: number;
@@ -41,6 +42,7 @@ export interface StudentStarPerformerSourceData {
   students: Array<{
     student_uuid: string;
     student_name: string;
+    roll_number: string | null;
     school_uuid: string;
     class_name: string | null;
     section_name: string | null;

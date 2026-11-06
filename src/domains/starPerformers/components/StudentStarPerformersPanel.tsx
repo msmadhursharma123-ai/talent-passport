@@ -311,6 +311,7 @@ export default function StudentStarPerformersPanel({
                   <tr>
                     <th>Class + Section</th>
                     <th>Rank</th>
+                    <th>Roll No.</th>
                     <th>Student</th>
                     <th>Total Credits (Loop 1 + 2)</th>
                     <th>Responses Submitted</th>
@@ -319,14 +320,15 @@ export default function StudentStarPerformersPanel({
                 </thead>
                 <tbody>
                   {loading && !result ? (
-                    <tr><td colSpan={6} className="student-sp-empty">Calculating combined Loop 1 + Loop 2 scorecard…</td></tr>
+                    <tr><td colSpan={7} className="student-sp-empty">Calculating combined Loop 1 + Loop 2 scorecard…</td></tr>
                   ) : error ? (
-                    <tr><td colSpan={6} className="student-sp-empty">{error}</td></tr>
+                    <tr><td colSpan={7} className="student-sp-empty">{error}</td></tr>
                   ) : result?.rows.length ? (
                     result.rows.map(row => (
                       <tr key={`${row.className}-${row.sectionName}-${row.studentUuid}`}>
                         <td><strong>{row.className}</strong>{row.sectionName ? ` ${row.sectionName}` : ""}</td>
                         <td><span className={`student-sp-rank rank-${row.rank}`}>#{row.rank}</span></td>
+                        <td><strong>{row.rollNumber || "—"}</strong></td>
                         <td><strong>{row.studentName}</strong></td>
                         <td><span className="student-sp-credit">{row.dailyFeedbackCredits}</span></td>
                         <td>{row.submittedFeedbackCount + row.submittedLoop2ResponseCount}</td>
@@ -334,7 +336,7 @@ export default function StudentStarPerformersPanel({
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan={6} className="student-sp-empty">No Loop 1 or Loop 2 credit activity matches the selected filters.</td></tr>
+                    <tr><td colSpan={7} className="student-sp-empty">No Loop 1 or Loop 2 credit activity matches the selected filters.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -372,7 +374,7 @@ export default function StudentStarPerformersPanel({
         .student-sp-live-pill { padding:4px 7px;border-radius:999px;background:${theme.soft};color:${theme.softText};font-size:7.5px;font-weight:900;letter-spacing:.6px; }
         .student-sp-swipe { display:none;margin:0 0 5px;color:#64748B;font-size:8px;font-weight:750; }
         .student-sp-table-wrap { width:100%;overflow-x:auto;overflow-y:hidden;border:1px solid #E2E8F0;border-radius:13px;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;background:#fff; }
-        .student-sp-table { width:100%;min-width:760px;border-collapse:collapse;font-size:10.5px; }
+        .student-sp-table { width:100%;min-width:820px;border-collapse:collapse;font-size:10.5px; }
         .student-sp-table th { background:${theme.header};color:${portalTheme === "school" ? "#fff" : theme.softText};padding:9px 8px;text-align:left;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.45px;white-space:nowrap; }
         .student-sp-table td { padding:9px 8px;border-top:1px solid #EEF2F7;color:#334155;vertical-align:middle; }
         .student-sp-table tbody tr:first-child td { border-top:0; }
@@ -382,8 +384,8 @@ export default function StudentStarPerformersPanel({
         .student-sp-credit { display:inline-flex;min-width:52px;justify-content:center;padding:5px 7px;border-radius:8px;background:${theme.soft};color:${theme.softText};font-size:12px;font-weight:950;font-variant-numeric:tabular-nums; }
         .student-sp-empty { padding:24px 12px!important;text-align:center;color:#64748B;font-size:10px;font-weight:750; }
         .student-sp-footer { display:flex;justify-content:space-between;gap:12px;margin-top:8px;padding:8px 2px;color:#64748B;font-size:8px;line-height:1.45;font-weight:700; }
-        @media(max-width:1024px){ .student-sp-launch { padding:11px 12px; }.student-sp-modal-backdrop{padding:10px}.student-sp-modal{padding:10px;border-radius:15px;max-height:95vh}.student-sp-modal-head{padding:12px}.student-sp-modal-head h2{font-size:21px}.student-sp-filters{grid-template-columns:repeat(3,minmax(0,1fr));padding:9px}.student-sp-swipe{display:block}.student-sp-table{min-width:760px} }
-        @media(max-width:600px){ .student-sp-launch{align-items:flex-start;flex-direction:column;padding:9px 10px;border-radius:11px;margin-top:8px}.student-sp-launch-title{font-size:14px}.student-sp-launch-copy{font-size:8px}.student-sp-open{width:100%;padding:8px 9px;font-size:8px}.student-sp-modal-backdrop{padding:0;align-items:stretch}.student-sp-modal{width:100%;max-height:100vh;border-radius:0;padding:7px;border:0}.student-sp-modal-head{padding:9px;border-radius:11px}.student-sp-modal-head h2{font-size:16px}.student-sp-modal-head p:last-child{font-size:8px}.student-sp-close{width:28px;height:28px;font-size:20px}.student-sp-filters{grid-template-columns:1fr 1fr;padding:7px;border-radius:10px;gap:6px}.student-sp-filters span{font-size:6.5px;margin-bottom:3px}.student-sp-filters select,.student-sp-filters input{min-height:31px;padding:0 6px;font-size:8px;border-radius:7px}.student-sp-livebar{font-size:7.5px;padding:6px 2px}.student-sp-table{min-width:760px;font-size:8px}.student-sp-table th{padding:6px 5px;font-size:6.5px}.student-sp-table td{padding:6px 5px}.student-sp-rank{min-width:27px;padding:3px 5px;font-size:7.5px}.student-sp-credit{min-width:43px;padding:4px 5px;font-size:10px}.student-sp-empty{padding:18px 8px!important;font-size:8px}.student-sp-footer{font-size:6.8px;flex-direction:column;gap:3px}.student-sp-swipe{font-size:6.8px} }
+        @media(max-width:1024px){ .student-sp-launch { padding:11px 12px; }.student-sp-modal-backdrop{padding:10px}.student-sp-modal{padding:10px;border-radius:15px;max-height:95vh}.student-sp-modal-head{padding:12px}.student-sp-modal-head h2{font-size:21px}.student-sp-filters{grid-template-columns:repeat(3,minmax(0,1fr));padding:9px}.student-sp-swipe{display:block}.student-sp-table{min-width:820px} }
+        @media(max-width:600px){ .student-sp-launch{align-items:flex-start;flex-direction:column;padding:9px 10px;border-radius:11px;margin-top:8px}.student-sp-launch-title{font-size:14px}.student-sp-launch-copy{font-size:8px}.student-sp-open{width:100%;padding:8px 9px;font-size:8px}.student-sp-modal-backdrop{padding:0;align-items:stretch}.student-sp-modal{width:100%;max-height:100vh;border-radius:0;padding:7px;border:0}.student-sp-modal-head{padding:9px;border-radius:11px}.student-sp-modal-head h2{font-size:16px}.student-sp-modal-head p:last-child{font-size:8px}.student-sp-close{width:28px;height:28px;font-size:20px}.student-sp-filters{grid-template-columns:1fr 1fr;padding:7px;border-radius:10px;gap:6px}.student-sp-filters span{font-size:6.5px;margin-bottom:3px}.student-sp-filters select,.student-sp-filters input{min-height:31px;padding:0 6px;font-size:8px;border-radius:7px}.student-sp-livebar{font-size:7.5px;padding:6px 2px}.student-sp-table{min-width:820px;font-size:8px}.student-sp-table th{padding:6px 5px;font-size:6.5px}.student-sp-table td{padding:6px 5px}.student-sp-rank{min-width:27px;padding:3px 5px;font-size:7.5px}.student-sp-credit{min-width:43px;padding:4px 5px;font-size:10px}.student-sp-empty{padding:18px 8px!important;font-size:8px}.student-sp-footer{font-size:6.8px;flex-direction:column;gap:3px}.student-sp-swipe{font-size:6.8px} }
       `}</style>
     </>
   );

@@ -3,6 +3,7 @@ import React from "react";
 import {
   requirePartnerIdentity
 } from "../../services/identityService";
+import PartnerMasterclassChecklist from "../../domains/partnerMasterclass/components/PartnerMasterclassChecklist";
 
 export default function PartnerHome() {
 
@@ -619,6 +620,8 @@ const partnerId =
             >
               PARTNER ID&nbsp; {partnerId}
             </div>
+
+            <PartnerMasterclassChecklist />
 
           </div>
 

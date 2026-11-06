@@ -63,7 +63,7 @@ export async function getStudentStarPerformerSourceData(
     fetchPaged((from, to) =>
       supabase
         .from("students_master")
-        .select("student_uuid,student_name,school_uuid,class_name,section_name,created_at")
+        .select("student_uuid,student_name,roll_number,school_uuid,class_name,section_name,created_at")
         .eq("school_uuid", schoolUuid)
         .range(from, to)
     ),
@@ -160,6 +160,7 @@ export async function getStudentStarPerformerSourceData(
     students: students.map(row => ({
       student_uuid: String(row.student_uuid ?? ""),
       student_name: String(row.student_name ?? "Student"),
+      roll_number: row.roll_number == null ? null : String(row.roll_number).trim(),
       school_uuid: String(row.school_uuid ?? schoolUuid),
       class_name: row.class_name ?? null,
       section_name: row.section_name ?? null,
