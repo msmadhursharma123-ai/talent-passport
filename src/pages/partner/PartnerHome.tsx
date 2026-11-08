@@ -4,6 +4,7 @@ import {
   requirePartnerIdentity
 } from "../../services/identityService";
 import PartnerMasterclassChecklist from "../../domains/partnerMasterclass/components/PartnerMasterclassChecklist";
+import { usePartnerDashboardAnalytics } from "../../domains/partnerDashboardAnalytics/hooks/usePartnerDashboardAnalytics";
 
 export default function PartnerHome() {
 
@@ -24,6 +25,9 @@ const profile =
 const partnerId =
   profile.partnerId ||
   "Not Assigned";
+
+const { analytics } =
+  usePartnerDashboardAnalytics();
 
     return (
 
@@ -781,28 +785,28 @@ const partnerId =
 
           <StatCard
             title="Total Student Leads"
-            value="0"
+            value={analytics ? String(analytics.kpis.totalStudentLeads) : "—"}
             description="Student opportunities received"
             tone="orange"
           />
 
           <StatCard
             title="Total Workshops Conducted"
-            value="0"
+            value={analytics ? String(analytics.kpis.workshopsConducted) : "—"}
             description="Learning engagements delivered"
             tone="blue"
           />
 
           <StatCard
             title="Scholarships Offered"
-            value="0"
+            value={analytics ? String(analytics.kpis.scholarshipsOffered) : "—"}
             description="Student scholarships created"
             tone="green"
           />
 
           <StatCard
             title="Total Admissions Generated"
-            value="0"
+            value={analytics ? String(analytics.kpis.totalAdmissionsGenerated) : "—"}
             description="Admissions generated through network"
             tone="purple"
           />
@@ -931,7 +935,9 @@ const partnerId =
                   fontWeight: 800
                 }}
               >
-                School intelligence will appear here
+                {analytics
+                  ? `${analytics.schools.filter((school) => school.schoolName !== "Unknown school").length} connected school${analytics.schools.filter((school) => school.schoolName !== "Unknown school").length === 1 ? "" : "s"}`
+                  : "School intelligence will appear here"}
               </div>
 
               <div
@@ -941,7 +947,9 @@ const partnerId =
                   fontSize: "11px"
                 }}
               >
-                No school data available yet.
+                {analytics
+                  ? `${analytics.schools.reduce((sum, school) => sum + school.leads, 0)} leads · ${analytics.schools.reduce((sum, school) => sum + school.admissions, 0)} admissions · ${analytics.schools.reduce((sum, school) => sum + school.masterclasses, 0)} masterclasses`
+                  : "No school data available yet."}
               </div>
 
             </div>
@@ -1059,11 +1067,11 @@ const partnerId =
             </p>
 
 
-            <EmptyRow text="No scholarship offers yet." />
+            <EmptyRow text={analytics ? `Scholarships offered: ${analytics.offers.scholarshipCount}` : "No scholarship offers yet."} />
 
-            <EmptyRow text="No workshop invitations yet." />
+            <EmptyRow text={analytics ? `Workshop offers: ${analytics.offers.workshopCount}` : "No workshop invitations yet."} />
 
-            <EmptyRow text="No masterclass invitations yet." />
+            <EmptyRow text={analytics ? `Masterclasses conducted: ${analytics.offers.masterclassCount}` : "No masterclass invitations yet."} />
 
           </div>
 
@@ -1200,7 +1208,9 @@ const partnerId =
                     fontWeight: 800
                   }}
                 >
-                  No recent activity
+                  {analytics && analytics.recentActivity.length > 0
+                    ? formatRecentActivity(analytics.recentActivity[0])
+                    : "No recent activity"}
                 </div>
 
                 <div
@@ -1210,7 +1220,9 @@ const partnerId =
                     marginTop: "3px"
                   }}
                 >
-                  New partner actions will appear here.
+                  {analytics && analytics.recentActivity.length > 0
+                    ? formatRecentActivityDetail(analytics.recentActivity[0])
+                    : "New partner actions will appear here."}
                 </div>
 
               </div>
@@ -1362,6 +1374,30 @@ const partnerId =
     </div>
 
   );
+}
+
+
+function formatRecentActivity(activity: {
+  title: string;
+  studentName?: string;
+  schoolName?: string;
+}) {
+  const subject = activity.studentName || activity.schoolName;
+  return subject ? `${activity.title} · ${subject}` : activity.title;
+}
+
+function formatRecentActivityDetail(activity: {
+  studentName?: string;
+  schoolName?: string;
+  createdAt: string;
+  status?: string;
+}) {
+  const parts = [activity.schoolName, activity.status].filter(Boolean);
+  const date = activity.createdAt
+    ? new Date(activity.createdAt).toLocaleDateString("en-IN")
+    : "";
+  if (date) parts.push(date);
+  return parts.join(" · ") || "New partner activity recorded.";
 }
 
 
