@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import StudentMasterclassPanel from "../domains/studentMasterclass/components/StudentMasterclassPanel";
+
 import {
   getSubjectsByClass,
 } from "../data/academicMasterRepository";
@@ -437,6 +439,8 @@ export default function ProgressTracker() {
 </div>
 
 
+
+    <StudentMasterclassPanel />
 
     {/* Calendar */}
 

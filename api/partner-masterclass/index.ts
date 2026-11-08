@@ -125,7 +125,7 @@ export default async function handler(req:any,res:any){
       if(!winner) return res.status(403).json({message:"You are not shortlisted for the master class."});
       const target=source.students.find(s=>s.student_uuid===winner.studentUuid&&normalizeRoll(s.roll_number)===normalizeRoll(winner.rollNumber));
       if(!target) return res.status(403).json({message:"Student identity no longer matches the verified record."});
-      const {error}=await supabase.from("partner_masterclass_checkins_v9").insert({partner_uuid:partnerUuid,student_uuid:winner.studentUuid,roll_number:normalizeRoll(winner.rollNumber),student_name:target.student_name,school_uuid:target.school_uuid,school_name:String(identity.school_name??"School"),class_name:target.class_name,section_name:target.section_name,parent_phone:String(identity.parent_phone??identity.phone??""),parent_email:String(identity.student_email??""),masterclass_month:period.month});
+      const {error}=await supabase.from("partner_masterclass_checkins_v9").insert({partner_uuid:partnerUuid,student_uuid:winner.studentUuid,roll_number:normalizeRoll(winner.rollNumber),student_name:target.student_name,school_uuid:target.school_uuid,school_name:String(identity.school_name??"School"),class_name:target.class_name,section_name:target.section_name,parent_phone:String(identity.parent_phone??identity.phone??""),parent_email:String(identity.student_email??""),masterclass_month:period.month,credits_won:Number(winner.dailyFeedbackCredits),rank_out_of_5:Number(winner.rank)});
       if(error && error.code!=="23505") throw error;
       return res.status(200).json({ok:true});
     }
