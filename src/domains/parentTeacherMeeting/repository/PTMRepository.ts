@@ -15,6 +15,7 @@ import type {
   PTMAssignment,
   PTMDateRange,
   PTMDoubt,
+  PTMDoubtLedgerRow,
   PTMFeedback,
   PTMLog,
   PTMPreparedDataset,
@@ -56,6 +57,78 @@ function toUtcBoundary(date: string, endExclusive = false): string {
 
 function unique<T>(items: T[]): T[] {
   return Array.from(new Set(items));
+}
+
+const PENDING_DOUBT_ASSIGNMENT_CHUNK_SIZE = 8;
+const PENDING_DOUBT_PAGE_SIZE = 750;
+const LIVE_DOUBT_ASSIGNMENT_CHUNK_SIZE = 10;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    result.push(items.slice(index, index + size));
+  }
+  return result;
+}
+
+async function queryPendingDoubtRows(
+  assignmentIds: string[],
+  options: {
+    status?: string;
+    columns: string;
+  }
+): Promise<any[]> {
+  const supabase = getSupabaseClient();
+  if (!supabase || assignmentIds.length === 0) return [];
+
+  const rows: any[] = [];
+  const uniqueAssignmentIds = unique(assignmentIds.filter(Boolean));
+
+  // pending_teacher_doubts is a high-volume Loop-2 ledger. Keep the PTM
+  // read bounded by the same assignment scope, batch wide assignment lists,
+  // and page each batch so a large classroom cannot turn the PTM preload into
+  // a single long-running PostgREST statement.
+  for (const assignmentChunk of chunk(
+    uniqueAssignmentIds,
+    PENDING_DOUBT_ASSIGNMENT_CHUNK_SIZE
+  )) {
+    for (let offset = 0; ; offset += PENDING_DOUBT_PAGE_SIZE) {
+      let query = (supabase as any)
+        .from("pending_teacher_doubts")
+        .select(options.columns)
+        .in("teacher_assignment_uuid", assignmentChunk)
+        .order("log_date", { ascending: true })
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .range(offset, offset + PENDING_DOUBT_PAGE_SIZE - 1);
+
+      if (options.status) {
+        query = query.eq("status", options.status);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const page = Array.isArray(data) ? data : [];
+      rows.push(...page);
+      if (page.length < PENDING_DOUBT_PAGE_SIZE) break;
+    }
+  }
+
+  return rows;
+}
+
+async function queryLiveDoubtsInChunks(assignmentIds: string[], strict = true): Promise<any[]> {
+  const uniqueAssignmentIds = unique(assignmentIds.filter(Boolean));
+  if (uniqueAssignmentIds.length === 0) return [];
+
+  const rows: any[] = [];
+  for (const assignmentChunk of chunk(
+    uniqueAssignmentIds,
+    LIVE_DOUBT_ASSIGNMENT_CHUNK_SIZE
+  )) {
+    rows.push(...(await getLiveDoubtsForTeacherAssignments(assignmentChunk, strict)));
+  }
+  return rows;
 }
 
 function mapAssignment(row: any): PTMAssignment {
@@ -170,41 +243,104 @@ async function queryFeedback(logIds: string[]): Promise<any[]> {
   return data ?? [];
 }
 
-async function queryCurrentDoubts(assignmentIds: string[]): Promise<PTMDoubt[]> {
-  if (assignmentIds.length === 0) return [];
-
+async function queryDoubtLedger(
+  assignmentIds: string[],
+  startDate?: string,
+  endDate?: string
+): Promise<{ ledger: PTMDoubtLedgerRow[]; currentDoubts: PTMDoubt[]; liveRows: any[] }> {
   const supabase = getSupabaseClient();
-  if (!supabase) return [];
+  if (!supabase || assignmentIds.length === 0) {
+    return { ledger: [], currentDoubts: [], liveRows: [] };
+  }
 
-  const { data, error } = await (supabase as any)
-    .from("pending_teacher_doubts")
-    .select(
-      "id,student_uuid,student_name,teacher_assignment_uuid,daily_log_uuid,subject_name,previous_topic_name,previous_difficult_concept,status,doubt_resolved,log_date,created_at"
-    )
-    .in("teacher_assignment_uuid", assignmentIds)
-    .eq("status", "NOT DISCUSSED");
+  const pendingRows = await queryPendingDoubtRows(assignmentIds, {
+    columns:
+      "id,student_uuid,teacher_assignment_uuid,daily_log_uuid,subject_name,previous_topic_name,previous_difficult_concept,status,student_response,doubt_resolved,log_date,created_at,revision_checked_at",
+  });
 
-  if (error) throw error;
-
-  const pendingRows = (data ?? []).filter((row: any) => row?.doubt_resolved !== true);
-
+  let effectiveRows = pendingRows;
+  let liveRows: any[] = [];
   try {
-    const liveRows = await getLiveDoubtsForTeacherAssignments(assignmentIds);
-    const merged = mergePendingDoubtsWithLiveLedger(
-      pendingRows,
+    // Keep PTM doubt reconciliation on the exact shared Loop-2 + Live
+    // reconciliation path used by Exam Preparation. Do not apply the PTM
+    // period before reconciliation: a historical Loop-2 row must remain
+    // available so a matching Live row can overlay its state before the
+    // canonical historical date is evaluated. Pagination/chunking above keeps
+    // this read statement-bounded without changing reconciliation semantics.
+    liveRows = await queryLiveDoubtsInChunks(assignmentIds, true);
+    effectiveRows = mergePendingDoubtsWithLiveLedger(
+      pendingRows ?? [],
       liveRows ?? [],
       { includeUnmatchedLive: true }
     );
-
-    return merged
-      .map(mapDoubt)
-      .filter((row: PTMDoubt) => row.isUnresolved);
   } catch (error) {
-    console.warn("PTM LIVE DOUBT READ FAILED — USING LOOP-2 DATA", error);
-    return pendingRows
-      .map(mapDoubt)
-      .filter((row: PTMDoubt) => row.isUnresolved);
+    // Live evidence is an all-or-nothing overlay for a PTM evidence load.
+    // If any assignment chunk fails, never return a partial Live set: that
+    // could make some students/subjects look Live-reconciled while others
+    // silently fall back to Loop-2. Preserve the established PTM fail-safe
+    // by using the complete Loop-2 snapshot and no Live feedback overlay.
+    liveRows = [];
+    effectiveRows = pendingRows;
+    console.warn(
+      "PTM DOUBT LEDGER LIVE READ FAILED — USING LOOP-2 DATA",
+      error
+    );
   }
+
+  const reconciledRows = effectiveRows
+    .map((row: any) => {
+      const logDate = dateKey(
+        row?.log_date ??
+          row?.first_seen_at ??
+          row?.source_submitted_at ??
+          row?.latest_source_submitted_at ??
+          row?.created_at ??
+          ""
+      );
+      const studentUuid = String(row?.student_uuid ?? "").trim();
+      const teacherAssignmentUuid = String(row?.teacher_assignment_uuid ?? "").trim();
+      if (!studentUuid || !teacherAssignmentUuid || !logDate) return null;
+
+      // Apply the PTM period only after Loop-2 + Live reconciliation.
+      // This preserves the existing reconciliation hierarchy and historical
+      // date precedence while still keeping the returned PTM evidence scoped.
+      if (startDate && logDate < startDate) return null;
+      if (endDate && logDate > endDate) return null;
+
+      return {
+        raw: row,
+        ledger: {
+          id: String(row?.id ?? ""),
+          studentUuid,
+          teacherAssignmentUuid,
+          subjectName: String(row?.subject_name ?? ""),
+          topicName: row?.previous_topic_name ?? row?.topic_name ?? null,
+          concept: row?.previous_difficult_concept ?? row?.doubt_concept ?? null,
+          status: row?.status ?? null,
+          studentResponse: row?.student_response ?? null,
+          doubtResolved: row?.doubt_resolved === true,
+          source: row?._live_only === true ? "live" : "loop2",
+          logDate,
+        } as PTMDoubtLedgerRow,
+      };
+    })
+    .filter(Boolean) as Array<{ raw: any; ledger: PTMDoubtLedgerRow }>;
+
+  const ledger = reconciledRows.map((row) => row.ledger);
+  const currentDoubts = reconciledRows
+    .filter(({ raw }) => {
+      if (raw?._live_only === true) {
+        return raw?.doubt_resolved !== true &&
+          String(raw?.status ?? "").trim().toUpperCase() !== "RESOLVED" &&
+          String(raw?.student_response ?? "").trim().toUpperCase() !== "DISCUSSED";
+      }
+      return String(raw?.status ?? "").trim().toUpperCase() === "NOT DISCUSSED" &&
+        raw?.doubt_resolved !== true;
+    })
+    .map(({ raw }) => mapDoubt(raw))
+    .filter((row: PTMDoubt) => row.isUnresolved !== false);
+
+  return { ledger, currentDoubts, liveRows };
 }
 
 async function loadPeerAssignmentsForClassrooms(
@@ -363,32 +499,29 @@ export async function getPTMPreparedDataset(): Promise<PTMPreparedDataset> {
       logs: [],
       feedback: [],
       pendingDoubts: [],
+      doubtLedger: [],
     };
   }
 
   const today = todayIndia();
   const preloadStart = shiftDays(today, -PRELOAD_DAYS + 1);
 
-  const [students, rawLogs, pendingDoubts] = await Promise.all([
+  const [students, rawLogs, doubtEvidence] = await Promise.all([
     loadStudents(teacher.schoolUuid, teacher.schoolName ?? "", assignments),
     queryLogs(assignmentIds, preloadStart, today),
-    queryCurrentDoubts(assignmentIds),
+    queryDoubtLedger(assignmentIds, preloadStart, today),
   ]);
+
+  const { ledger: doubtLedger, currentDoubts: pendingDoubts, liveRows } = doubtEvidence;
 
   const assignmentMap = new Map(assignments.map((assignment) => [assignment.id, assignment]));
   const logs = rawLogs.map((row) => mapLog(row, assignmentMap));
   const rawFeedback = await queryFeedback(logs.map((log) => log.id));
 
-  let effectiveFeedback = rawFeedback;
-  try {
-    const liveRows = await getLiveDoubtsForTeacherAssignments(assignmentIds);
-    effectiveFeedback = mergeFeedbackUnderstandingLevels(
-      rawFeedback,
-      liveRows ?? []
-    );
-  } catch (error) {
-    console.warn("PTM FEEDBACK LIVE OVERLAY FAILED — ORIGINAL FEEDBACK PRESERVED", error);
-  }
+  const effectiveFeedback = mergeFeedbackUnderstandingLevels(
+    rawFeedback,
+    liveRows ?? []
+  );
 
   return {
     teacherUuid: teacher.teacherUuid,
@@ -400,6 +533,7 @@ export async function getPTMPreparedDataset(): Promise<PTMPreparedDataset> {
     logs,
     feedback: effectiveFeedback.map(mapFeedback),
     pendingDoubts,
+    doubtLedger,
   };
 }
 
@@ -432,29 +566,21 @@ export async function getPTMCanonicalExamPreparationRows(
   });
 }
 
-async function mapLiveFeedbackOverlay(
+function mapLiveFeedbackOverlay(
   rawFeedback: any[],
-  assignmentIds: string[]
-): Promise<PTMFeedback[]> {
-  let effectiveFeedback = rawFeedback;
-  try {
-    const liveRows = await getLiveDoubtsForTeacherAssignments(assignmentIds, true);
-    effectiveFeedback = mergeFeedbackUnderstandingLevels(rawFeedback, liveRows ?? []);
-  } catch (error) {
-    console.warn("PTM DATE-RANGE FEEDBACK LIVE OVERLAY FAILED — ORIGINAL FEEDBACK PRESERVED", error);
-  }
-
-  return effectiveFeedback.map(mapFeedback);
+  liveRows: any[]
+): PTMFeedback[] {
+  return mergeFeedbackUnderstandingLevels(rawFeedback, liveRows ?? []).map(mapFeedback);
 }
 
 export async function getPTMAllTimeEvidence(
   assignmentIds: string[]
-): Promise<{ logs: PTMLog[]; feedback: PTMFeedback[] }> {
+): Promise<{ logs: PTMLog[]; feedback: PTMFeedback[]; doubts: PTMDoubtLedgerRow[] }> {
   const uniqueAssignmentIds = unique(assignmentIds.filter(Boolean));
-  if (uniqueAssignmentIds.length === 0) return { logs: [], feedback: [] };
+  if (uniqueAssignmentIds.length === 0) return { logs: [], feedback: [], doubts: [] };
 
   const supabase = getSupabaseClient();
-  if (!supabase) return { logs: [], feedback: [] };
+  if (!supabase) return { logs: [], feedback: [], doubts: [] };
 
   const { data: rawLogs, error: logsError } = await (supabase as any)
     .from("teacher_daily_logs")
@@ -481,21 +607,22 @@ export async function getPTMAllTimeEvidence(
 
   const logs = (rawLogs ?? []).map((row: any) => mapLog(row, assignmentMap));
   const rawFeedback = await queryFeedback(logs.map((log) => log.id));
-  const feedback = await mapLiveFeedbackOverlay(rawFeedback, uniqueAssignmentIds);
+  const { ledger: doubts, liveRows } = await queryDoubtLedger(uniqueAssignmentIds);
+  const feedback = mapLiveFeedbackOverlay(rawFeedback, liveRows);
 
-  return { logs, feedback };
+  return { logs, feedback, doubts };
 }
 
 export async function getPTMDateRangeEvidence(
   assignmentIds: string[],
   startDate: string,
   endDate: string
-): Promise<{ logs: PTMLog[]; feedback: PTMFeedback[] }> {
+): Promise<{ logs: PTMLog[]; feedback: PTMFeedback[]; doubts: PTMDoubtLedgerRow[] }> {
   const uniqueAssignmentIds = unique(assignmentIds.filter(Boolean));
-  if (uniqueAssignmentIds.length === 0) return { logs: [], feedback: [] };
+  if (uniqueAssignmentIds.length === 0) return { logs: [], feedback: [], doubts: [] };
 
   const supabase = getSupabaseClient();
-  if (!supabase) return { logs: [], feedback: [] };
+  if (!supabase) return { logs: [], feedback: [], doubts: [] };
 
   const { data: rawLogs, error: logsError } = await (supabase as any)
     .from("teacher_daily_logs")
@@ -523,7 +650,8 @@ export async function getPTMDateRangeEvidence(
 
   const logs = (rawLogs ?? []).map((row: any) => mapLog(row, assignmentMap));
   const rawFeedback = await queryFeedback(logs.map((log) => log.id));
-  const feedback = await mapLiveFeedbackOverlay(rawFeedback, uniqueAssignmentIds);
+  const { ledger: doubts, liveRows } = await queryDoubtLedger(uniqueAssignmentIds, startDate, endDate);
+  const feedback = mapLiveFeedbackOverlay(rawFeedback, liveRows);
 
-  return { logs, feedback };
+  return { logs, feedback, doubts };
 }

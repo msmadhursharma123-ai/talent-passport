@@ -78,9 +78,28 @@ export interface PTMSubjectMetric {
   partiallyUnderstood: number;
   didntUnderstand: number;
   understandingPercentage: number;
+  partialUnderstandingPercentage: number;
+  didntUnderstandPercentage: number;
+  doubtPercentage: number;
+  doubtClosurePercentage: number;
   topics: string[];
   unresolvedDoubtCount: number;
   unresolvedDoubts: Array<{ topic: string; concept: string }>;
+}
+
+export interface PTMDoubtLedgerRow {
+  id: string;
+  studentUuid: string;
+  teacherAssignmentUuid: string;
+  subjectName: string;
+  topicName?: string | null;
+  concept?: string | null;
+  status?: string | null;
+  studentResponse?: string | null;
+  doubtResolved?: boolean;
+  /** Provenance after shared Loop-2 + Live reconciliation. Live-only rows are not part of the closure denominator. */
+  source: "loop2" | "live";
+  logDate: string;
 }
 
 export interface PTMPendingDoubtGroup {
@@ -98,6 +117,14 @@ export interface PTMReport {
   schoolName: string;
   period: PTMDateRange;
   combinedUnderstandingPercentage: number;
+  combinedFullUnderstandingPercentage: number;
+  combinedPartialUnderstandingPercentage: number;
+  combinedDidntUnderstandPercentage: number;
+  totalTopicsTaught: number;
+  totalSubtopicsTaught: number;
+  combinedDoubtPercentage: number;
+  unresolvedDoubtCount: number;
+  doubtClosurePercentage: number;
   totalLogs: number;
   totalFeedbackResponses: number;
   overallResponseRate: number;
@@ -118,6 +145,7 @@ export interface PTMPreparedDataset {
   logs: PTMLog[];
   feedback: PTMFeedback[];
   pendingDoubts: PTMDoubt[];
+  doubtLedger: PTMDoubtLedgerRow[];
 }
 
 export interface PTMEmailResult {

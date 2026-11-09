@@ -1,8 +1,18 @@
-import { buildLearningIntelligence } from "../../../engines/learningIntelligenceEngine";
-import type { CanonicalExamPreparationRow } from "../../examPreparationIntelligence/canonical/ExamPreparationTypes";
+import {
+  calculateDoubtClosureRate,
+  calculateLearningDoubtRate,
+  calculatePooledPercentage,
+  calculateStudentLearningHealthPercentage,
+  isDoubtUnresolved,
+  isLearningUnderstandingLevel,
+  COMPLETE_FEEDBACK_OPTION,
+  DID_NOT_UNDERSTAND_FEEDBACK_OPTION,
+  PARTIAL_FEEDBACK_OPTION,
+} from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import type {
   PTMDateRange,
   PTMFeedback,
+  PTMLog,
   PTMPreparedDataset,
   PTMReport,
   PTMStudent,
@@ -77,13 +87,55 @@ function cleanTopic(value: unknown): string {
   return String(value ?? "").trim().replace(/\s+/g, " ");
 }
 
+function subjectKey(value: unknown): string {
+  return cleanTopic(value).toLowerCase();
+}
+
 function uniqueSorted(items: string[]): string[] {
   return Array.from(new Set(items.filter(Boolean))).sort((a, b) => a.localeCompare(b));
+}
+
+function normalizedMetricKey(value: unknown): string {
+  return cleanTopic(value).toLowerCase();
+}
+
+function countUniqueTopics(logs: PTMLog[]): number {
+  const keys = new Set<string>();
+  logs.forEach((log) => {
+    const subject = normalizedMetricKey(log.subjectName);
+    const topic = normalizedMetricKey(log.topicName);
+    if (!subject || !topic) return;
+    keys.add(`${subject}|||${topic}`);
+  });
+  return keys.size;
+}
+
+function countUniqueSubtopics(logs: PTMLog[]): number {
+  const keys = new Set<string>();
+  logs.forEach((log) => {
+    const subject = normalizedMetricKey(log.subjectName);
+    const topic = normalizedMetricKey(log.topicName);
+    if (!subject || !topic) return;
+    (log.conceptsCovered ?? []).forEach((concept) => {
+      const subtopic = normalizedMetricKey(concept);
+      if (!subtopic) return;
+      keys.add(`${subject}|||${topic}|||${subtopic}`);
+    });
+  });
+  return keys.size;
 }
 
 function responseRate(responses: number, logs: number): number {
   if (logs <= 0) return 0;
   return Math.round((responses / logs) * 100);
+}
+
+function learningFeedbackLevel(feedback: PTMFeedback): string {
+  return String(feedback.understandingLevel ?? "").trim();
+}
+
+function isValidLearningFeedback(feedback: PTMFeedback): boolean {
+  return isLearningUnderstandingLevel(learningFeedbackLevel(feedback));
 }
 
 function buildDiscussionPoints(report: Omit<PTMReport, "discussionPoints">): string[] {
@@ -124,7 +176,7 @@ export function buildPTMReport(
   period: PTMDateRange,
   logsOverride = dataset.logs,
   feedbackOverride = dataset.feedback,
-  canonicalRows?: CanonicalExamPreparationRow[]
+  doubtLedgerOverride = dataset.doubtLedger
 ): PTMReport {
   const relevantAssignments = dataset.assignments.filter(
     (assignment) =>
@@ -146,72 +198,126 @@ export function buildPTMReport(
       logById.has(feedback.dailyLogUuid)
   );
 
-  const validFeedback = relevantFeedback.filter(
-    (feedback) =>
-      feedback.understandingLevel === "I completely understood." ||
-      feedback.understandingLevel === "I partially understood." ||
-      feedback.understandingLevel === "I didn't understand."
+  const validFeedback = relevantFeedback.filter(isValidLearningFeedback);
+  const completeCount = validFeedback.filter(
+    (feedback) => learningFeedbackLevel(feedback) === COMPLETE_FEEDBACK_OPTION
+  ).length;
+  const partialCount = validFeedback.filter(
+    (feedback) => learningFeedbackLevel(feedback) === PARTIAL_FEEDBACK_OPTION
+  ).length;
+  const didntUnderstandCount = validFeedback.filter(
+    (feedback) => learningFeedbackLevel(feedback) === DID_NOT_UNDERSTAND_FEEDBACK_OPTION
+  ).length;
+  const validFeedbackCount = validFeedback.length;
+  const combinedUnderstandingPercentage = calculateStudentLearningHealthPercentage(
+    validFeedback.map((feedback) => learningFeedbackLevel(feedback))
+  );
+  const combinedFullUnderstandingPercentage = calculatePooledPercentage(
+    completeCount,
+    validFeedbackCount
+  );
+  const combinedPartialUnderstandingPercentage = calculatePooledPercentage(
+    partialCount,
+    validFeedbackCount
+  );
+  const combinedDidntUnderstandPercentage = calculatePooledPercentage(
+    didntUnderstandCount,
+    validFeedbackCount
+  );
+  const combinedDoubtPercentage = calculateLearningDoubtRate(
+    partialCount,
+    didntUnderstandCount,
+    validFeedbackCount
   );
 
-  const learning = buildLearningIntelligence(
-    validFeedback.map((feedback) => ({
-      understanding_level: feedback.understandingLevel,
-      subject_name: logById.get(feedback.dailyLogUuid)?.subjectName ?? feedback.subjectName,
-      topic_name: logById.get(feedback.dailyLogUuid)?.topicName ?? feedback.topicName,
-      concepts_not_understood: feedback.conceptsNotUnderstood,
-    })),
-    0
+  const relevantDoubtLedger = doubtLedgerOverride.filter(
+    (doubt) =>
+      same(doubt.studentUuid, student.studentUuid) &&
+      assignmentIds.has(doubt.teacherAssignmentUuid) &&
+      inRange(doubt.logDate, period.startDate, period.endDate)
   );
 
-  const feedbackByLog = new Set(relevantFeedback.map((feedback) => feedback.dailyLogUuid));
+  // The canonical closure calculator intentionally consumes the canonical
+  // snake_case resolution contract. PTM's repository model is camelCase, so
+  // normalize only at this boundary rather than creating a second closure
+  // formula or changing the shared canonical service.
+  const canonicalDoubtLedger = relevantDoubtLedger
+    .filter((doubt) => doubt.source !== "live")
+    .map((doubt) => ({
+    doubt_resolved: doubt.doubtResolved === true,
+    status: doubt.status,
+    student_response: doubt.studentResponse,
+  }));
+
   const feedbackDays = new Set(
     relevantFeedback.map((feedback) =>
       indiaDateKey(feedback.submittedAt) || logById.get(feedback.dailyLogUuid)?.logDate || ""
     ).filter(Boolean)
   ).size;
 
-  const hasCanonicalRows = canonicalRows !== undefined;
-  const canonicalStudentRows = (canonicalRows ?? []).filter(
-    (row) =>
-      same(row.studentUuid, student.studentUuid) &&
-      same(row.className, student.className) &&
-      same(row.sectionName, student.sectionName)
+  const unresolvedDoubtRows = relevantDoubtLedger.filter((doubt) =>
+    isDoubtUnresolved({
+      doubt_resolved: doubt.doubtResolved === true,
+      status: doubt.status,
+      student_response: doubt.studentResponse,
+    })
   );
 
-  const canonicalDoubtsBySubject = new Map<
+  const unresolvedDoubtsBySubject = new Map<
     string,
     Array<{ topic: string; concept: string }>
   >();
 
-  canonicalStudentRows.forEach((row) => {
+  unresolvedDoubtRows.forEach((row) => {
     const subject = cleanTopic(row.subjectName) || "Other";
-    const items = canonicalDoubtsBySubject.get(subject) ?? [];
-    items.push({
+    const keySubject = subjectKey(subject) || "other";
+    const items = unresolvedDoubtsBySubject.get(keySubject) ?? [];
+    const item = {
       topic: cleanTopic(row.topicName) || "—",
-      concept: cleanTopic(row.conceptName) || "—",
-    });
-    canonicalDoubtsBySubject.set(subject, items);
+      concept: cleanTopic(row.concept) || "—",
+    };
+    const key = `${item.topic}|||${item.concept}`.toLowerCase();
+    if (!items.some((current) => `${current.topic}|||${current.concept}`.toLowerCase() === key)) {
+      items.push(item);
+    }
+    unresolvedDoubtsBySubject.set(keySubject, items);
   });
 
-  const subjects = Array.from(
-    new Set(relevantAssignments.map((assignment) => assignment.subjectName).filter(Boolean))
-  )
-    .sort((a, b) => a.localeCompare(b))
-    .map((subject) => {
-      const subjectLogs = relevantLogs.filter((log) => same(log.subjectName, subject));
+  const subjectLabelsByKey = new Map<string, string>();
+  relevantAssignments.forEach((assignment) => {
+    const label = cleanTopic(assignment.subjectName);
+    const key = subjectKey(label);
+    if (key && !subjectLabelsByKey.has(key)) subjectLabelsByKey.set(key, label);
+  });
+
+  const subjects = Array.from(subjectLabelsByKey.entries())
+    .sort(([, a], [, b]) => a.localeCompare(b))
+    .map(([subjectKeyValue, subject]) => {
+      const subjectLogs = relevantLogs.filter(
+        (log) => subjectKey(log.subjectName) === subjectKeyValue
+      );
       const subjectFeedback = relevantFeedback.filter((feedback) => {
         const log = logById.get(feedback.dailyLogUuid);
-        return same(log?.subjectName ?? feedback.subjectName, subject);
+        return subjectKey(log?.subjectName ?? feedback.subjectName) === subjectKeyValue;
       });
-      const complete = subjectFeedback.filter((row) => row.understandingLevel === "I completely understood.").length;
-      const partial = subjectFeedback.filter((row) => row.understandingLevel === "I partially understood.").length;
-      const didnt = subjectFeedback.filter((row) => row.understandingLevel === "I didn't understand.").length;
-      const understanding = buildLearningIntelligence(
-        subjectFeedback.map((feedback) => ({ understanding_level: feedback.understandingLevel })),
-        0
-      ).understandingScore;
-
-      const unresolvedDoubts = canonicalDoubtsBySubject.get(subject) ?? [];
+      const validSubjectFeedback = subjectFeedback.filter(isValidLearningFeedback);
+      const complete = validSubjectFeedback.filter(
+        (row) => learningFeedbackLevel(row) === COMPLETE_FEEDBACK_OPTION
+      ).length;
+      const partial = validSubjectFeedback.filter(
+        (row) => learningFeedbackLevel(row) === PARTIAL_FEEDBACK_OPTION
+      ).length;
+      const didnt = validSubjectFeedback.filter(
+        (row) => learningFeedbackLevel(row) === DID_NOT_UNDERSTAND_FEEDBACK_OPTION
+      ).length;
+      const understanding = calculateStudentLearningHealthPercentage(
+        validSubjectFeedback.map((feedback) => learningFeedbackLevel(feedback))
+      );
+      const subjectDoubtLedger = relevantDoubtLedger.filter(
+        (doubt) => subjectKey(doubt.subjectName) === subjectKeyValue
+      );
+      const unresolvedDoubts = unresolvedDoubtsBySubject.get(subjectKeyValue) ?? [];
+      const subjectFeedbackCount = validSubjectFeedback.length;
 
       return {
         subject,
@@ -222,53 +328,55 @@ export function buildPTMReport(
         partiallyUnderstood: partial,
         didntUnderstand: didnt,
         understandingPercentage: understanding,
+        partialUnderstandingPercentage: calculatePooledPercentage(partial, subjectFeedbackCount),
+        didntUnderstandPercentage: calculatePooledPercentage(didnt, subjectFeedbackCount),
+        doubtPercentage: calculateLearningDoubtRate(
+          partial,
+          didnt,
+          subjectFeedbackCount
+        ),
+        doubtClosurePercentage: calculateDoubtClosureRate(
+          subjectDoubtLedger
+            .filter((doubt) => doubt.source !== "live")
+            .map((doubt) => ({
+            doubt_resolved: doubt.doubtResolved === true,
+            status: doubt.status,
+            student_response: doubt.studentResponse,
+          }))
+        ),
         topics: uniqueSorted(subjectLogs.map((log) => cleanTopic(log.topicName))),
         unresolvedDoubtCount: unresolvedDoubts.length,
         unresolvedDoubts,
       };
     });
 
-  const pendingDoubts = hasCanonicalRows
-    ? Array.from(canonicalDoubtsBySubject.entries())
-        .map(([subject, items]) => ({
-          subject,
-          count: items.length,
-          items,
-        }))
-        .sort((a, b) => a.subject.localeCompare(b.subject))
-    : dataset.pendingDoubts
-        .filter(
-          (doubt) =>
-            same(doubt.studentUuid, student.studentUuid) &&
-            assignmentIds.has(doubt.teacherAssignmentUuid) &&
-            doubt.isUnresolved !== false
-        )
-        .reduce<PTMReport["pendingDoubts"]>((groups, doubt) => {
-          const subject = cleanTopic(doubt.subjectName) || "Other";
-          const existing = groups.find((group) => same(group.subject, subject));
-          const item = {
-            topic: cleanTopic(doubt.topicName) || "—",
-            concept: cleanTopic(doubt.concept) || "—",
-          };
-          if (existing) {
-            const key = `${item.topic}|||${item.concept}`.toLowerCase();
-            if (!existing.items.some((current) => `${current.topic}|||${current.concept}`.toLowerCase() === key)) {
-              existing.items.push(item);
-            }
-            existing.count = existing.items.length;
-          } else {
-            groups.push({ subject, count: 1, items: [item] });
-          }
-          return groups;
-        }, [])
-        .sort((a, b) => a.subject.localeCompare(b.subject));
+  const pendingDoubts = Array.from(unresolvedDoubtsBySubject.entries())
+    .map(([subjectKeyValue, items]) => ({
+      subject: relevantAssignments.find((assignment) => subjectKey(assignment.subjectName) === subjectKeyValue)?.subjectName ??
+        unresolvedDoubtRows.find((row) => subjectKey(row.subjectName) === subjectKeyValue)?.subjectName ??
+        "Other",
+      count: items.length,
+      items,
+    }))
+    .sort((a, b) => a.subject.localeCompare(b.subject));
 
   const base: Omit<PTMReport, "discussionPoints"> = {
     student,
     teacherName: dataset.teacherName,
     schoolName: dataset.schoolName || student.schoolName,
     period,
-    combinedUnderstandingPercentage: learning.understandingScore,
+    combinedUnderstandingPercentage,
+    combinedFullUnderstandingPercentage,
+    combinedPartialUnderstandingPercentage,
+    combinedDidntUnderstandPercentage,
+    totalTopicsTaught: countUniqueTopics(relevantLogs),
+    totalSubtopicsTaught: countUniqueSubtopics(relevantLogs),
+    combinedDoubtPercentage,
+    unresolvedDoubtCount: Array.from(unresolvedDoubtsBySubject.values()).reduce(
+      (sum, items) => sum + items.length,
+      0
+    ),
+    doubtClosurePercentage: calculateDoubtClosureRate(canonicalDoubtLedger),
     totalLogs: relevantLogs.length,
     totalFeedbackResponses: relevantFeedback.length,
     overallResponseRate: responseRate(relevantFeedback.length, relevantLogs.length),
@@ -278,7 +386,6 @@ export function buildPTMReport(
     generatedAt: new Date().toISOString(),
   };
 
-  void feedbackByLog;
   return {
     ...base,
     discussionPoints: buildDiscussionPoints(base),

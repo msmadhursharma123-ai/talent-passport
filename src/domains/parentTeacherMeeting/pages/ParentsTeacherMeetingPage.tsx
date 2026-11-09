@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getPTMAllTimeEvidence,
-  getPTMCanonicalExamPreparationRows,
   getPTMDateRangeEvidence,
   getPTMPreparedDataset,
 } from "../repository/PTMRepository";
@@ -12,8 +11,6 @@ import {
 import { blobToBase64, buildPTMPdf } from "../services/PTMPdfService";
 import { sendPTMReportEmail } from "../services/PTMEmailService";
 import { downloadOrSharePdfBlob } from "../../../services/platform/nativeDocumentService";
-import { shiftExamPreparationDate } from "../../examPreparationIntelligence/canonical/ExamPreparationDate";
-import type { CanonicalExamPreparationRow } from "../../examPreparationIntelligence/canonical/ExamPreparationTypes";
 import type {
   PTMFeedback,
   PTMLog,
@@ -82,15 +79,13 @@ export default function ParentsTeacherMeetingPage() {
   const [customEnd, setCustomEnd] = useState("");
   const [filtersTouched, setFiltersTouched] = useState(false);
   const [selectedStudentUuid, setSelectedStudentUuid] = useState("");
-  const [customEvidence, setCustomEvidence] = useState<{ logs: PTMLog[]; feedback: PTMFeedback[] } | null>(null);
-  const [canonicalRows, setCanonicalRows] = useState<CanonicalExamPreparationRow[]>([]);
-  const [canonicalRowsKey, setCanonicalRowsKey] = useState("");
-  const [loadingCanonical, setLoadingCanonical] = useState(false);
+  const [customEvidence, setCustomEvidence] = useState<{ logs: PTMLog[]; feedback: PTMFeedback[]; doubts: PTMPreparedDataset["doubtLedger"] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingCustom, setLoadingCustom] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const [emailMessage, setEmailMessage] = useState("");
   const [error, setError] = useState("");
+  const customEvidenceRequestRef = useRef(0);
 
   useEffect(() => {
     void loadPreparedData();
@@ -102,8 +97,6 @@ export default function ParentsTeacherMeetingPage() {
     try {
       const prepared = await getPTMPreparedDataset();
       setDataset(prepared);
-      setCanonicalRows([]);
-      setCanonicalRowsKey("");
     } catch (loadError: any) {
       console.error("PTM PRELOAD FAILED", loadError);
       setError(loadError?.message ?? "Unable to prepare the Parents Teacher Meeting workspace.");
@@ -157,31 +150,10 @@ export default function ParentsTeacherMeetingPage() {
     [visibleStudents, selectedStudentUuid]
   );
 
-  const canonicalRequestKey = useMemo(() => {
-    if (!selectedStudent) return "";
-    return [
-      selectedStudent.studentUuid,
-      selectedStudent.className,
-      selectedStudent.sectionName,
-      periodPreset,
-      customStart,
-      customEnd,
-    ].join("|");
-  }, [selectedStudent, periodPreset, customStart, customEnd]);
-
   const selectedPeriod = useMemo(
     () => getPTMPeriod(periodPreset, customStart, customEnd),
     [periodPreset, customStart, customEnd]
   );
-
-  const canonicalRange = useMemo(() => {
-    if (periodPreset === "ALL") return {};
-    if (!selectedPeriod.startDate || !selectedPeriod.endDate) return null;
-    return {
-      startDate: selectedPeriod.startDate,
-      endDateExclusive: shiftExamPreparationDate(selectedPeriod.endDate, 1),
-    };
-  }, [periodPreset, selectedPeriod]);
 
   const preloadStart = useMemo(() => shiftDays(IndiaToday(), -89), []);
   const needsExtendedEvidence =
@@ -190,54 +162,15 @@ export default function ParentsTeacherMeetingPage() {
       Boolean(customStart && customEnd) &&
       !(customStart >= preloadStart && customEnd <= IndiaToday()));
 
-  useEffect(() => {
-    if (!dataset || !selectedStudent || !filtersTouched || !canonicalRequestKey) {
-      setCanonicalRows([]);
-      setCanonicalRowsKey("");
-      return;
-    }
-
-    if (!canonicalRange) {
-      setCanonicalRows([]);
-      setCanonicalRowsKey("");
-      return;
-    }
-
-    let cancelled = false;
-    setLoadingCanonical(true);
-    setError("");
-
-    void getPTMCanonicalExamPreparationRows(selectedStudent, dataset.assignments, canonicalRange)
-      .then((rows) => {
-        if (cancelled) return;
-        setCanonicalRows(rows);
-        setCanonicalRowsKey(canonicalRequestKey);
-      })
-      .catch((canonicalError: any) => {
-        if (cancelled) return;
-        console.error("PTM CANONICAL EXAM PREPARATION LOAD FAILED", canonicalError);
-        setCanonicalRows([]);
-        setCanonicalRowsKey("");
-        setError(canonicalError?.message ?? "Unable to load canonical Exam Preparation intelligence for this PTM student.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingCanonical(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [dataset, selectedStudent, filtersTouched, canonicalRequestKey, canonicalRange]);
-
   const currentReport = useMemo(() => {
     if (!dataset || !selectedStudent) return null;
-    if (canonicalRowsKey !== canonicalRequestKey || loadingCanonical) return null;
     if (needsExtendedEvidence && (loadingCustom || !customEvidence)) return null;
 
     const period = getPTMPeriod(periodPreset, customStart, customEnd);
     const useExtendedEvidence = (periodPreset === "ALL" || periodPreset === "CUSTOM") && Boolean(customEvidence);
     const logs = useExtendedEvidence ? customEvidence!.logs : dataset.logs;
     const feedback = useExtendedEvidence ? customEvidence!.feedback : dataset.feedback;
+    const doubts = useExtendedEvidence ? customEvidence!.doubts : dataset.doubtLedger;
 
     return buildPTMReport(
       dataset,
@@ -245,7 +178,7 @@ export default function ParentsTeacherMeetingPage() {
       period,
       logs,
       feedback,
-      canonicalRows
+      doubts
     );
   }, [
     dataset,
@@ -254,17 +187,15 @@ export default function ParentsTeacherMeetingPage() {
     customStart,
     customEnd,
     customEvidence,
-    canonicalRows,
-    canonicalRowsKey,
-    canonicalRequestKey,
-    loadingCanonical,
     needsExtendedEvidence,
     loadingCustom,
   ]);
 
   async function prepareCustomEvidence(startDate: string, endDate: string) {
+    const requestId = ++customEvidenceRequestRef.current;
     if (!dataset || !startDate || !endDate || startDate > endDate) {
       setCustomEvidence(null);
+      setLoadingCustom(false);
       return;
     }
 
@@ -272,6 +203,7 @@ export default function ParentsTeacherMeetingPage() {
     const alreadyLoaded = startDate >= preloadStart && endDate <= IndiaToday();
     if (alreadyLoaded) {
       setCustomEvidence(null);
+      setLoadingCustom(false);
       return;
     }
 
@@ -279,29 +211,34 @@ export default function ParentsTeacherMeetingPage() {
     setError("");
     try {
       const evidence = await getPTMDateRangeEvidence(assignmentIds, startDate, endDate);
+      if (requestId !== customEvidenceRequestRef.current) return;
       setCustomEvidence(evidence);
     } catch (customError: any) {
+      if (requestId !== customEvidenceRequestRef.current) return;
       console.error("PTM CUSTOM RANGE LOAD FAILED", customError);
       setError(customError?.message ?? "Unable to load the selected custom date range.");
       setCustomEvidence(null);
     } finally {
-      setLoadingCustom(false);
+      if (requestId === customEvidenceRequestRef.current) setLoadingCustom(false);
     }
   }
 
   async function prepareAllTimeEvidence() {
     if (!dataset) return;
+    const requestId = ++customEvidenceRequestRef.current;
     setLoadingCustom(true);
     setError("");
     try {
       const evidence = await getPTMAllTimeEvidence(dataset.assignments.map((assignment) => assignment.id));
+      if (requestId !== customEvidenceRequestRef.current) return;
       setCustomEvidence(evidence);
     } catch (allTimeError: any) {
+      if (requestId !== customEvidenceRequestRef.current) return;
       console.error("PTM ALL-TIME EVIDENCE LOAD FAILED", allTimeError);
       setError(allTimeError?.message ?? "Unable to load all-time PTM teaching and feedback intelligence.");
       setCustomEvidence(null);
     } finally {
-      setLoadingCustom(false);
+      if (requestId === customEvidenceRequestRef.current) setLoadingCustom(false);
     }
   }
 
@@ -325,10 +262,9 @@ export default function ParentsTeacherMeetingPage() {
 
   function handlePeriodChange(value: PTMTimePreset) {
     touch();
+    customEvidenceRequestRef.current += 1;
     setPeriodPreset(value);
     setCustomEvidence(null);
-    setCanonicalRows([]);
-    setCanonicalRowsKey("");
     setEmailMessage("");
     if (value === "CUSTOM") {
       const today = IndiaToday();
@@ -340,6 +276,8 @@ export default function ParentsTeacherMeetingPage() {
       setCustomStart("");
       setCustomEnd("");
       void prepareAllTimeEvidence();
+    } else {
+      setLoadingCustom(false);
     }
   }
 
@@ -542,6 +480,7 @@ export default function ParentsTeacherMeetingPage() {
           .ptm-student-list { grid-template-columns:repeat(2,minmax(0,1fr)); }
           .ptm-report-card { border-radius:15px; }
           .ptm-report-head { margin:-15px -15px 0; padding:16px 15px 13px; }
+          .ptm-metrics { grid-template-columns:repeat(4,minmax(0,1fr)); }
         }
         @media (max-width: 600px) {
           .ptm-page { padding:8px; }
@@ -561,6 +500,7 @@ export default function ParentsTeacherMeetingPage() {
           .ptm-report-head { flex-direction:column; margin:-10px -10px 0; padding:14px 10px 11px; border-radius:13px 13px 0 0; }
           .ptm-report-actions { width:100%; justify-content:flex-start; }
           .ptm-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+          .ptm-subject-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
           .ptm-metric-value { font-size:19.2px; }
         }
       `}</style>
@@ -620,11 +560,11 @@ export default function ParentsTeacherMeetingPage() {
             <div className="ptm-custom-grid">
               <div className="ptm-field">
                 <label>From</label>
-                <input type="date" value={customStart} max={customEnd || IndiaToday()} onChange={(event) => { touch(); setCustomStart(event.target.value); setCustomEvidence(null); setCanonicalRows([]); setCanonicalRowsKey(""); void prepareCustomEvidence(event.target.value, customEnd); }} />
+                <input type="date" value={customStart} max={customEnd || IndiaToday()} onChange={(event) => { touch(); setCustomStart(event.target.value); setCustomEvidence(null); void prepareCustomEvidence(event.target.value, customEnd); }} />
               </div>
               <div className="ptm-field">
                 <label>To</label>
-                <input type="date" value={customEnd} min={customStart || undefined} max={IndiaToday()} onChange={(event) => { touch(); setCustomEnd(event.target.value); setCustomEvidence(null); setCanonicalRows([]); setCanonicalRowsKey(""); void prepareCustomEvidence(customStart, event.target.value); }} />
+                <input type="date" value={customEnd} min={customStart || undefined} max={IndiaToday()} onChange={(event) => { touch(); setCustomEnd(event.target.value); setCustomEvidence(null); void prepareCustomEvidence(customStart, event.target.value); }} />
               </div>
             </div>
           )}
@@ -633,9 +573,7 @@ export default function ParentsTeacherMeetingPage() {
             <span>
               {loading
                 ? "Preparing teacher-assigned student intelligence…"
-                : loadingCanonical
-                  ? "Reconciling Loop 2 + Live Exam Preparation intelligence…"
-                  : loadingCustom
+                : loadingCustom
                     ? "Preparing the selected time period…"
                     : dataset
                     ? `${dataset.students.length} assigned students · ${dataset.assignments.length} active subject assignments prepared`
@@ -679,11 +617,11 @@ export default function ParentsTeacherMeetingPage() {
           </section>
         )}
 
-        {filtersTouched && selectedStudent && !currentReport && (loadingCanonical || loadingCustom) && (
+        {filtersTouched && selectedStudent && !currentReport && loadingCustom && (
           <section className="ptm-report-card">
             <div className="ptm-empty">
-              <div className="ptm-empty-title">Preparing the canonical PTM intelligence…</div>
-              <div className="ptm-empty-copy">Loop 2 and Live are being reconciled using the same Exam Preparation intelligence used by the Student, Teacher and School views.</div>
+              <div className="ptm-empty-title">Preparing the PTM intelligence…</div>
+              <div className="ptm-empty-copy">Learning feedback and doubt intelligence are being reconciled using the shared canonical learning definitions and existing Live Layer.</div>
             </div>
           </section>
         )}
@@ -705,9 +643,16 @@ export default function ParentsTeacherMeetingPage() {
 
             <div className="ptm-metrics">
               <div className="ptm-metric"><div className="ptm-metric-label">Combined understanding</div><div className="ptm-metric-value">{currentReport.combinedUnderstandingPercentage}%</div></div>
+              <div className="ptm-metric"><div className="ptm-metric-label">Full understanding</div><div className="ptm-metric-value">{currentReport.combinedFullUnderstandingPercentage}%</div></div>
+              <div className="ptm-metric"><div className="ptm-metric-label">Partial understanding</div><div className="ptm-metric-value">{currentReport.combinedPartialUnderstandingPercentage}%</div></div>
+              <div className="ptm-metric"><div className="ptm-metric-label">Did not understand</div><div className="ptm-metric-value">{currentReport.combinedDidntUnderstandPercentage}%</div></div>
+              <div className="ptm-metric"><div className="ptm-metric-label">Doubt</div><div className="ptm-metric-value">{currentReport.combinedDoubtPercentage}%</div></div>
               <div className="ptm-metric"><div className="ptm-metric-label">Feedback response</div><div className="ptm-metric-value">{currentReport.overallResponseRate}%</div></div>
               <div className="ptm-metric"><div className="ptm-metric-label">Feedback days</div><div className="ptm-metric-value">{currentReport.feedbackDays}</div></div>
-              <div className="ptm-metric"><div className="ptm-metric-label">Unresolved doubts in period</div><div className="ptm-metric-value">{currentReport.pendingDoubts.reduce((sum, group) => sum + group.count, 0)}</div></div>
+              <div className="ptm-metric"><div className="ptm-metric-label">Unresolved doubts</div><div className="ptm-metric-value">{currentReport.unresolvedDoubtCount}</div></div>
+              <div className="ptm-metric"><div className="ptm-metric-label">Doubt closure</div><div className="ptm-metric-value">{currentReport.doubtClosurePercentage}%</div></div>
+              <div className="ptm-metric"><div className="ptm-metric-label">Topics taught</div><div className="ptm-metric-value">{currentReport.totalTopicsTaught}</div></div>
+              <div className="ptm-metric"><div className="ptm-metric-label">Subtopics taught</div><div className="ptm-metric-value">{currentReport.totalSubtopicsTaught}</div></div>
             </div>
 
             <div className="ptm-section">
@@ -737,6 +682,12 @@ export default function ParentsTeacherMeetingPage() {
                       <div className="ptm-mini"><div className="ptm-mini-label">Logs</div><div className="ptm-mini-value">{subject.logsCount}</div></div>
                       <div className="ptm-mini"><div className="ptm-mini-label">Responses</div><div className="ptm-mini-value">{subject.feedbackCount}</div></div>
                       <div className="ptm-mini"><div className="ptm-mini-label">Rate</div><div className="ptm-mini-value">{subject.responseRate}%</div></div>
+                      <div className="ptm-mini"><div className="ptm-mini-label">Understanding</div><div className="ptm-mini-value">{subject.understandingPercentage}%</div></div>
+                      <div className="ptm-mini"><div className="ptm-mini-label">Partial</div><div className="ptm-mini-value">{subject.partialUnderstandingPercentage}%</div></div>
+                      <div className="ptm-mini"><div className="ptm-mini-label">Didn't understand</div><div className="ptm-mini-value">{subject.didntUnderstandPercentage}%</div></div>
+                      <div className="ptm-mini"><div className="ptm-mini-label">Doubt</div><div className="ptm-mini-value">{subject.doubtPercentage}%</div></div>
+                      <div className="ptm-mini"><div className="ptm-mini-label">Unresolved doubts</div><div className="ptm-mini-value">{subject.unresolvedDoubtCount}</div></div>
+                      <div className="ptm-mini"><div className="ptm-mini-label">Doubt closure</div><div className="ptm-mini-value">{subject.doubtClosurePercentage}%</div></div>
                     </div>
                     <div className="ptm-subsection-label">What was taught in this selected period</div>
                     <div className="ptm-topic-list">
