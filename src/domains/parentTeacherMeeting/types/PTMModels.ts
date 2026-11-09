@@ -123,6 +123,7 @@ export interface PTMReport {
   totalTopicsTaught: number;
   totalSubtopicsTaught: number;
   combinedDoubtPercentage: number;
+  totalDoubtsRaised: number;
   unresolvedDoubtCount: number;
   doubtClosurePercentage: number;
   totalLogs: number;

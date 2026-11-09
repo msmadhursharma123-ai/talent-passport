@@ -372,6 +372,7 @@ export function buildPTMReport(
     totalTopicsTaught: countUniqueTopics(relevantLogs),
     totalSubtopicsTaught: countUniqueSubtopics(relevantLogs),
     combinedDoubtPercentage,
+    totalDoubtsRaised: relevantDoubtLedger.length,
     unresolvedDoubtCount: Array.from(unresolvedDoubtsBySubject.values()).reduce(
       (sum, items) => sum + items.length,
       0

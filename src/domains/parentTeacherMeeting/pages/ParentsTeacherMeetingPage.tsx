@@ -646,9 +646,10 @@ export default function ParentsTeacherMeetingPage() {
               <div className="ptm-metric"><div className="ptm-metric-label">Full understanding</div><div className="ptm-metric-value">{currentReport.combinedFullUnderstandingPercentage}%</div></div>
               <div className="ptm-metric"><div className="ptm-metric-label">Partial understanding</div><div className="ptm-metric-value">{currentReport.combinedPartialUnderstandingPercentage}%</div></div>
               <div className="ptm-metric"><div className="ptm-metric-label">Did not understand</div><div className="ptm-metric-value">{currentReport.combinedDidntUnderstandPercentage}%</div></div>
-              <div className="ptm-metric"><div className="ptm-metric-label">Doubt</div><div className="ptm-metric-value">{currentReport.combinedDoubtPercentage}%</div></div>
               <div className="ptm-metric"><div className="ptm-metric-label">Feedback response</div><div className="ptm-metric-value">{currentReport.overallResponseRate}%</div></div>
               <div className="ptm-metric"><div className="ptm-metric-label">Feedback days</div><div className="ptm-metric-value">{currentReport.feedbackDays}</div></div>
+              <div className="ptm-metric"><div className="ptm-metric-label">Doubt</div><div className="ptm-metric-value">{currentReport.combinedDoubtPercentage}%</div></div>
+              <div className="ptm-metric"><div className="ptm-metric-label">Total doubts raised</div><div className="ptm-metric-value">{currentReport.totalDoubtsRaised}</div></div>
               <div className="ptm-metric"><div className="ptm-metric-label">Unresolved doubts</div><div className="ptm-metric-value">{currentReport.unresolvedDoubtCount}</div></div>
               <div className="ptm-metric"><div className="ptm-metric-label">Doubt closure</div><div className="ptm-metric-value">{currentReport.doubtClosurePercentage}%</div></div>
               <div className="ptm-metric"><div className="ptm-metric-label">Topics taught</div><div className="ptm-metric-value">{currentReport.totalTopicsTaught}</div></div>
