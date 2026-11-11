@@ -34,6 +34,12 @@ import {
 import { getSupabaseClient } from "../supabaseClient";
 
 import {
+  hasLoop1VerificationQuestion,
+} from "./loop1Feedback/Loop1FeedbackVerification";
+import Loop1FeedbackVerificationDialog from "./loop1Feedback/Loop1FeedbackVerificationDialog";
+import Loop1FeedbackVerificationQuestion from "./loop1Feedback/Loop1FeedbackVerificationQuestion";
+
+import {
   calculateDailyFeedbackCreditSummaryFromLogs,
   isStudentLoop2Response,
 } from "../data/creditEngine";
@@ -181,6 +187,17 @@ export default function DailyLectureFeedback() {
   const [submittedFeedback, setSubmittedFeedback] = useState<Record<string, any>>({});
   const [crossQuestionAnswers, setCrossQuestionAnswers] = useState<Record<string, number>>({});
   const [crossQuestionResults, setCrossQuestionResults] = useState<Record<string, boolean>>({});
+
+  // Additive top-up state. Existing Loop-1 Cross Question state and handlers remain untouched.
+  const loop1VerificationIntentRef = useRef(0);
+  const loop1VerificationAnswerLockRef = useRef<Set<string>>(new Set());
+  const loop1VerificationAttemptHistoryReadyRef = useRef(false);
+  const loop1VerificationNoLockLogIdRef = useRef<string | null>(null);
+  const [loop1VerificationStage, setLoop1VerificationStage] = useState<"idle" | "question" | "verification" | "corrected" | "wrong" | "no">("idle");
+  const [loop1VerificationLogId, setLoop1VerificationLogId] = useState<string | null>(null);
+  const [loop1VerificationAnswer, setLoop1VerificationAnswer] = useState<number | null>(null);
+  const [loop1VerificationCorrect, setLoop1VerificationCorrect] = useState<boolean | null>(null);
+  const [loop1VerificationSecondSelection, setLoop1VerificationSecondSelection] = useState<string | null>(null);
   const [crossQuestionImageViewerUrl, setCrossQuestionImageViewerUrl] = useState<string | null>(null);
   const [guidedScrollTarget, setGuidedScrollTarget] = useState<{ logId: string; section: "understanding" | "concepts" | "question" | "credits" | "doubt" | "loop2question" } | null>(null);
   const [guidedDoubtHighlightId, setGuidedDoubtHighlightId] = useState<string | null>(null);
@@ -218,6 +235,11 @@ export default function DailyLectureFeedback() {
   }, []);
 
   useEffect(() => {
+    if (!loop1VerificationLogId || loop1VerificationLogId === expandedCard) return;
+    clearLoop1Verification(loop1VerificationLogId);
+  }, [expandedCard, loop1VerificationLogId]);
+
+  useEffect(() => {
     if (!guidedScrollTarget) return;
     const targetId = guidedScrollTarget.section === "understanding"
       ? `dlf-understanding-${guidedScrollTarget.logId}`
@@ -241,6 +263,7 @@ export default function DailyLectureFeedback() {
   }, [guidedScrollTarget, understandingLevel, conceptsNotUnderstood, somethingElse, pendingDoubts, lectureLogs, submittedFeedback]);
 
   async function loadPageData() {
+    loop1VerificationAttemptHistoryReadyRef.current = false;
     setIsLoadingLogs(true);
 
     try {
@@ -271,10 +294,13 @@ export default function DailyLectureFeedback() {
             }
             setCrossQuestionAnswers(answerMap);
             setCrossQuestionResults(resultMap);
+            loop1VerificationAttemptHistoryReadyRef.current = true;
           }
         } catch (attemptLoadError) {
           console.warn("CROSS QUESTION ATTEMPT HISTORY LOAD FAILED", attemptLoadError);
         }
+      } else {
+        loop1VerificationAttemptHistoryReadyRef.current = true;
       }
 
       // These are secondary data loads and run together. None of them blocks
@@ -435,6 +461,157 @@ export default function DailyLectureFeedback() {
     setFeedbackSubmitError(null);
   }
 
+  function clearLoop1Verification(logId: string) {
+    loop1VerificationIntentRef.current += 1;
+    loop1VerificationAnswerLockRef.current.delete(logId);
+    if (loop1VerificationNoLockLogIdRef.current === logId) {
+      loop1VerificationNoLockLogIdRef.current = null;
+    }
+    setLoop1VerificationStage("idle");
+    setLoop1VerificationLogId(null);
+    setLoop1VerificationAnswer(null);
+    setLoop1VerificationCorrect(null);
+    setLoop1VerificationSecondSelection(null);
+  }
+
+  function startLoop1Verification(log: any, level: string): boolean {
+    if (!loop1VerificationAttemptHistoryReadyRef.current) return false;
+    if (log.id in crossQuestionAnswers) return false;
+    if (!hasLoop1VerificationQuestion(log)) return false;
+    loop1VerificationIntentRef.current += 1;
+    if (loop1VerificationNoLockLogIdRef.current === log.id) {
+      loop1VerificationNoLockLogIdRef.current = null;
+    }
+    setUnderstandingLevel(level);
+    setFeedbackSubmitError(null);
+    setLoop1VerificationLogId(log.id);
+    setLoop1VerificationAnswer(null);
+    setLoop1VerificationCorrect(null);
+    setLoop1VerificationSecondSelection(null);
+    setLoop1VerificationStage("question");
+    setGuidedScrollTarget({ logId: log.id, section: "question" });
+    return true;
+  }
+
+  function handleLoop1UnderstandingCapture(log: any, event: React.SyntheticEvent) {
+    const target = event.target as HTMLInputElement | null;
+    if (!target || target.type !== "radio") return;
+    const option = target.value;
+
+    if (loop1VerificationNoLockLogIdRef.current === log.id) {
+      event.stopPropagation();
+      return;
+    }
+
+    if (loop1VerificationLogId === log.id && loop1VerificationStage === "corrected") {
+      event.stopPropagation();
+      if (option === ABSENT_FEEDBACK_OPTION) return;
+      setLoop1VerificationSecondSelection(option);
+      setUnderstandingLevel(option);
+      setFeedbackSubmitError(null);
+      if (option === "I completely understood.") {
+        const selected = loop1VerificationAnswer;
+        const correct = loop1VerificationCorrect;
+        void submitFeedback(log, option, selected, correct);
+        return;
+      }
+      if (option === "I partially understood." || option === "I didn't understand.") {
+        // Keep the verification-completed stage active after the fresh second
+        // selection. This permanently suppresses the Cross Question for the
+        // remainder of the corrected flow, even if the student switches
+        // between Partial and Didn't understand before choosing concepts.
+        // The verification state is cleared only after the final feedback
+        // submission/reset or when the student explicitly chooses NO.
+        setGuidedScrollTarget({ logId: log.id, section: "concepts" });
+      }
+      return;
+    }
+
+    if (loop1VerificationLogId === log.id && loop1VerificationStage !== "idle") {
+      event.stopPropagation();
+      return;
+    }
+
+    if (
+      (option === "I partially understood." || option === "I didn't understand.") &&
+      !(log.id in crossQuestionAnswers)
+    ) {
+      if (startLoop1Verification(log, option)) {
+        event.stopPropagation();
+      }
+    }
+  }
+
+  async function handleLoop1VerificationAnswer(log: any, selected: number) {
+    if (loop1VerificationLogId !== log.id || loop1VerificationStage !== "question") return;
+    if (loop1VerificationAnswerLockRef.current.has(log.id)) return;
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      setFeedbackSubmitError("Your session is unavailable. Please sign in again.");
+      return;
+    }
+
+    const intent = loop1VerificationIntentRef.current;
+    loop1VerificationAnswerLockRef.current.add(log.id);
+
+    try {
+      const { data, error } = await (supabase as any).rpc("tp_record_daily_cross_question_attempt", {
+        p_daily_log_uuid: log.id,
+        p_selected_index: selected,
+      });
+      if (error) throw error;
+
+      if (intent !== loop1VerificationIntentRef.current || loop1VerificationLogId !== log.id) return;
+
+      const attempt = Array.isArray(data) ? data[0] : data;
+      const correct = attempt?.is_correct === true;
+      setLoop1VerificationAnswer(selected);
+      setLoop1VerificationCorrect(correct);
+
+      if (correct) {
+        setLoop1VerificationStage("verification");
+      } else {
+        setLoop1VerificationStage("wrong");
+        setGuidedScrollTarget({ logId: log.id, section: "concepts" });
+      }
+    } catch (error: any) {
+      if (intent !== loop1VerificationIntentRef.current) return;
+      console.error("LOOP-1 VERIFICATION QUESTION ATTEMPT FAILED", error);
+      setFeedbackSubmitError(String(error?.message ?? "Your answer could not be recorded. Refresh the page to check whether it was already attempted."));
+    } finally {
+      loop1VerificationAnswerLockRef.current.delete(log.id);
+    }
+  }
+
+  function handleLoop1VerificationDecision(log: any, wantsToCorrect: boolean) {
+    if (loop1VerificationLogId !== log.id || loop1VerificationStage !== "verification") return;
+    if (wantsToCorrect) {
+      // Verification YES starts a fresh second understanding selection.
+      // The original Partial/Didn't choice must not remain selected or be
+      // reusable by the ordinary Submit button.
+      setUnderstandingLevel("");
+      setLoop1VerificationSecondSelection(null);
+      setConceptsNotUnderstood([]);
+      setSomethingElse(false);
+      setSomethingElseText("");
+      setAdditionalNote("");
+      setFeedbackSubmitError(null);
+      setLoop1VerificationStage("corrected");
+      setGuidedScrollTarget({ logId: log.id, section: "understanding" });
+      return;
+    }
+    // Verification NO keeps the original understanding choice locked while
+    // the student completes the difficult-concepts step. Changing the
+    // understanding radio at this point must never restart the verification
+    // question. The state is cleared only by normal form reset/submission.
+    loop1VerificationNoLockLogIdRef.current = log.id;
+    setLoop1VerificationSecondSelection(null);
+    setLoop1VerificationStage("no");
+    setFeedbackSubmitError(null);
+    setGuidedScrollTarget({ logId: log.id, section: "concepts" });
+  }
+
   async function submitFeedback(
     log: any,
     understandingOverride?: string,
@@ -443,6 +620,18 @@ export default function DailyLectureFeedback() {
   ) {
     if (isSubmittingFeedbackId) return;
     const effectiveUnderstandingLevel = understandingOverride ?? understandingLevel;
+
+    // After Verification YES, the student must make a fresh second selection.
+    // Do not allow the ordinary Submit button to reuse the cleared/previous
+    // Partial or Didn't-understand choice.
+    if (
+      loop1VerificationLogId === log.id &&
+      loop1VerificationStage === "corrected" &&
+      loop1VerificationSecondSelection == null
+    ) {
+      setFeedbackSubmitError("Please choose your understanding level again.");
+      return;
+    }
 
     // A Cross Question is mandatory only for the existing “I completely understood.”
     // path. Never allow the ordinary submit button to bypass the one-attempt MCQ.
@@ -4519,9 +4708,13 @@ return (
                     <div
                       id={`dlf-understanding-${log.id}`}
                       className="dlf-option-grid"
+                      onChangeCapture={(event) => handleLoop1UnderstandingCapture(log, event)}
                     >
 
-                      {UNDERSTANDING_OPTIONS.map(
+                      {(loop1VerificationLogId === log.id && loop1VerificationStage === "corrected"
+                        ? UNDERSTANDING_OPTIONS.filter((option) => option !== ABSENT_FEEDBACK_OPTION)
+                        : UNDERSTANDING_OPTIONS
+                      ).map(
                         (option) => (
 
                           <label
@@ -4533,12 +4726,26 @@ return (
                               type="radio"
                               name={`understanding-${log.id}`}
                               value={option}
-                              disabled={(option === "I completely understood." || option === ABSENT_FEEDBACK_OPTION) && log.id in crossQuestionAnswers && crossQuestionResults[log.id] === false}
+                              disabled={
+                                loop1VerificationNoLockLogIdRef.current === log.id ||
+                                (loop1VerificationLogId === log.id && loop1VerificationStage === "no") ||
+                                (
+                                  !(loop1VerificationLogId === log.id && loop1VerificationStage === "corrected") &&
+                                  (option === "I completely understood." || option === ABSENT_FEEDBACK_OPTION) &&
+                                  log.id in crossQuestionAnswers &&
+                                  crossQuestionResults[log.id] === false
+                                )
+                              }
                               checked={
-                                understandingLevel ===
-                                option
+                                loop1VerificationLogId === log.id && loop1VerificationStage === "corrected"
+                                  ? loop1VerificationSecondSelection === option
+                                  : understandingLevel === option
                               }
                               onChange={() => {
+                                // After verification YES, the second understanding selection is
+                                // authoritative. Never let the original radio handler reopen the
+                                // Cross Question or override the top-up state machine.
+                                if (loop1VerificationLogId === log.id && loop1VerificationStage === "corrected") return;
                                 if (option === "I completely understood." && log.id in crossQuestionAnswers && crossQuestionResults[log.id] === false) return;
                                 setUnderstandingLevel(option);
 
@@ -4571,7 +4778,18 @@ return (
 
                     </div>
 
+                    {loop1VerificationLogId === log.id && loop1VerificationStage === "question" && (
+                      <Loop1FeedbackVerificationQuestion
+                        log={log}
+                        disabled={loop1VerificationAnswerLockRef.current.has(log.id)}
+                        onAnswer={(selected) => handleLoop1VerificationAnswer(log, selected)}
+                        onImageClick={setCrossQuestionImageViewerUrl}
+                      />
+                    )}
 
+
+                    {!(loop1VerificationLogId === log.id && loop1VerificationStage === "corrected") && (
+                      <>
                     {(understandingLevel === "I completely understood." || (log.id in crossQuestionAnswers && !submittedFeedback[log.id])) &&
                       Array.isArray(log.cross_question_options) &&
                       log.cross_question_options.length === 4 &&
@@ -4619,6 +4837,8 @@ return (
                         ))}
                       </div>
                     )}
+                      </>
+                    )}
                     {log.id in crossQuestionAnswers && crossQuestionResults[log.id] === false && !submittedFeedback[log.id] && (
                       <div role="status" style={{ margin: "10px 0", padding: 12, borderRadius: 10, background: "#FFF7ED", color: "#9A3412" }}>
                         That answer is incorrect. You cannot try again.
@@ -4629,10 +4849,32 @@ return (
                         DIFFICULT CONCEPTS
                     ===================================== */}
 
+                    {loop1VerificationLogId === log.id &&
+                      loop1VerificationStage === "wrong" && (
+                        <div
+                          role="status"
+                          style={{
+                            margin: "10px 0",
+                            color: "#DC2626",
+                            fontSize: 14,
+                            fontWeight: 600,
+                          }}
+                        >
+                          wrong answer given, choose your problematic subtopics
+                        </div>
+                      )}
+
                     {understandingLevel !== "" &&
                       understandingLevel !==
                         "I completely understood." &&
-                      understandingLevel !== ABSENT_FEEDBACK_OPTION && (
+                      understandingLevel !== ABSENT_FEEDBACK_OPTION &&
+                      (
+                        loop1VerificationLogId !== log.id ||
+                        loop1VerificationStage === "idle" ||
+                        loop1VerificationStage === "wrong" ||
+                        loop1VerificationStage === "corrected" ||
+                        loop1VerificationStage === "no"
+                      ) && (
 
                       <>
 
@@ -4819,7 +5061,12 @@ return (
 
 
                       <button
-                        disabled={isSubmittingFeedbackId === log.id}
+                        disabled={
+                          isSubmittingFeedbackId === log.id ||
+                          (loop1VerificationLogId === log.id &&
+                            loop1VerificationStage === "corrected" &&
+                            loop1VerificationSecondSelection == null)
+                        }
                         onClick={() =>
                           submitFeedback(log)
                         }
@@ -4850,6 +5097,55 @@ return (
         )}
 
       </section>
+
+      {loop1VerificationLogId && loop1VerificationStage === "corrected" && understandingLevel === "I completely understood." && feedbackSubmitError && (
+        <div
+          style={{
+            position: "fixed",
+            left: 16,
+            right: 16,
+            bottom: 16,
+            zIndex: 3099,
+            display: "flex",
+            justifyContent: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              const verificationLog = lectureLogs.find((item: any) => String(item.id) === String(loop1VerificationLogId));
+              if (!verificationLog) return;
+              void submitFeedback(verificationLog, "I completely understood.", loop1VerificationAnswer, true);
+            }}
+            disabled={isSubmittingFeedbackId === loop1VerificationLogId || loop1VerificationAnswer == null}
+            style={{
+              pointerEvents: "auto",
+              minHeight: 42,
+              padding: "9px 18px",
+              borderRadius: 9,
+              border: "1px solid #1D4ED8",
+              background: "#1D4ED8",
+              color: "#FFFFFF",
+              fontWeight: 700,
+              cursor: isSubmittingFeedbackId === loop1VerificationLogId ? "default" : "pointer",
+            }}
+          >
+            RETRY SUBMISSION
+          </button>
+        </div>
+      )}
+
+      {loop1VerificationLogId && loop1VerificationStage === "verification" && (() => {
+        const verificationLog = lectureLogs.find((item: any) => String(item.id) === String(loop1VerificationLogId));
+        if (!verificationLog) return null;
+        return (
+          <Loop1FeedbackVerificationDialog
+            open
+            onDecision={(wantsToCorrect) => handleLoop1VerificationDecision(verificationLog, wantsToCorrect)}
+          />
+        );
+      })()}
 
 
 

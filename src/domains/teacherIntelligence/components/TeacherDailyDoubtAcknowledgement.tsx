@@ -22,12 +22,126 @@ import {
 interface TeacherDoubtReferenceExactDoubt {
   doubt: string;
   count: number;
+  oldestRaisedAt: string | null;
+}
+
+type DoubtTenureGrade = "oldest" | "mid" | "newest";
+
+const ALL_TIME_DOUBT_TENURE_THRESHOLDS = {
+  newestMaxDays: 7,
+  midMaxDays: 30,
+} as const;
+
+const DOUBT_RANGE_TENURE_THRESHOLDS = {
+  "30": { newestMaxDays: 10, midMaxDays: 20 },
+  "60": { newestMaxDays: 20, midMaxDays: 40 },
+  "90": { newestMaxDays: 30, midMaxDays: 60 },
+} as const;
+
+function getDoubtTenureThresholds(filterPeriod: DoubtFilterPeriod) {
+  if (filterPeriod === "30" || filterPeriod === "60" || filterPeriod === "90") {
+    return DOUBT_RANGE_TENURE_THRESHOLDS[filterPeriod];
+  }
+
+  // Preserve V2 grading for All Time and Custom Date. Custom Date has no
+  // separate threshold contract in this upgrade request.
+  return ALL_TIME_DOUBT_TENURE_THRESHOLDS;
+}
+
+function getDoubtRaisedAt(row: LiveDoubtRow): string | null {
+  const candidates = [
+    row.first_seen_at,
+    row.source_submitted_at,
+    row.latest_source_submitted_at,
+    row.created_at,
+  ];
+
+  for (const candidate of candidates) {
+    const value = String(candidate ?? "").trim();
+    if (!value) continue;
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return value;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  }
+
+  return null;
+}
+
+function getIndiaDateKeyFromValue(value: string | null): string | null {
+  if (!value) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(parsed);
+
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+  if (!year || !month || !day) return null;
+
+  return `${year}-${month}-${day}`;
+}
+
+function getDoubtTenureDays(raisedAt: string | null): number | null {
+  const raisedDateKey = getIndiaDateKeyFromValue(raisedAt);
+  if (!raisedDateKey) return null;
+
+  const today = getIndiaDateKey();
+  const raisedMs = Date.parse(`${raisedDateKey}T00:00:00Z`);
+  const todayMs = Date.parse(`${today}T00:00:00Z`);
+  if (!Number.isFinite(raisedMs) || !Number.isFinite(todayMs)) return null;
+
+  return Math.max(0, Math.floor((todayMs - raisedMs) / 86_400_000));
+}
+
+function getDoubtTenureGrade(raisedAt: string | null, filterPeriod: DoubtFilterPeriod): DoubtTenureGrade {
+  const tenureDays = getDoubtTenureDays(raisedAt);
+  if (tenureDays === null) return "newest";
+
+  const thresholds = getDoubtTenureThresholds(filterPeriod);
+  if (tenureDays <= thresholds.newestMaxDays) return "newest";
+  if (tenureDays <= thresholds.midMaxDays) return "mid";
+  return "oldest";
+}
+
+function getDoubtTenureStyle(grade: DoubtTenureGrade): {
+  backgroundColor: string;
+  borderColor: string;
+  color: string;
+} {
+  if (grade === "oldest") {
+    return {
+      backgroundColor: "#FEE2E2",
+      borderColor: "#FCA5A5",
+      color: "#991B1B",
+    };
+  }
+  if (grade === "mid") {
+    return {
+      backgroundColor: "#FFEDD5",
+      borderColor: "#FDBA74",
+      color: "#9A3412",
+    };
+  }
+  return {
+    backgroundColor: "#FEF9C3",
+    borderColor: "#FDE047",
+    color: "#854D0E",
+  };
 }
 
 interface TeacherDoubtReferenceTopic {
   topic: string;
   count: number;
   doubts: TeacherDoubtReferenceExactDoubt[];
+  oldestRaisedAt: string | null;
 }
 
 interface TeacherDoubtReferenceClassroom {
@@ -145,7 +259,7 @@ function buildClassroomReferences(
 ): TeacherDoubtReferenceClassroom[] {
   const grouped = new Map<
     string,
-    { classroom: string; topicMap: Map<string, Map<string, number>> }
+    { classroom: string; topicMap: Map<string, Map<string, TeacherDoubtReferenceExactDoubt>> }
   >();
 
   for (const item of Array.isArray(rows) ? rows : []) {
@@ -170,15 +284,33 @@ function buildClassroomReferences(
       .join('::');
     const exactDoubt = String(row?.doubt_concept ?? '').trim();
     const topic = String(item?.topic ?? '').trim() || 'Topic not recorded';
+    const raisedAt = getDoubtRaisedAt(row);
 
     if (!exactDoubt) continue;
 
     const group = grouped.get(groupKey) ?? {
       classroom,
-      topicMap: new Map<string, Map<string, number>>(),
+      topicMap: new Map<string, Map<string, TeacherDoubtReferenceExactDoubt>>(),
     };
-    const doubtMap = group.topicMap.get(topic) ?? new Map<string, number>();
-    doubtMap.set(exactDoubt, (doubtMap.get(exactDoubt) ?? 0) + 1);
+    const doubtMap = group.topicMap.get(topic) ?? new Map<string, TeacherDoubtReferenceExactDoubt>();
+    const current = doubtMap.get(exactDoubt);
+    let oldestRaisedAt = current?.oldestRaisedAt ?? null;
+    if (raisedAt) {
+      if (!oldestRaisedAt) {
+        oldestRaisedAt = raisedAt;
+      } else {
+        const raisedTime = new Date(raisedAt).getTime();
+        const currentTime = new Date(oldestRaisedAt).getTime();
+        if (Number.isFinite(raisedTime) && (!Number.isFinite(currentTime) || raisedTime < currentTime)) {
+          oldestRaisedAt = raisedAt;
+        }
+      }
+    }
+    doubtMap.set(exactDoubt, {
+      doubt: exactDoubt,
+      count: (current?.count ?? 0) + 1,
+      oldestRaisedAt,
+    });
     group.topicMap.set(topic, doubtMap);
     grouped.set(groupKey, group);
   }
@@ -187,17 +319,27 @@ function buildClassroomReferences(
     .map(({ classroom, topicMap }) => {
       const topics = Array.from(topicMap.entries())
         .map(([topic, doubtMap]) => {
-          const doubts = Array.from(doubtMap.entries())
-            .map(([doubt, count]) => ({ doubt, count }))
+          const doubts = Array.from(doubtMap.values())
             .sort(
               (a, b) =>
                 b.count - a.count || a.doubt.localeCompare(b.doubt)
             );
 
+          const oldestRaisedAt = doubts.reduce<string | null>((oldest, item) => {
+            if (!item.oldestRaisedAt) return oldest;
+            if (!oldest) return item.oldestRaisedAt;
+            const itemTime = new Date(item.oldestRaisedAt).getTime();
+            const oldestTime = new Date(oldest).getTime();
+            if (!Number.isFinite(oldestTime)) return item.oldestRaisedAt;
+            if (!Number.isFinite(itemTime)) return oldest;
+            return itemTime < oldestTime ? item.oldestRaisedAt : oldest;
+          }, null);
+
           return {
             topic,
             count: doubts.reduce((sum, item) => sum + item.count, 0),
             doubts,
+            oldestRaisedAt,
           };
         })
         .sort(
@@ -562,6 +704,9 @@ export default function TeacherDailyDoubtAcknowledgement() {
         .teacher-doubt-ack-topic-chevron { display:inline-flex; width:14px; height:14px; align-items:center; justify-content:center; border:1px solid #FDBA74; border-radius:50%; color:#C2410C; font-size:10px; font-weight:900; line-height:1; }
         .teacher-doubt-ack-subtopics { display:flex; flex-wrap:wrap; gap:4px; padding:0 6px 6px; border-top:1px solid #FFEDD5; background:#FFFBF7; }
         .teacher-doubt-ack-subtopic { display:inline-flex; align-items:center; gap:4px; max-width:100%; padding:4px 6px; border:1px solid #FED7AA; border-radius:999px; background:#FFF; color:#7C2D12; font-size:8px; line-height:1.2; font-weight:800; }
+        .teacher-doubt-ack-subtopic--oldest { background:#FEE2E2; border-color:#FCA5A5; color:#991B1B; }
+        .teacher-doubt-ack-subtopic--mid { background:#FFEDD5; border-color:#FDBA74; color:#9A3412; }
+        .teacher-doubt-ack-subtopic--newest { background:#FEF9C3; border-color:#FDE047; color:#854D0E; }
         .teacher-doubt-ack-subtopic span { min-width:0; overflow-wrap:anywhere; }
         .teacher-doubt-ack-subtopic strong { color:#EA580C; font-size:7px; white-space:nowrap; }
         .teacher-doubt-ack-action { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding-top:9px; border-top:1px solid rgba(251,146,60,.25); }
@@ -738,6 +883,7 @@ export default function TeacherDailyDoubtAcknowledgement() {
                         className="teacher-doubt-ack-topic-toggle"
                         aria-expanded={expanded}
                         onClick={() => toggleTopic(item.classroom, topic.topic)}
+                        style={getDoubtTenureStyle(getDoubtTenureGrade(topic.oldestRaisedAt, filterPeriod))}
                       >
                         <span className="teacher-doubt-ack-topic-label">{topic.topic}</span>
                         <span className="teacher-doubt-ack-topic-meta">
@@ -750,8 +896,9 @@ export default function TeacherDailyDoubtAcknowledgement() {
                         <div className="teacher-doubt-ack-subtopics" aria-label={`Exact doubts under ${topic.topic}`}>
                           {topic.doubts.map((doubt) => (
                             <span
-                              className="teacher-doubt-ack-subtopic"
+                              className={`teacher-doubt-ack-subtopic teacher-doubt-ack-subtopic--${getDoubtTenureGrade(doubt.oldestRaisedAt, filterPeriod)}`}
                               key={`${topicKey}:${doubt.doubt}`}
+                              style={getDoubtTenureStyle(getDoubtTenureGrade(doubt.oldestRaisedAt, filterPeriod))}
                             >
                               <span>{doubt.doubt}</span>
                               <strong>×{doubt.count}</strong>
