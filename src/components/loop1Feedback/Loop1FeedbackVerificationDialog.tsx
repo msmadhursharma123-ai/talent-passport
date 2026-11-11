@@ -45,7 +45,7 @@ export default function Loop1FeedbackVerificationDialog({
             lineHeight: 1.35,
           }}
         >
-         You correctly analysed the question from the topic ✅
+          You correctly analysed the question from the topic ✅
         </div>
         <div
           style={{
@@ -55,7 +55,7 @@ export default function Loop1FeedbackVerificationDialog({
             marginBottom: 20,
           }}
         >
-           Are you sure you didn't understand it well? Do you want to correct your feedback?
+          Are you sure you didn't understand it well? Do you want to correct your feedback?
         </div>
         <div
           style={{

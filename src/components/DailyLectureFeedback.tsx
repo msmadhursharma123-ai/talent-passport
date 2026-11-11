@@ -193,6 +193,11 @@ export default function DailyLectureFeedback() {
   const loop1VerificationAnswerLockRef = useRef<Set<string>>(new Set());
   const loop1VerificationAttemptHistoryReadyRef = useRef(false);
   const loop1VerificationNoLockLogIdRef = useRef<string | null>(null);
+  // Synchronous marker used by the understanding radio's own onChange handler.
+  // React state is not updated until after the event, so the capture handler
+  // needs a same-event guard to prevent the legacy Partial/Didn't scroll target
+  // from overwriting the verification-question target.
+  const loop1VerificationActivationLogIdRef = useRef<string | null>(null);
   const [loop1VerificationStage, setLoop1VerificationStage] = useState<"idle" | "question" | "verification" | "corrected" | "wrong" | "no">("idle");
   const [loop1VerificationLogId, setLoop1VerificationLogId] = useState<string | null>(null);
   const [loop1VerificationAnswer, setLoop1VerificationAnswer] = useState<number | null>(null);
@@ -467,6 +472,9 @@ export default function DailyLectureFeedback() {
     if (loop1VerificationNoLockLogIdRef.current === logId) {
       loop1VerificationNoLockLogIdRef.current = null;
     }
+    if (loop1VerificationActivationLogIdRef.current === logId) {
+      loop1VerificationActivationLogIdRef.current = null;
+    }
     setLoop1VerificationStage("idle");
     setLoop1VerificationLogId(null);
     setLoop1VerificationAnswer(null);
@@ -482,6 +490,7 @@ export default function DailyLectureFeedback() {
     if (loop1VerificationNoLockLogIdRef.current === log.id) {
       loop1VerificationNoLockLogIdRef.current = null;
     }
+    loop1VerificationActivationLogIdRef.current = log.id;
     setUnderstandingLevel(level);
     setFeedbackSubmitError(null);
     setLoop1VerificationLogId(log.id);
@@ -489,6 +498,10 @@ export default function DailyLectureFeedback() {
     setLoop1VerificationCorrect(null);
     setLoop1VerificationSecondSelection(null);
     setLoop1VerificationStage("question");
+    // The verification question is rendered by the same state transition as the
+    // Partial/Didn't selection. Keep the existing guided-scroll mechanism, but
+    // explicitly target the newly rendered question so this step is guided on
+    // mobile, tablet, and desktop as well.
     setGuidedScrollTarget({ logId: log.id, section: "question" });
     return true;
   }
@@ -4626,6 +4639,11 @@ return (
 
                         <button
                           onClick={() => {
+                            // The daily-feedback launcher is idempotent while a feedback
+                            // flow is already open. A repeated click must never reset the
+                            // current step back to the understanding choices.
+                            if (expandedCard === log.id) return;
+                            if (loop1VerificationLogId === log.id && loop1VerificationStage !== "idle") return;
 
                             setExpandedCard(log.id);
 
@@ -4638,6 +4656,10 @@ return (
                             setSomethingElse(false);
 
                             setSomethingElseText("");
+
+                            // First guided step: after opening the feedback form,
+                            // take the student directly to the understanding choices.
+                            setGuidedScrollTarget({ logId: log.id, section: "understanding" });
 
                           }}
                           className="dlf-feedback-button"
@@ -4746,6 +4768,17 @@ return (
                                 // authoritative. Never let the original radio handler reopen the
                                 // Cross Question or override the top-up state machine.
                                 if (loop1VerificationLogId === log.id && loop1VerificationStage === "corrected") return;
+                                // During the same event that activates the top-up question,
+                                // the legacy radio handler must not overwrite the question
+                                // guided-scroll target with its normal Partial/Didn't concepts
+                                // target. The synchronous activation ref closes that race.
+                                if (
+                                  loop1VerificationActivationLogIdRef.current === log.id &&
+                                  (option === "I partially understood." || option === "I didn't understand.")
+                                ) {
+                                  loop1VerificationActivationLogIdRef.current = null;
+                                  return;
+                                }
                                 if (option === "I completely understood." && log.id in crossQuestionAnswers && crossQuestionResults[log.id] === false) return;
                                 setUnderstandingLevel(option);
 
