@@ -2,6 +2,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ReactNode,
 } from "react";
 
 import {
@@ -12,6 +13,10 @@ import {
   shiftExamPreparationDate,
   todayExamPreparationDate,
 } from "../../examPreparationIntelligence/canonical/ExamPreparationDate";
+import {
+  getTeacherReraiseDisplayKeys,
+  normalizeReraiseValue,
+} from "../../studentDoubtReraise/service/StudentDoubtReraiseService";
 
 type FilterYear = "ALL" | "2026" | "2027" | "2028";
 type FilterMonth = "ALL" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12";
@@ -86,7 +91,66 @@ export default function ExamPreparationPage() {
     setLoading(true);
     try {
       const data = await getTeacherExamAttentionIntelligenceWithLiveLayer(range.start, range.end);
-      setTables(Array.isArray(data) ? data : []);
+      const baseTables = Array.isArray(data) ? data : [];
+
+      // Preserve the existing Exam Preparation load/open/render path. The new
+      // priority marker is fetched only after the canonical/live result has
+      // already been committed to the page.
+      setTables(baseTables);
+
+      void (async () => {
+        try {
+          const rangeForOverlay = examFilterRange(year, month, period, from, to);
+          if (!rangeForOverlay) return;
+          const reraisedKeys = await getTeacherReraiseDisplayKeys({
+            startDate: rangeForOverlay.start,
+            endDateExclusive: rangeForOverlay.end ? shiftExamPreparationDate(rangeForOverlay.end, 1) : undefined,
+          });
+
+          setTables((currentTables) => currentTables.map((table: any) => ({
+            ...table,
+            students: (table.students ?? []).map((student: any) => {
+              const studentKeys = new Set<string>();
+              const topics = new Set<string>();
+              const subtopics = new Set<string>();
+              const classroomMatch = String(table.classroom ?? "").match(/^Class\s+(.*?)\s+-\s+Section\s+(.*?)\s+·\s+(.*)$/);
+              if (!classroomMatch) return student;
+              const className = classroomMatch[1].trim();
+              const sectionName = classroomMatch[2].trim();
+              const subjectName = classroomMatch[3].trim();
+              for (const key of reraisedKeys) {
+                if (!key.startsWith(`${normalizeReraiseValue(className)}::${normalizeReraiseValue(sectionName)}::${normalizeReraiseValue(subjectName)}::${normalizeReraiseValue(student.studentUuid)}::`)) continue;
+                // getTeacherReraiseDisplayKeys includes subject twice by design:
+                // once in the classroom identity and once in the canonical
+                // subject/topic/subtopic payload. Strip the first four identity
+                // fields, then remove the repeated subject before reading the
+                // topic/subtopic. This keeps exact student + Live identity
+                // matching while making the existing table renderer receive
+                // the same topic/subtopic shape used by Student and School.
+                const suffix = key.split("::").slice(4).join("::");
+                const suffixParts = suffix.split("::");
+                if (suffixParts.length < 3) continue;
+                const topic = suffixParts[1];
+                const subtopic = suffixParts.slice(2).join("::");
+                const topicSubtopic = `${topic}::${subtopic}`;
+                studentKeys.add(topicSubtopic);
+                if (topic) topics.add(topic);
+              }
+              for (const suffix of studentKeys) {
+                const parts = suffix.split("::");
+                if (parts.length >= 2) subtopics.add(`${parts[0]}::${parts.slice(1).join("::")}`);
+              }
+              return topics.size || subtopics.size
+                ? { ...student, _reraisedTopics: Array.from(topics), _reraisedSubtopics: Array.from(subtopics) }
+                : student;
+            }),
+          })));
+        } catch (reraiseError) {
+          // Re-raise is a non-blocking visual overlay. Existing canonical/live
+          // Exam Preparation data remains exactly as it was loaded.
+          console.error("TEACHER EXAM PREPARATION RE-RAISE OVERLAY LOAD FAILED", reraiseError);
+        }
+      })();
     } catch (error) {
       console.error("EXAM PREPARATION FILTER LOAD FAILED — ORIGINAL PAGE SAFETY PRESERVED", error);
       setTables([]);
@@ -120,6 +184,7 @@ export default function ExamPreparationPage() {
 
 
       <style>{`
+        .exam-prep-reraised-text { color:#CA8A04 !important; font-weight:800 !important; }
         .exam-prep-swipe-cue { display: none; }
 
         .exam-prep-filter-bar {
@@ -779,21 +844,47 @@ export default function ExamPreparationPage() {
 
               {renderExamPreparationRow(
                 "Topics With Unresolved Doubts",
-                table.students.map(
-                  (student: any) =>
-                    student.topics.join(", ")
+                table.students.map((student: any) =>
+                  (student.topics ?? []).length > 0
+                    ? (student.topics ?? []).map((topic: string, index: number) => (
+                    <span
+                      key={`${student.studentUuid}-teacher-topic-${index}-${topic}`}
+                      className={
+                        (student._reraisedTopics ?? []).includes(normalizeReraiseValue(topic))
+                          ? "exam-prep-reraised-text"
+                          : undefined
+                      }
+                    >
+                      {topic}
+                      {index < (student.topics ?? []).length - 1 ? ", " : ""}
+                    </span>
+                  ))
+                    : "-"
                 )
               )}
 
               {renderExamPreparationRow(
                 "Pending Doubts: Unresolved Subtopics",
-                table.students.map(
-                  (student: any) =>
-                    (student.topics ?? [])
-                      .map((topic: string, index: number) =>
-                        `${topic} → ${String(student.subtopics?.[index] ?? "").trim() || "-"}`
-                      )
-                      .join(" • ")
+                table.students.map((student: any) =>
+                  (student.topics ?? []).length > 0
+                    ? (student.topics ?? []).map((topic: string, index: number) => {
+                    const subtopic = String(student.subtopics?.[index] ?? "").trim();
+                    const markerKey = `${normalizeReraiseValue(topic)}::${normalizeReraiseValue(subtopic)}`;
+                    const reraised = (student._reraisedSubtopics ?? []).includes(markerKey);
+                    return (
+                      <span key={`${student.studentUuid}-teacher-subtopic-${index}-${topic}`}>
+                        <span className={reraised ? "exam-prep-reraised-text" : undefined}>
+                          {topic}
+                        </span>
+                        {" → "}
+                        <span className={reraised ? "exam-prep-reraised-text" : undefined}>
+                          {subtopic || "-"}
+                        </span>
+                        {index < (student.topics ?? []).length - 1 ? " • " : ""}
+                      </span>
+                    );
+                  })
+                    : "-"
                 )
               )}
 
@@ -854,7 +945,7 @@ export default function ExamPreparationPage() {
 
 function renderExamPreparationRow(
   metricName: string,
-  values: string[]
+  values: ReactNode[]
 ) {
   return (
     <tr>

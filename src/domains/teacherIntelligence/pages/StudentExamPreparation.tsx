@@ -1,6 +1,7 @@
 import {
   useEffect,
   useState,
+  type ReactNode,
 } from "react";
 
 import {
@@ -17,6 +18,11 @@ import {
 import {
   buildExamPreparationRange,
 } from "../../examPreparationIntelligence/canonical/ExamPreparationDate";
+import StudentReraiseDoubtModal from "../../studentDoubtReraise/components/StudentReraiseDoubtModal";
+import {
+  getStudentReraiseMarkerSet,
+  reraiseSubjectTopicKey,
+} from "../../studentDoubtReraise/service/StudentDoubtReraiseService";
 
 interface SubjectBreakdown {
   subject: string;
@@ -75,6 +81,29 @@ export default function StudentExamPreparation() {
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [loading, setLoading] = useState(true);
+  const [reraiseMarkerSet, setReraiseMarkerSet] = useState<Set<string>>(new Set());
+
+  async function loadReraiseMarkers() {
+    try {
+      const range = buildDateRange(timeFilter, customStart, customEnd);
+      if (!range) {
+        setReraiseMarkerSet(new Set());
+        return;
+      }
+      setReraiseMarkerSet(await getStudentReraiseMarkerSet({
+        subjectName: selectedSubject,
+        startDate: range.startDate,
+        endDateExclusive: range.endDateExclusive,
+      }));
+    } catch (error) {
+      console.error("STUDENT RE-RAISE MARKER LOAD FAILED", error);
+      setReraiseMarkerSet(new Set());
+    }
+  }
+
+  useEffect(() => {
+    void loadReraiseMarkers();
+  }, [selectedSubject, timeFilter, customStart, customEnd]);
 
   useEffect(() => {
     try {
@@ -151,6 +180,12 @@ export default function StudentExamPreparation() {
     timeFilter === "CUSTOM" &&
     Boolean(customStart && customEnd && customStart > customEnd);
 
+  function isReraised(subjectName: string, topicName: string, subtopicName: string) {
+    return reraiseMarkerSet.has(
+      reraiseSubjectTopicKey({ subjectName, topicName, subtopicName })
+    );
+  }
+
   return (
     <div className="student-exam-preparation tp-exam-prep-root">
       <style>{styles}</style>
@@ -166,7 +201,17 @@ export default function StudentExamPreparation() {
           </p>
         </div>
 
-        <span className="tp-exam-live-badge">LIVE</span>
+        <div className="tp-exam-header-actions">
+          <StudentReraiseDoubtModal
+            subjectOptions={subjectOptions}
+            initialSubject={selectedSubject}
+            initialTimeFilter={timeFilter}
+            initialCustomStart={customStart}
+            initialCustomEnd={customEnd}
+            onReraised={loadReraiseMarkers}
+          />
+          <span className="tp-exam-live-badge">LIVE</span>
+        </div>
       </div>
 
       <div className="tp-exam-live-note">
@@ -290,13 +335,23 @@ export default function StudentExamPreparation() {
               subjects={subjects}
               getValue={(subject) =>
                 subject.topics.length > 0
-                  ? subject.topics
-                      .map((item) =>
-                        item.signals > 1
+                  ? subject.topics.map((item, index) => (
+                      <span
+                        key={`${subject.subject}-topic-${index}-${item.topic}`}
+                        className={
+                          item.subtopics.some((subtopic) =>
+                            isReraised(subject.subject, item.topic, subtopic)
+                          )
+                            ? "tp-exam-reraised-text"
+                            : undefined
+                        }
+                      >
+                        {item.signals > 1
                           ? `${item.topic} (${item.signals})`
-                          : item.topic
-                      )
-                      .join(" • ")
+                          : item.topic}
+                        {index < subject.topics.length - 1 ? " • " : ""}
+                      </span>
+                    ))
                   : "-"
               }
               emptyValue={
@@ -312,12 +367,40 @@ export default function StudentExamPreparation() {
               subjects={subjects}
               getValue={(subject) =>
                 subject.topics.length > 0
-                  ? subject.topics
-                      .map((item) => {
-                        const subtopics = (item.subtopics ?? []).join(", ");
-                        return `${item.topic} → ${subtopics || "-"}`;
-                      })
-                      .join(" • ")
+                  ? subject.topics.map((item, topicIndex) => (
+                      <span
+                        key={`${subject.subject}-subtopic-${topicIndex}-${item.topic}`}
+                      >
+                        <span
+                          className={
+                            item.subtopics.some((subtopic) =>
+                              isReraised(subject.subject, item.topic, subtopic)
+                            )
+                              ? "tp-exam-reraised-text"
+                              : undefined
+                          }
+                        >
+                          {item.topic}
+                        </span>
+                        {" → "}
+                        {(item.subtopics ?? []).length > 0
+                          ? item.subtopics.map((subtopic, subtopicIndex) => (
+                              <span
+                                key={`${item.topic}-${subtopicIndex}-${subtopic}`}
+                                className={
+                                  isReraised(subject.subject, item.topic, subtopic)
+                                    ? "tp-exam-reraised-text"
+                                    : undefined
+                                }
+                              >
+                                {subtopic}
+                                {subtopicIndex < item.subtopics.length - 1 ? ", " : ""}
+                              </span>
+                            ))
+                          : "-"}
+                        {topicIndex < subject.topics.length - 1 ? " • " : ""}
+                      </span>
+                    ))
                   : "-"
               }
               emptyValue="-"
@@ -355,8 +438,8 @@ function ExamRow({
 }: {
   metric: string;
   subjects: SubjectBreakdown[];
-  getValue: (subject: SubjectBreakdown) => string;
-  emptyValue: string;
+  getValue: (subject: SubjectBreakdown) => ReactNode;
+  emptyValue: ReactNode;
   kind: "count" | "doubt" | "subtopic" | "difficult" | "status";
 }) {
   const valueClass =
@@ -393,6 +476,9 @@ function ExamRow({
 }
 
 const styles = `
+
+.tp-exam-header-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; flex:0 0 auto; min-width:0; }
+.tp-exam-reraised-text { color:#CA8A04 !important; font-weight:800; }
 
 .tp-exam-filter-bar {
   display: grid;
@@ -704,6 +790,8 @@ const styles = `
     margin-top: 4px !important;
   }
 
+  .tp-exam-header-actions { gap:5px !important; }
+
   .tp-exam-live-badge {
     padding: 5px 8px !important;
     font-size: 7px !important;
@@ -811,6 +899,8 @@ const styles = `
   .tp-exam-description {
     font-size: 8.5px !important;
   }
+
+  .tp-exam-header-actions { gap:4px !important; max-width:100%; }
 
   .tp-exam-live-badge {
     padding: 4px 7px !important;

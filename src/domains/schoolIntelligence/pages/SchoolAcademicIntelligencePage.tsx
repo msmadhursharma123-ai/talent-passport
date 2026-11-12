@@ -2,6 +2,10 @@ import "./schoolIntelligence.css";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { loadCanonicalSchoolExamPreparation } from "../../examPreparationIntelligence/canonical/ExamPreparationCanonicalService";
 import { buildExamPreparationRange, todayExamPreparationDate } from "../../examPreparationIntelligence/canonical/ExamPreparationDate";
+import {
+  getSchoolReraiseDisplayKeys,
+  normalizeReraiseValue,
+} from "../../studentDoubtReraise/service/StudentDoubtReraiseService";
 import type { SchoolExamPreparationClassroom, SchoolExamPreparationStudent } from "../types/SchoolIntelligenceModels";
 import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
 
@@ -63,7 +67,50 @@ export default function SchoolAcademicIntelligencePage(){
    setLoading(true);
    try{
      const d=await loadCanonicalSchoolExamPreparation({startDate:range.start,endDateExclusive:range.endExclusive});
-     setAll(d??[]);
+     const baseData=d??[];
+
+     // Commit the existing School Academic Intelligence projection first.
+     // Re-raise is a non-blocking visual overlay only.
+     setAll(baseData);
+
+     void (async()=>{
+       try{
+         const reraiseKeys=await getSchoolReraiseDisplayKeys({
+           startDate:range.start,
+           endDateExclusive:range.endExclusive,
+         });
+
+         setAll((currentAll)=>currentAll.map((classroom:any)=>({
+           ...classroom,
+           subjects:(classroom.subjects??[]).map((subject:any)=>({
+             ...subject,
+             students:(subject.students??[]).map((student:any)=>{
+               const assignment=String(subject.assignmentUuid??"").trim();
+               const studentUuid=String(student.studentUuid??"").trim();
+               const topicKeys=new Set<string>();
+               const subtopicKeys=new Set<string>();
+               for(const key of reraiseKeys){
+                 const prefix=`${assignment}::${studentUuid}::`;
+                 if(!key.startsWith(prefix)) continue;
+                 const remainder=key.slice(prefix.length);
+                 const parts=remainder.split("::");
+                 if(parts.length>=3){
+                   topicKeys.add(parts[1]);
+                   subtopicKeys.add(`${parts[1]}::${parts[2]}`);
+                 }
+               }
+               return topicKeys.size||subtopicKeys.size
+                 ? {...student,_reraisedTopics:Array.from(topicKeys),_reraisedSubtopics:Array.from(subtopicKeys)}
+                 : student;
+             }),
+           })),
+         })));
+       }catch(reraiseError){
+         // Re-raise is an additive overlay. If it fails, the canonical School
+         // Academic Intelligence projection remains exactly as loaded.
+         console.error("SCHOOL ACADEMIC INTELLIGENCE RE-RAISE OVERLAY LOAD FAILED",reraiseError);
+       }
+     })();
    }finally{setLoading(false)}
  }
 
@@ -116,9 +163,18 @@ function R({c,layouts,m}:{c:SchoolExamPreparationClassroom;layouts:{subject:any;
  const labels={TOTAL:"Total Unresolved Not Discussed Doubts",TOPICS:"Topics With Unresolved Doubts",SUBTOPICS:"Pending Doubts: Unresolved Subtopics",RISK:"Highest Risk Topic",ATTENTION:"Attention Level"};
  return <tr><td className="sa-metric">{labels[m]}</td>{layouts.flatMap(({subject:s,studentWidth})=>s.students.length?s.students.map((st:SchoolExamPreparationStudent)=><td key={s.assignmentUuid+st.studentUuid+m} className="sa-cell" style={{width:studentWidth,minWidth:studentWidth,maxWidth:studentWidth,color:m==="TOTAL"?"#EF4444":m==="RISK"?"#1E3A8A":m==="ATTENTION"?(st.attentionLevel==="HIGH"?"#DC2626":st.attentionLevel==="MEDIUM"?"#D97706":"#16A34A"):undefined}}>{value(st,m)}</td>):[<td key={s.assignmentUuid+m+"empty"} className="sa-cell" style={{width:studentWidth,minWidth:studentWidth,maxWidth:studentWidth}}>-</td>])}</tr>
 }
-function value(s:SchoolExamPreparationStudent,m:"TOTAL"|"TOPICS"|"SUBTOPICS"|"RISK"|"ATTENTION"){return m==="TOTAL"?s.totalUnresolvedDoubts:m==="TOPICS"?(s.topics.join(", ")||"-"):m==="SUBTOPICS"?((s.topics??[]).map((topic:string,index:number)=>`${topic} → ${String(s.subtopics?.[index]??"").trim()||"-"}`).join(" • ")||"-"):m==="RISK"?s.highestRiskTopic:s.attentionLevel}
+function value(s:SchoolExamPreparationStudent,m:"TOTAL"|"TOPICS"|"SUBTOPICS"|"RISK"|"ATTENTION"){
+ const student:any=s;
+ if(m==="TOTAL")return s.totalUnresolvedDoubts;
+ if(m==="RISK")return s.highestRiskTopic;
+ if(m==="ATTENTION")return s.attentionLevel;
+ const topics=s.topics??[];
+ if(m==="TOPICS")return topics.length?topics.map((topic:string,index:number)=><span key={`${s.studentUuid}-school-topic-${index}-${topic}`} className={(student._reraisedTopics??[]).includes(normalizeReraiseValue(topic))?"sa-reraised-text":undefined}>{topic}{index<topics.length-1?", ":""}</span>):"-";
+ return topics.length?topics.map((topic:string,index:number)=>{const subtopic=String(s.subtopics?.[index]??"").trim();const reraised=(student._reraisedSubtopics??[]).includes(`${normalizeReraiseValue(topic)}::${normalizeReraiseValue(subtopic)}`);return <span key={`${s.studentUuid}-school-subtopic-${index}-${topic}`}><span className={reraised?"sa-reraised-text":undefined}>{topic}</span>{" → "}<span className={reraised?"sa-reraised-text":undefined}>{subtopic||"-"}</span>{index<topics.length-1?" • ":""}</span>}):"-";
+}
 function S({l,v}:{l:string;v:string}){return <div className="sa-summary-card"><span>{l}</span><b>{v}</b></div>}
 const css=`
+.sa-reraised-text{color:#CA8A04 !important;font-weight:800 !important}
 /* =========================================================
    CONTENT ABOVE DECORATIVE CARD BACKGROUNDS
    Keep headings/body text above decorative circles/gradients.

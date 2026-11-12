@@ -18,11 +18,15 @@ import {
   getLiveDoubtsForTeacherAssignments,
   type LiveDoubtRow,
 } from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
+import {
+  getTeacherReraiseRecordsForOverlay,
+} from "../../studentDoubtReraise/service/StudentDoubtReraiseService";
 
 interface TeacherDoubtReferenceExactDoubt {
   doubt: string;
   count: number;
   oldestRaisedAt: string | null;
+  isReraised: boolean;
 }
 
 type DoubtTenureGrade = "oldest" | "mid" | "newest";
@@ -142,6 +146,7 @@ interface TeacherDoubtReferenceTopic {
   count: number;
   doubts: TeacherDoubtReferenceExactDoubt[];
   oldestRaisedAt: string | null;
+  isReraised: boolean;
 }
 
 interface TeacherDoubtReferenceClassroom {
@@ -310,6 +315,7 @@ function buildClassroomReferences(
       doubt: exactDoubt,
       count: (current?.count ?? 0) + 1,
       oldestRaisedAt,
+      isReraised: Boolean(current?.isReraised),
     });
     group.topicMap.set(topic, doubtMap);
     grouped.set(groupKey, group);
@@ -340,6 +346,7 @@ function buildClassroomReferences(
             count: doubts.reduce((sum, item) => sum + item.count, 0),
             doubts,
             oldestRaisedAt,
+            isReraised: doubts.some((item) => item.isReraised),
           };
         })
         .sort(
@@ -357,6 +364,58 @@ function buildClassroomReferences(
     .sort((a, b) =>
       a.classroom.localeCompare(b.classroom, undefined, { numeric: true })
     );
+}
+
+function applyReraiseOverlayToClassrooms(
+  classrooms: TeacherDoubtReferenceClassroom[],
+  exactLiveRows: ExactLiveDoubtReference[],
+  records: any[]
+): TeacherDoubtReferenceClassroom[] {
+  const liveIds = new Set(
+    records
+      .map((row) => String(row?.source_live_id ?? "").trim())
+      .filter(Boolean)
+  );
+
+  const reraisedDisplayKeys = new Set<string>();
+  for (const item of exactLiveRows) {
+    const live = item.liveRow;
+    if (!live?.is_unresolved) continue;
+
+    const liveId = String(live.id ?? "").trim();
+    const exactLiveMatch = Boolean(liveId && liveIds.has(liveId));
+    if (!exactLiveMatch) continue;
+
+    const classroom = [
+      live?.class_name ? `Class ${String(live.class_name).trim()}` : "Class not recorded",
+      live?.section_name ? `Section ${String(live.section_name).trim()}` : "Section not recorded",
+      String(live?.subject_name ?? "").trim() || "Subject not recorded",
+    ].join(" - ");
+
+    reraisedDisplayKeys.add(
+      `${classroom}::${String(item.topic ?? "").trim().toLocaleLowerCase().replace(/\s+/g, " ")}::${String(live?.doubt_concept ?? "").trim().toLocaleLowerCase().replace(/\s+/g, " ")}`
+    );
+  }
+
+  return classrooms.map((classroom) => ({
+    ...classroom,
+    topics: classroom.topics.map((topic) => {
+      const topicDoubts = topic.doubts.map((doubt) => {
+        const key =
+          `${classroom.classroom}::${String(topic.topic).trim().toLocaleLowerCase().replace(/\s+/g, " ")}::${String(doubt.doubt).trim().toLocaleLowerCase().replace(/\s+/g, " ")}`;
+        return {
+          ...doubt,
+          isReraised: reraisedDisplayKeys.has(key),
+        };
+      });
+
+      return {
+        ...topic,
+        isReraised: topicDoubts.some((doubt) => doubt.isReraised),
+        doubts: topicDoubts,
+      };
+    }),
+  }));
 }
 
 export default function TeacherDailyDoubtAcknowledgement() {
@@ -450,6 +509,21 @@ export default function TeacherDailyDoubtAcknowledgement() {
         setAcknowledged({});
         setExpandedTopics({});
         setOpen(true);
+
+        // Re-raise is strictly an asynchronous visual overlay. The existing
+        // popup has already passed its original canonical/live eligibility
+        // path and is allowed to open without waiting for the new table.
+        void (async () => {
+          try {
+            const reraiseRows = await getTeacherReraiseRecordsForOverlay();
+            if (cancelled) return;
+            setClassrooms((current) =>
+              applyReraiseOverlayToClassrooms(current, exactLiveRows, reraiseRows)
+            );
+          } catch (reraiseError) {
+            console.error("TEACHER DAILY DOUBT RE-RAISE OVERLAY LOAD FAILED", reraiseError);
+          }
+        })();
       } catch (error) {
         if (cancelled) return;
         setFilterError("Unable to refresh the selected doubt range. Please try again.");
@@ -542,12 +616,12 @@ export default function TeacherDailyDoubtAcknowledgement() {
                 .map(
                   (topic) => `
                     <div class="topic">
-                      <div class="topic-head"><span>${escapeHtml(topic.topic)}</span><strong>${topic.count}</strong></div>
+                      <div class="topic-head${topic.isReraised ? " reraise" : ""}"><span>${escapeHtml(topic.topic)}</span><strong>${topic.count}</strong></div>
                       <ul>
                         ${topic.doubts
                           .map(
                             (doubt) =>
-                              `<li><span>${escapeHtml(doubt.doubt)}</span><strong>${doubt.count}</strong></li>`
+                              `<li class="${doubt.isReraised ? "reraise" : ""}"><span>${escapeHtml(doubt.doubt)}</span><strong>${doubt.count}</strong></li>`
                           )
                           .join("")}
                       </ul>
@@ -575,6 +649,8 @@ export default function TeacherDailyDoubtAcknowledgement() {
         .topic ul { margin:0; padding:0 0 0 12px; list-style:none; }
         .topic li { display:flex; justify-content:space-between; gap:14px; padding:5px 0; border-top:1px solid #FED7AA; font-size:11px; }
         strong { color:#C2410C; }
+        .reraise { color:#7C3AED !important; }
+        .reraise strong { color:#7C3AED !important; }
       `;
       await printHtmlAsPdf({
         bodyHtml: `<h1>Unresolved Doubt Bank</h1><div class="date">${getIndiaDateKey()}${selectedRange?.start && selectedRange?.end ? ` · ${selectedRange.start} to ${selectedRange.end}` : " · All current unresolved doubts"}</div>${printable}`,
@@ -640,6 +716,8 @@ export default function TeacherDailyDoubtAcknowledgement() {
             .topic ul { margin:0; padding:0 0 0 12px; list-style:none; }
             .topic li { display:flex; justify-content:space-between; gap:14px; padding:6px 0; border-top:1px solid #FED7AA; font-size:11px; }
             strong { color:#C2410C; }
+            .reraise { color:#7C3AED !important; }
+            .reraise strong { color:#7C3AED !important; }
           </style>
         </head>
         <body>
@@ -712,6 +790,14 @@ export default function TeacherDailyDoubtAcknowledgement() {
         .teacher-doubt-ack-action { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding-top:9px; border-top:1px solid rgba(251,146,60,.25); }
         .teacher-doubt-ack-check { display:inline-flex; align-items:center; gap:7px; color:#334155; font-size:10px; font-weight:900; cursor:pointer; }
         .teacher-doubt-ack-check input { width:15px; height:15px; margin:0; accent-color:#F97316; }
+        .teacher-doubt-ack-legend { display:flex; align-items:center; flex-wrap:wrap; gap:8px 14px; padding:8px 16px; border-top:1px solid #EEF2F7; border-bottom:1px solid #EEF2F7; background:#FAFAF9; }
+        .teacher-doubt-ack-legend-title { color:#64748B; font-size:8px; font-weight:900; letter-spacing:.7px; text-transform:uppercase; white-space:nowrap; }
+        .teacher-doubt-ack-legend-item { display:inline-flex; align-items:center; gap:5px; color:#334155; font-size:8px; line-height:1.2; font-weight:800; white-space:nowrap; }
+        .teacher-doubt-ack-legend-swatch { width:12px; height:12px; flex:0 0 12px; border:1px solid transparent; border-radius:3px; background:#FFF; }
+        .teacher-doubt-ack-legend-swatch--oldest { background:#FEE2E2; border-color:#FCA5A5; }
+        .teacher-doubt-ack-legend-swatch--mid { background:#FFEDD5; border-color:#FDBA74; }
+        .teacher-doubt-ack-legend-swatch--newest { background:#FEF9C3; border-color:#FDE047; }
+        .teacher-doubt-ack-legend-swatch--reraised { background:#FFF; border:2px solid #991B1B; }
         .teacher-doubt-ack-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; border-top:1px solid #EEF2F7; background:#FCFCFB; }
         .teacher-doubt-ack-foot-note { color:#94A3B8; font-size:9px; line-height:1.3; font-weight:700; }
         .teacher-doubt-ack-btn { flex:0 0 auto; border:1px solid #F97316; border-radius:10px; padding:8px 12px; background:#F97316; color:#FFF; font-size:10px; font-weight:900; cursor:pointer; }
@@ -747,6 +833,10 @@ export default function TeacherDailyDoubtAcknowledgement() {
           .teacher-doubt-ack-action { margin-top:7px; padding-top:6px; }
           .teacher-doubt-ack-check { font-size:9px; }
           .teacher-doubt-ack-check input { width:13px; height:13px; }
+          .teacher-doubt-ack-legend { gap:6px 10px; padding:7px 9px; }
+          .teacher-doubt-ack-legend-title { font-size:7px; }
+          .teacher-doubt-ack-legend-item { font-size:8px; }
+          .teacher-doubt-ack-legend-swatch { width:11px; height:11px; flex-basis:11px; }
           .teacher-doubt-ack-foot { padding:8px 9px; }
           .teacher-doubt-ack-foot-note { font-size:8px; }
           .teacher-doubt-ack-btn,.teacher-doubt-ack-download { padding:6px 8px; font-size:8px; border-radius:8px; }
@@ -782,6 +872,10 @@ export default function TeacherDailyDoubtAcknowledgement() {
           .teacher-doubt-ack-action { margin-top:5px; padding-top:5px; }
           .teacher-doubt-ack-check { gap:4px; font-size:9px; }
           .teacher-doubt-ack-check input { width:11px; height:11px; }
+          .teacher-doubt-ack-legend { gap:5px 8px; padding:6px 7px; }
+          .teacher-doubt-ack-legend-title { width:100%; font-size:7px; }
+          .teacher-doubt-ack-legend-item { font-size:8px; }
+          .teacher-doubt-ack-legend-swatch { width:10px; height:10px; flex-basis:10px; border-radius:2px; }
           .teacher-doubt-ack-foot { gap:5px; padding:6px 7px; }
           .teacher-doubt-ack-foot-note { max-width:45%; font-size:8px; }
           .teacher-doubt-ack-btn,.teacher-doubt-ack-download { padding:6px 7px; font-size:8px; border-radius:8px; }
@@ -883,7 +977,10 @@ export default function TeacherDailyDoubtAcknowledgement() {
                         className="teacher-doubt-ack-topic-toggle"
                         aria-expanded={expanded}
                         onClick={() => toggleTopic(item.classroom, topic.topic)}
-                        style={getDoubtTenureStyle(getDoubtTenureGrade(topic.oldestRaisedAt, filterPeriod))}
+                        style={{
+                          ...getDoubtTenureStyle(getDoubtTenureGrade(topic.oldestRaisedAt, filterPeriod)),
+                          ...(topic.isReraised ? { boxShadow: "inset 0 0 0 2px #991B1B" } : {}),
+                        }}
                       >
                         <span className="teacher-doubt-ack-topic-label">{topic.topic}</span>
                         <span className="teacher-doubt-ack-topic-meta">
@@ -898,7 +995,10 @@ export default function TeacherDailyDoubtAcknowledgement() {
                             <span
                               className={`teacher-doubt-ack-subtopic teacher-doubt-ack-subtopic--${getDoubtTenureGrade(doubt.oldestRaisedAt, filterPeriod)}`}
                               key={`${topicKey}:${doubt.doubt}`}
-                              style={getDoubtTenureStyle(getDoubtTenureGrade(doubt.oldestRaisedAt, filterPeriod))}
+                              style={{
+                                ...getDoubtTenureStyle(getDoubtTenureGrade(doubt.oldestRaisedAt, filterPeriod)),
+                                ...(doubt.isReraised ? { boxShadow: "inset 0 0 0 2px #991B1B" } : {}),
+                              }}
                             >
                               <span>{doubt.doubt}</span>
                               <strong>×{doubt.count}</strong>
@@ -923,6 +1023,26 @@ export default function TeacherDailyDoubtAcknowledgement() {
               </div>
             </section>
           ))}
+        </div>
+
+        <div className="teacher-doubt-ack-legend" aria-label="Doubt color grading reference">
+          <span className="teacher-doubt-ack-legend-title">Doubt Reference</span>
+          <span className="teacher-doubt-ack-legend-item">
+            <span className="teacher-doubt-ack-legend-swatch teacher-doubt-ack-legend-swatch--oldest" aria-hidden="true" />
+            Oldest doubt
+          </span>
+          <span className="teacher-doubt-ack-legend-item">
+            <span className="teacher-doubt-ack-legend-swatch teacher-doubt-ack-legend-swatch--mid" aria-hidden="true" />
+            Mid-age doubt
+          </span>
+          <span className="teacher-doubt-ack-legend-item">
+            <span className="teacher-doubt-ack-legend-swatch teacher-doubt-ack-legend-swatch--newest" aria-hidden="true" />
+            Newest doubt
+          </span>
+          <span className="teacher-doubt-ack-legend-item">
+            <span className="teacher-doubt-ack-legend-swatch teacher-doubt-ack-legend-swatch--reraised" aria-hidden="true" />
+            Re-raised doubt
+          </span>
         </div>
 
         <div className="teacher-doubt-ack-foot">
