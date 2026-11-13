@@ -6,11 +6,18 @@ import {
   calculateLearningDoubtRate,
   countResolvedDoubts,
   calculateUnweightedAveragePercentage,
+  latestFeedbackByStudent,
+  isAbsentFeedback,
 } from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import type {
   SchoolMorningBrief,
   SchoolMorningBriefClassroomMetric,
   SchoolMorningBriefTeacherDailyMetric,
+  SchoolMorningBriefAssignmentDetail,
+  SchoolMorningBriefClassroomDetail,
+  SchoolMorningBriefStudentStatusDetail,
+  SchoolMorningBriefDoubtDetail,
+  SchoolMorningBriefWeeklyDayDetail,
 } from "../types/SchoolMorningBriefModels";
 import type { SchoolMorningBriefRawData } from "../repository/SchoolMorningBriefRepository";
 
@@ -137,6 +144,353 @@ function rosterForAssignment(raw: SchoolMorningBriefRawData, assignment: any): s
     )
     .map((student: any) => student.student_uuid)
     .filter(Boolean);
+}
+
+
+function studentNameMap(raw: SchoolMorningBriefRawData) {
+  return new Map<string, string>(
+    raw.students
+      .map((student: any) => [
+        String(student.student_uuid ?? "").trim(),
+        String(student.student_name ?? "").trim(),
+      ] as [string, string])
+      .filter(([uuid, name]) => Boolean(uuid && name)),
+  );
+}
+
+function teacherNameMap(raw: SchoolMorningBriefRawData) {
+  return new Map<string, string>(
+    raw.teachers
+      .map((teacher: any) => [
+        String(teacher.teacher_uuid ?? "").trim(),
+        String(teacher.full_name ?? "").trim(),
+      ] as [string, string])
+      .filter(([uuid]) => Boolean(uuid)),
+  );
+}
+
+function studentDetailsSorted(
+  rows: Map<string, SchoolMorningBriefStudentStatusDetail>,
+) {
+  return Array.from(rows.values()).sort((a, b) =>
+    a.studentName.localeCompare(b.studentName) || a.studentUuid.localeCompare(b.studentUuid),
+  );
+}
+
+function collectStudentStatusDetails(
+  raw: SchoolMorningBriefRawData,
+  logs: any[],
+  assignment: any,
+  doubts: any[],
+): {
+  completeStudents: SchoolMorningBriefStudentStatusDetail[];
+  partialStudents: SchoolMorningBriefStudentStatusDetail[];
+  didntUnderstandStudents: SchoolMorningBriefStudentStatusDetail[];
+  responseStudents: SchoolMorningBriefStudentStatusDetail[];
+  absentStudents: SchoolMorningBriefStudentStatusDetail[];
+  noResponseStudents: SchoolMorningBriefStudentStatusDetail[];
+} {
+  const roster = rosterForAssignment(raw, assignment);
+  const rosterSet = new Set(roster);
+  const names = studentNameMap(raw);
+  const buckets: Record<string, Map<string, SchoolMorningBriefStudentStatusDetail>> = {
+    complete: new Map(),
+    partial: new Map(),
+    didntUnderstand: new Map(),
+    response: new Map(),
+    absent: new Map(),
+    noResponse: new Map(),
+  };
+
+  const add = (bucket: Map<string, SchoolMorningBriefStudentStatusDetail>, studentUuid: string) => {
+    const studentName = names.get(studentUuid) || "Student";
+    const current = bucket.get(studentUuid);
+    bucket.set(studentUuid, {
+      studentUuid,
+      studentName,
+      observationCount: (current?.observationCount ?? 0) + 1,
+    });
+  };
+
+  for (const log of logs) {
+    const feedbackForLog = raw.feedback.filter(
+      (row: any) => String(row.daily_log_uuid ?? "") === String(log.id ?? ""),
+    );
+    const latest = latestFeedbackByStudent(feedbackForLog).filter((row: any) =>
+      rosterSet.has(String(row.student_uuid ?? "").trim()),
+    );
+    const latestByStudent = new Map(
+      latest.map((row: any) => [String(row.student_uuid ?? "").trim(), row]),
+    );
+
+    for (const studentUuid of roster) {
+      const row = latestByStudent.get(studentUuid);
+      const level = effectiveUnderstanding(row, doubts);
+
+      if (!row || !level) {
+        add(buckets.noResponse, studentUuid);
+        continue;
+      }
+      if (isAbsentFeedback(level)) {
+        add(buckets.absent, studentUuid);
+        continue;
+      }
+      if (level === COMPLETE) {
+        add(buckets.complete, studentUuid);
+        add(buckets.response, studentUuid);
+        continue;
+      }
+      if (level === PARTIAL) {
+        add(buckets.partial, studentUuid);
+        add(buckets.response, studentUuid);
+        continue;
+      }
+      if (level === NONE) {
+        add(buckets.didntUnderstand, studentUuid);
+        add(buckets.response, studentUuid);
+        continue;
+      }
+      add(buckets.noResponse, studentUuid);
+    }
+  }
+
+  return {
+    completeStudents: studentDetailsSorted(buckets.complete),
+    partialStudents: studentDetailsSorted(buckets.partial),
+    didntUnderstandStudents: studentDetailsSorted(buckets.didntUnderstand),
+    responseStudents: studentDetailsSorted(buckets.response),
+    absentStudents: studentDetailsSorted(buckets.absent),
+    noResponseStudents: studentDetailsSorted(buckets.noResponse),
+  };
+}
+
+function doubtDetailsForRows(
+  raw: SchoolMorningBriefRawData,
+  rows: any[],
+  assignmentById: Map<string, any>,
+): SchoolMorningBriefDoubtDetail[] {
+  const names = studentNameMap(raw);
+  const teachers = teacherNameMap(raw);
+
+  return (rows ?? []).map((row: any) => {
+    const assignment = assignmentById.get(String(row.teacher_assignment_uuid ?? ""));
+    const studentUuid = String(row.student_uuid ?? "").trim();
+    const assignmentTeacher = String(assignment?.teacher_uuid ?? "").trim();
+    const isLiveOnly = row?._live_only === true;
+    const isLiveReconciled = !isLiveOnly && (
+      String(row?.status ?? "").trim().toUpperCase() === "RESOLVED" ||
+      String(row?.status ?? "").trim().toUpperCase() === "NOT DISCUSSED"
+    ) && Boolean(row?.revision_checked_at);
+
+    return {
+      id: String(row.id ?? `${studentUuid}-${row.teacher_assignment_uuid ?? ""}-${row.log_date ?? ""}`),
+      studentUuid,
+      studentName: names.get(studentUuid) || String(row.student_name ?? "").trim() || "Student",
+      teacherName: teachers.get(assignmentTeacher) || "Teacher unavailable",
+      topic: String(row.previous_topic_name ?? row.topic_name ?? "").trim() || "Topic not recorded",
+      doubt: String(row.previous_difficult_concept ?? row.doubt_concept ?? "").trim() || "Doubt concept not recorded",
+      date: String(row.log_date ?? row.created_at ?? "").slice(0, 10) || "—",
+      resolved: isDoubtResolved(row),
+      source: (isLiveOnly ? "Live" : (isLiveReconciled ? "Live reconciled" : "Loop 2")) as SchoolMorningBriefDoubtDetail["source"],
+    };
+  }).sort((a, b) =>
+    a.date.localeCompare(b.date) ||
+    a.studentName.localeCompare(b.studentName) ||
+    a.doubt.localeCompare(b.doubt),
+  );
+}
+
+function assignmentDetailForDay(
+  raw: SchoolMorningBriefRawData,
+  assignment: any,
+  date: string,
+): SchoolMorningBriefAssignmentDetail {
+  const assignmentId = String(assignment.id ?? "").trim();
+  const logs = raw.logs.filter((log: any) =>
+    String(log.teacher_assignment_uuid ?? "") === assignmentId &&
+    String(log.log_date ?? "") === date,
+  );
+  const logIds = new Set(logs.map((log: any) => String(log.id ?? "")));
+  const feedback = raw.feedback.filter((row: any) => logIds.has(String(row.daily_log_uuid ?? "")));
+  const doubts = raw.doubts.filter((row: any) =>
+    String(row.teacher_assignment_uuid ?? "") === assignmentId &&
+    String(row.log_date ?? "") === date,
+  );
+  const assignmentById = new Map([[assignmentId, assignment]]);
+  const lectureMetrics = metricsForLogs(raw, logs, feedback, assignmentById, raw.doubts);
+  const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
+  const studentDetails = collectStudentStatusDetails(raw, logs, assignment, raw.doubts);
+  const teachers = teacherNameMap(raw);
+
+  return {
+    assignmentId,
+    teacherName: teachers.get(String(assignment.teacher_uuid ?? "").trim()) || "Teacher unavailable",
+    classroom: `Class ${assignment.class_name} · Section ${assignment.section_name} · ${assignment.subject_name}`,
+    logsCount: logs.length,
+    learningHealth: aggregate.classHealthPercentage,
+    responseRate: aggregate.responseRate,
+    understandingRate: aggregate.understandingRate,
+    partialRate: aggregate.partialRate,
+    didntUnderstandRate: aggregate.didntUnderstandRate,
+    doubtRate: calculateLearningDoubtRate(
+      aggregate.partialStudentObservations,
+      aggregate.didntUnderstandStudentObservations,
+      aggregate.eligibleStudentObservations,
+    ),
+    doubtClosureRate: calculateDoubtClosureRate(doubts),
+    eligibleStudentObservations: aggregate.eligibleStudentObservations,
+    ...studentDetails,
+    doubtDetails: doubtDetailsForRows(raw, doubts, assignmentById),
+  };
+}
+
+export function buildYesterdayClassroomDetails(
+  raw: SchoolMorningBriefRawData,
+  yesterday: string,
+): SchoolMorningBriefClassroomDetail[] {
+  const groups = new Map<string, { className: string; sectionName: string; subjectName: string; assignments: any[] }>();
+  for (const assignment of raw.assignments) {
+    const className = String(assignment.class_name ?? "").trim();
+    const sectionName = String(assignment.section_name ?? "").trim();
+    const subjectName = String(assignment.subject_name ?? "").trim();
+    if (!className || !sectionName || !subjectName) continue;
+    const key = `${className}|||${sectionName}|||${subjectName}`;
+    const group = groups.get(key) ?? { className, sectionName, subjectName, assignments: [] };
+    group.assignments.push(assignment);
+    groups.set(key, group);
+  }
+
+  return Array.from(groups.entries()).map(([classroomKey, group]) => ({
+    classroomKey,
+    classroom: `Class ${group.className} · Section ${group.sectionName} · ${group.subjectName}`,
+    className: group.className,
+    sectionName: group.sectionName,
+    subjectName: group.subjectName,
+    assignmentDetails: group.assignments
+      .map((assignment) => assignmentDetailForDay(raw, assignment, yesterday))
+      .sort((a, b) => a.teacherName.localeCompare(b.teacherName) || a.assignmentId.localeCompare(b.assignmentId)),
+  })).sort((a, b) =>
+    a.className.localeCompare(b.className, undefined, { numeric: true }) ||
+    a.sectionName.localeCompare(b.sectionName) ||
+    a.subjectName.localeCompare(b.subjectName),
+  );
+}
+
+export function buildWeeklyDailyDetails(
+  raw: SchoolMorningBriefRawData,
+  classroom: { assignmentIds: Set<string> },
+  start: string,
+  end: string,
+  scopedDoubts: any[],
+): SchoolMorningBriefWeeklyDayDetail[] {
+  const assignmentById = new Map(
+    raw.assignments.map((assignment: any) => [String(assignment.id ?? ""), assignment]),
+  );
+  const days: SchoolMorningBriefWeeklyDayDetail[] = [];
+  let day = start;
+  while (day <= end) {
+    const logs = raw.logs.filter((log: any) =>
+      classroom.assignmentIds.has(String(log.teacher_assignment_uuid ?? "")) &&
+      String(log.log_date ?? "") === day,
+    );
+    const logIds = new Set(logs.map((log: any) => String(log.id ?? "")));
+    const feedback = raw.feedback.filter((row: any) => logIds.has(String(row.daily_log_uuid ?? "")));
+    const doubts = scopedDoubts.filter((row: any) =>
+      String(row.log_date ?? "") === day,
+    );
+    const doubtDetails = doubtDetailsForRows(raw, doubts, assignmentById);
+    const lectureMetrics = metricsForLogs(raw, logs, feedback, assignmentById, scopedDoubts);
+    const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
+    // When a classroom has multiple assignments/teachers, the status detail
+    // above must include all of their logs, not only the first assignment.
+    const mergedStatuses = collectStudentStatusDetailsForAssignmentSet(raw, logs, classroom.assignmentIds, scopedDoubts);
+
+    days.push({
+      date: day,
+      day: displayDay(day),
+      logsCount: logs.length,
+      feedbackRate: aggregate.responseRate,
+      understandingRate: aggregate.understandingRate,
+      doubtClosureRate: calculateDoubtClosureRate(doubts),
+      feedbackStudents: mergedStatuses.responseStudents,
+      understandingStudents: mergedStatuses.completeStudents,
+      partialStudents: mergedStatuses.partialStudents,
+      didntUnderstandStudents: mergedStatuses.didntUnderstandStudents,
+      resolvedDoubtStudents: doubtStudentDetails(raw, doubts, true),
+      unresolvedDoubtStudents: doubtStudentDetails(raw, doubts, false),
+      doubtDetails,
+    });
+
+    day = addDays(day, 1);
+  }
+  return days;
+}
+
+function collectStudentStatusDetailsForAssignmentSet(
+  raw: SchoolMorningBriefRawData,
+  logs: any[],
+  assignmentIds: Set<string>,
+  doubts: any[],
+) {
+  const names = studentNameMap(raw);
+  const buckets: Record<string, Map<string, SchoolMorningBriefStudentStatusDetail>> = {
+    complete: new Map(), partial: new Map(), didntUnderstand: new Map(), response: new Map(),
+  };
+  const add = (bucket: Map<string, SchoolMorningBriefStudentStatusDetail>, studentUuid: string) => {
+    const current = bucket.get(studentUuid);
+    bucket.set(studentUuid, {
+      studentUuid,
+      studentName: names.get(studentUuid) || "Student",
+      observationCount: (current?.observationCount ?? 0) + 1,
+    });
+  };
+
+  for (const log of logs) {
+    const assignment = raw.assignments.find((item: any) =>
+      String(item.id ?? "") === String(log.teacher_assignment_uuid ?? "") &&
+      assignmentIds.has(String(item.id ?? "")),
+    );
+    if (!assignment) continue;
+    const roster = rosterForAssignment(raw, assignment);
+    const rosterSet = new Set(roster);
+    const latest = latestFeedbackByStudent(raw.feedback.filter((row: any) =>
+      String(row.daily_log_uuid ?? "") === String(log.id ?? ""),
+    )).filter((row: any) => rosterSet.has(String(row.student_uuid ?? "").trim()));
+    for (const row of latest) {
+      const studentUuid = String(row.student_uuid ?? "").trim();
+      const level = effectiveUnderstanding(row, doubts);
+      if (level === COMPLETE) { add(buckets.complete, studentUuid); add(buckets.response, studentUuid); }
+      else if (level === PARTIAL) { add(buckets.partial, studentUuid); add(buckets.response, studentUuid); }
+      else if (level === NONE) { add(buckets.didntUnderstand, studentUuid); add(buckets.response, studentUuid); }
+    }
+  }
+
+  return {
+    responseStudents: studentDetailsSorted(buckets.response),
+    completeStudents: studentDetailsSorted(buckets.complete),
+    partialStudents: studentDetailsSorted(buckets.partial),
+    didntUnderstandStudents: studentDetailsSorted(buckets.didntUnderstand),
+  };
+}
+
+function doubtStudentDetails(
+  raw: SchoolMorningBriefRawData,
+  doubts: any[],
+  resolved: boolean,
+): SchoolMorningBriefStudentStatusDetail[] {
+  const names = studentNameMap(raw);
+  const map = new Map<string, SchoolMorningBriefStudentStatusDetail>();
+  for (const row of doubts.filter((item: any) => isDoubtResolved(item) === resolved)) {
+    const studentUuid = String(row.student_uuid ?? "").trim();
+    if (!studentUuid) continue;
+    const current = map.get(studentUuid);
+    map.set(studentUuid, {
+      studentUuid,
+      studentName: names.get(studentUuid) || String(row.student_name ?? "").trim() || "Student",
+      observationCount: (current?.observationCount ?? 0) + 1,
+    });
+  }
+  return studentDetailsSorted(map);
 }
 
 function metricsForLogs(
@@ -429,6 +783,45 @@ function yesterdayDoubtClassMetrics(raw: SchoolMorningBriefRawData, yesterday: s
     a.sectionName.localeCompare(b.sectionName) ||
     a.subjectName.localeCompare(b.subjectName),
   ).slice(0, 3);
+}
+
+export function buildDoubtClassroomDetail(
+  raw: SchoolMorningBriefRawData,
+  row: { className: string; sectionName: string; subjectName: string },
+  yesterday: string,
+): {
+  doubtDetails: SchoolMorningBriefDoubtDetail[];
+  partialStudents: SchoolMorningBriefStudentStatusDetail[];
+  didntUnderstandStudents: SchoolMorningBriefStudentStatusDetail[];
+} {
+  const assignmentIds = new Set(
+    raw.assignments
+      .filter((assignment: any) =>
+        same(assignment.class_name, row.className) &&
+        same(assignment.section_name, row.sectionName) &&
+        same(assignment.subject_name, row.subjectName),
+      )
+      .map((assignment: any) => String(assignment.id ?? "").trim())
+      .filter(Boolean),
+  );
+  const assignmentById = new Map(
+    raw.assignments.map((assignment: any) => [String(assignment.id ?? ""), assignment]),
+  );
+  const logs = raw.logs.filter((log: any) =>
+    assignmentIds.has(String(log.teacher_assignment_uuid ?? "")) &&
+    String(log.log_date ?? "") === yesterday,
+  );
+  const details = collectStudentStatusDetailsForAssignmentSet(raw, logs, assignmentIds, raw.doubts);
+  const doubts = raw.doubts.filter((doubt: any) =>
+    assignmentIds.has(String(doubt.teacher_assignment_uuid ?? "")) &&
+    String(doubt.log_date ?? "") === yesterday,
+  );
+
+  return {
+    doubtDetails: doubtDetailsForRows(raw, doubts, assignmentById),
+    partialStudents: details.partialStudents,
+    didntUnderstandStudents: details.didntUnderstandStudents,
+  };
 }
 
 function missingDailyLogs(raw: SchoolMorningBriefRawData, yesterday: string) {
