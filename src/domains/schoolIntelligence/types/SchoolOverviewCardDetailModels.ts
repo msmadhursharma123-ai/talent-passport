@@ -66,6 +66,26 @@ export interface SchoolOverviewDoubtDetailRow {
   resolved: boolean;
 }
 
+export interface SchoolOverviewDoubtSubjectGroup {
+  className: string;
+  sectionName: string;
+  subjectName: string;
+  teacherNames: string[];
+  doubtCount: number;
+  resolvedCount: number;
+  unresolvedCount: number;
+  rows: SchoolOverviewDoubtDetailRow[];
+}
+
+export interface SchoolOverviewDoubtClassGroup {
+  className: string;
+  sectionName: string;
+  doubtCount: number;
+  resolvedCount: number;
+  unresolvedCount: number;
+  subjects: SchoolOverviewDoubtSubjectGroup[];
+}
+
 export interface SchoolOverviewResponseStudentRow {
   studentUuid: string;
   studentName: string;
@@ -151,7 +171,9 @@ export interface SchoolOverviewCardDetailSnapshot {
   period: SchoolOverviewCardDetailPeriod;
   understanding: SchoolOverviewUnderstandingDetail;
   activeDoubts: SchoolOverviewDoubtDetailRow[];
+  activeDoubtGroups: SchoolOverviewDoubtClassGroup[];
   doubtClosure: SchoolOverviewDoubtDetailRow[];
+  doubtClosureGroups: SchoolOverviewDoubtClassGroup[];
   responses: SchoolOverviewResponseDetail;
   topicsTaught: SchoolOverviewTopicDayGroup[];
   activeTeachers: SchoolOverviewTeacherDetailRow[];

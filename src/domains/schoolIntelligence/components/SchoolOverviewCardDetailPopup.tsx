@@ -136,11 +136,120 @@ function DoubtRows({ rows }: { rows: SchoolOverviewCardDetailSnapshot["activeDou
   );
 }
 
+function DoubtGroupRows({
+  groups,
+  mode,
+}: {
+  groups: SchoolOverviewCardDetailSnapshot["activeDoubtGroups"];
+  mode: "active" | "closure";
+}) {
+  if (!groups.length) {
+    return <Empty text="No matching doubt records were recorded for the selected period." />;
+  }
+
+  return (
+    <div className="school-overview-detail-doubt-class-list">
+      {groups.map(classGroup => {
+        const closureRate = classGroup.doubtCount
+          ? Math.round((classGroup.resolvedCount / classGroup.doubtCount) * 100)
+          : 0;
+
+        return (
+          <section
+            className="school-overview-detail-doubt-class"
+            key={JSON.stringify([classGroup.className, classGroup.sectionName])}
+          >
+            <div className="school-overview-detail-doubt-class-head">
+              <div>
+                <strong>Class {classGroup.className} · Section {classGroup.sectionName}</strong>
+                <span>
+                  {mode === "active"
+                    ? `${classGroup.doubtCount} active doubt${classGroup.doubtCount === 1 ? "" : "s"}`
+                    : `${classGroup.doubtCount} raised doubt${classGroup.doubtCount === 1 ? "" : "s"}`}
+                </span>
+              </div>
+              <b>{classGroup.doubtCount}</b>
+            </div>
+
+            <div className="school-overview-detail-doubt-stats">
+              {mode === "active" ? (
+                <>
+                  <span>Active doubts <b>{classGroup.unresolvedCount}</b></span>
+                  <span>Subjects with active doubts <b>{classGroup.subjects.length}</b></span>
+                </>
+              ) : (
+                <>
+                  <span>Total raised <b>{classGroup.doubtCount}</b></span>
+                  <span>Resolved <b>{classGroup.resolvedCount}</b></span>
+                  <span>Unresolved <b>{classGroup.unresolvedCount}</b></span>
+                  <span>Closure rate <b>{closureRate}%</b></span>
+                </>
+              )}
+            </div>
+
+            <div className="school-overview-detail-doubt-subject-list">
+              {classGroup.subjects.map(subjectGroup => {
+                const subjectClosureRate = subjectGroup.doubtCount
+                  ? Math.round((subjectGroup.resolvedCount / subjectGroup.doubtCount) * 100)
+                  : 0;
+
+                return (
+                  <section
+                    className="school-overview-detail-doubt-subject"
+                    key={JSON.stringify([classGroup.className, classGroup.sectionName, subjectGroup.subjectName])}
+                  >
+                    <div className="school-overview-detail-doubt-subject-head">
+                      <div>
+                        <strong>{subjectGroup.subjectName}</strong>
+                        <span>
+                          {subjectGroup.teacherNames.length
+                            ? `Teacher${subjectGroup.teacherNames.length === 1 ? "" : "s"}: ${subjectGroup.teacherNames.join(" · ")}`
+                            : "Teacher not recorded"}
+                        </span>
+                      </div>
+                      <b>
+                        {subjectGroup.doubtCount} {mode === "active" ? "active" : "raised"}
+                      </b>
+                    </div>
+
+                    <div className="school-overview-detail-doubt-stats subject">
+                      {mode === "active" ? (
+                        <span>Pending doubts <b>{subjectGroup.unresolvedCount}</b></span>
+                      ) : (
+                        <>
+                          <span>Total <b>{subjectGroup.doubtCount}</b></span>
+                          <span>Resolved <b>{subjectGroup.resolvedCount}</b></span>
+                          <span>Unresolved <b>{subjectGroup.unresolvedCount}</b></span>
+                          <span>Closure <b>{subjectClosureRate}%</b></span>
+                        </>
+                      )}
+                    </div>
+
+                    <DoubtRows rows={subjectGroup.rows} />
+                  </section>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
 function ActiveDoubtsDetail({ detail }: { detail: SchoolOverviewCardDetailSnapshot }) {
   if (detail.doubtsLoadFailed) {
     return <Empty text="Pending-doubt data could not be retrieved. Active Doubts is unavailable, not zero. Refresh and retry." />;
   }
-  return <DoubtRows rows={detail.activeDoubts} />;
+  return (
+    <>
+      <div className="school-overview-detail-summary-grid compact">
+        <span>School active doubts <b>{detail.activeDoubts.length}</b></span>
+        <span>Class / section groups <b>{detail.activeDoubtGroups.length}</b></span>
+      </div>
+      <DoubtGroupRows groups={detail.activeDoubtGroups} mode="active" />
+    </>
+  );
 }
 
 function DoubtClosureDetail({ detail }: { detail: SchoolOverviewCardDetailSnapshot }) {
@@ -156,7 +265,7 @@ function DoubtClosureDetail({ detail }: { detail: SchoolOverviewCardDetailSnapsh
         <span>Unresolved <b>{detail.doubtClosure.length - resolved}</b></span>
         <span>Closure rate <b>{detail.doubtClosure.length ? Math.round((resolved / detail.doubtClosure.length) * 100) : 0}%</b></span>
       </div>
-      <DoubtRows rows={detail.doubtClosure} />
+      <DoubtGroupRows groups={detail.doubtClosureGroups} mode="closure" />
     </>
   );
 }
@@ -364,8 +473,26 @@ const CSS = `
 .school-overview-detail-name-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .school-overview-detail-name-grid span{padding:8px 9px;border:1px solid #E2E8F0;border-radius:8px;background:#FFF;color:#334155;font-size:9.5px;font-weight:750}
 .school-overview-detail-empty{padding:12px;border:1px dashed #CBD5E1;border-radius:10px;color:#64748B;background:#FCFCFB;font-size:10.5px;line-height:1.5;font-weight:750}
-@media(max-width:1024px){.school-overview-detail-overlay{padding:10px}.school-overview-detail-modal{width:min(820px,100%);max-height:92vh;border-radius:18px}.school-overview-detail-head{padding:17px 19px 13px}.school-overview-detail-kicker{font-size:10px}.school-overview-detail-head h3{font-size:23px}.school-overview-detail-head p{font-size:11px}.school-overview-detail-body{padding:11px}.school-overview-detail-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.school-overview-detail-summary-grid.compact{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-mini-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.school-overview-detail-class-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-name-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-explanation p{font-size:10.5px}.school-overview-detail-card-head strong{font-size:11.5px}.school-overview-detail-card-head span{font-size:9.5px}.school-overview-detail-card-head>b{font-size:18px}}
-@media(max-width:600px){.school-overview-detail-overlay{padding:5px}.school-overview-detail-modal{width:100%;max-width:none;max-height:95vh;border-radius:14px}.school-overview-detail-head{padding:12px 13px 10px}.school-overview-detail-kicker{font-size:8px;letter-spacing:.85px}.school-overview-detail-head h3{font-size:20px}.school-overview-detail-head p{font-size:9.5px}.school-overview-detail-close{width:32px;height:32px;font-size:21px}.school-overview-detail-body{padding:8px}.school-overview-detail-summary-grid,.school-overview-detail-summary-grid.compact,.school-overview-detail-mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-class-grid,.school-overview-detail-name-grid{grid-template-columns:1fr}.school-overview-detail-card-head strong{font-size:10.5px}.school-overview-detail-card-head span{font-size:9px}.school-overview-detail-card-head>b{font-size:16px}.school-overview-detail-student-main{display:block}.school-overview-detail-student-main strong{font-size:10.5px}.school-overview-detail-student-main span{display:block;margin-top:3px;font-size:9px}.school-overview-detail-student-metrics{margin-top:5px}.school-overview-detail-group-head{display:block}.school-overview-detail-group-head span{display:block;margin-top:4px}.school-overview-detail-explanation p{font-size:9.5px}.school-overview-detail-summary-grid span{font-size:9px}.school-overview-detail-summary-grid b{font-size:13px}.school-overview-detail-mini-grid span{font-size:9px}.school-overview-detail-doubt-topic{font-size:10px}.school-overview-detail-doubt-meta{font-size:9px}}
+.school-overview-detail-doubt-class-list{display:grid;gap:12px}
+.school-overview-detail-doubt-class{padding:13px;border:1px solid #CBD5E1;border-radius:14px;background:#F8FAFC}
+.school-overview-detail-doubt-class-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.school-overview-detail-doubt-class-head strong{display:block;color:#0F172A;font-size:14px;line-height:1.4;font-weight:950}
+.school-overview-detail-doubt-class-head span{display:block;margin-top:3px;color:#64748B;font-size:10.5px;line-height:1.4;font-weight:750}
+.school-overview-detail-doubt-class-head>b{color:#0F172A;font-size:22px;font-weight:950;white-space:nowrap}
+.school-overview-detail-doubt-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:9px}
+.school-overview-detail-doubt-stats span{padding:7px 8px;border:1px solid #E2E8F0;border-radius:8px;background:#FFF;color:#64748B;font-size:9.5px;font-weight:800}
+.school-overview-detail-doubt-stats b{display:block;margin-top:2px;color:#0F172A;font-size:13px}
+.school-overview-detail-doubt-stats.subject{grid-template-columns:repeat(4,minmax(0,1fr))}
+.school-overview-detail-doubt-subject-list{display:grid;gap:9px;margin-top:10px;padding-left:10px;border-left:3px solid #E2E8F0}
+.school-overview-detail-doubt-subject{padding:10px;border:1px solid #DDE5EE;border-radius:11px;background:#FFF}
+.school-overview-detail-doubt-subject-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.school-overview-detail-doubt-subject-head strong{display:block;color:#1E293B;font-size:12px;line-height:1.4;font-weight:950}
+.school-overview-detail-doubt-subject-head span{display:block;margin-top:3px;color:#64748B;font-size:9.5px;line-height:1.4;font-weight:750}
+.school-overview-detail-doubt-subject-head>b{color:#0F172A;font-size:15px;font-weight:950;white-space:nowrap}
+.school-overview-detail-doubt-subject .school-overview-detail-list{margin-top:8px}
+
+@media(max-width:1024px){.school-overview-detail-overlay{padding:10px}.school-overview-detail-modal{width:min(820px,100%);max-height:92vh;border-radius:18px}.school-overview-detail-head{padding:17px 19px 13px}.school-overview-detail-kicker{font-size:10px}.school-overview-detail-head h3{font-size:23px}.school-overview-detail-head p{font-size:11px}.school-overview-detail-body{padding:11px}.school-overview-detail-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.school-overview-detail-summary-grid.compact{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-mini-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.school-overview-detail-class-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-name-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-explanation p{font-size:10.5px}.school-overview-detail-card-head strong{font-size:11.5px}.school-overview-detail-card-head span{font-size:9.5px}.school-overview-detail-card-head>b{font-size:18px}.school-overview-detail-doubt-class-head strong{font-size:13px}.school-overview-detail-doubt-class-head>b{font-size:20px}.school-overview-detail-doubt-stats,.school-overview-detail-doubt-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.school-overview-detail-overlay{padding:5px}.school-overview-detail-modal{width:100%;max-width:none;max-height:95vh;border-radius:14px}.school-overview-detail-head{padding:12px 13px 10px}.school-overview-detail-kicker{font-size:8px;letter-spacing:.85px}.school-overview-detail-head h3{font-size:20px}.school-overview-detail-head p{font-size:9.5px}.school-overview-detail-close{width:32px;height:32px;font-size:21px}.school-overview-detail-body{padding:8px}.school-overview-detail-summary-grid,.school-overview-detail-summary-grid.compact,.school-overview-detail-mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-class-grid,.school-overview-detail-name-grid{grid-template-columns:1fr}.school-overview-detail-card-head strong{font-size:10.5px}.school-overview-detail-card-head span{font-size:9px}.school-overview-detail-card-head>b{font-size:16px}.school-overview-detail-student-main{display:block}.school-overview-detail-student-main strong{font-size:10.5px}.school-overview-detail-student-main span{display:block;margin-top:3px;font-size:9px}.school-overview-detail-student-metrics{margin-top:5px}.school-overview-detail-group-head{display:block}.school-overview-detail-group-head span{display:block;margin-top:4px}.school-overview-detail-explanation p{font-size:9.5px}.school-overview-detail-summary-grid span{font-size:9px}.school-overview-detail-summary-grid b{font-size:13px}.school-overview-detail-mini-grid span{font-size:9px}.school-overview-detail-doubt-topic{font-size:10px}.school-overview-detail-doubt-meta{font-size:9px}.school-overview-detail-doubt-class{padding:10px}.school-overview-detail-doubt-class-head strong{font-size:11px}.school-overview-detail-doubt-class-head span{font-size:8.5px}.school-overview-detail-doubt-class-head>b{font-size:18px}.school-overview-detail-doubt-stats,.school-overview-detail-doubt-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.school-overview-detail-doubt-stats span{font-size:8.5px}.school-overview-detail-doubt-stats b{font-size:12px}.school-overview-detail-doubt-subject-list{padding-left:6px}.school-overview-detail-doubt-subject{padding:8px}.school-overview-detail-doubt-subject-head strong{font-size:10.5px}.school-overview-detail-doubt-subject-head span{font-size:8.5px}.school-overview-detail-doubt-subject-head>b{font-size:13px}}
 `;
 
 

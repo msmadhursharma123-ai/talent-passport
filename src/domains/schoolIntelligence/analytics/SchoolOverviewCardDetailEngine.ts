@@ -11,7 +11,9 @@ import type { SchoolOverviewCardDetailRawData } from "../repository/SchoolOvervi
 import type {
   SchoolOverviewAssignmentUnderstandingDetail,
   SchoolOverviewCardDetailSnapshot,
+  SchoolOverviewDoubtClassGroup,
   SchoolOverviewDoubtDetailRow,
+  SchoolOverviewDoubtSubjectGroup,
   SchoolOverviewResponseSubjectGroup,
   SchoolOverviewStudentContribution,
   SchoolOverviewTopicDayGroup,
@@ -300,6 +302,87 @@ function doubtRows(raw: SchoolOverviewCardDetailRawData): SchoolOverviewDoubtDet
   }).sort((a, b) => `${a.raisedDate}|${a.className}|${a.subjectName}|${a.studentName}`.localeCompare(`${b.raisedDate}|${b.className}|${b.subjectName}|${b.studentName}`));
 }
 
+function buildDoubtGroups(rows: SchoolOverviewDoubtDetailRow[]): SchoolOverviewDoubtClassGroup[] {
+  const classMap = new Map<string, SchoolOverviewDoubtClassGroup>();
+  const subjectMaps = new Map<string, Map<string, SchoolOverviewDoubtSubjectGroup>>();
+
+  for (const row of rows) {
+    const classKey = JSON.stringify([row.className, row.sectionName]);
+    let classGroup = classMap.get(classKey);
+    if (!classGroup) {
+      classGroup = {
+        className: row.className,
+        sectionName: row.sectionName,
+        doubtCount: 0,
+        resolvedCount: 0,
+        unresolvedCount: 0,
+        subjects: [],
+      };
+      classMap.set(classKey, classGroup);
+      subjectMaps.set(classKey, new Map());
+    }
+
+    classGroup.doubtCount += 1;
+    if (row.resolved) classGroup.resolvedCount += 1;
+    else classGroup.unresolvedCount += 1;
+
+    const subjectKey = JSON.stringify([
+      row.className,
+      row.sectionName,
+      row.subjectName,
+    ]);
+    const subjectsForClass = subjectMaps.get(classKey)!;
+    let subjectGroup = subjectsForClass.get(subjectKey);
+
+    if (!subjectGroup) {
+      subjectGroup = {
+        className: row.className,
+        sectionName: row.sectionName,
+        subjectName: row.subjectName,
+        teacherNames: [],
+        doubtCount: 0,
+        resolvedCount: 0,
+        unresolvedCount: 0,
+        rows: [],
+      };
+      subjectsForClass.set(subjectKey, subjectGroup);
+      classGroup.subjects.push(subjectGroup);
+    }
+
+    subjectGroup.doubtCount += 1;
+    if (row.resolved) subjectGroup.resolvedCount += 1;
+    else subjectGroup.unresolvedCount += 1;
+    if (row.teacherName && !subjectGroup.teacherNames.includes(row.teacherName)) {
+      subjectGroup.teacherNames.push(row.teacherName);
+    }
+    subjectGroup.rows.push(row);
+  }
+
+  const sortByCountThenLabel = (
+    a: { doubtCount: number; className?: string; sectionName?: string; subjectName?: string },
+    b: { doubtCount: number; className?: string; sectionName?: string; subjectName?: string },
+  ) =>
+    b.doubtCount - a.doubtCount ||
+    `${a.className ?? ""}|${a.sectionName ?? ""}|${a.subjectName ?? ""}`.localeCompare(
+      `${b.className ?? ""}|${b.sectionName ?? ""}|${b.subjectName ?? ""}`,
+    );
+
+  for (const classGroup of classMap.values()) {
+    classGroup.subjects.sort(sortByCountThenLabel);
+    for (const subjectGroup of classGroup.subjects) {
+      subjectGroup.teacherNames.sort((a, b) => a.localeCompare(b));
+      subjectGroup.rows.sort(
+        (a, b) =>
+          `${a.raisedDate}|${a.studentName}|${a.id}`.localeCompare(
+            `${b.raisedDate}|${b.studentName}|${b.id}`,
+          ),
+      );
+    }
+  }
+
+  return Array.from(classMap.values()).sort(sortByCountThenLabel);
+}
+
 function buildResponses(raw: SchoolOverviewCardDetailRawData) {
   const names = studentNameMap(raw);
   const assignmentMap = new Map(raw.assignments.map(a => [String(a.id), a]));
@@ -491,7 +574,9 @@ export function buildSchoolOverviewCardDetail(
     period: { startDate, endDate },
     understanding,
     activeDoubts: allDoubts.filter(row => !row.resolved),
+    activeDoubtGroups: buildDoubtGroups(allDoubts.filter(row => !row.resolved)),
     doubtClosure: allDoubts,
+    doubtClosureGroups: buildDoubtGroups(allDoubts),
     responses: buildResponses(raw),
     topicsTaught: buildTopics(raw),
     activeTeachers: buildTeachers(raw, startDate, endDate),
