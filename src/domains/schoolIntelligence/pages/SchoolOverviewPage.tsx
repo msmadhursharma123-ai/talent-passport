@@ -13,6 +13,10 @@ import SchoolPostManagerPage from "./SchoolPostManagerPage";
 import SchoolTeacherAccessManager from "./SchoolTeacherAccessManager";
 import SchoolStudentAccessManager from "./SchoolStudentAccessManager";
 import SchoolMorningBrief from "../components/SchoolMorningBrief";
+import SchoolOverviewCardDetailPopup from "../components/SchoolOverviewCardDetailPopup";
+import { getSchoolOverviewCardDetailRawData } from "../repository/SchoolOverviewCardDetailRepository";
+import { buildSchoolOverviewCardDetail } from "../analytics/SchoolOverviewCardDetailEngine";
+import type { SchoolOverviewCardDetailSnapshot, SchoolOverviewCardKey } from "../types/SchoolOverviewCardDetailModels";
 import SchoolWeeklyMeetingInsights from "../components/weeklyMeetingInsights/SchoolWeeklyMeetingInsights";
 import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
 import TrackRecordModal from "../../trackRecord/TrackRecordModal";
@@ -42,6 +46,10 @@ function classroomLabel(row: SchoolClassroomHealthRow) {
   return `Class ${row.className} · Section ${row.sectionName}`;
 }
 
+function isoDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
 export default function SchoolOverviewPage() {
   const [showPostManager, setShowPostManager] = useState(false);
   const [showTeacherAccessManager, setShowTeacherAccessManager] = useState(false);
@@ -61,6 +69,12 @@ export default function SchoolOverviewPage() {
 
   const [sortKey, setSortKey] = useState<SortKey>("doubtClosureRate");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  const [selectedPeriod, setSelectedPeriod] = useState<{ startDate: string; endDate: string } | null>(null);
+  const [detailCard, setDetailCard] = useState<SchoolOverviewCardKey | null>(null);
+  const [detailSnapshot, setDetailSnapshot] = useState<SchoolOverviewCardDetailSnapshot | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
 
   const [classMenuOpen, setClassMenuOpen] = useState(false);
   const classMenuRef = useRef<HTMLDivElement | null>(null);
@@ -106,6 +120,17 @@ export default function SchoolOverviewPage() {
 
         if (!cancelled) {
           setData(snapshot);
+          const resolvedStart = range === "custom" ? customStart : (() => {
+            const end = new Date();
+            const start = new Date();
+            start.setDate(end.getDate() - (Number(range) - 1));
+            return isoDate(start);
+          })();
+          const resolvedEnd = range === "custom" ? customEnd : isoDate(new Date());
+          setSelectedPeriod({ startDate: resolvedStart, endDate: resolvedEnd });
+          setDetailCard(null);
+          setDetailSnapshot(null);
+          setDetailError("");
         }
       } catch (e: any) {
         if (!cancelled) {
@@ -271,6 +296,31 @@ export default function SchoolOverviewPage() {
     return sortDirection === "desc" ? "↓" : "↑";
   }
 
+  async function openCardDetail(card: SchoolOverviewCardKey) {
+    if (!selectedPeriod) return;
+    setDetailCard(card);
+    setDetailSnapshot(null);
+    setDetailError("");
+    setDetailLoading(true);
+    try {
+      const raw = await getSchoolOverviewCardDetailRawData(
+        selectedPeriod.startDate,
+        selectedPeriod.endDate,
+      );
+      setDetailSnapshot(
+        buildSchoolOverviewCardDetail(
+          raw,
+          selectedPeriod.startDate,
+          selectedPeriod.endDate,
+        ),
+      );
+    } catch (error: any) {
+      setDetailError(error?.message ?? "Unable to prepare this card detail.");
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
   if (error) {
     return (
       <div className="school-page">
@@ -292,31 +342,15 @@ export default function SchoolOverviewPage() {
 
   if (!data) return null;
 
-  const cards = [
-    [
-      "Understanding",
-      `${data.stats.understandingRate}%`,
-      "Completely understood",
-      "orange",
-    ],
-    ["Active Doubts", data.doubtsLoadFailed ? "Unavailable" : data.stats.activeDoubts, data.doubtsLoadFailed ? "Pending-doubt data failed to load" : "Current learning gaps", "blue"],
-    [
-      "Doubt Closure Rate",
-      data.doubtsLoadFailed ? "Unavailable" : `${data.stats.doubtResolutionRate}%`,
-      data.doubtsLoadFailed ? "Pending-doubt data failed to load" : `Resolved ${data.stats.resolvedDoubts} of ${data.stats.doubtsAsked} doubts`,
-
-      "green",
-    ],
-    ["Responses", data.stats.responses, "Student feedback records", "purple"],
-    ["Topics Taught", data.stats.topicsTaught, "Published lecture logs", "orange"],
-    ["Active Teachers", data.stats.activeTeachers, "Teaching workforce", "blue"],
-    [
-      "Classes Reporting",
-      data.stats.classesReporting,
-      "Class / section coverage",
-      "green",
-    ],
-    ["Students", data.stats.totalStudents, "Students in this school", "purple"],
+  const cards: Array<{ key: SchoolOverviewCardKey; label: string; value: string | number; note: string; tone: string }> = [
+    { key: "understanding", label: "Understanding", value: `${data.stats.understandingRate}%`, note: "Completely understood", tone: "orange" },
+    { key: "activeDoubts", label: "Active Doubts", value: data.doubtsLoadFailed ? "Unavailable" : data.stats.activeDoubts, note: data.doubtsLoadFailed ? "Pending-doubt data failed to load" : "Current learning gaps", tone: "blue" },
+    { key: "doubtClosure", label: "Doubt Closure Rate", value: data.doubtsLoadFailed ? "Unavailable" : `${data.stats.doubtResolutionRate}%`, note: data.doubtsLoadFailed ? "Pending-doubt data failed to load" : `Resolved ${data.stats.resolvedDoubts} of ${data.stats.doubtsAsked} doubts`, tone: "green" },
+    { key: "responses", label: "Responses", value: data.stats.responses, note: "Student feedback records", tone: "purple" },
+    { key: "topicsTaught", label: "Topics Taught", value: data.stats.topicsTaught, note: "Published lecture logs", tone: "orange" },
+    { key: "activeTeachers", label: "Active Teachers", value: data.stats.activeTeachers, note: "Teaching workforce", tone: "blue" },
+    { key: "classesReporting", label: "Classes Reporting", value: data.stats.classesReporting, note: "Class / section coverage", tone: "green" },
+    { key: "students", label: "Students", value: data.stats.totalStudents, note: "Students in this school", tone: "purple" },
   ];
 
   const selectedClassText =
@@ -794,14 +828,25 @@ export default function SchoolOverviewPage() {
           </div>
 
           <div className="school-metric-grid">
-            {cards.map(([label, value, note, tone]) => (
+            {cards.map(card => (
               <article
-                key={String(label)}
-                className={`school-card ${tone}`}
+                key={card.key}
+                className={`school-card ${card.tone}`}
+                role="button"
+                tabIndex={0}
+                aria-label={`View ${card.label} detail`}
+                onClick={() => void openCardDetail(card.key)}
+                onKeyDown={event => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    void openCardDetail(card.key);
+                  }
+                }}
+                style={{ cursor: "pointer" }}
               >
-                <div className="school-card-label">{label}</div>
-                <div className="school-card-value">{value}</div>
-                <div className="school-card-note">{note}</div>
+                <div className="school-card-label">{card.label}</div>
+                <div className="school-card-value">{card.value}</div>
+                <div className="school-card-note">{card.note}</div>
               </article>
             ))}
           </div>
@@ -1120,6 +1165,21 @@ export default function SchoolOverviewPage() {
           </div>
         </section>
       </div>
+
+      {detailCard && (
+        <SchoolOverviewCardDetailPopup
+          card={detailCard}
+          value={cards.find(card => card.key === detailCard)?.value ?? ""}
+          detail={detailSnapshot}
+          loading={detailLoading}
+          error={detailError}
+          onClose={() => {
+            setDetailCard(null);
+            setDetailSnapshot(null);
+            setDetailError("");
+          }}
+        />
+      )}
 
       <SchoolMorningBrief />
 
