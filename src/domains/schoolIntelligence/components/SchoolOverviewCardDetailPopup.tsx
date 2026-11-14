@@ -17,7 +17,7 @@ const TITLES: Record<SchoolOverviewCardKey, string> = {
 
 const EXPLANATIONS: Record<SchoolOverviewCardKey, string> = {
   understanding:
-    "The card remains the existing canonical school-level understanding percentage: complete-understanding student observations divided by eligible student observations. The groups below expose the exact class, section, subject, teacher and student observations behind that number. Health contribution is shown separately so the 50% value of Partial understanding is never confused with the full-understanding percentage.",
+    "The card remains the existing canonical school-level understanding percentage: complete-understanding student observations divided by eligible student observations. The evidence is grouped first by class and section, then by subject and teacher, with the student-level observations behind each subject. Health contribution is shown separately so the 50% value of Partial understanding is never confused with the full-understanding percentage.",
   activeDoubts:
     "This card remains the existing unresolved-doubt count after the same canonical Live / Loop 2 resolution classifier. Only unresolved records are shown here, with the exact student, classroom, teacher, topic, subtopic and raised date.",
   doubtClosure:
@@ -25,7 +25,7 @@ const EXPLANATIONS: Record<SchoolOverviewCardKey, string> = {
   responses:
     "The card remains the existing response count. The detail shows actual submitted learning responses by day, then class, section and subject. Absent feedback is not presented as a submitted learning response; it remains part of the existing card calculation exactly as before.",
   topicsTaught:
-    "The card remains the existing published Daily Log count. Every log is grouped by day, class, section and subject, with the teacher, topic and recorded concepts/subtopics shown exactly from the published Daily Log.",
+    "The card remains the existing published Daily Log count. The evidence is grouped first by class and section, then by subject and teacher, with every published log showing its date, topic and recorded concepts/subtopics exactly from the Daily Log.",
   activeTeachers:
     "The card remains the existing active-teacher count. Each teacher is shown with every active class, section and subject assignment, expected Daily Logs, submitted logs, missed logs and a deterministic rank by the same canonical class-health calculation used by School Intelligence.",
   classesReporting:
@@ -66,50 +66,92 @@ function SectionHead({ title, count }: { title: string; count?: string }) {
 
 function UnderstandingDetail({ detail }: { detail: SchoolOverviewCardDetailSnapshot }) {
   const value = detail.understanding;
+  const subjectCount = value.classGroups.reduce((sum, group) => sum + group.subjects.length, 0);
   return (
     <>
       <div className="school-overview-detail-summary-grid">
         <span>Card understanding <b>{value.cardValue}%</b></span>
+        <span>Class / section groups <b>{value.classSectionCount}</b></span>
+        <span>Subject groups <b>{subjectCount}</b></span>
         <span>Eligible observations <b>{value.eligibleStudentObservations}</b></span>
         <span>Full understanding <b>{value.completeStudentObservations}</b></span>
         <span>Partial understanding <b>{value.partialStudentObservations}</b></span>
         <span>Did not understand <b>{value.didntUnderstandStudentObservations}</b></span>
       </div>
 
-      {value.assignments.map(assignment => (
-        <section className="school-overview-detail-card" key={assignment.assignmentUuid}>
-          <div className="school-overview-detail-card-head">
-            <div>
-              <strong>Class {assignment.className} · Section {assignment.sectionName} · {assignment.subjectName}</strong>
-              <span>Teacher: {assignment.teacherName} · {assignment.logsCount} published log{assignment.logsCount === 1 ? "" : "s"}</span>
-            </div>
-            <b>{assignment.understandingRate}%</b>
-          </div>
-          <div className="school-overview-detail-mini-grid">
-            <span>Eligible <b>{assignment.eligibleStudentObservations}</b></span>
-            <span>Complete <b>{assignment.completeStudentObservations}</b></span>
-            <span>Partial <b>{assignment.partialStudentObservations}</b></span>
-            <span>DNU <b>{assignment.didntUnderstandStudentObservations}</b></span>
-            <span>Health <b>{assignment.healthPercentage}%</b></span>
-          </div>
-          <div className="school-overview-detail-students">
-            {assignment.students.map(student => (
-              <div className="school-overview-detail-student-row" key={student.studentUuid}>
-                <div className="school-overview-detail-student-main">
-                  <strong>{student.studentName}</strong>
-                  <span>{student.eligibleObservations} eligible · {student.responseObservations} responses</span>
-                </div>
-                <div className="school-overview-detail-student-metrics">
-                  <span>Full {student.fullUnderstandingRate}%</span>
-                  <span>Health contribution {student.healthContributionRate}%</span>
-                  <span>P {student.partialObservations} · DNU {student.didntUnderstandObservations}</span>
-                </div>
+      {!value.classGroups.length && <Empty text="No active class / section teaching groups were found for the selected period." />}
+
+      <div className="school-overview-detail-understanding-class-list">
+        {value.classGroups.map(classGroup => (
+          <section
+            className="school-overview-detail-understanding-class"
+            key={JSON.stringify([classGroup.className, classGroup.sectionName])}
+          >
+            <div className="school-overview-detail-understanding-class-head">
+              <div>
+                <strong>Class {classGroup.className} · Section {classGroup.sectionName}</strong>
+                <span>{classGroup.subjects.length} subject{classGroup.subjects.length === 1 ? "" : "s"} · {classGroup.logsCount} published log{classGroup.logsCount === 1 ? "" : "s"}</span>
               </div>
-            ))}
-            {!assignment.students.length && <Empty text="No students are in this class / section roster." />}
-          </div>
-        </section>
-      ))}
+              <b>{classGroup.understandingRate}%</b>
+            </div>
+
+            <div className="school-overview-detail-understanding-stats">
+              <span>Eligible <b>{classGroup.eligibleStudentObservations}</b></span>
+              <span>Complete <b>{classGroup.completeStudentObservations}</b></span>
+              <span>Partial <b>{classGroup.partialStudentObservations}</b></span>
+              <span>DNU <b>{classGroup.didntUnderstandStudentObservations}</b></span>
+              <span>Health <b>{classGroup.healthPercentage}%</b></span>
+            </div>
+
+            <div className="school-overview-detail-understanding-subject-list">
+              {classGroup.subjects.map(subject => (
+                <section
+                  className="school-overview-detail-understanding-subject"
+                  key={JSON.stringify([classGroup.className, classGroup.sectionName, subject.subjectName])}
+                >
+                  <div className="school-overview-detail-understanding-subject-head">
+                    <div>
+                      <strong>{subject.subjectName}</strong>
+                      <span>
+                        {subject.teacherNames.length
+                          ? `Teacher${subject.teacherNames.length === 1 ? "" : "s"}: ${subject.teacherNames.join(" · ")}`
+                          : "Teacher not recorded"}
+                        {subject.logsCount ? ` · ${subject.logsCount} published log${subject.logsCount === 1 ? "" : "s"}` : " · No published logs"}
+                      </span>
+                    </div>
+                    <b>{subject.understandingRate}%</b>
+                  </div>
+
+                  <div className="school-overview-detail-understanding-stats subject">
+                    <span>Eligible <b>{subject.eligibleStudentObservations}</b></span>
+                    <span>Complete <b>{subject.completeStudentObservations}</b></span>
+                    <span>Partial <b>{subject.partialStudentObservations}</b></span>
+                    <span>DNU <b>{subject.didntUnderstandStudentObservations}</b></span>
+                    <span>Health <b>{subject.healthPercentage}%</b></span>
+                  </div>
+
+                  <div className="school-overview-detail-students">
+                    {subject.students.map(student => (
+                      <div className="school-overview-detail-student-row" key={student.studentUuid}>
+                        <div className="school-overview-detail-student-main">
+                          <strong>{student.studentName}</strong>
+                          <span>{student.eligibleObservations} eligible · {student.responseObservations} responses</span>
+                        </div>
+                        <div className="school-overview-detail-student-metrics">
+                          <span>Full {student.fullUnderstandingRate}%</span>
+                          <span>Health contribution {student.healthContributionRate}%</span>
+                          <span>P {student.partialObservations} · DNU {student.didntUnderstandObservations}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {!subject.students.length && <Empty text="No students are in this class / section subject roster." />}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
     </>
   );
 }
@@ -307,31 +349,75 @@ function ResponsesDetail({ detail }: { detail: SchoolOverviewCardDetailSnapshot 
 }
 
 function TopicsDetail({ detail }: { detail: SchoolOverviewCardDetailSnapshot }) {
-  if (!detail.topicsTaught.length) {
+  const groups = detail.topicClassGroups;
+  const subjectCount = groups.reduce((sum, group) => sum + group.subjects.length, 0);
+  const logCount = groups.reduce((sum, group) => sum + group.logsCount, 0);
+  if (!groups.length) {
     return <Empty text="No published Daily Logs were recorded for the selected period." />;
   }
+
   return (
-    <div className="school-overview-detail-list">
-      {detail.topicsTaught.map(day => (
-        <section className="school-overview-detail-day" key={day.date}>
-          <SectionHead title={day.day} count={day.date} />
-          {day.groups.map(group => (
-            <div className="school-overview-detail-group" key={`${day.date}|${group.assignmentUuid}|${group.className}|${group.sectionName}|${group.subjectName}`}>
-              <div className="school-overview-detail-group-head">
-                <strong>Class {group.className} · Section {group.sectionName} · {group.subjectName}</strong>
-                <span>Teacher: {group.teacherName}</span>
+    <>
+      <div className="school-overview-detail-summary-grid compact">
+        <span>Published logs <b>{logCount}</b></span>
+        <span>Class / section groups <b>{detail.topicClassSectionCount}</b></span>
+        <span>Subject groups <b>{subjectCount}</b></span>
+        <span>Period days represented <b>{new Set(groups.flatMap(group => group.subjects.flatMap(subject => subject.logs.map(log => log.date)))).size}</b></span>
+      </div>
+
+      <div className="school-overview-detail-topic-class-list">
+        {groups.map(classGroup => (
+          <section
+            className="school-overview-detail-topic-class"
+            key={JSON.stringify([classGroup.className, classGroup.sectionName])}
+          >
+            <div className="school-overview-detail-topic-class-head">
+              <div>
+                <strong>Class {classGroup.className} · Section {classGroup.sectionName}</strong>
+                <span>{classGroup.subjects.length} subject{classGroup.subjects.length === 1 ? "" : "s"} · {classGroup.logsCount} published log{classGroup.logsCount === 1 ? "" : "s"}</span>
               </div>
-              {group.logs.map(log => (
-                <div className="school-overview-detail-topic-row" key={log.logId}>
-                  <strong>{log.topic}</strong>
-                  <span>{log.subtopics.length ? log.subtopics.join(" · ") : "No subtopics / concepts recorded"}</span>
-                </div>
+              <b>{classGroup.logsCount}</b>
+            </div>
+
+            <div className="school-overview-detail-topic-subject-list">
+              {classGroup.subjects.map(subject => (
+                <section
+                  className="school-overview-detail-topic-subject"
+                  key={JSON.stringify([classGroup.className, classGroup.sectionName, subject.subjectName])}
+                >
+                  <div className="school-overview-detail-topic-subject-head">
+                    <div>
+                      <strong>{subject.subjectName}</strong>
+                      <span>
+                        {subject.teacherNames.length
+                          ? `Teacher${subject.teacherNames.length === 1 ? "" : "s"}: ${subject.teacherNames.join(" · ")}`
+                          : "Teacher not recorded"}
+                      </span>
+                    </div>
+                    <b>{subject.logsCount} log{subject.logsCount === 1 ? "" : "s"}</b>
+                  </div>
+
+                  <div className="school-overview-detail-topic-log-list">
+                    {subject.logs.map(log => (
+                      <div className="school-overview-detail-topic-log" key={log.logId}>
+                        <div className="school-overview-detail-topic-log-head">
+                          <strong>{log.topic}</strong>
+                          <span>{log.date} · {log.day}</span>
+                        </div>
+                        <span className="school-overview-detail-topic-log-teacher">Teacher: {log.teacherName}</span>
+                        <span className="school-overview-detail-topic-log-subtopics">
+                          {log.subtopics.length ? log.subtopics.join(" · ") : "No subtopics / concepts recorded"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
-          ))}
-        </section>
-      ))}
-    </div>
+          </section>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -473,6 +559,41 @@ const CSS = `
 .school-overview-detail-name-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .school-overview-detail-name-grid span{padding:8px 9px;border:1px solid #E2E8F0;border-radius:8px;background:#FFF;color:#334155;font-size:9.5px;font-weight:750}
 .school-overview-detail-empty{padding:12px;border:1px dashed #CBD5E1;border-radius:10px;color:#64748B;background:#FCFCFB;font-size:10.5px;line-height:1.5;font-weight:750}
+.school-overview-detail-understanding-class-list{display:grid;gap:12px}
+.school-overview-detail-understanding-class{padding:13px;border:1px solid #CBD5E1;border-radius:14px;background:#F8FAFC}
+.school-overview-detail-understanding-class-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.school-overview-detail-understanding-class-head strong{display:block;color:#0F172A;font-size:14px;line-height:1.4;font-weight:950}
+.school-overview-detail-understanding-class-head span{display:block;margin-top:3px;color:#64748B;font-size:10.5px;line-height:1.4;font-weight:750}
+.school-overview-detail-understanding-class-head>b{color:#0F172A;font-size:22px;font-weight:950;white-space:nowrap}
+.school-overview-detail-understanding-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:9px}
+.school-overview-detail-understanding-stats span{padding:7px 8px;border:1px solid #E2E8F0;border-radius:8px;background:#FFF;color:#64748B;font-size:9.5px;font-weight:800}
+.school-overview-detail-understanding-stats b{display:block;margin-top:2px;color:#0F172A;font-size:13px}
+.school-overview-detail-understanding-stats.subject{grid-template-columns:repeat(5,minmax(0,1fr))}
+.school-overview-detail-understanding-subject-list{display:grid;gap:9px;margin-top:10px;padding-left:10px;border-left:3px solid #E2E8F0}
+.school-overview-detail-understanding-subject{padding:10px;border:1px solid #DDE5EE;border-radius:11px;background:#FFF}
+.school-overview-detail-understanding-subject-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.school-overview-detail-understanding-subject-head strong{display:block;color:#1E293B;font-size:12px;line-height:1.4;font-weight:950}
+.school-overview-detail-understanding-subject-head span{display:block;margin-top:3px;color:#64748B;font-size:9.5px;line-height:1.4;font-weight:750}
+.school-overview-detail-understanding-subject-head>b{color:#0F172A;font-size:15px;font-weight:950;white-space:nowrap}
+.school-overview-detail-topic-class-list{display:grid;gap:12px}
+.school-overview-detail-topic-class{padding:13px;border:1px solid #CBD5E1;border-radius:14px;background:#F8FAFC}
+.school-overview-detail-topic-class-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.school-overview-detail-topic-class-head strong{display:block;color:#0F172A;font-size:14px;line-height:1.4;font-weight:950}
+.school-overview-detail-topic-class-head span{display:block;margin-top:3px;color:#64748B;font-size:10.5px;line-height:1.4;font-weight:750}
+.school-overview-detail-topic-class-head>b{color:#0F172A;font-size:22px;font-weight:950;white-space:nowrap}
+.school-overview-detail-topic-subject-list{display:grid;gap:9px;margin-top:10px;padding-left:10px;border-left:3px solid #E2E8F0}
+.school-overview-detail-topic-subject{padding:10px;border:1px solid #DDE5EE;border-radius:11px;background:#FFF}
+.school-overview-detail-topic-subject-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.school-overview-detail-topic-subject-head strong{display:block;color:#1E293B;font-size:12px;line-height:1.4;font-weight:950}
+.school-overview-detail-topic-subject-head span{display:block;margin-top:3px;color:#64748B;font-size:9.5px;line-height:1.4;font-weight:750}
+.school-overview-detail-topic-subject-head>b{color:#0F172A;font-size:15px;font-weight:950;white-space:nowrap}
+.school-overview-detail-topic-log-list{display:grid;gap:6px;margin-top:8px}
+.school-overview-detail-topic-log{padding:8px;border:1px solid #E2E8F0;border-radius:8px;background:#FCFCFB}
+.school-overview-detail-topic-log-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.school-overview-detail-topic-log-head strong{color:#0F172A;font-size:10.5px;line-height:1.4;font-weight:950}
+.school-overview-detail-topic-log-head span{color:#64748B;font-size:9px;line-height:1.4;font-weight:800;white-space:nowrap}
+.school-overview-detail-topic-log-teacher{display:block;margin-top:4px;color:#475569;font-size:9px;line-height:1.4;font-weight:750}
+.school-overview-detail-topic-log-subtopics{display:block;margin-top:4px;color:#64748B;font-size:9px;line-height:1.45;font-weight:700}
 .school-overview-detail-doubt-class-list{display:grid;gap:12px}
 .school-overview-detail-doubt-class{padding:13px;border:1px solid #CBD5E1;border-radius:14px;background:#F8FAFC}
 .school-overview-detail-doubt-class-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
@@ -491,8 +612,8 @@ const CSS = `
 .school-overview-detail-doubt-subject-head>b{color:#0F172A;font-size:15px;font-weight:950;white-space:nowrap}
 .school-overview-detail-doubt-subject .school-overview-detail-list{margin-top:8px}
 
-@media(max-width:1024px){.school-overview-detail-overlay{padding:10px}.school-overview-detail-modal{width:min(820px,100%);max-height:92vh;border-radius:18px}.school-overview-detail-head{padding:17px 19px 13px}.school-overview-detail-kicker{font-size:10px}.school-overview-detail-head h3{font-size:23px}.school-overview-detail-head p{font-size:11px}.school-overview-detail-body{padding:11px}.school-overview-detail-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.school-overview-detail-summary-grid.compact{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-mini-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.school-overview-detail-class-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-name-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-explanation p{font-size:10.5px}.school-overview-detail-card-head strong{font-size:11.5px}.school-overview-detail-card-head span{font-size:9.5px}.school-overview-detail-card-head>b{font-size:18px}.school-overview-detail-doubt-class-head strong{font-size:13px}.school-overview-detail-doubt-class-head>b{font-size:20px}.school-overview-detail-doubt-stats,.school-overview-detail-doubt-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){.school-overview-detail-overlay{padding:5px}.school-overview-detail-modal{width:100%;max-width:none;max-height:95vh;border-radius:14px}.school-overview-detail-head{padding:12px 13px 10px}.school-overview-detail-kicker{font-size:8px;letter-spacing:.85px}.school-overview-detail-head h3{font-size:20px}.school-overview-detail-head p{font-size:9.5px}.school-overview-detail-close{width:32px;height:32px;font-size:21px}.school-overview-detail-body{padding:8px}.school-overview-detail-summary-grid,.school-overview-detail-summary-grid.compact,.school-overview-detail-mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-class-grid,.school-overview-detail-name-grid{grid-template-columns:1fr}.school-overview-detail-card-head strong{font-size:10.5px}.school-overview-detail-card-head span{font-size:9px}.school-overview-detail-card-head>b{font-size:16px}.school-overview-detail-student-main{display:block}.school-overview-detail-student-main strong{font-size:10.5px}.school-overview-detail-student-main span{display:block;margin-top:3px;font-size:9px}.school-overview-detail-student-metrics{margin-top:5px}.school-overview-detail-group-head{display:block}.school-overview-detail-group-head span{display:block;margin-top:4px}.school-overview-detail-explanation p{font-size:9.5px}.school-overview-detail-summary-grid span{font-size:9px}.school-overview-detail-summary-grid b{font-size:13px}.school-overview-detail-mini-grid span{font-size:9px}.school-overview-detail-doubt-topic{font-size:10px}.school-overview-detail-doubt-meta{font-size:9px}.school-overview-detail-doubt-class{padding:10px}.school-overview-detail-doubt-class-head strong{font-size:11px}.school-overview-detail-doubt-class-head span{font-size:8.5px}.school-overview-detail-doubt-class-head>b{font-size:18px}.school-overview-detail-doubt-stats,.school-overview-detail-doubt-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.school-overview-detail-doubt-stats span{font-size:8.5px}.school-overview-detail-doubt-stats b{font-size:12px}.school-overview-detail-doubt-subject-list{padding-left:6px}.school-overview-detail-doubt-subject{padding:8px}.school-overview-detail-doubt-subject-head strong{font-size:10.5px}.school-overview-detail-doubt-subject-head span{font-size:8.5px}.school-overview-detail-doubt-subject-head>b{font-size:13px}}
+@media(max-width:1024px){.school-overview-detail-overlay{padding:10px}.school-overview-detail-modal{width:min(820px,100%);max-height:92vh;border-radius:18px}.school-overview-detail-head{padding:17px 19px 13px}.school-overview-detail-kicker{font-size:10px}.school-overview-detail-head h3{font-size:23px}.school-overview-detail-head p{font-size:11px}.school-overview-detail-body{padding:11px}.school-overview-detail-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.school-overview-detail-summary-grid.compact{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-mini-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.school-overview-detail-class-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-name-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-explanation p{font-size:10.5px}.school-overview-detail-card-head strong{font-size:11.5px}.school-overview-detail-card-head span{font-size:9.5px}.school-overview-detail-card-head>b{font-size:18px}.school-overview-detail-doubt-class-head strong{font-size:13px}.school-overview-detail-doubt-class-head>b{font-size:20px}.school-overview-detail-doubt-stats,.school-overview-detail-doubt-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-understanding-stats,.school-overview-detail-understanding-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-topic-log-head{display:block}.school-overview-detail-topic-log-head span{display:block;margin-top:3px}}
+@media(max-width:600px){.school-overview-detail-overlay{padding:5px}.school-overview-detail-modal{width:100%;max-width:none;max-height:95vh;border-radius:14px}.school-overview-detail-head{padding:12px 13px 10px}.school-overview-detail-kicker{font-size:8px;letter-spacing:.85px}.school-overview-detail-head h3{font-size:20px}.school-overview-detail-head p{font-size:9.5px}.school-overview-detail-close{width:32px;height:32px;font-size:21px}.school-overview-detail-body{padding:8px}.school-overview-detail-summary-grid,.school-overview-detail-summary-grid.compact,.school-overview-detail-mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-class-grid,.school-overview-detail-name-grid{grid-template-columns:1fr}.school-overview-detail-card-head strong{font-size:10.5px}.school-overview-detail-card-head span{font-size:9px}.school-overview-detail-card-head>b{font-size:16px}.school-overview-detail-student-main{display:block}.school-overview-detail-student-main strong{font-size:10.5px}.school-overview-detail-student-main span{display:block;margin-top:3px;font-size:9px}.school-overview-detail-student-metrics{margin-top:5px}.school-overview-detail-group-head{display:block}.school-overview-detail-group-head span{display:block;margin-top:4px}.school-overview-detail-explanation p{font-size:9.5px}.school-overview-detail-summary-grid span{font-size:9px}.school-overview-detail-summary-grid b{font-size:13px}.school-overview-detail-mini-grid span{font-size:9px}.school-overview-detail-doubt-topic{font-size:10px}.school-overview-detail-doubt-meta{font-size:9px}.school-overview-detail-doubt-class{padding:10px}.school-overview-detail-doubt-class-head strong{font-size:11px}.school-overview-detail-doubt-class-head span{font-size:8.5px}.school-overview-detail-doubt-class-head>b{font-size:18px}.school-overview-detail-doubt-stats,.school-overview-detail-doubt-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.school-overview-detail-understanding-class{padding:10px}.school-overview-detail-understanding-class-head strong,.school-overview-detail-topic-class-head strong{font-size:11px}.school-overview-detail-understanding-class-head span,.school-overview-detail-topic-class-head span{font-size:8.5px}.school-overview-detail-understanding-class-head>b,.school-overview-detail-topic-class-head>b{font-size:18px}.school-overview-detail-understanding-stats,.school-overview-detail-understanding-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.school-overview-detail-understanding-stats span{font-size:8.5px}.school-overview-detail-understanding-stats b{font-size:12px}.school-overview-detail-understanding-subject-list,.school-overview-detail-topic-subject-list{padding-left:6px}.school-overview-detail-understanding-subject,.school-overview-detail-topic-subject{padding:8px}.school-overview-detail-understanding-subject-head strong,.school-overview-detail-topic-subject-head strong{font-size:10.5px}.school-overview-detail-understanding-subject-head span,.school-overview-detail-topic-subject-head span{font-size:8.5px}.school-overview-detail-understanding-subject-head>b,.school-overview-detail-topic-subject-head>b{font-size:13px}.school-overview-detail-topic-class{padding:10px}.school-overview-detail-topic-log-head strong{font-size:10px}.school-overview-detail-topic-log-head span,.school-overview-detail-topic-log-teacher,.school-overview-detail-topic-log-subtopics{font-size:8.5px}.school-overview-detail-doubt-stats span{font-size:8.5px}.school-overview-detail-doubt-stats b{font-size:12px}.school-overview-detail-doubt-subject-list{padding-left:6px}.school-overview-detail-doubt-subject{padding:8px}.school-overview-detail-doubt-subject-head strong{font-size:10.5px}.school-overview-detail-doubt-subject-head span{font-size:8.5px}.school-overview-detail-doubt-subject-head>b{font-size:13px}}
 `;
 
 

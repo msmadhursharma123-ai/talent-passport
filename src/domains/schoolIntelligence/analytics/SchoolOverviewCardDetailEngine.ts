@@ -16,7 +16,9 @@ import type {
   SchoolOverviewDoubtSubjectGroup,
   SchoolOverviewResponseSubjectGroup,
   SchoolOverviewStudentContribution,
+  SchoolOverviewTopicClassGroup,
   SchoolOverviewTopicDayGroup,
+  SchoolOverviewTopicSubjectGroup,
   SchoolOverviewTeacherDetailRow,
 } from "../types/SchoolOverviewCardDetailModels";
 
@@ -243,36 +245,171 @@ function buildStudentContributions(
 
 function buildUnderstanding(raw: SchoolOverviewCardDetailRawData) {
   const activeAssignments = raw.assignments.filter(a => a.is_active !== false);
-  const assignmentDetails: SchoolOverviewAssignmentUnderstandingDetail[] = activeAssignments
-    .map(assignment => {
-      const { logs, aggregate } = assignmentMetrics(raw, assignment);
-      return {
-        assignmentUuid: String(assignment.id ?? ""),
-        className: clean(assignment.class_name),
-        sectionName: clean(assignment.section_name),
-        subjectName: clean(assignment.subject_name, "Subject"),
-        teacherName: clean(raw.teachers.find(t => String(t.teacher_uuid) === String(assignment.teacher_uuid))?.full_name, "Teacher"),
-        logsCount: logs.length,
-        eligibleStudentObservations: aggregate.eligibleStudentObservations,
-        completeStudentObservations: aggregate.completeStudentObservations,
-        partialStudentObservations: aggregate.partialStudentObservations,
-        didntUnderstandStudentObservations: aggregate.didntUnderstandStudentObservations,
-        understandingRate: aggregate.understandingRate,
-        healthPercentage: aggregate.classHealthPercentage,
-        students: buildStudentContributions(raw, assignment, logs),
-      };
-    });
+  const assignmentBuilds = activeAssignments.map(assignment => {
+    const { logs, metrics, aggregate } = assignmentMetrics(raw, assignment);
+    const detail: SchoolOverviewAssignmentUnderstandingDetail = {
+      assignmentUuid: String(assignment.id ?? ""),
+      className: clean(assignment.class_name),
+      sectionName: clean(assignment.section_name),
+      subjectName: clean(assignment.subject_name, "Subject"),
+      teacherName: clean(raw.teachers.find(t => String(t.teacher_uuid) === String(assignment.teacher_uuid))?.full_name, "Teacher"),
+      logsCount: logs.length,
+      eligibleStudentObservations: aggregate.eligibleStudentObservations,
+      completeStudentObservations: aggregate.completeStudentObservations,
+      partialStudentObservations: aggregate.partialStudentObservations,
+      didntUnderstandStudentObservations: aggregate.didntUnderstandStudentObservations,
+      understandingRate: aggregate.understandingRate,
+      healthPercentage: aggregate.classHealthPercentage,
+      students: buildStudentContributions(raw, assignment, logs),
+    };
+    return { detail, metrics };
+  });
 
-  const lectureMetrics = activeAssignments.flatMap(assignment => assignmentMetrics(raw, assignment).metrics);
+  const assignmentDetails = assignmentBuilds.map(item => item.detail);
+  const lectureMetrics = assignmentBuilds.flatMap(item => item.metrics);
   const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
+
+  type SubjectAccumulator = {
+    className: string;
+    sectionName: string;
+    subjectName: string;
+    assignmentUuids: string[];
+    teacherNames: string[];
+    logsCount: number;
+    metrics: ReturnType<typeof calculateLearningLectureMetrics>[];
+    studentMap: Map<string, SchoolOverviewStudentContribution>;
+  };
+
+  type ClassAccumulator = {
+    className: string;
+    sectionName: string;
+    metrics: ReturnType<typeof calculateLearningLectureMetrics>[];
+    subjects: Map<string, SubjectAccumulator>;
+  };
+
+  const classMap = new Map<string, ClassAccumulator>();
+
+  for (const item of assignmentBuilds) {
+    const detail = item.detail;
+    const classKey = JSON.stringify([detail.className, detail.sectionName]);
+    let classGroup = classMap.get(classKey);
+    if (!classGroup) {
+      classGroup = {
+        className: detail.className,
+        sectionName: detail.sectionName,
+        metrics: [],
+        subjects: new Map(),
+      };
+      classMap.set(classKey, classGroup);
+    }
+    classGroup.metrics.push(...item.metrics);
+
+    const subjectKey = JSON.stringify([
+      detail.className,
+      detail.sectionName,
+      detail.subjectName,
+    ]);
+    let subjectGroup = classGroup.subjects.get(subjectKey);
+    if (!subjectGroup) {
+      subjectGroup = {
+        className: detail.className,
+        sectionName: detail.sectionName,
+        subjectName: detail.subjectName,
+        assignmentUuids: [],
+        teacherNames: [],
+        logsCount: 0,
+        metrics: [],
+        studentMap: new Map(),
+      };
+      classGroup.subjects.set(subjectKey, subjectGroup);
+    }
+
+    if (detail.assignmentUuid && !subjectGroup.assignmentUuids.includes(detail.assignmentUuid)) {
+      subjectGroup.assignmentUuids.push(detail.assignmentUuid);
+    }
+    if (detail.teacherName && !subjectGroup.teacherNames.includes(detail.teacherName)) {
+      subjectGroup.teacherNames.push(detail.teacherName);
+    }
+    subjectGroup.logsCount += detail.logsCount;
+    subjectGroup.metrics.push(...item.metrics);
+
+    for (const student of detail.students) {
+      const existing = subjectGroup.studentMap.get(student.studentUuid);
+      if (!existing) {
+        subjectGroup.studentMap.set(student.studentUuid, { ...student });
+        continue;
+      }
+      existing.eligibleObservations += student.eligibleObservations;
+      existing.responseObservations += student.responseObservations;
+      existing.completeObservations += student.completeObservations;
+      existing.partialObservations += student.partialObservations;
+      existing.didntUnderstandObservations += student.didntUnderstandObservations;
+    }
+  }
+
+  const pooledStudentContribution = (student: SchoolOverviewStudentContribution): SchoolOverviewStudentContribution => ({
+    ...student,
+    fullUnderstandingRate: student.eligibleObservations === 0
+      ? 0
+      : Math.round((student.completeObservations / student.eligibleObservations) * 100),
+    healthContributionRate: student.eligibleObservations === 0
+      ? 0
+      : Math.round(((student.completeObservations + student.partialObservations * 0.5) / student.eligibleObservations) * 100),
+  });
+
+  const buildSubject = (subject: SubjectAccumulator) => {
+    const metrics = aggregateLearningLectureMetrics(subject.metrics);
+    subject.teacherNames.sort((a, b) => a.localeCompare(b));
+    subject.assignmentUuids.sort((a, b) => a.localeCompare(b));
+    const students = Array.from(subject.studentMap.values())
+      .map(pooledStudentContribution)
+      .sort((a, b) => a.studentName.localeCompare(b.studentName) || a.studentUuid.localeCompare(b.studentUuid));
+
+    return {
+      className: subject.className,
+      sectionName: subject.sectionName,
+      subjectName: subject.subjectName,
+      assignmentUuids: subject.assignmentUuids,
+      teacherNames: subject.teacherNames,
+      logsCount: subject.logsCount,
+      eligibleStudentObservations: metrics.eligibleStudentObservations,
+      completeStudentObservations: metrics.completeStudentObservations,
+      partialStudentObservations: metrics.partialStudentObservations,
+      didntUnderstandStudentObservations: metrics.didntUnderstandStudentObservations,
+      understandingRate: metrics.understandingRate,
+      healthPercentage: metrics.classHealthPercentage,
+      students,
+    };
+  };
+
+  const classGroups = Array.from(classMap.values()).map(classGroup => {
+    const metrics = aggregateLearningLectureMetrics(classGroup.metrics);
+    const subjects = Array.from(classGroup.subjects.values())
+      .map(buildSubject)
+      .sort((a, b) => a.subjectName.localeCompare(b.subjectName));
+    return {
+      className: classGroup.className,
+      sectionName: classGroup.sectionName,
+      logsCount: classGroup.metrics.length,
+      eligibleStudentObservations: metrics.eligibleStudentObservations,
+      completeStudentObservations: metrics.completeStudentObservations,
+      partialStudentObservations: metrics.partialStudentObservations,
+      didntUnderstandStudentObservations: metrics.didntUnderstandStudentObservations,
+      understandingRate: metrics.understandingRate,
+      healthPercentage: metrics.classHealthPercentage,
+      subjects,
+    };
+  }).sort((a, b) => `${a.className}|${a.sectionName}`.localeCompare(`${b.className}|${b.sectionName}`));
 
   return {
     cardValue: aggregate.understandingRate,
+    classSectionCount: classGroups.length,
     eligibleStudentObservations: aggregate.eligibleStudentObservations,
     completeStudentObservations: aggregate.completeStudentObservations,
     partialStudentObservations: aggregate.partialStudentObservations,
     didntUnderstandStudentObservations: aggregate.didntUnderstandStudentObservations,
     assignments: assignmentDetails,
+    classGroups,
   };
 }
 
@@ -459,6 +596,8 @@ function buildTopics(raw: SchoolOverviewCardDetailRawData): SchoolOverviewTopicD
     };
     group.logs.push({
       logId: clean(log.id),
+      date,
+      day: dayName(date),
       teacherName: group.teacherName,
       className: group.className,
       sectionName: group.sectionName,
@@ -479,6 +618,93 @@ function buildTopics(raw: SchoolOverviewCardDetailRawData): SchoolOverviewTopicD
   }));
 
   return dayGroups;
+}
+
+function buildTopicClassGroups(raw: SchoolOverviewCardDetailRawData): SchoolOverviewTopicClassGroup[] {
+  const assignmentMap = new Map(raw.assignments.map(a => [String(a.id), a]));
+  const teacherMap = new Map(raw.teachers.map(t => [String(t.teacher_uuid), clean(t.full_name, "Teacher")]));
+  const classMap = new Map<string, {
+    className: string;
+    sectionName: string;
+    subjects: Map<string, SchoolOverviewTopicSubjectGroup>;
+  }>();
+
+  for (const log of raw.logs) {
+    const assignment = assignmentMap.get(String(log.teacher_assignment_uuid ?? ""));
+    if (!assignment) continue;
+    const className = clean(assignment.class_name);
+    const sectionName = clean(assignment.section_name);
+    const subjectName = clean(assignment.subject_name, "Subject");
+    const classKey = JSON.stringify([className, sectionName]);
+    let classGroup = classMap.get(classKey);
+    if (!classGroup) {
+      classGroup = {
+        className,
+        sectionName,
+        subjects: new Map(),
+      };
+      classMap.set(classKey, classGroup);
+    }
+
+    const subjectKey = JSON.stringify([className, sectionName, subjectName]);
+    let subjectGroup = classGroup.subjects.get(subjectKey);
+    if (!subjectGroup) {
+      subjectGroup = {
+        className,
+        sectionName,
+        subjectName,
+        assignmentUuids: [],
+        teacherNames: [],
+        logsCount: 0,
+        logs: [],
+      };
+      classGroup.subjects.set(subjectKey, subjectGroup);
+    }
+
+    const assignmentUuid = String(assignment.id ?? "");
+    const teacherName = teacherMap.get(String(assignment.teacher_uuid)) ?? "Teacher";
+    if (assignmentUuid && !subjectGroup.assignmentUuids.includes(assignmentUuid)) {
+      subjectGroup.assignmentUuids.push(assignmentUuid);
+    }
+    if (teacherName && !subjectGroup.teacherNames.includes(teacherName)) {
+      subjectGroup.teacherNames.push(teacherName);
+    }
+
+    subjectGroup.logs.push({
+      logId: clean(log.id),
+      date: clean(log.log_date),
+      day: dayName(clean(log.log_date)),
+      teacherName,
+      className,
+      sectionName,
+      subjectName,
+      topic: clean(log.topic_name, "Topic not recorded"),
+      subtopics: Array.isArray(log.concepts_covered)
+        ? log.concepts_covered.map((value: unknown) => clean(value)).filter(Boolean)
+        : [],
+    });
+  }
+
+  return Array.from(classMap.values()).map(classGroup => {
+    const subjects = Array.from(classGroup.subjects.values()).map(subjectGroup => {
+      subjectGroup.assignmentUuids.sort((a, b) => a.localeCompare(b));
+      subjectGroup.teacherNames.sort((a, b) => a.localeCompare(b));
+      subjectGroup.logs.sort((a, b) =>
+        `${a.date}|${a.logId}`.localeCompare(`${b.date}|${b.logId}`),
+      );
+      return {
+        ...subjectGroup,
+        logsCount: subjectGroup.logs.length,
+      };
+    }).sort((a, b) => a.subjectName.localeCompare(b.subjectName));
+
+    return {
+      className: classGroup.className,
+      sectionName: classGroup.sectionName,
+      logsCount: subjects.reduce((sum, subject) => sum + subject.logsCount, 0),
+      subjects,
+    };
+  }).sort((a, b) => `${a.className}|${a.sectionName}`.localeCompare(`${b.className}|${b.sectionName}`));
 }
 
 function buildTeachers(raw: SchoolOverviewCardDetailRawData, startDate: string, endDate: string): SchoolOverviewTeacherDetailRow[] {
@@ -570,6 +796,7 @@ export function buildSchoolOverviewCardDetail(
 ): SchoolOverviewCardDetailSnapshot {
   const understanding = buildUnderstanding(raw);
   const allDoubts = doubtRows(raw);
+  const topicClassGroups = buildTopicClassGroups(raw);
   return {
     period: { startDate, endDate },
     understanding,
@@ -579,6 +806,8 @@ export function buildSchoolOverviewCardDetail(
     doubtClosureGroups: buildDoubtGroups(allDoubts),
     responses: buildResponses(raw),
     topicsTaught: buildTopics(raw),
+    topicClassSectionCount: topicClassGroups.length,
+    topicClassGroups,
     activeTeachers: buildTeachers(raw, startDate, endDate),
     classesReporting: buildClasses(raw),
     students: buildStudents(raw),

@@ -41,13 +41,44 @@ export interface SchoolOverviewAssignmentUnderstandingDetail {
   students: SchoolOverviewStudentContribution[];
 }
 
+export interface SchoolOverviewUnderstandingSubjectGroup {
+  className: string;
+  sectionName: string;
+  subjectName: string;
+  assignmentUuids: string[];
+  teacherNames: string[];
+  logsCount: number;
+  eligibleStudentObservations: number;
+  completeStudentObservations: number;
+  partialStudentObservations: number;
+  didntUnderstandStudentObservations: number;
+  understandingRate: number;
+  healthPercentage: number;
+  students: SchoolOverviewStudentContribution[];
+}
+
+export interface SchoolOverviewUnderstandingClassGroup {
+  className: string;
+  sectionName: string;
+  logsCount: number;
+  eligibleStudentObservations: number;
+  completeStudentObservations: number;
+  partialStudentObservations: number;
+  didntUnderstandStudentObservations: number;
+  understandingRate: number;
+  healthPercentage: number;
+  subjects: SchoolOverviewUnderstandingSubjectGroup[];
+}
+
 export interface SchoolOverviewUnderstandingDetail {
   cardValue: number;
+  classSectionCount: number;
   eligibleStudentObservations: number;
   completeStudentObservations: number;
   partialStudentObservations: number;
   didntUnderstandStudentObservations: number;
   assignments: SchoolOverviewAssignmentUnderstandingDetail[];
+  classGroups: SchoolOverviewUnderstandingClassGroup[];
 }
 
 export interface SchoolOverviewDoubtDetailRow {
@@ -116,6 +147,8 @@ export interface SchoolOverviewResponseDayGroup {
 
 export interface SchoolOverviewTopicLogRow {
   logId: string;
+  date: string;
+  day: string;
   teacherName: string;
   className: string;
   sectionName: string;
@@ -135,6 +168,23 @@ export interface SchoolOverviewTopicDayGroup {
     teacherName: string;
     logs: SchoolOverviewTopicLogRow[];
   }>;
+}
+
+export interface SchoolOverviewTopicSubjectGroup {
+  className: string;
+  sectionName: string;
+  subjectName: string;
+  assignmentUuids: string[];
+  teacherNames: string[];
+  logsCount: number;
+  logs: SchoolOverviewTopicLogRow[];
+}
+
+export interface SchoolOverviewTopicClassGroup {
+  className: string;
+  sectionName: string;
+  logsCount: number;
+  subjects: SchoolOverviewTopicSubjectGroup[];
 }
 
 export interface SchoolOverviewTeacherDetailRow {
@@ -176,6 +226,8 @@ export interface SchoolOverviewCardDetailSnapshot {
   doubtClosureGroups: SchoolOverviewDoubtClassGroup[];
   responses: SchoolOverviewResponseDetail;
   topicsTaught: SchoolOverviewTopicDayGroup[];
+  topicClassSectionCount: number;
+  topicClassGroups: SchoolOverviewTopicClassGroup[];
   activeTeachers: SchoolOverviewTeacherDetailRow[];
   classesReporting: SchoolOverviewClassDetailRow[];
   students: SchoolOverviewStudentGroup[];
