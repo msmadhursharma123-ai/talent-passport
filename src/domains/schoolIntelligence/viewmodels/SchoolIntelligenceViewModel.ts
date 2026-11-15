@@ -1,7 +1,8 @@
 import { getSchoolIntelligenceRawData } from "../repository/SchoolIntelligenceRepository";
 import { buildSchoolIntelligenceSnapshot } from "../analytics/SchoolIntelligenceEngine";
-import { applyLiveSchoolIntelligenceOverlay } from "../../liveDoubtIntelligence/service/LiveSchoolIntelligenceOverlay";
+import { getLiveOverlayRawData } from "../../liveDoubtIntelligence/service/LiveSchoolIntelligenceOverlay";
 import type { SchoolIntelligenceSnapshot } from "../types/SchoolIntelligenceModels";
+import type { SchoolIntelligenceRawData } from "../repository/SchoolIntelligenceRepository";
 import { getCurrentSchool } from "../../../services/identityService";
 import { readSchoolPageCache, writeSchoolPageCache } from "../schoolPageCache";
 
@@ -9,10 +10,33 @@ function isoDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+function schoolCacheKey(
+  schoolUuid: string | undefined,
+  startDate?: string,
+  endDate?: string,
+) {
+  if (!schoolUuid) return undefined;
+  return [
+    "school-intelligence-v3",
+    schoolUuid,
+    startDate ?? "default",
+    endDate ?? "default",
+  ].join("|");
+}
+
+function schoolDetailRawCacheKey(
+  schoolUuid: string | undefined,
+  startDate?: string,
+  endDate?: string,
+) {
+  const snapshotKey = schoolCacheKey(schoolUuid, startDate, endDate);
+  return snapshotKey ? `${snapshotKey}|detail-raw-v1` : undefined;
+}
+
 async function buildSnapshotWithOptionalLiveLayer(
   customStartDate?: string,
   customEndDate?: string
-) {
+): Promise<{ snapshot: SchoolIntelligenceSnapshot; detailRaw: SchoolIntelligenceRawData }> {
   const raw = await getSchoolIntelligenceRawData(
     customStartDate,
     customEndDate
@@ -23,44 +47,59 @@ async function buildSnapshotWithOptionalLiveLayer(
     doubtsLoadFailed: raw.doubtsLoadFailed,
   };
 
-  // The live doubt layer is strictly additive. If its SQL/table is not
-  // installed yet, or if it fails, the original school intelligence stays.
-  // In particular, a live-doubt problem must never wipe the Daily Log feed.
+  // The Live layer remains strictly additive. The important V15 contract is
+  // that the exact overlaid raw evidence used to calculate the page snapshot
+  // is retained beside that snapshot for any row-detail popup opened from the
+  // same page. This removes the previous second-fetch race/divergence.
+  const detailRaw = await getLiveOverlayRawData(
+    raw,
+    customStartDate,
+    customEndDate,
+  );
+
+  if (detailRaw === raw) {
+    return { snapshot: base, detailRaw };
+  }
+
+  // Preserve the original School Intelligence failure-isolation contract: if
+  // the live-overlay snapshot itself cannot be built, the page must retain
+  // the base snapshot and the popup must receive the same base raw evidence.
+  // Returning overlaid raw evidence with a base snapshot would recreate the
+  // very table/detail divergence V15 is designed to eliminate.
   try {
-    const overlaid = await applyLiveSchoolIntelligenceOverlay(
-      raw,
-      base,
-      customStartDate,
-      customEndDate
-    );
+    const overlaid = {
+      ...buildSchoolIntelligenceSnapshot(detailRaw),
+      doubtsLoadFailed: detailRaw.doubtsLoadFailed,
+    };
 
     return {
-      ...base,
-      ...overlaid,
-      // Teacher Intelligence is authoritative from teacher_daily_logs. If the
-      // optional live overlay has no live-status payload, retain the base feed.
-      teacherLiveStatus:
-        Array.isArray(overlaid?.teacherLiveStatus) &&
-        overlaid.teacherLiveStatus.length > 0
-          ? overlaid.teacherLiveStatus
-          : base.teacherLiveStatus,
+      snapshot: {
+        ...base,
+        ...overlaid,
+        teacherLiveStatus:
+          Array.isArray(overlaid?.teacherLiveStatus) &&
+          overlaid.teacherLiveStatus.length > 0
+            ? overlaid.teacherLiveStatus
+            : base.teacherLiveStatus,
+      },
+      detailRaw,
     };
   } catch (error) {
     console.warn(
-      "OPTIONAL LIVE SCHOOL INTELLIGENCE OVERLAY FAILED; USING BASE SCHOOL INTELLIGENCE",
-      error
+      "OPTIONAL LIVE SCHOOL INTELLIGENCE SNAPSHOT BUILD FAILED; USING BASE SCHOOL INTELLIGENCE",
+      error,
     );
-
-    return base;
+    return { snapshot: base, detailRaw: raw };
   }
 }
 
-export async function loadSchoolIntelligence(
+
+export async function loadSchoolIntelligenceWithDetailRaw(
   days?: 7 | 14 | 21 | 30 | 60 | 90,
   customStartDate?: string,
   customEndDate?: string,
   options?: { forceRefresh?: boolean }
-) {
+): Promise<{ snapshot: SchoolIntelligenceSnapshot; detailRaw: SchoolIntelligenceRawData }> {
   let startDate = customStartDate;
   let endDate = customEndDate;
 
@@ -73,21 +112,39 @@ export async function loadSchoolIntelligence(
   }
 
   const schoolUuid = getCurrentSchool()?.schoolUuid;
-  const cacheKey = schoolUuid
-    ? [
-        "school-intelligence-v3",
-        schoolUuid,
-        startDate ?? "default",
-        endDate ?? "default",
-      ].join("|")
-    : undefined;
+  const cacheKey = schoolCacheKey(schoolUuid, startDate, endDate);
+  const detailRawKey = schoolDetailRawCacheKey(schoolUuid, startDate, endDate);
 
-  if (!options?.forceRefresh && cacheKey) {
+  if (!options?.forceRefresh && cacheKey && detailRawKey) {
     const cached = readSchoolPageCache<SchoolIntelligenceSnapshot>(cacheKey);
-    if (cached) return cached;
+    const cachedDetailRaw = readSchoolPageCache<SchoolIntelligenceRawData>(detailRawKey);
+    // A snapshot without its matching raw evidence is not a valid V15 cache
+    // entry for this page: rebuild both together so popup and table cannot
+    // silently diverge.
+    if (cached && cachedDetailRaw) return { snapshot: cached, detailRaw: cachedDetailRaw };
   }
 
-  const snapshot = await buildSnapshotWithOptionalLiveLayer(startDate, endDate);
+  const { snapshot, detailRaw } = await buildSnapshotWithOptionalLiveLayer(
+    startDate,
+    endDate,
+  );
+
   if (cacheKey) writeSchoolPageCache(cacheKey, snapshot);
-  return snapshot;
+  if (detailRawKey) writeSchoolPageCache(detailRawKey, detailRaw);
+  return { snapshot, detailRaw };
+}
+
+export async function loadSchoolIntelligence(
+  days?: 7 | 14 | 21 | 30 | 60 | 90,
+  customStartDate?: string,
+  customEndDate?: string,
+  options?: { forceRefresh?: boolean }
+): Promise<SchoolIntelligenceSnapshot> {
+  const result = await loadSchoolIntelligenceWithDetailRaw(
+    days,
+    customStartDate,
+    customEndDate,
+    options,
+  );
+  return result.snapshot;
 }

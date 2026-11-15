@@ -4,7 +4,9 @@ import {
   calculateUnweightedAveragePercentageFromSum,
 } from "../../learningAnalytics/canonical/LearningAnalyticsCanonicalService";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
+import {
+  loadSchoolIntelligenceWithDetailRaw,
+} from "../viewmodels/SchoolIntelligenceViewModel";
 import type {
   SchoolClassroomHealthRow,
   SchoolIntelligenceSnapshot,
@@ -14,9 +16,13 @@ import SchoolTeacherAccessManager from "./SchoolTeacherAccessManager";
 import SchoolStudentAccessManager from "./SchoolStudentAccessManager";
 import SchoolMorningBrief from "../components/SchoolMorningBrief";
 import SchoolOverviewCardDetailPopup from "../components/SchoolOverviewCardDetailPopup";
+import SchoolOverviewTableRowDetailPopup from "../components/SchoolOverviewTableRowDetailPopup";
+import { buildSchoolOverviewTableRowDetail } from "../analytics/SchoolOverviewTableRowDetailEngine";
 import { getSchoolOverviewCardDetailRawData } from "../repository/SchoolOverviewCardDetailRepository";
 import { buildSchoolOverviewCardDetail } from "../analytics/SchoolOverviewCardDetailEngine";
 import type { SchoolOverviewCardDetailSnapshot, SchoolOverviewCardKey } from "../types/SchoolOverviewCardDetailModels";
+import type { SchoolOverviewTableRowDetailSnapshot } from "../types/SchoolOverviewTableRowDetailModels";
+import type { SchoolIntelligenceRawData } from "../repository/SchoolIntelligenceRepository";
 import SchoolWeeklyMeetingInsights from "../components/weeklyMeetingInsights/SchoolWeeklyMeetingInsights";
 import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
 import TrackRecordModal from "../../trackRecord/TrackRecordModal";
@@ -76,6 +82,13 @@ export default function SchoolOverviewPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
 
+  const [tableDetailAssignmentUuid, setTableDetailAssignmentUuid] = useState<string | null>(null);
+  const [tableDetailSnapshot, setTableDetailSnapshot] = useState<SchoolOverviewTableRowDetailSnapshot | null>(null);
+  const [tableDetailRaw, setTableDetailRaw] = useState<SchoolIntelligenceRawData | null>(null);
+  const [tableDetailLoading, setTableDetailLoading] = useState(false);
+  const [tableDetailError, setTableDetailError] = useState("");
+  const tableDetailRequestRef = useRef(0);
+
   const [classMenuOpen, setClassMenuOpen] = useState(false);
   const classMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -94,6 +107,17 @@ export default function SchoolOverviewPage() {
   }, []);
 
   useEffect(() => {
+    // Invalidate the row-detail popup immediately on every period-input change,
+    // including temporarily incomplete/invalid custom-date states. This prevents
+    // an old snapshot from remaining visible while the date controls are being
+    // edited or while a new period is not yet valid enough to load.
+    tableDetailRequestRef.current += 1;
+    setTableDetailAssignmentUuid(null);
+    setTableDetailSnapshot(null);
+    setTableDetailRaw(null);
+    setTableDetailError("");
+    setTableDetailLoading(false);
+
     if (range === "custom" && (!customStart || !customEnd)) return;
     if (range === "custom" && customStart > customEnd) return;
 
@@ -107,15 +131,19 @@ export default function SchoolOverviewPage() {
         let snapshot: SchoolIntelligenceSnapshot;
 
         if (range === "custom") {
-          snapshot = await loadSchoolIntelligence(
+          const loaded = await loadSchoolIntelligenceWithDetailRaw(
             undefined,
             customStart,
             customEnd
           );
+          snapshot = loaded.snapshot;
+          if (!cancelled) setTableDetailRaw(loaded.detailRaw);
         } else {
-          snapshot = await loadSchoolIntelligence(
+          const loaded = await loadSchoolIntelligenceWithDetailRaw(
             Number(range) as 30 | 60 | 90
           );
+          snapshot = loaded.snapshot;
+          if (!cancelled) setTableDetailRaw(loaded.detailRaw);
         }
 
         if (!cancelled) {
@@ -147,6 +175,7 @@ export default function SchoolOverviewPage() {
     load();
     return () => {
       cancelled = true;
+      tableDetailRequestRef.current += 1;
     };
   }, [range, customStart, customEnd]);
 
@@ -294,6 +323,52 @@ export default function SchoolOverviewPage() {
   function sortArrow(key: SortKey) {
     if (sortKey !== key) return "↕";
     return sortDirection === "desc" ? "↓" : "↑";
+  }
+
+  function invalidateTableRowDetail() {
+    tableDetailRequestRef.current += 1;
+    setTableDetailAssignmentUuid(null);
+    setTableDetailSnapshot(null);
+    setTableDetailRaw(null);
+    setTableDetailError("");
+    setTableDetailLoading(false);
+  }
+
+  async function openTableRowDetail(assignmentUuid: string, tableRowTotalStudents: number) {
+    if (!selectedPeriod) return;
+    const requestId = ++tableDetailRequestRef.current;
+    setTableDetailAssignmentUuid(assignmentUuid);
+    setTableDetailSnapshot(null);
+    setTableDetailError("");
+    setTableDetailLoading(true);
+    try {
+      // V15 deliberately does not perform a second database read here. The
+      // School Overview table and this popup receive the exact same raw
+      // evidence object from the page load that produced the displayed table
+      // snapshot. A different page's refresh cannot silently replace it.
+      const raw = tableDetailRaw;
+      if (!raw) {
+        throw new Error(
+          "The classroom evidence snapshot is no longer available. Please refresh School Overview and try again."
+        );
+      }
+      const snapshot = buildSchoolOverviewTableRowDetail(
+        raw,
+        assignmentUuid,
+        selectedPeriod,
+        tableRowTotalStudents,
+      );
+      if (requestId !== tableDetailRequestRef.current) return;
+      setTableDetailSnapshot(snapshot);
+      setTableDetailError("");
+      setTableDetailLoading(false);
+    } catch (error: any) {
+      if (requestId !== tableDetailRequestRef.current) return;
+      setTableDetailError(
+        error?.message ?? "Unable to prepare this classroom detail.",
+      );
+      setTableDetailLoading(false);
+    }
   }
 
   async function openCardDetail(card: SchoolOverviewCardKey) {
@@ -956,9 +1031,10 @@ export default function SchoolOverviewPage() {
                 <select
                   className="so-select"
                   value={range}
-                  onChange={event =>
-                    setRange(event.target.value as RangeValue)
-                  }
+                  onChange={event => {
+                    invalidateTableRowDetail();
+                    setRange(event.target.value as RangeValue);
+                  }}
                 >
                   <option value="30">Last 30 Days</option>
                   <option value="60">Last 60 Days</option>
@@ -973,14 +1049,20 @@ export default function SchoolOverviewPage() {
                       type="date"
                       aria-label="Custom start date"
                       value={customStart}
-                      onChange={event => setCustomStart(event.target.value)}
+                      onChange={event => {
+                        invalidateTableRowDetail();
+                        setCustomStart(event.target.value);
+                      }}
                     />
                     <input
                       className="so-date"
                       type="date"
                       aria-label="Custom end date"
                       value={customEnd}
-                      onChange={event => setCustomEnd(event.target.value)}
+                      onChange={event => {
+                        invalidateTableRowDetail();
+                        setCustomEnd(event.target.value);
+                      }}
                     />
                   </div>
                 )}
@@ -1089,7 +1171,20 @@ export default function SchoolOverviewPage() {
                   ? groupedVisibleRows.map((group, groupIndex) => (
                       <Fragment key={group.key}>
                         {group.rows.map(row => (
-                          <tr key={row.assignmentUuid}>
+                          <tr
+                            key={row.assignmentUuid}
+                            className="so-table-detail-row"
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`View ${row.classroom} ${row.subjectName} detail`}
+                            onClick={() => void openTableRowDetail(row.assignmentUuid, row.totalStudents)}
+                            onKeyDown={event => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                void openTableRowDetail(row.assignmentUuid, row.totalStudents);
+                              }
+                            }}
+                          >
                             <td><b>{row.classroom}</b></td>
                             <td>{row.subjectName}</td>
                             <td>{row.teacherName}</td>
@@ -1131,7 +1226,20 @@ export default function SchoolOverviewPage() {
                       </Fragment>
                     ))
                   : visibleRows.map(row => (
-                      <tr key={row.assignmentUuid}>
+                      <tr
+                        key={row.assignmentUuid}
+                        className="so-table-detail-row"
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`View ${row.classroom} ${row.subjectName} detail`}
+                        onClick={() => void openTableRowDetail(row.assignmentUuid, row.totalStudents)}
+                        onKeyDown={event => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            void openTableRowDetail(row.assignmentUuid, row.totalStudents);
+                          }
+                        }}
+                      >
                         <td><b>{row.classroom}</b></td>
                         <td>{row.subjectName}</td>
                         <td>{row.teacherName}</td>
@@ -1177,6 +1285,20 @@ export default function SchoolOverviewPage() {
             setDetailCard(null);
             setDetailSnapshot(null);
             setDetailError("");
+          }}
+        />
+      )}
+
+      {tableDetailAssignmentUuid && (
+        <SchoolOverviewTableRowDetailPopup
+          detail={tableDetailSnapshot}
+          loading={tableDetailLoading}
+          error={tableDetailError}
+          onClose={() => {
+            tableDetailRequestRef.current += 1;
+            setTableDetailAssignmentUuid(null);
+            setTableDetailSnapshot(null);
+            setTableDetailError("");
           }}
         />
       )}

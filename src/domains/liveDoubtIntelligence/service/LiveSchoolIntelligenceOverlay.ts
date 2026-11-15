@@ -7,12 +7,18 @@ import {
   mergePendingDoubtsWithLiveLedger,
 } from "../repository/LiveDoubtReconciliationRepository";
 
-export async function applyLiveSchoolIntelligenceOverlay(
+/**
+ * Returns the exact raw school-intelligence evidence after the existing Live
+ * reconciliation overlay has been applied. This is deliberately kept as a
+ * pure data-layer companion to the existing snapshot overlay so a detail view
+ * can reuse the same evidence snapshot instead of issuing a second,
+ * independently-timed database read.
+ */
+export async function getLiveOverlayRawData(
   raw: SchoolIntelligenceRawData,
-  baseSnapshot: SchoolIntelligenceSnapshot,
   startDate?: string,
   endDateInclusive?: string
-): Promise<SchoolIntelligenceSnapshot> {
+): Promise<SchoolIntelligenceRawData> {
   try {
     const liveRows = await getSchoolIntelligenceLiveRows(
       raw.schoolUuid,
@@ -20,28 +26,38 @@ export async function applyLiveSchoolIntelligenceOverlay(
       endDateInclusive
     );
 
-    if (!liveRows.length) return baseSnapshot;
+    if (!liveRows.length) return raw;
 
-    // The Live ledger is the canonical first-loop state for the selected
-    // historical window. Do NOT require last_reconciled_at here:
-    // all 429 currently-unresolved rows in the production audit have
-    // last_reconciled_at = NULL, and that timestamp is not an unresolved
-    // eligibility gate. Resolution/reconciliation timestamps also must never
-    // move an old doubt into today's analytics; the shared Live date filter
-    // uses the original doubt date precedence.
-    const overlayRaw: SchoolIntelligenceRawData = {
+    return {
       ...raw,
-      feedback: mergeFeedbackUnderstandingLevels(
-        raw.feedback,
-        liveRows
-      ),
-      doubts: mergePendingDoubtsWithLiveLedger(
-        raw.doubts,
-        liveRows,
-        { includeUnmatchedLive: true }
-      ),
+      feedback: mergeFeedbackUnderstandingLevels(raw.feedback, liveRows),
+      doubts: mergePendingDoubtsWithLiveLedger(raw.doubts, liveRows, {
+        includeUnmatchedLive: true,
+      }),
     };
+  } catch (error) {
+    console.error(
+      "LIVE SCHOOL INTELLIGENCE OVERLAY FAILED — ORIGINAL DATA PRESERVED",
+      error
+    );
+    return raw;
+  }
+}
 
+export async function applyLiveSchoolIntelligenceOverlay(
+  raw: SchoolIntelligenceRawData,
+  baseSnapshot: SchoolIntelligenceSnapshot,
+  startDate?: string,
+  endDateInclusive?: string
+): Promise<SchoolIntelligenceSnapshot> {
+  try {
+    const overlayRaw = await getLiveOverlayRawData(
+      raw,
+      startDate,
+      endDateInclusive
+    );
+
+    if (overlayRaw === raw) return baseSnapshot;
     return buildSchoolIntelligenceSnapshot(overlayRaw);
   } catch (error) {
     console.error(
