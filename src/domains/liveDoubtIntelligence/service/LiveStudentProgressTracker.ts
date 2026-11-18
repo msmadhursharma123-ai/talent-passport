@@ -8,7 +8,7 @@ import { getStudentProgressTracker, type StudentProgressTracker } from "../../te
 import { requireIdentity } from "../../../services/identityService";
 import {
   getStudentLiveDoubtRows,
-  normalizeLiveConcept,
+  mergeFeedbackUnderstandingLevels,
 } from "../repository/LiveDoubtReconciliationRepository";
 
 const COMPLETE = "I completely understood.";
@@ -45,49 +45,6 @@ function monthBounds(selectedMonth?: string) {
   };
 }
 
-function effectiveRows(rows: any[], liveRows: any[]) {
-  if (!liveRows.length) return rows;
-
-  const byFeedback = new Map<string, any[]>();
-
-  for (const live of liveRows) {
-    const ids = [
-      live.source_feedback_id,
-      live.latest_source_feedback_id,
-    ].filter(Boolean);
-
-    for (const id of ids) {
-      const list = byFeedback.get(String(id)) ?? [];
-      list.push(live);
-      byFeedback.set(String(id), list);
-    }
-  }
-
-  return rows.map((row) => {
-    const related = byFeedback.get(String(row.id ?? "")) ?? [];
-    if (!related.length) return row;
-
-    const concepts = Array.isArray(row.concepts_not_understood)
-      ? row.concepts_not_understood.filter(Boolean)
-      : [];
-
-    const allResolved =
-      concepts.length > 0 &&
-      concepts.every((concept: string) =>
-        related.some(
-          (live) =>
-            !live.is_unresolved &&
-            normalizeLiveConcept(live.doubt_concept) ===
-              normalizeLiveConcept(concept)
-        )
-      );
-
-    return allResolved
-      ? { ...row, understanding_level: COMPLETE }
-      : row;
-  });
-}
-
 export async function getStudentProgressTrackerWithLiveLayer(
   selectedSubject?: string,
   selectedMonth?: string,
@@ -110,7 +67,7 @@ export async function getStudentProgressTrackerWithLiveLayer(
     let query = (supabase as any)
       .from("student_daily_feedback")
       .select(
-        "id,subject_name,understanding_level,concepts_not_understood,submitted_at"
+        "id,daily_log_uuid,student_uuid,teacher_assignment_uuid,subject_name,understanding_level,concepts_not_understood,submitted_at"
       )
       .eq("student_uuid", identity.studentUuid)
       .order("submitted_at", { ascending: true });
@@ -128,7 +85,7 @@ export async function getStudentProgressTrackerWithLiveLayer(
     const { data, error } = await query;
     if (error) throw error;
 
-    const rows = effectiveRows(
+    const rows = mergeFeedbackUnderstandingLevels(
       data ?? [],
       await getStudentLiveDoubtRows()
     );

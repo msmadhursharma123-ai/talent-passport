@@ -1106,85 +1106,139 @@ export function mergeFeedbackUnderstandingLevels(
 ) {
   if (!liveRows.length) return feedbackRows ?? [];
 
-  const byFeedback = new Map<string, LiveDoubtRow[]>();
+  const byFeedbackConcept = new Map<string, LiveDoubtRow[]>();
   const byDailyLogConcept = new Map<string, LiveDoubtRow[]>();
 
+  const addToMap = (
+    map: Map<string, LiveDoubtRow[]>,
+    key: string | null,
+    row: LiveDoubtRow,
+  ) => {
+    if (!key) return;
+    const list = map.get(key) ?? [];
+    list.push(row);
+    map.set(key, list);
+  };
+
   for (const row of liveRows) {
+    const concept = exactConcept(row);
+    if (!concept) continue;
+
     const ids = [
       row.source_feedback_id,
       row.latest_source_feedback_id,
     ].filter(Boolean) as string[];
 
     for (const id of ids) {
-      const list = byFeedback.get(String(id)) ?? [];
-      list.push(row);
-      byFeedback.set(String(id), list);
+      addToMap(
+        byFeedbackConcept,
+        [String(id), concept].join("|"),
+        row,
+      );
     }
 
-    const key = dailyLogConceptKey(row);
-    if (key) {
-      const list = byDailyLogConcept.get(key) ?? [];
-      list.push(row);
-      byDailyLogConcept.set(key, list);
-    }
+    addToMap(byDailyLogConcept, dailyLogConceptKey(row), row);
   }
+
+  const sortLiveLatest = (a: LiveDoubtRow, b: LiveDoubtRow) =>
+    latestSourceTime(b) - latestSourceTime(a) ||
+    timestampValue(b?.last_reconciled_at) -
+      timestampValue(a?.last_reconciled_at) ||
+    timestampValue(b?.updated_at) - timestampValue(a?.updated_at) ||
+    String(b?.id ?? "").localeCompare(String(a?.id ?? ""));
+
+  const authoritativeForConcept = (candidates: LiveDoubtRow[]) =>
+    [...candidates].sort(sortLiveLatest)[0] ?? null;
 
   return (feedbackRows ?? []).map((feedback: any) => {
     const concepts = Array.isArray(feedback.concepts_not_understood)
       ? feedback.concepts_not_understood.filter(Boolean)
       : [];
 
-    let related = byFeedback.get(String(feedback.id ?? "")) ?? [];
+    if (!concepts.length) return feedback;
 
-    if (related.length === 0 && feedback.daily_log_uuid) {
-      related = concepts.flatMap((concept: string) => {
-        const key = dailyLogConceptKey({
-          student_uuid: feedback.student_uuid,
-          teacher_assignment_uuid: feedback.teacher_assignment_uuid,
-          daily_log_uuid: feedback.daily_log_uuid,
-          doubt_concept: concept,
-        });
-        return key ? byDailyLogConcept.get(key) ?? [] : [];
-      });
+    const feedbackId = normalizeId(feedback.id);
+    const student = exactStudent(feedback);
+    const assignment = exactAssignment(feedback);
+    const log = exactDailyLog(feedback);
+    const subject = exactSubject(feedback);
+
+    const resolvedConcepts = new Set<string>();
+    const activeConcepts = new Set<string>();
+    let matchedAnyConcept = false;
+
+    for (const concept of concepts) {
+      const normalizedConcept = normalize(concept);
+      if (!normalizedConcept) continue;
+
+      let candidates: LiveDoubtRow[] = [];
+
+      // Concept-level source-feedback matching. A source-feedback match for
+      // one concept must never suppress fallback matching for another concept
+      // in the same feedback row.
+      if (feedbackId) {
+        candidates = (
+          byFeedbackConcept.get([String(feedbackId), normalizedConcept].join("|")) ??
+          []
+        ).filter(
+          (row) =>
+            (!student || exactStudent(row) === student) &&
+            (!subject || exactSubject(row) === subject) &&
+            (!assignment || exactAssignment(row) === assignment) &&
+            (!log || exactDailyLog(row) === log)
+        );
+      }
+
+      // Exact daily-log + student + assignment + subject + concept fallback.
+      // Assignment is mandatory here so this path can never cross teachers.
+      if (!candidates.length && student && assignment && log && subject) {
+        const key = [
+          student,
+          assignment,
+          log,
+          subject,
+          normalizedConcept,
+        ].join("|");
+        candidates = byDailyLogConcept.get(key) ?? [];
+      }
+
+      // Legacy feedback rows may not contain teacher_assignment_uuid. The
+      // exact daily_log_uuid remains the safe boundary in that case. Never
+      // use student + subject + concept alone.
+      if (!candidates.length && student && log && subject && !assignment) {
+        candidates = liveRows.filter(
+          (row) =>
+            exactStudent(row) === student &&
+            exactDailyLog(row) === log &&
+            exactSubject(row) === subject &&
+            exactConcept(row) === normalizedConcept
+        );
+      }
+
+      const authoritative = authoritativeForConcept(candidates);
+      if (!authoritative) continue;
+
+      matchedAnyConcept = true;
+      if (authoritative.is_unresolved) {
+        activeConcepts.add(normalizedConcept);
+      } else {
+        resolvedConcepts.add(normalizedConcept);
+      }
     }
 
-    // Legacy feedback rows may not contain teacher_assignment_uuid. In that
-    // case the exact daily_log_uuid is still a safe boundary because the live
-    // row was created from that same teacher_daily_logs record. Never fall back
-    // to student + subject + concept alone.
-    if (related.length === 0 && feedback.daily_log_uuid) {
-      const log = String(feedback.daily_log_uuid);
-      const student = String(feedback.student_uuid ?? "");
-      const subject = normalize(feedback.subject_name);
-      const conceptSet = new Set(concepts.map((concept: string) => normalize(concept)));
-
-      related = liveRows.filter(
-        (row) =>
-          String(row.student_uuid ?? "") === student &&
-          String(row.daily_log_uuid ?? "") === log &&
-          normalize(row.subject_name) === subject &&
-          conceptSet.has(normalize(row.doubt_concept))
-      );
-    }
-
-    if (related.length === 0) return feedback;
-
-    const resolvedConcepts = new Set(
-      related
-        .filter((row) => !row.is_unresolved)
-        .map((row) => row.normalized_concept)
-    );
-
-    const activeConcepts = related.filter((row) => row.is_unresolved);
+    if (!matchedAnyConcept) return feedback;
 
     const remainingConcepts = concepts.filter(
-      (concept: string) => !resolvedConcepts.has(normalize(concept))
+      (concept: string) => {
+        const normalizedConcept = normalize(concept);
+        return !resolvedConcepts.has(normalizedConcept);
+      }
     );
 
     const allFeedbackConceptsResolved =
       concepts.length > 0 &&
       remainingConcepts.length === 0 &&
-      activeConcepts.length === 0;
+      activeConcepts.size === 0;
 
     if (allFeedbackConceptsResolved) {
       return {

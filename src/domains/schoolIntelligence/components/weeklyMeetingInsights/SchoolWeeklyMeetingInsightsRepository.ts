@@ -1,9 +1,10 @@
 import { getSupabaseClient } from "../../../../supabaseClient";
 import { requireSchoolIdentity } from "../../../../services/identityService";
 import {
+  getSchoolIntelligenceCurrentStateLiveRows,
   getSchoolIntelligenceLiveRows,
   mergeFeedbackUnderstandingLevels,
-  mergePendingDoubtsWithLiveLedger,
+  mergePendingDoubtsWithLiveLedgerForReportingPeriod,
 } from "../../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 
 export interface SchoolWeeklyMeetingRawData {
@@ -125,14 +126,21 @@ export async function getSchoolWeeklyMeetingRawData(
 
   if (doubtResult.error) throw doubtResult.error;
 
-  const scopedLiveRows = await getSchoolIntelligenceLiveRows(
+  const scopedLiveRows = await getSchoolIntelligenceCurrentStateLiveRows(
+    schoolUuid,
+  );
+  const feedbackLiveRows = await getSchoolIntelligenceLiveRows(
     schoolUuid,
     startDate,
     endDate,
   );
   const rawDoubts = doubtResult.data ?? [];
-  const effectiveFeedback = mergeFeedbackUnderstandingLevels(feedback, scopedLiveRows);
-  const effectiveDoubts = mergePendingDoubtsWithLiveLedger(rawDoubts, scopedLiveRows, { includeUnmatchedLive: true });
+  const effectiveFeedback = mergeFeedbackUnderstandingLevels(feedback, feedbackLiveRows);
+  const effectiveDoubts = mergePendingDoubtsWithLiveLedgerForReportingPeriod(
+    rawDoubts,
+    scopedLiveRows,
+    { startDate, endDateInclusive: endDate },
+  );
 
   return {
     schoolUuid,
