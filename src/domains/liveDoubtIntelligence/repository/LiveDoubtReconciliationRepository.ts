@@ -322,6 +322,149 @@ export async function getSchoolIntelligenceLiveRows(
   });
 }
 
+/**
+ * Current-state reporting read for period-scoped analytics.
+ *
+ * IMPORTANT: do not date-filter these rows before reconciliation. A Live row
+ * represents the current state of a conceptual doubt whose source occurrence
+ * may belong to an earlier reporting period. Filtering it by first_seen/source
+ * date before matching can make the same Loop-2 occurrence appear unresolved
+ * in one period and resolved in another consumer.
+ *
+ * Period scoping is applied only to unmatched Live-only rows by the
+ * period-aware merge helper below. Matched historical Loop-2 rows may use a
+ * Live row whose source date is outside the reporting period.
+ */
+async function readCurrentStateLiveRows(
+  buildQuery: () => any,
+): Promise<LiveDoubtRow[]> {
+  const rows: LiveDoubtRow[] = [];
+  const pageSize = 500;
+
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await buildQuery()
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      // Preserve the existing Live repository fail-soft contract used by
+      // getLiveDoubtsForSchool/getLiveDoubtsForTeacherAssignments: a missing
+      // Live infrastructure must not turn an otherwise usable portal read
+      // into a hard failure. Other database errors remain fatal.
+      if (isMissingLiveInfrastructure(error)) return [];
+      throw error;
+    }
+
+    const page = (data ?? []) as LiveDoubtRow[];
+    rows.push(...page);
+
+    if (page.length < pageSize) break;
+  }
+
+  return rows;
+}
+
+export async function getSchoolIntelligenceCurrentStateLiveRows(
+  schoolUuid: string,
+): Promise<LiveDoubtRow[]> {
+  if (!schoolUuid) return [];
+
+  const { data: assignments, error: assignmentError } = await client()
+    .from("teacher_classroom_assignments")
+    .select("id")
+    .eq("school_uuid", schoolUuid)
+    .eq("is_active", true);
+
+  if (assignmentError) throw assignmentError;
+
+  const assignmentIds = Array.from(
+    new Set((assignments ?? []).map((row: any) => String(row.id ?? "")).filter(Boolean))
+  );
+
+  if (assignmentIds.length === 0) return [];
+
+  // Keep the same active-assignment school boundary used by School Intelligence
+  // itself. This prevents historical/inactive assignment Live rows from being
+  // introduced merely because the new current-state read is intentionally not
+  // date-filtered.
+  const rows: LiveDoubtRow[] = [];
+  const chunkSize = 100;
+  for (let i = 0; i < assignmentIds.length; i += chunkSize) {
+    const chunk = assignmentIds.slice(i, i + chunkSize);
+    rows.push(
+      ...(await readCurrentStateLiveRows(() =>
+        client()
+          .from("student_live_unresolved_doubts")
+          .select("*")
+          .eq("school_uuid", schoolUuid)
+          .in("teacher_assignment_uuid", chunk)
+      ))
+    );
+  }
+
+  return rows;
+}
+
+export async function getTeacherCurrentStateLiveRows(
+  assignmentIds: string[],
+): Promise<LiveDoubtRow[]> {
+  const ids = Array.from(
+    new Set((assignmentIds ?? []).filter(Boolean).map(String))
+  );
+
+  if (ids.length === 0) return [];
+
+  return readCurrentStateLiveRows(() =>
+    client()
+      .from("student_live_unresolved_doubts")
+      .select("*")
+      .in("teacher_assignment_uuid", ids)
+  );
+}
+
+/**
+ * Reconcile a reporting-period Loop-2 cohort against the complete current
+ * Live state, while preventing Live-only rows from outside the reporting
+ * period from inflating the period.
+ *
+ * This is the narrow consistency contract for School Overview, Morning Brief
+ * and Teaching Journal. It deliberately does not alter the canonical
+ * reconciliation algorithm; it only fixes the read scope around it.
+ */
+export function mergePendingDoubtsWithLiveLedgerForReportingPeriod(
+  pendingDoubts: any[],
+  liveRows: LiveDoubtRow[],
+  options: {
+    startDate?: string;
+    endDateInclusive?: string;
+    endDateExclusive?: string;
+  } = {},
+) {
+  const reconciled = reconcilePendingDoubtsWithLiveLedger(
+    pendingDoubts,
+    liveRows,
+    { includeUnmatchedLive: true },
+  );
+
+  const allowedUnmatchedIds = new Set(
+    filterLiveRowsForCurrentState(liveRows, {
+      startDate: options.startDate,
+      endDateInclusive: options.endDateInclusive,
+      endDateExclusive: options.endDateExclusive,
+    }).map((row) => String(row.id ?? "")).filter(Boolean),
+  );
+
+  return reconciled
+    .filter((item) => {
+      if (!item.pending && item.live) {
+        return allowedUnmatchedIds.has(String(item.live.id ?? ""));
+      }
+      return true;
+    })
+    .map((item) => item.merged);
+}
+
+
 function parseTimestamp(value: unknown): number | null {
   if (value === null || value === undefined) return null;
 

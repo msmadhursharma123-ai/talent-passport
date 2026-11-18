@@ -6,9 +6,10 @@ import {
 import { getSupabaseClient } from "../../../supabaseClient";
 import { requireSchoolIdentity } from "../../../services/identityService";
 import {
+  getSchoolIntelligenceCurrentStateLiveRows,
   getSchoolIntelligenceLiveRows,
   mergeFeedbackUnderstandingLevels,
-  mergePendingDoubtsWithLiveLedger,
+  mergePendingDoubtsWithLiveLedgerForReportingPeriod,
 } from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 
 export interface SchoolIntelligenceRawData {
@@ -350,19 +351,22 @@ export async function getSchoolClassroomSupplementalMetrics(
   let effectiveFeedback = raw.feedback;
   let effectiveDoubts = raw.doubts;
   try {
-    const liveRows = await getSchoolIntelligenceLiveRows(
+    const liveRows = await getSchoolIntelligenceCurrentStateLiveRows(
+      raw.schoolUuid,
+    );
+    const feedbackLiveRows = await getSchoolIntelligenceLiveRows(
       raw.schoolUuid,
       startDate,
-      endDate
+      endDate,
     );
     effectiveFeedback = mergeFeedbackUnderstandingLevels(
       raw.feedback,
-      liveRows
+      feedbackLiveRows
     );
-    effectiveDoubts = mergePendingDoubtsWithLiveLedger(
+    effectiveDoubts = mergePendingDoubtsWithLiveLedgerForReportingPeriod(
       raw.doubts,
       liveRows,
-      { includeUnmatchedLive: true }
+      { startDate, endDateInclusive: endDate },
     );
   } catch (liveError) {
     console.error(

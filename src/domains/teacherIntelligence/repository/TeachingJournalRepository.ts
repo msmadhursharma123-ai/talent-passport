@@ -8,9 +8,10 @@ import {
 import { getSupabaseClient } from "../../../supabaseClient";
 import {
   getLiveDoubtsForTeacherAssignments,
+  getTeacherCurrentStateLiveRows,
   filterLiveRowsForCurrentState,
   mergeFeedbackUnderstandingLevels,
-  mergePendingDoubtsWithLiveLedger,
+  mergePendingDoubtsWithLiveLedgerForReportingPeriod,
 } from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 
 import {
@@ -357,24 +358,23 @@ export async function getOverallClassroomComparison(
     throw doubtError;
   }
 
-  const liveRows = filterLiveRowsForCurrentState(
-    await getLiveDoubtsForTeacherAssignments(assignmentIds),
-    {
-      startDate: monthStartDate,
-      endDateExclusive: nextMonthDate,
-    }
-  );
+  const liveRows = await getTeacherCurrentStateLiveRows(assignmentIds);
+  const feedbackLiveRows = filterLiveRowsForCurrentState(liveRows, {
+    startDate: monthStartDate,
+    endDateExclusive: nextMonthDate,
+  });
 
   const effectiveDoubtRows =
-    mergePendingDoubtsWithLiveLedger(
+    mergePendingDoubtsWithLiveLedgerForReportingPeriod(
       doubtRows ?? [],
-      liveRows
+      liveRows,
+      { startDate: monthStartDate, endDateExclusive: nextMonthDate },
     );
 
   const effectiveFeedback =
     mergeFeedbackUnderstandingLevels(
       feedback ?? [],
-      liveRows
+      feedbackLiveRows
     );
 
   let teachingJournalStudentsQuery = supabase
@@ -810,18 +810,16 @@ export async function getCurrentMonthClassroomMetrics(
      for the analytics layer. This is intentionally additive: the
      original query and classroom grouping remain unchanged.
   */
-  const liveRows = filterLiveRowsForCurrentState(
-    await getLiveDoubtsForTeacherAssignments(assignmentIds),
-    {
-      startDate: monthStartDate,
-      endDateExclusive: nextMonthDate,
-    }
-  );
+  const liveRows = await getTeacherCurrentStateLiveRows(assignmentIds);
+  const feedbackLiveRows = filterLiveRowsForCurrentState(liveRows, {
+    startDate: monthStartDate,
+    endDateExclusive: nextMonthDate,
+  });
 
   const effectiveFeedback =
     mergeFeedbackUnderstandingLevels(
       feedback ?? [],
-      liveRows
+      feedbackLiveRows
     );
 
   const { data: rosterStudents, error: rosterError } = await (supabase as any)

@@ -2,9 +2,10 @@ import type { SchoolIntelligenceRawData } from "../../schoolIntelligence/reposit
 import type { SchoolIntelligenceSnapshot } from "../../schoolIntelligence/types/SchoolIntelligenceModels";
 import { buildSchoolIntelligenceSnapshot } from "../../schoolIntelligence/analytics/SchoolIntelligenceEngine";
 import {
+  getSchoolIntelligenceCurrentStateLiveRows,
   getSchoolIntelligenceLiveRows,
   mergeFeedbackUnderstandingLevels,
-  mergePendingDoubtsWithLiveLedger,
+  mergePendingDoubtsWithLiveLedgerForReportingPeriod,
 } from "../repository/LiveDoubtReconciliationRepository";
 
 /**
@@ -20,20 +21,28 @@ export async function getLiveOverlayRawData(
   endDateInclusive?: string
 ): Promise<SchoolIntelligenceRawData> {
   try {
-    const liveRows = await getSchoolIntelligenceLiveRows(
+    const liveRows = await getSchoolIntelligenceCurrentStateLiveRows(
       raw.schoolUuid,
-      startDate,
-      endDateInclusive
     );
 
     if (!liveRows.length) return raw;
 
+    // Feedback retains the original period-scoped Live read contract. Only
+    // doubt reconciliation needs the complete current-state Live population.
+    const feedbackLiveRows = await getSchoolIntelligenceLiveRows(
+      raw.schoolUuid,
+      startDate,
+      endDateInclusive,
+    );
+
     return {
       ...raw,
-      feedback: mergeFeedbackUnderstandingLevels(raw.feedback, liveRows),
-      doubts: mergePendingDoubtsWithLiveLedger(raw.doubts, liveRows, {
-        includeUnmatchedLive: true,
-      }),
+      feedback: mergeFeedbackUnderstandingLevels(raw.feedback, feedbackLiveRows),
+      doubts: mergePendingDoubtsWithLiveLedgerForReportingPeriod(
+        raw.doubts,
+        liveRows,
+        { startDate, endDateInclusive },
+      ),
     };
   } catch (error) {
     console.error(

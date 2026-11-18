@@ -1,9 +1,10 @@
 import { getSupabaseClient } from "../../../supabaseClient";
 import { getSchoolIntelligenceRawData } from "./SchoolIntelligenceRepository";
 import {
+  getSchoolIntelligenceCurrentStateLiveRows,
   getSchoolIntelligenceLiveRows,
   mergeFeedbackUnderstandingLevels,
-  mergePendingDoubtsWithLiveLedger,
+  mergePendingDoubtsWithLiveLedgerForReportingPeriod,
 } from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 import type { SchoolIntelligenceRawData } from "./SchoolIntelligenceRepository";
 
@@ -47,7 +48,10 @@ export async function getSchoolOverviewCardDetailRawData(
   const schoolHolidays = await getSchoolHolidays(raw.schoolUuid, startDate, endDate);
 
   try {
-    const liveRows = await getSchoolIntelligenceLiveRows(
+    const liveRows = await getSchoolIntelligenceCurrentStateLiveRows(
+      raw.schoolUuid,
+    );
+    const feedbackLiveRows = await getSchoolIntelligenceLiveRows(
       raw.schoolUuid,
       startDate,
       endDate,
@@ -55,10 +59,12 @@ export async function getSchoolOverviewCardDetailRawData(
 
     return {
       ...raw,
-      feedback: mergeFeedbackUnderstandingLevels(raw.feedback, liveRows),
-      doubts: mergePendingDoubtsWithLiveLedger(raw.doubts, liveRows, {
-        includeUnmatchedLive: true,
-      }),
+      feedback: mergeFeedbackUnderstandingLevels(raw.feedback, feedbackLiveRows),
+      doubts: mergePendingDoubtsWithLiveLedgerForReportingPeriod(
+        raw.doubts,
+        liveRows,
+        { startDate, endDateInclusive: endDate },
+      ),
       schoolHolidays,
     };
   } catch (error) {
