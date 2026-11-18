@@ -85,77 +85,40 @@ throw new Error(
 
 }
 
-
-const updates:any = {
-
-student_response:
-studentResponse,
-
-revision_checked_at:
-new Date().toISOString(),
-
-};
-
-
-/*
-----------------------------------
-CONCEPT WAS REVISED
-----------------------------------
-*/
+const response =
+String(studentResponse ?? "").trim().toUpperCase();
 
 if(
-
-studentResponse ===
-"DISCUSSED"
-
+response !== "DISCUSSED" &&
+response !== "NOT DISCUSSED"
 ){
 
-updates.status =
-"RESOLVED";
-
-updates.doubt_resolved =
-true;
-
-}
-
-
-/*
-----------------------------------
-CONCEPT WAS NOT REVISED
-----------------------------------
-*/
-
-if(
-
-studentResponse ===
-"NOT DISCUSSED"
-
-){
-
-updates.status =
-"NOT DISCUSSED";
-
-updates.doubt_resolved =
-false;
-
-}
-
-
-const { error } =
-
-await supabase
-
-.from(TABLE_NAME)
-
-.update(
-updates as never
-)
-
-.eq(
-"id",
-pendingDoubtUuid
+throw new Error(
+"Unsupported Loop-2 response."
 );
 
+}
+
+/*
+----------------------------------
+ATOMIC LOOP-2 -> LIVE SYNC
+----------------------------------
+
+The database function owns the complete resolution transaction. The existing
+UI flow, response semantics, locks, queue refresh, and all canonical readers
+remain unchanged. The function only receives the exact Loop-2 row already
+being resolved; it never scans or rewrites unrelated doubts.
+*/
+
+const { data, error } =
+await (supabase as any)
+.rpc(
+"tp_resolve_loop2_doubt_and_sync_live",
+{
+ p_pending_doubt_uuid: pendingDoubtUuid,
+ p_student_response: response,
+}
+);
 
 if(error){
 
@@ -163,10 +126,10 @@ throw error;
 
 }
 
-
-return true;
+return data !== false;
 
 }
+
 
 
 /* =======================================

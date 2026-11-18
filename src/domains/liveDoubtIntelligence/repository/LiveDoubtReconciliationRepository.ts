@@ -322,14 +322,38 @@ export async function getSchoolIntelligenceLiveRows(
   });
 }
 
+function parseTimestamp(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  const text = String(value).trim();
+  if (!text) return null;
+
+  const time = Date.parse(text);
+  return Number.isFinite(time) ? time : null;
+}
+
+function timestampValue(value: unknown) {
+  return parseTimestamp(value) ?? 0;
+}
+
 function latestSourceTime(row: LiveDoubtRow) {
-  return new Date(
-    row.latest_source_submitted_at ??
-      row.source_submitted_at ??
-      row.last_seen_at ??
-      row.updated_at ??
-      0
-  ).getTime();
+  const values = [
+    row.latest_source_submitted_at,
+    row.source_submitted_at,
+    row.last_seen_at,
+    row.updated_at,
+  ];
+
+  for (const value of values) {
+    const time = parseTimestamp(value);
+    if (time !== null) return time;
+  }
+
+  return 0;
 }
 
 function exactAssignment(row: any) {
@@ -486,12 +510,17 @@ export interface LiveDoubtReconciliationMatch {
 export function reconcilePendingDoubtsWithLiveLedger(
   pendingDoubts: any[],
   liveRows: LiveDoubtRow[],
-  options?: { includeUnmatchedLive?: boolean }
+  options?: {
+    includeUnmatchedLive?: boolean;
+    preserveHistoricalOccurrences?: boolean;
+  }
 ): LiveDoubtReconciliationMatch[] {
   const pending = Array.isArray(pendingDoubts) ? pendingDoubts : [];
   const live = Array.isArray(liveRows) ? liveRows : [];
   const includeUnmatchedLive =
     options?.includeUnmatchedLive !== false;
+  const preserveHistoricalOccurrences =
+    options?.preserveHistoricalOccurrences === true;
 
   const byFeedback = new Map<string, LiveDoubtRow[]>();
   const byDailyLogConcept = new Map<string, LiveDoubtRow[]>();
@@ -526,69 +555,343 @@ export function reconcilePendingDoubtsWithLiveLedger(
     }
   }
 
-  const consumedLiveIds = new Set<string>();
-  const reconciled: LiveDoubtReconciliationMatch[] = [];
+  const mergeWithLiveState = (
+    row: any,
+    liveMatch: LiveDoubtRow,
+    collapseHistoricalOccurrence = false,
+  ) => ({
+    ...row,
+    student_name:
+      row.student_name ?? liveMatch.student_name ?? "Student",
+    previous_topic_name:
+      row.previous_topic_name ??
+      liveMatch.topic_name ??
+      liveMatch.doubt_concept,
+    previous_difficult_concept:
+      row.previous_difficult_concept ??
+      liveMatch.doubt_concept,
+    status:
+      collapseHistoricalOccurrence
+        ? "RESOLVED"
+        : liveMatch.is_unresolved
+          ? "NOT DISCUSSED"
+          : "RESOLVED",
+    doubt_resolved:
+      collapseHistoricalOccurrence
+        ? true
+        : !liveMatch.is_unresolved,
+    // Current Live state is authoritative for the representative occurrence.
+    // Historical occurrences sharing the same current-state identity are
+    // collapsed out of current analytics so one Live doubt cannot inflate
+    // unresolved counts multiple times.
+    student_response:
+      collapseHistoricalOccurrence
+        ? "DISCUSSED"
+        : liveMatch.is_unresolved
+          ? null
+          : "DISCUSSED",
+    revision_checked_at:
+      liveMatch.last_reconciled_at ??
+      row.revision_checked_at,
+  });
+
+  /**
+   * V44/V45 historical reconciliation mode.
+   *
+   * This intentionally preserves the previous one-Live-row/one-pending-row
+   * consumption semantics for Track Record event-history calculations.
+   * Current-state consumers use the identity-aware mode below.
+   */
+  if (preserveHistoricalOccurrences) {
+    const consumedLiveIds = new Set<string>();
+    const reconciled: LiveDoubtReconciliationMatch[] = [];
+
+    for (const row of pending) {
+      const candidateLists: LiveDoubtRow[][] = [];
+
+      const feedbackKey = sourceFeedbackKey(row?.source_feedback_id);
+      if (feedbackKey) {
+        candidateLists.push(byFeedback.get(feedbackKey) ?? []);
+      }
+
+      const logKey = dailyLogConceptKey(row);
+      if (logKey) {
+        candidateLists.push(byDailyLogConcept.get(logKey) ?? []);
+      }
+
+      const identity = identityKey(row);
+      if (identity) {
+        candidateLists.push(byIdentity.get(identity) ?? []);
+      }
+
+      const candidates = Array.from(
+        new Map(
+          candidateLists
+            .flat()
+            .filter((item) => item?.id)
+            .map((item) => [String(item.id), item])
+        ).values()
+      ).filter((item) => !consumedLiveIds.has(String(item.id)));
+
+      const liveMatch = chooseLiveForPending(row, candidates);
+
+      if (liveMatch) {
+        consumedLiveIds.add(String(liveMatch.id));
+      }
+
+      const merged = liveMatch
+        ? mergeWithLiveState(row, liveMatch)
+        : row;
+
+      reconciled.push({
+        pending: row,
+        live: liveMatch,
+        merged,
+      });
+    }
+
+    if (!includeUnmatchedLive) {
+      return reconciled;
+    }
+
+    for (const row of live) {
+      const id = String(row.id ?? "");
+      if (!id || consumedLiveIds.has(id)) continue;
+
+      reconciled.push({
+        pending: null,
+        live: row,
+        merged: {
+          id: `live-${id}`,
+          _live_only: true,
+          student_uuid: row.student_uuid,
+          student_name: row.student_name ?? "Student",
+          teacher_uuid: row.teacher_uuid,
+          teacher_assignment_uuid: row.teacher_assignment_uuid,
+          daily_log_uuid: row.daily_log_uuid,
+          status: row.is_unresolved ? "NOT DISCUSSED" : "RESOLVED",
+          student_response: row.is_unresolved ? null : "DISCUSSED",
+          school_name: null,
+          class_name: row.class_name,
+          section_name: row.section_name,
+          subject_name: row.subject_name,
+          previous_topic_name: row.topic_name ?? row.doubt_concept,
+          previous_difficult_concept: row.doubt_concept,
+          log_date:
+            row.first_seen_at?.slice(0, 10) ??
+            row.source_submitted_at?.slice(0, 10) ??
+            row.latest_source_submitted_at?.slice(0, 10) ??
+            null,
+          doubt_resolved: !row.is_unresolved,
+          revision_checked_at: row.last_reconciled_at,
+          created_at: row.first_seen_at,
+        },
+      });
+    }
+
+    return reconciled;
+  }
+
+  /**
+   * Current-state reconciliation.
+   *
+   * A current Live identity represents the current state of a conceptual
+   * doubt, not an independent state for every historical Loop-2 occurrence.
+   * Repeated Loop-2 rows therefore form one identity group. The authoritative
+   * Live row is selected before any row is marked as consumed, so an older
+   * historical occurrence cannot steal the Live row from the occurrence that
+   * exactly matches its current daily log/source.
+   *
+   * When a current Live row exists:
+   *   - the representative (latest/exactly-linked) occurrence receives the
+   *     Live state;
+   *   - older occurrences are retained as evidence but collapsed as resolved
+   *     in the current-state projection;
+   *   - one current unresolved Live identity therefore contributes at most
+   *     one unresolved row.
+   *
+   * Rows with no Live identity match preserve their existing Loop-2 state.
+   */
+  const groupedPending = new Map<string, any[]>();
+  const unkeyedPending: any[] = [];
 
   for (const row of pending) {
-    const candidateLists: LiveDoubtRow[][] = [];
+    const key = identityKey(row);
+    if (!key) {
+      unkeyedPending.push(row);
+      continue;
+    }
+    const list = groupedPending.get(key) ?? [];
+    list.push(row);
+    groupedPending.set(key, list);
+  }
 
-    const feedbackKey = sourceFeedbackKey(row?.source_feedback_id);
-    if (feedbackKey) {
-      candidateLists.push(byFeedback.get(feedbackKey) ?? []);
+  const authoritativeLiveByIdentity = new Map<string, LiveDoubtRow>();
+  const representativePendingRows = new Set<any>();
+  const consumedLiveIds = new Set<string>();
+
+  const compareLatest = (a: any, b: any) =>
+    pendingDate(b) - pendingDate(a) ||
+    String(b?.id ?? "").localeCompare(String(a?.id ?? ""));
+
+  for (const [identity, rows] of groupedPending.entries()) {
+    const identityLiveRows = byIdentity.get(identity) ?? [];
+    if (identityLiveRows.length === 0) continue;
+
+    const unique = (rowsToDedupe: LiveDoubtRow[]) =>
+      Array.from(
+        new Map(
+          rowsToDedupe
+            .filter((row) => row?.id)
+            .map((row) => [String(row.id), row])
+        ).values()
+      );
+
+    const sortLiveLatest = (a: LiveDoubtRow, b: LiveDoubtRow) =>
+      latestSourceTime(b) - latestSourceTime(a) ||
+      timestampValue(b?.last_reconciled_at) -
+        timestampValue(a?.last_reconciled_at) ||
+      timestampValue(b?.updated_at) - timestampValue(a?.updated_at) ||
+      String(b?.id ?? "").localeCompare(String(a?.id ?? ""));
+
+    const identityCandidates = unique(identityLiveRows).sort(sortLiveLatest);
+
+    // The authoritative current Live state must be selected from the complete
+    // physical identity set. Exact source-feedback/daily-log linkage is used
+    // only to choose which historical Loop-2 occurrence receives that state;
+    // it must never allow an older duplicate Live row to override a newer
+    // current Live row. This is especially important when physical duplicates
+    // disagree (for example, old unresolved + newer resolved).
+    const authoritativeLive = identityCandidates[0];
+
+    if (!authoritativeLive) continue;
+
+    authoritativeLiveByIdentity.set(identity, authoritativeLive);
+
+    // Any physical Live duplicates for the same current identity are
+    // represented by the one authoritative current row. Do not append the
+    // others as independent Live-only intelligence rows.
+    for (const duplicate of identityLiveRows) {
+      if (duplicate?.id) consumedLiveIds.add(String(duplicate.id));
     }
 
-    const logKey = dailyLogConceptKey(row);
-    if (logKey) {
-      candidateLists.push(byDailyLogConcept.get(logKey) ?? []);
+    const authoritativeFeedbackIds = new Set(
+      [
+        authoritativeLive.source_feedback_id,
+        authoritativeLive.latest_source_feedback_id,
+      ]
+        .map(sourceFeedbackKey)
+        .filter(Boolean) as string[]
+    );
+
+    const exactFeedbackRows = rows.filter((pendingRow) => {
+      const key = sourceFeedbackKey(pendingRow?.source_feedback_id);
+      return Boolean(key && authoritativeFeedbackIds.has(key));
+    });
+
+    const exactDailyLogRows = rows.filter(
+      (pendingRow) =>
+        dailyLogConceptKey(pendingRow) ===
+        dailyLogConceptKey(authoritativeLive)
+    );
+
+    const representative =
+      exactFeedbackRows.sort(compareLatest)[0] ??
+      exactDailyLogRows.sort(compareLatest)[0] ??
+      [...rows].sort(compareLatest)[0];
+
+    if (representative) {
+      representativePendingRows.add(representative);
     }
+  }
 
-    const identity = identityKey(row);
-    if (identity) {
-      candidateLists.push(byIdentity.get(identity) ?? []);
-    }
+  // Live-only identities can also contain duplicate physical rows. They have
+  // no pending occurrence through which the identity-aware selection above
+  // could consume them, so select one deterministic current row here and
+  // suppress the remaining physical duplicates from current analytics.
+  // Historical Track Record mode does not enter this branch.
+  if (includeUnmatchedLive) {
+    for (const [identity, identityLiveRows] of byIdentity.entries()) {
+      if (authoritativeLiveByIdentity.has(identity)) continue;
+      if (identityLiveRows.length === 0) continue;
 
-    const candidates = Array.from(
-      new Map(
-        candidateLists
-          .flat()
-          .filter((item) => item?.id)
-          .map((item) => [String(item.id), item])
-      ).values()
-    ).filter((item) => !consumedLiveIds.has(String(item.id)));
+      const authoritative = [...identityLiveRows].sort(
+        (a, b) =>
+          latestSourceTime(b) - latestSourceTime(a) ||
+          timestampValue(b?.last_reconciled_at) -
+            timestampValue(a?.last_reconciled_at) ||
+          timestampValue(b?.updated_at) - timestampValue(a?.updated_at) ||
+          String(b?.id ?? "").localeCompare(String(a?.id ?? ""))
+      )[0];
 
-    const liveMatch = chooseLiveForPending(row, candidates);
-
-    if (liveMatch) {
-      consumedLiveIds.add(String(liveMatch.id));
-    }
-
-    const merged = liveMatch
-      ? {
-          ...row,
-          student_name:
-            row.student_name ?? liveMatch.student_name ?? "Student",
-          previous_topic_name:
-            row.previous_topic_name ??
-            liveMatch.topic_name ??
-            liveMatch.doubt_concept,
-          previous_difficult_concept:
-            row.previous_difficult_concept ??
-            liveMatch.doubt_concept,
-          status: liveMatch.is_unresolved ? "NOT DISCUSSED" : "RESOLVED",
-          doubt_resolved: !liveMatch.is_unresolved,
-          student_response: liveMatch.is_unresolved
-            ? row.student_response
-            : "DISCUSSED",
-          revision_checked_at:
-            liveMatch.last_reconciled_at ??
-            row.revision_checked_at,
+      authoritativeLiveByIdentity.set(identity, authoritative);
+      for (const duplicate of identityLiveRows) {
+        if (!duplicate?.id) continue;
+        const duplicateId = String(duplicate.id);
+        // If a pending occurrence already consumed this identity, every
+        // physical Live row is intentionally suppressed from the unmatched
+        // Live-only pass. For a genuinely Live-only identity, keep the
+        // authoritative row available to be emitted once.
+        if (groupedPending.has(identity) || duplicateId !== String(authoritative.id)) {
+          consumedLiveIds.add(duplicateId);
         }
-      : row;
+      }
+    }
+  }
 
+  const reconciled: LiveDoubtReconciliationMatch[] = [];
+
+  // Project every pending row in its original input order. Keyed rows use the
+  // identity-aware current-state path; unkeyed rows use the exact-match
+  // fallback at the same position. This preserves observable ordering even
+  // when malformed/unkeyed rows are interleaved with normal keyed rows.
+  for (const row of pending) {
+    const identity = identityKey(row);
+
+    if (!identity) {
+      const candidates = live.filter(
+        (candidate) => !consumedLiveIds.has(String(candidate?.id ?? ""))
+      );
+      const liveMatch = chooseLiveForPending(row, candidates);
+
+      if (liveMatch) {
+        consumedLiveIds.add(String(liveMatch.id));
+      }
+
+      reconciled.push({
+        pending: row,
+        live: liveMatch,
+        merged: liveMatch
+          ? mergeWithLiveState(row, liveMatch)
+          : row,
+      });
+      continue;
+    }
+
+    const authoritativeLive =
+      authoritativeLiveByIdentity.get(identity) ?? null;
+
+    if (authoritativeLive) {
+      const representative = representativePendingRows.has(row);
+
+      reconciled.push({
+        pending: row,
+        live: representative ? authoritativeLive : null,
+        merged: mergeWithLiveState(
+          row,
+          authoritativeLive,
+          !representative
+        ),
+      });
+      continue;
+    }
+
+    // No current Live identity exists. Preserve the Loop-2 occurrence exactly
+    // as stored; this is important for fail-safe historical evidence.
     reconciled.push({
       pending: row,
-      live: liveMatch,
-      merged,
+      live: null,
+      merged: row,
     });
   }
 

@@ -419,6 +419,10 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
   );
   const reconciledDoubts = reconcilePendingDoubtsWithLiveLedger(ledgerDoubts, liveRows, {
     includeUnmatchedLive: false,
+    // Track Record event-history calculations intentionally preserve each
+    // historical Loop-2 occurrence. Current-state consumers collapse repeated
+    // occurrences onto the authoritative current Live identity.
+    preserveHistoricalOccurrences: true,
   });
   const effectiveDoubts = reconciledDoubts.map(({ merged, pending, live }: any) => {
     const result = { ...merged };

@@ -1,6 +1,7 @@
 import { getSupabaseClient } from "../../../supabaseClient";
 import { requireIdentity } from "../../../services/identityService";
 import { getCanonicalExamPreparationRows } from "../../examPreparationIntelligence/canonical/ExamPreparationCanonicalService";
+import { applyMonthlyCanonicalOverlay } from "./MonthlyCanonicalOverlayService";
 import { getStudentLiveDoubtRows, syncStudentLiveDoubtLedger } from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 import { currentReviewMonth, indiaDate } from "../utils/MonthlyReviewDate";
 import { monthlyLearningIdentityKey as buildMonthlyLearningIdentityKey } from "../utils/MonthlyLearningIdentity";
@@ -62,7 +63,7 @@ export async function getStudentDailyVerificationState() {
   // deduplication. Canonical remains the central intelligence projection, but
   // the existing Live population is retained as an explicit candidate source
   // so the new gate cannot silently replace the old Live eligibility behavior.
-  const [liveRows, canonicalRows, todaysLiveCheck] = await Promise.all([
+  const [liveRows, canonicalBaseRows, todaysLiveCheck] = await Promise.all([
     getStudentLiveDoubtRows(true),
     getCanonicalExamPreparationRows({ scope: "student", studentUuid: identity.studentUuid }),
     client()
@@ -73,6 +74,10 @@ export async function getStudentDailyVerificationState() {
       .limit(1),
   ]);
   if (todaysLiveCheck.error) throw todaysLiveCheck.error;
+  const canonicalRows = await applyMonthlyCanonicalOverlay(canonicalBaseRows, {
+    scope: "student",
+    studentUuid: identity.studentUuid,
+  });
   const existingLiveCheckToday = (todaysLiveCheck.data ?? []).length > 0;
   // The old Live check table remains authoritative for an already-completed
   // old Live popup during deployment/upgrade transitions. If a check exists
@@ -157,12 +162,12 @@ export async function getStudentDailyVerificationState() {
   // Loop-2/Monthly-only canonical occurrences into the unified candidate pool.
   for (const row of rows) {
     if (!row.isUnresolved) continue;
-    const key = learningIdentityKey(row, assignmentYearById.get(String(row.teacherAssignmentUuid ?? row.teacher_assignment_uuid ?? "")));
+    const key = learningIdentityKey(row, assignmentYearById.get(String(row.teacherAssignmentUuid ?? "")));
     const existing = candidateByKey.get(key);
     if (!existing || String(row.source ?? "").toLowerCase() === "live") candidateByKey.set(key, row);
   }
   for (const row of candidateByKey.values()) {
-    const key = learningIdentityKey(row, assignmentYearById.get(String(row.teacherAssignmentUuid ?? row.teacher_assignment_uuid ?? "")));
+    const key = learningIdentityKey(row, assignmentYearById.get(String(row.teacherAssignmentUuid ?? "")));
     if (history.has(key)) continue;
 
     const projection = projectionByKey.get(key);

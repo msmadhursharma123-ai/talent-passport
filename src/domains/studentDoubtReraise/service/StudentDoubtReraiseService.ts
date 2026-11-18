@@ -1,6 +1,8 @@
 import {
   getCanonicalExamPreparationRows,
 } from "../../examPreparationIntelligence/canonical/ExamPreparationCanonicalService";
+import { applyMonthlyCanonicalOverlay } from "../../monthlyLearningReview/service/MonthlyCanonicalOverlayService";
+import type { CanonicalExamPreparationOptions, CanonicalExamPreparationRow } from "../../examPreparationIntelligence/canonical/ExamPreparationTypes";
 import {
   getStudentLiveDoubtRows,
 } from "../../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
@@ -23,6 +25,13 @@ function clean(value: unknown) {
   return String(value ?? "").trim();
 }
 
+async function getReraiseCanonicalRows(
+  options: CanonicalExamPreparationOptions,
+): Promise<CanonicalExamPreparationRow[]> {
+  const baseRows = await getCanonicalExamPreparationRows(options);
+  return applyMonthlyCanonicalOverlay(baseRows, options);
+}
+
 export interface StudentReraiseRange {
   subjectName?: string;
   startDate?: string;
@@ -43,7 +52,7 @@ export async function getStudentReraiseCandidates(
   options: StudentReraiseRange
 ): Promise<StudentReraiseCandidate[]> {
   const [rows, liveRows] = await Promise.all([
-    getCanonicalExamPreparationRows({
+    getReraiseCanonicalRows({
       scope: "student",
       subjectName: options.subjectName,
       startDate: options.startDate,
@@ -172,7 +181,7 @@ function filterReraiseRecordsToCurrentLiveIds(
 
 export async function getStudentReraiseMarkerSet(options: StudentReraiseRange = {}) {
   const [canonicalRows, records] = await Promise.all([
-    getCanonicalExamPreparationRows({
+    getReraiseCanonicalRows({
       scope: "student",
       subjectName: options.subjectName,
       startDate: options.startDate,
@@ -216,7 +225,7 @@ export async function getStudentReraiseMarkerSet(options: StudentReraiseRange = 
 
 export async function getTeacherReraiseRecordsForOverlay() {
   const [canonicalRows, records] = await Promise.all([
-    getCanonicalExamPreparationRows({ scope: "teacher" }),
+    getReraiseCanonicalRows({ scope: "teacher" }),
     getTeacherDoubtReraiseRecords(),
   ]);
 
@@ -233,7 +242,7 @@ export async function getTeacherReraiseRecordsForOverlay() {
 
 export async function getTeacherReraiseDisplayKeys(options: StudentReraiseRange = {}) {
   const [canonicalRows, records] = await Promise.all([
-    getCanonicalExamPreparationRows({
+    getReraiseCanonicalRows({
       scope: "teacher",
       startDate: options.startDate,
       endDateExclusive: options.endDateExclusive,
@@ -269,7 +278,7 @@ export async function getTeacherReraiseDisplayKeys(options: StudentReraiseRange 
 
 export async function getSchoolReraiseDisplayKeys(options: StudentReraiseRange = {}) {
   const [canonicalRows, records] = await Promise.all([
-    getCanonicalExamPreparationRows({
+    getReraiseCanonicalRows({
       scope: "school",
       startDate: options.startDate,
       endDateExclusive: options.endDateExclusive,
