@@ -18,6 +18,7 @@ import { buildVerifiedEnrollmentRoster, classroomRosterKey } from "../learningEv
 import {
   mergeFeedbackUnderstandingLevels,
   mergePendingDoubtsWithLiveLedger,
+  mergePendingDoubtsWithLiveLedgerForReportingPeriod,
   reconcilePendingDoubtsWithLiveLedger,
 } from "../liveDoubtIntelligence/repository/LiveDoubtReconciliationRepository";
 import { enumerateCalendarDays, getAssignmentEffectiveEndDate, isAssignmentActiveOnDate, getResolvedDoubtDate, getStudentUnderstandingPercentage, getEffectivePeriodEndExclusive, hasUnverifiableAssignmentInterval, buildAssignmentIntervalWarning, buildTrackRecordPeriods, selectSchoolOverviewDoubtClosureCohort, getSchoolOverviewDoubtClosureStartDate } from "./TrackRecordCalculations";
@@ -391,17 +392,23 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
   }
 
   let liveRows: any[] = [];
+  let liveSnapshot: any[] = [];
   let liveDoubtFailed = false;
   try {
     for (const part of chunk(closureQueryAssignmentIds, 10)) {
-      liveRows.push(...await readAllLiveDoubtsForAssignments(part));
+      liveSnapshot.push(...await readAllLiveDoubtsForAssignments(part));
     }
-    liveRows = liveRows.filter((row: any) =>
+    // Preserve the V56 historical/event Live projection exactly. The complete
+    // fetched snapshot is retained separately only so the closure calculation
+    // can mirror the current-state School Overview reader without changing any
+    // other Track Record metric.
+    liveRows = liveSnapshot.filter((row: any) =>
       (!clean(row.school_uuid) || clean(row.school_uuid) === schoolUuid) &&
       (row.academic_year_id == null || clean(row.academic_year_id) === academicYearId)
     );
   } catch (error: any) {
     liveRows = [];
+    liveSnapshot = [];
     liveDoubtFailed = true;
     warnings.push("Live doubt overlay could not be loaded. Doubt-derived metrics are unavailable rather than presenting a potentially stale Loop-2-only result.");
   }
@@ -417,6 +424,16 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
     liveRows,
     { includeUnmatchedLive: true },
   );
+  // Current-state closure must consume the exact evidence shape exposed by
+  // School Overview's pending_teacher_doubts reader. That reader deliberately
+  // does not select source_feedback_id/latest_source_feedback_id, so retaining
+  // those fields here would activate a higher-priority Live match that School
+  // Overview cannot make. This projection is closure-only; all event-history
+  // and learning metrics below continue to use the V56 evidence unchanged.
+  const schoolOverviewClosureEvidence = closureLedgerDoubts.map((row: any) => {
+    const { source_feedback_id: _sourceFeedbackId, latest_source_feedback_id: _latestSourceFeedbackId, ...closureRow } = row ?? {};
+    return closureRow;
+  });
   const reconciledDoubts = reconcilePendingDoubtsWithLiveLedger(ledgerDoubts, liveRows, {
     includeUnmatchedLive: false,
     // Track Record event-history calculations intentionally preserve each
@@ -593,6 +610,7 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
     const activeGroupClosureAssignmentIds = new Set<string>(
       schoolOverviewActiveAssignmentIdsByGroup.get(group.id) ?? []
     );
+    const isCurrentStateParityGroup = activeGroupClosureAssignmentIds.size > 0;
     const groupClosureAssignmentIds = new Set<string>([
       ...ids, ...activeGroupClosureAssignmentIds,
     ]);
@@ -634,10 +652,39 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
         });
       const applyCanonicalClosure = (cell: TrackRecordCell, assignmentScope: ReadonlySet<string>) => {
         if (doubtLedgerFailed || assignmentScope.size === 0) return cell;
-        const cohort = selectSchoolOverviewDoubtClosureCohort(
-          groupClosureDoubts, assignmentScope, closurePeriodStart,
+
+        if (!isCurrentStateParityGroup) {
+          // Historical-only Track Record groups retain the exact V56 closure
+          // behavior. The consistency fix must not rewrite historical semantics.
+          const cohort = selectSchoolOverviewDoubtClosureCohort(
+            groupClosureDoubts, assignmentScope, closurePeriodStart,
+            metricPeriod.endDateExclusive, isoDay,
+          );
+          const rate = calculateDoubtClosureRate(cohort);
+          cell.metrics.closureRate = metric("closureRate", rate, `${rate}%`, "percent");
+          cell.details.closureRate = buildClosureDetails(cohort);
+          return cell;
+        }
+
+        // Current-state parity groups mirror School Overview exactly:
+        // period-first Loop-2 cohort + the complete current Live state for the
+        // active assignment scope. Do not reuse V56's academic-year-filtered
+        // Live projection here; that can hide a valid current resolution.
+        const cohortLedger = selectSchoolOverviewDoubtClosureCohort(
+          schoolOverviewClosureEvidence, assignmentScope, closurePeriodStart,
           metricPeriod.endDateExclusive, isoDay,
         );
+        const closureLiveRows = liveSnapshot.filter((row: any) =>
+          assignmentScope.has(clean(row.teacher_assignment_uuid)) &&
+          (audience === "school" ? clean(row.school_uuid) === schoolUuid : true)
+        );
+        const cohort = liveDoubtFailed
+          ? cohortLedger
+          : mergePendingDoubtsWithLiveLedgerForReportingPeriod(
+              cohortLedger,
+              closureLiveRows,
+              { startDate: closurePeriodStart, endDateExclusive: metricPeriod.endDateExclusive },
+            );
         const rate = calculateDoubtClosureRate(cohort);
         cell.metrics.closureRate = metric("closureRate", rate, `${rate}%`, "percent");
         cell.details.closureRate = buildClosureDetails(cohort);
@@ -708,13 +755,36 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
       // not by requiring the resolution timestamp to fall in the same period.
       // This is intentionally distinct from the event-date "Doubts Resolved
       // in Period" count below.
-      const periodClosureDoubts = selectSchoolOverviewDoubtClosureCohort(
-        groupClosureDoubts,
-        closureAssignmentScope,
-        closurePeriodStart,
-        metricPeriod.endDateExclusive,
-        isoDay,
-      );
+      const periodClosureDoubts = isCurrentStateParityGroup
+        ? (liveDoubtFailed
+          ? selectSchoolOverviewDoubtClosureCohort(
+              schoolOverviewClosureEvidence,
+              closureAssignmentScope,
+              closurePeriodStart,
+              metricPeriod.endDateExclusive,
+              isoDay,
+            )
+          : mergePendingDoubtsWithLiveLedgerForReportingPeriod(
+              selectSchoolOverviewDoubtClosureCohort(
+                schoolOverviewClosureEvidence,
+                closureAssignmentScope,
+                closurePeriodStart,
+                metricPeriod.endDateExclusive,
+                isoDay,
+              ),
+              liveSnapshot.filter((row: any) =>
+                closureAssignmentScope.has(clean(row.teacher_assignment_uuid)) &&
+                (audience === "school" ? clean(row.school_uuid) === schoolUuid : true)
+              ),
+              { startDate: closurePeriodStart, endDateExclusive: metricPeriod.endDateExclusive },
+            ))
+        : selectSchoolOverviewDoubtClosureCohort(
+            groupClosureDoubts,
+            closureAssignmentScope,
+            closurePeriodStart,
+            metricPeriod.endDateExclusive,
+            isoDay,
+          );
       const canonicalClosureRate = calculateDoubtClosureRate(periodClosureDoubts);
       const canonicalClosureDetails = buildClosureDetails(periodClosureDoubts);
       const periodAcademicYearIds = [academicYearId];
