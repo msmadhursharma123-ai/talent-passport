@@ -390,32 +390,19 @@ export async function getSchoolIntelligenceLiveRows(
  * Live row whose source date is outside the reporting period.
  */
 async function readCurrentStateLiveRows(
-  buildQuery: () => any,
+  buildQuery: (afterId?: string) => any,
+  getExactCount: () => Promise<number>,
 ): Promise<LiveDoubtRow[]> {
-  const rows: LiveDoubtRow[] = [];
-  const pageSize = 500;
-
-  for (let offset = 0; ; offset += pageSize) {
-    const { data, error } = await buildQuery()
-      .order("id", { ascending: true })
-      .range(offset, offset + pageSize - 1);
-
-    if (error) {
-      // Preserve the existing Live repository fail-soft contract used by
-      // getLiveDoubtsForSchool/getLiveDoubtsForTeacherAssignments: a missing
-      // Live infrastructure must not turn an otherwise usable portal read
-      // into a hard failure. Other database errors remain fatal.
-      if (isMissingLiveInfrastructure(error)) return [];
-      throw error;
-    }
-
-    const page = (data ?? []) as LiveDoubtRow[];
-    rows.push(...page);
-
-    if (page.length < pageSize) break;
+  try {
+    return await readAllLiveDoubtsPaged(buildQuery, getExactCount);
+  } catch (error) {
+    // Preserve the existing Live repository fail-soft contract used by
+    // current-state School/Teacher intelligence reads: a missing Live
+    // infrastructure must not turn an otherwise usable portal read into a
+    // hard failure. Other database errors remain fatal.
+    if (isMissingLiveInfrastructure(error)) return [];
+    throw error;
   }
-
-  return rows;
 }
 
 export async function getSchoolIntelligenceCurrentStateLiveRows(
@@ -446,12 +433,30 @@ export async function getSchoolIntelligenceCurrentStateLiveRows(
   for (let i = 0; i < assignmentIds.length; i += chunkSize) {
     const chunk = assignmentIds.slice(i, i + chunkSize);
     rows.push(
-      ...(await readCurrentStateLiveRows(() =>
-        client()
-          .from("student_live_unresolved_doubts")
-          .select("*")
-          .eq("school_uuid", schoolUuid)
-          .in("teacher_assignment_uuid", chunk)
+      ...(await readCurrentStateLiveRows(
+        (afterId) => {
+          let query = client()
+            .from("student_live_unresolved_doubts")
+            .select("*")
+            .eq("school_uuid", schoolUuid)
+            .in("teacher_assignment_uuid", chunk)
+            .order("id", { ascending: true })
+            .limit(LIVE_READ_PAGE_SIZE);
+          if (afterId) query = query.gt("id", afterId);
+          return query;
+        },
+        async () => {
+          const { count, error } = await client()
+            .from("student_live_unresolved_doubts")
+            .select("id", { count: "exact", head: true })
+            .eq("school_uuid", schoolUuid)
+            .in("teacher_assignment_uuid", chunk);
+          if (error) throw error;
+          if (typeof count !== "number") {
+            throw new Error("Live doubt count could not be verified; current-state analytics are unavailable.");
+          }
+          return count;
+        },
       ))
     );
   }
@@ -468,11 +473,28 @@ export async function getTeacherCurrentStateLiveRows(
 
   if (ids.length === 0) return [];
 
-  return readCurrentStateLiveRows(() =>
-    client()
-      .from("student_live_unresolved_doubts")
-      .select("*")
-      .in("teacher_assignment_uuid", ids)
+  return readCurrentStateLiveRows(
+    (afterId) => {
+      let query = client()
+        .from("student_live_unresolved_doubts")
+        .select("*")
+        .in("teacher_assignment_uuid", ids)
+        .order("id", { ascending: true })
+        .limit(LIVE_READ_PAGE_SIZE);
+      if (afterId) query = query.gt("id", afterId);
+      return query;
+    },
+    async () => {
+      const { count, error } = await client()
+        .from("student_live_unresolved_doubts")
+        .select("id", { count: "exact", head: true })
+        .in("teacher_assignment_uuid", ids);
+      if (error) throw error;
+      if (typeof count !== "number") {
+        throw new Error("Live doubt count could not be verified; current-state analytics are unavailable.");
+      }
+      return count;
+    },
   );
 }
 
