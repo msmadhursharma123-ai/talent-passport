@@ -20,6 +20,78 @@ return text
 }
 
 
+function loop2RecordKey(record: {
+  student_uuid?: unknown;
+  teacher_assignment_uuid?: unknown;
+  daily_log_uuid?: unknown;
+  previous_difficult_concept?: unknown;
+}) {
+  return [
+    String(record.teacher_assignment_uuid ?? "").trim(),
+    String(record.daily_log_uuid ?? "").trim(),
+    String(record.student_uuid ?? "").trim(),
+    normalizeText(String(record.previous_difficult_concept ?? "")),
+  ].join("|");
+}
+
+async function insertLoop2RecordsIdempotently(
+  supabase: ReturnType<typeof getSupabaseClient>,
+  records: any[]
+) {
+  if (!records.length) return;
+
+  const assignmentIds = Array.from(
+    new Set(
+      records
+        .map((record) => String(record.teacher_assignment_uuid ?? "").trim())
+        .filter(Boolean)
+    )
+  );
+  const dailyLogIds = Array.from(
+    new Set(
+      records
+        .map((record) => String(record.daily_log_uuid ?? "").trim())
+        .filter(Boolean)
+    )
+  );
+
+  const { data: existingRows, error: existingRowsError } = await (supabase as any)
+    .from("pending_teacher_doubts")
+    .select("student_uuid,teacher_assignment_uuid,daily_log_uuid,previous_difficult_concept")
+    .in("teacher_assignment_uuid", assignmentIds)
+    .in("daily_log_uuid", dailyLogIds);
+
+  if (existingRowsError) {
+    throw existingRowsError;
+  }
+
+  const existingKeys = new Set(
+    (existingRows ?? []).map((row: any) => loop2RecordKey(row))
+  );
+
+  const recordsToInsert = records
+    .filter((record) => {
+      const key = loop2RecordKey(record);
+      if (existingKeys.has(key)) return false;
+      existingKeys.add(key);
+      return true;
+    })
+    .sort((a, b) => loop2RecordKey(a).localeCompare(loop2RecordKey(b)));
+
+  if (!recordsToInsert.length) {
+    console.log("LOOP-2 IDEMPOTENCY: ALL RECORDS ALREADY EXIST");
+    return;
+  }
+
+  const { error } = await (supabase as any)
+    .from("pending_teacher_doubts")
+    .insert(recordsToInsert);
+
+  if (error) {
+    throw error;
+  }
+}
+
 function isConceptCovered(
 
 mostDifficultConcept:string,
@@ -411,14 +483,10 @@ console.table(
 resolutionRecords
 );
 
-const { error:resolutionInsertError } =
-await (supabase as any)
-.from("pending_teacher_doubts")
-.insert(resolutionRecords);
-
-if(resolutionInsertError){
-throw resolutionInsertError;
-}
+await insertLoop2RecordsIdempotently(
+  supabase,
+  resolutionRecords
+);
 
 console.log(
 "STUDENT-SPECIFIC DOUBT RESULTS SAVED"
@@ -674,22 +742,10 @@ return;
 }
 
 
-const { error } =
-
-await (supabase as any)
-
-.from(
-"pending_teacher_doubts"
-)
-
-.insert(records);
-
-
-if(error){
-
-throw error;
-
-}
+await insertLoop2RecordsIdempotently(
+  supabase,
+  records
+);
 
 
 console.log(
