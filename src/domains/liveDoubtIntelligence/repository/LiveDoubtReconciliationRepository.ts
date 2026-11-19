@@ -125,6 +125,40 @@ export async function getStudentLiveDoubtRows(strict = false): Promise<LiveDoubt
   }
 }
 
+const LIVE_READ_PAGE_SIZE = 500;
+
+async function readAllLiveDoubtsPaged(
+  buildQuery: (afterId?: string) => any,
+  getExactCount: () => Promise<number>
+): Promise<LiveDoubtRow[]> {
+  const expectedCount = await getExactCount();
+  const rows: LiveDoubtRow[] = [];
+  let afterId: string | undefined;
+
+  while (true) {
+    const query = buildQuery(afterId);
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const page = (data ?? []) as LiveDoubtRow[];
+    rows.push(...page);
+
+    if (page.length < LIVE_READ_PAGE_SIZE) break;
+
+    const lastId = page[page.length - 1]?.id;
+    if (!lastId) {
+      throw new Error("Live doubt pagination could not advance because the page ended without a row id.");
+    }
+    afterId = String(lastId);
+  }
+
+  if (rows.length !== expectedCount) {
+    throw new Error(`Live doubt pagination was incomplete (${rows.length} of ${expectedCount} rows).`);
+  }
+
+  return rows;
+}
+
 export async function getLiveDoubtsForTeacherAssignments(
   assignmentIds: string[],
   strict = false
@@ -136,25 +170,35 @@ export async function getLiveDoubtsForTeacherAssignments(
   if (ids.length === 0) return [];
 
   try {
-    const { data, error } = await client()
-      .from("student_live_unresolved_doubts")
-      .select("*")
-      .in("teacher_assignment_uuid", ids);
-
-    if (error) {
-      if (isMissingLiveInfrastructure(error)) {
-        if (strict) throw error;
-        return [];
+    const supabase = client();
+    return await readAllLiveDoubtsPaged(
+      (afterId) => {
+        let query = supabase
+          .from("student_live_unresolved_doubts")
+          .select("*")
+          .in("teacher_assignment_uuid", ids)
+          .order("id", { ascending: true })
+          .limit(LIVE_READ_PAGE_SIZE);
+        if (afterId) query = query.gt("id", afterId);
+        return query;
+      },
+      async () => {
+        const { count, error } = await supabase
+          .from("student_live_unresolved_doubts")
+          .select("id", { count: "exact", head: true })
+          .in("teacher_assignment_uuid", ids);
+        if (error) throw error;
+        if (typeof count !== "number") {
+          throw new Error("Live doubt count could not be verified; canonical learning metrics are unavailable.");
+        }
+        return count;
       }
-      throw error;
-    }
-
-    return (data ?? []) as LiveDoubtRow[];
+    );
   } catch (error) {
     if (isMissingLiveInfrastructure(error)) {
-        if (strict) throw error;
-        return [];
-      }
+      if (strict) throw error;
+      return [];
+    }
     throw error;
   }
 }
@@ -265,25 +309,35 @@ export async function getLiveDoubtsForSchool(
   if (!schoolUuid) return [];
 
   try {
-    const { data, error } = await client()
-      .from("student_live_unresolved_doubts")
-      .select("*")
-      .eq("school_uuid", schoolUuid);
-
-    if (error) {
-      if (isMissingLiveInfrastructure(error)) {
-        if (strict) throw error;
-        return [];
+    const supabase = client();
+    return await readAllLiveDoubtsPaged(
+      (afterId) => {
+        let query = supabase
+          .from("student_live_unresolved_doubts")
+          .select("*")
+          .eq("school_uuid", schoolUuid)
+          .order("id", { ascending: true })
+          .limit(LIVE_READ_PAGE_SIZE);
+        if (afterId) query = query.gt("id", afterId);
+        return query;
+      },
+      async () => {
+        const { count, error } = await supabase
+          .from("student_live_unresolved_doubts")
+          .select("id", { count: "exact", head: true })
+          .eq("school_uuid", schoolUuid);
+        if (error) throw error;
+        if (typeof count !== "number") {
+          throw new Error("Live doubt count could not be verified; canonical learning metrics are unavailable.");
+        }
+        return count;
       }
-      throw error;
-    }
-
-    return (data ?? []) as LiveDoubtRow[];
+    );
   } catch (error) {
     if (isMissingLiveInfrastructure(error)) {
-        if (strict) throw error;
-        return [];
-      }
+      if (strict) throw error;
+      return [];
+    }
     throw error;
   }
 }
