@@ -56,7 +56,10 @@ export default function TeacherDailyLogDialog({
   const [crossQuestionImagePreview, setCrossQuestionImagePreview] = useState("");
   const [crossQuestionImageViewerOpen, setCrossQuestionImageViewerOpen] = useState(false);
   const [crossQuestionOptions, setCrossQuestionOptions] = useState(["", "", "", ""]);
-  const [crossQuestionCorrectIndex, setCrossQuestionCorrectIndex] = useState("0");
+  const [crossQuestionCorrectIndex, setCrossQuestionCorrectIndex] = useState("");
+  const [crossQuestionError, setCrossQuestionError] = useState<string | null>(null);
+  const [crossQuestionErrorRect, setCrossQuestionErrorRect] = useState<{ top: number; left: number; width: number; height: number; borderRadius: string } | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
 
   const [topicName, setTopicName] =
@@ -268,7 +271,9 @@ export default function TeacherDailyLogDialog({
     setCrossQuestionImagePreview("");
     setCrossQuestionImageViewerOpen(false);
     setCrossQuestionOptions(["", "", "", ""]);
-    setCrossQuestionCorrectIndex("0");
+    setCrossQuestionCorrectIndex("");
+    setCrossQuestionError(null);
+    setCrossQuestionErrorRect(null);
     setPreviousLog(null);
     setPreviousLogLoading(false);
     setDailyLogBusinessDate("");
@@ -357,10 +362,10 @@ export default function TeacherDailyLogDialog({
   }, [open, guidedStep, conceptsCovered.length]);
 
   useEffect(() => {
-    if (!open || guidedStep !== "question" || !crossQuestionText.trim()) return;
+    if (!open || guidedStep !== "question" || (!crossQuestionText.trim() && !crossQuestionImage)) return;
     const timeout = window.setTimeout(() => setGuidedStep("options"), 2000);
     return () => window.clearTimeout(timeout);
-  }, [open, guidedStep, crossQuestionText]);
+  }, [open, guidedStep, crossQuestionText, crossQuestionImage]);
 
   const guidedHighlightStyle: CSSProperties = {
     border: "2px solid #2563EB",
@@ -368,6 +373,26 @@ export default function TeacherDailyLogDialog({
     outline: "none",
     transition: "border-color 160ms ease, box-shadow 160ms ease",
   };
+
+  useEffect(() => {
+    if (!crossQuestionError) return;
+
+    const syncCrossQuestionErrorRect = () => {
+      const rect = dialogRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setCrossQuestionErrorRect({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        borderRadius: window.getComputedStyle(dialogRef.current).borderRadius,
+      });
+    };
+
+    syncCrossQuestionErrorRect();
+    window.addEventListener("resize", syncCrossQuestionErrorRect);
+    return () => window.removeEventListener("resize", syncCrossQuestionErrorRect);
+  }, [crossQuestionError]);
 
   if (!open) {
     return null;
@@ -484,6 +509,25 @@ export default function TeacherDailyLogDialog({
     return `${year}-${month}-${day}`;
   }
 
+  function showCrossQuestionError(message: string) {
+    const rect = dialogRef.current?.getBoundingClientRect();
+    if (rect) {
+      setCrossQuestionErrorRect({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        borderRadius: window.getComputedStyle(dialogRef.current).borderRadius,
+      });
+    }
+    setCrossQuestionError(message);
+  }
+
+  function closeCrossQuestionError() {
+    setCrossQuestionError(null);
+    setCrossQuestionErrorRect(null);
+  }
+
   async function handleSave() {
     const selectedAssignment =
       assignments.find(
@@ -528,9 +572,13 @@ export default function TeacherDailyLogDialog({
     const questionText = crossQuestionText.trim();
     const normalizedQuestionOptions = crossQuestionOptions.map((option) => option.trim());
     const hasCrossQuestion = Boolean(questionText || crossQuestionImage);
-    // A Cross Question is chapter-scoped in the approved lesson flow. Keep
-    // chapter optional for legacy/no-question daily logs, but do not publish a
-    // question that cannot be associated with the selected Study Material chapter.
+
+    if (!hasCrossQuestion) {
+      showCrossQuestionError("Please enter a Cross Question or attach a question image before publishing the Daily Log.");
+      return;
+    }
+
+    // A Cross Question is chapter-scoped in the approved lesson flow.
     const resolvedChapterName =
       selectedChapter === OTHER_CHAPTER_VALUE
         ? manualChapterName.trim()
@@ -546,30 +594,34 @@ export default function TeacherDailyLogDialog({
     }
     if (hasCrossQuestion) {
       if (!questionText && !crossQuestionImage) {
-        alert("Enter a cross-question or attach an image.");
+        showCrossQuestionError("Enter a Cross Question or attach an image.");
         return;
       }
       if (questionText && crossQuestionImage) {
-        alert("Use either question text or an image, not both.");
+        showCrossQuestionError("Use either question text or an image, not both.");
         return;
       }
       if (crossQuestionImage) {
         const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
         if (!allowedTypes.includes(crossQuestionImage.type)) {
-          alert("Please use a JPG, PNG, or WebP image.");
+          showCrossQuestionError("Please use a JPG, PNG, or WebP image.");
           return;
         }
         if (crossQuestionImage.size > 5 * 1024 * 1024) {
-          alert("The question image must be 5 MB or smaller.");
+          showCrossQuestionError("The question image must be 5 MB or smaller.");
           return;
         }
       }
       if (normalizedQuestionOptions.some((option) => !option)) {
-        alert("Please enter all four cross-question options.");
+        showCrossQuestionError("Please enter all four Cross Question options.");
         return;
       }
       if (new Set(normalizedQuestionOptions.map((option) => option.toLocaleLowerCase())).size !== 4) {
-        alert("All four cross-question options must be unique.");
+        showCrossQuestionError("All four Cross Question options must be unique.");
+        return;
+      }
+      if (!["0", "1", "2", "3"].includes(crossQuestionCorrectIndex)) {
+        showCrossQuestionError("Please choose the correct answer for the Cross Question.");
         return;
       }
     }
@@ -677,6 +729,7 @@ export default function TeacherDailyLogDialog({
       }}
     >
       <div
+        ref={dialogRef}
         className="tp-log-dialog"
         style={{
           position: "relative",
@@ -1485,16 +1538,20 @@ export default function TeacherDailyLogDialog({
 
           {/* Additive Cross Question section; existing Pages Covered fields are untouched. */}
           <div id="tp-daily-log-question" style={{ ...sectionCardStyle, ...(guidedStep === "question" ? guidedHighlightStyle : {}) }}>
-            <div style={sectionLabelStyle}>Cross Question (Optional)</div>
-            <div style={fieldLabelStyle}>Question text</div>
+            <div style={sectionLabelStyle}>Cross Question <span style={{ color: "#DC2626" }}>*</span></div>
+            <div style={{ fontSize: "12px", color: "#64748B", marginBottom: "10px", lineHeight: 1.5 }}>
+              Required: enter the question or attach one question image, fill all four options, and choose the correct answer.
+            </div>
+            <div style={fieldLabelStyle}>Question text (or use the image option below)</div>
             <textarea
               style={{ ...inputStyle, minHeight: "84px", resize: "vertical" }}
               value={crossQuestionText}
               onChange={(e) => setCrossQuestionText(e.target.value)}
               placeholder="Type the question, or attach a question image below"
               disabled={!!crossQuestionImage}
+              aria-required="true"
             />
-            <div style={fieldLabelStyle}>Attach or capture question image (optional)</div>
+            <div style={fieldLabelStyle}>Attach or capture question image <span style={{ color: "#64748B", fontWeight: 600 }}>(alternative to question text)</span></div>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
@@ -1530,16 +1587,17 @@ export default function TeacherDailyLogDialog({
             <div id="tp-daily-log-options" style={guidedStep === "options" ? guidedHighlightStyle : undefined}>
             {crossQuestionOptions.map((option, index) => (
               <div key={index} style={{ marginTop: "10px" }}>
-                <div style={fieldLabelStyle}>Option {index + 1}</div>
+                <div style={fieldLabelStyle}>Option {index + 1} <span style={{ color: "#DC2626" }}>*</span></div>
                 <input
                   style={inputStyle}
                   value={option}
                   onChange={(e) => setCrossQuestionOptions((current) => current.map((value, i) => i === index ? e.target.value : value))}
                   placeholder={`Enter option ${index + 1}`}
+                  aria-required="true"
                 />
                 <label style={{ display: "inline-flex", gap: "8px", alignItems: "center", fontSize: "13px", color: "#334155" }}>
-                  <input type="radio" name="cross-question-correct-option" checked={crossQuestionCorrectIndex === String(index)} onChange={() => setCrossQuestionCorrectIndex(String(index))} />
-                  Correct answer
+                  <input type="radio" name="cross-question-correct-option" checked={crossQuestionCorrectIndex === String(index)} onChange={() => setCrossQuestionCorrectIndex(String(index))} aria-required="true" />
+                  Correct answer <span style={{ color: "#DC2626", fontWeight: 800 }}>*</span>
                 </label>
               </div>
             ))}
@@ -1956,6 +2014,128 @@ export default function TeacherDailyLogDialog({
         <div role="dialog" aria-modal="true" aria-label="Selected cross-question image preview" onClick={(event) => { if (event.target === event.currentTarget) setCrossQuestionImageViewerOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 1300, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "rgba(2, 6, 23, 0.88)" }}>
           <button type="button" onClick={() => setCrossQuestionImageViewerOpen(false)} aria-label="Close enlarged image" style={{ position: "absolute", top: 16, right: 16, zIndex: 1, width: 42, height: 42, border: "1px solid rgba(255,255,255,.65)", borderRadius: 999, background: "#fff", color: "#0f172a", fontSize: 26, cursor: "pointer" }}>×</button>
           <img src={crossQuestionImagePreview} alt="Enlarged selected cross question" onClick={(event) => event.stopPropagation()} style={{ display: "block", maxWidth: "100%", maxHeight: "90vh", objectFit: "contain", borderRadius: 8 }} />
+        </div>
+      )}
+      {crossQuestionError && crossQuestionErrorRect && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tp-cross-question-error-title"
+          style={{
+            position: "fixed",
+            top: crossQuestionErrorRect.top,
+            left: crossQuestionErrorRect.left,
+            width: crossQuestionErrorRect.width,
+            height: crossQuestionErrorRect.height,
+            zIndex: 1200,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+            boxSizing: "border-box",
+            borderRadius: crossQuestionErrorRect.borderRadius,
+            overflow: "hidden",
+            background: "rgba(15, 23, 42, 0.38)",
+            backdropFilter: "blur(4px)",
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: "min(100%, 430px)",
+              padding: "26px 26px 24px",
+              boxSizing: "border-box",
+              background: "#FFFFFF",
+              border: "1px solid #FED7AA",
+              borderRadius: "20px",
+              boxShadow: "0 24px 60px rgba(15, 23, 42, 0.24)",
+              textAlign: "center",
+            }}
+          >
+            <button
+              type="button"
+              onClick={closeCrossQuestionError}
+              aria-label="Close Cross Question error"
+              style={{
+                position: "absolute",
+                top: "10px",
+                right: "10px",
+                width: "34px",
+                height: "34px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "1px solid #E2E8F0",
+                borderRadius: "999px",
+                background: "#FFFFFF",
+                color: "#475569",
+                fontSize: "22px",
+                lineHeight: 1,
+                fontWeight: 500,
+                cursor: "pointer",
+              }}
+            >
+              ×
+            </button>
+            <div
+              style={{
+                width: "44px",
+                height: "44px",
+                margin: "0 auto 12px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "999px",
+                background: "#FFF7ED",
+                color: "#EA580C",
+                fontSize: "22px",
+                fontWeight: 800,
+              }}
+              aria-hidden="true"
+            >
+              !
+            </div>
+            <div
+              id="tp-cross-question-error-title"
+              style={{
+                color: "#0F172A",
+                fontSize: "17px",
+                lineHeight: 1.3,
+                fontWeight: 800,
+              }}
+            >
+              Cross Question Validation
+            </div>
+            <div
+              style={{
+                marginTop: "8px",
+                color: "#64748B",
+                fontSize: "13px",
+                lineHeight: 1.6,
+                fontWeight: 600,
+              }}
+            >
+              {crossQuestionError}
+            </div>
+            <button
+              type="button"
+              onClick={closeCrossQuestionError}
+              style={{
+                marginTop: "20px",
+                minWidth: "92px",
+                padding: "10px 20px",
+                border: "1px solid #EA580C",
+                borderRadius: "10px",
+                background: "#EA580C",
+                color: "#FFFFFF",
+                fontSize: "13px",
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              OK
+            </button>
+          </div>
         </div>
       )}
 </div>
