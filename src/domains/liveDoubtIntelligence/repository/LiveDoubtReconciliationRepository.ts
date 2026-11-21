@@ -1398,11 +1398,11 @@ export async function getStudentLiveReconciliationState(): Promise<LiveReconcili
           )
       );
 
-      // One or more active unresolved first-loop doubts in the subject makes
+      // Five or more active unresolved first-loop doubts in the subject makes
       // that subject eligible for today's mandatory reconciliation. Do not
       // require a newer source signal here: daily check history above is the
       // mechanism that makes the same unresolved doubts eligible again tomorrow.
-      if (sorted.length < 1) continue;
+      if (sorted.length < 5) continue;
 
       eligibleSubjects.push({
         subjectName,
