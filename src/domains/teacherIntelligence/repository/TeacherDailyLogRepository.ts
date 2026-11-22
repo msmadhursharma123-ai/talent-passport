@@ -5,6 +5,36 @@ import { mapTeacherDailyLog } from "../types/TeacherDailyLogMapper";
 
 const TABLE_NAME = "teacher_daily_logs";
 
+type DailyLogCommitVerificationRow = {
+  id: string;
+  teacher_assignment_uuid: string | null;
+};
+
+async function verifyDailyLogCommit(
+  supabase: ReturnType<typeof getSupabaseClient>,
+  dailyLogUuid: string
+): Promise<{ data: DailyLogCommitVerificationRow | null; error: unknown | null }> {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase not configured.") };
+  }
+
+  // The generated Supabase Database type in this source snapshot does not
+  // expose the production teacher_daily_logs shape, so this narrow read-only
+  // verification boundary is explicitly typed instead of allowing the query
+  // builder to collapse the selected row to `never`. No write or authorization
+  // behavior is changed here.
+  const query = supabase
+    .from(TABLE_NAME)
+    .select("id, teacher_assignment_uuid")
+    .eq("id", dailyLogUuid)
+    .maybeSingle() as unknown as Promise<{
+      data: DailyLogCommitVerificationRow | null;
+      error: unknown | null;
+    }>;
+
+  return query;
+}
+
 /* =========================================================
    INDIA CLASSROOM BUSINESS DATE
 ========================================================= */
@@ -252,6 +282,69 @@ export async function createTeacherDailyLog(
     );
   }
 
+  const multiCrossQuestions = Array.isArray(dailyLog.multi_cross_questions)
+    ? dailyLog.multi_cross_questions
+    : null;
+
+  if (multiCrossQuestions) {
+    const createRpc = supabase.rpc.bind(supabase) as unknown as (
+      functionName: string,
+      args: Record<string, unknown>
+    ) => Promise<{ data: unknown; error: unknown | null }>;
+
+    const payload = { ...dailyLog };
+    delete payload.multi_cross_questions;
+    delete payload.daily_log_uuid;
+
+    const dailyLogUuid = String(dailyLog.daily_log_uuid ?? "").trim();
+    if (!dailyLogUuid) {
+      throw new Error("Daily Log identity is required for safe Cross Question publishing.");
+    }
+
+    const { data, error } = await createRpc(
+      "tp_v11_multi_create_teacher_daily_log_with_cross_questions",
+      {
+        p_daily_log: payload,
+        p_questions: multiCrossQuestions,
+        p_daily_log_uuid: dailyLogUuid,
+      }
+    );
+
+    if (error) {
+      // A PostgREST/network failure can be ambiguous: PostgreSQL may have
+      // committed before the client received the error. Verify the deterministic
+      // Daily Log UUID before deciding whether the operation actually failed.
+      const { data: committedRow, error: verifyError } = await verifyDailyLogCommit(
+        supabase,
+        dailyLogUuid
+      );
+
+      if (!verifyError && committedRow?.id && String(committedRow.teacher_assignment_uuid ?? "") === teacherAssignmentUuid) {
+        // The database commit is confirmed. Treat publication as successful so
+        // the UI does not prompt a retry that could create a duplicate log.
+        return true;
+      }
+
+      const enriched = error instanceof Error ? error : new Error(String((error as any)?.message ?? error ?? "Daily Log creation failed."));
+      (enriched as any).__dailyLogCommitConfirmedAbsent = !verifyError && !committedRow?.id;
+      throw enriched;
+    }
+    if (!data) {
+      const { data: committedRow, error: verifyError } = await verifyDailyLogCommit(
+        supabase,
+        dailyLogUuid
+      );
+      if (verifyError || !committedRow?.id || String(committedRow.teacher_assignment_uuid ?? "") !== teacherAssignmentUuid) {
+        const enriched = new Error("Daily Log was not created.");
+        (enriched as any).__dailyLogCommitConfirmedAbsent = !verifyError && !committedRow?.id;
+        throw enriched;
+      }
+      return true;
+    }
+    return true;
+  }
+
+  // Legacy callers remain unchanged. New Daily Log UI uses the atomic RPC above.
   const { error } = await supabase
     .from(TABLE_NAME)
     .insert(dailyLog as never);

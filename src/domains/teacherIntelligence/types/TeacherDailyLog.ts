@@ -36,5 +36,15 @@ export interface TeacherDailyLog {
   crossQuestionImageUrl?: string | null;
   crossQuestionOptions?: string[] | null;
   crossQuestionCorrectIndex?: number | null;
+  multiCrossQuestions?: Array<{
+    id: string;
+    daily_log_uuid: string;
+    question_order: number;
+    question_type: "MCQ" | "TRUE_FALSE" | "FILL_UPS" | "ONE_WORD";
+    question_text: string | null;
+    image_path: string | null;
+    image_url?: string | null;
+    options: string[] | null;
+  }>;
 
 }

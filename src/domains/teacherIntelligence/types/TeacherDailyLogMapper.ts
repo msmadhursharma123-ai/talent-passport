@@ -53,5 +53,6 @@ export function mapTeacherDailyLog(
     crossQuestionImagePath: data.cross_question_image_path ?? null,
     crossQuestionOptions: Array.isArray(data.cross_question_options) ? data.cross_question_options : null,
     crossQuestionCorrectIndex: Number.isInteger(data.cross_question_correct_index) ? data.cross_question_correct_index : null,
+    multiCrossQuestions: Array.isArray(data.multi_cross_questions) ? data.multi_cross_questions : [],
   };
 }

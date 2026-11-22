@@ -18,6 +18,21 @@ import {
 
 import { getStudyMaterialChaptersForTeacher } from "../../studyMaterial/common/studyMaterialRepository";
 import { getSupabaseClient } from "../../../supabaseClient";
+import TeacherDailyLogCrossQuestionBuilder, { createEmptyTeacherCrossQuestion, type TeacherCrossQuestionDraft } from "../components/TeacherDailyLogCrossQuestionBuilder";
+
+function createClientUuid(): string {
+  const webCrypto = typeof globalThis !== "undefined" ? globalThis.crypto : undefined;
+  if (webCrypto?.randomUUID) return webCrypto.randomUUID();
+  if (webCrypto?.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    webCrypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  }
+  throw new Error("Secure UUID generation is unavailable. Please reload the page and try again.");
+}
 
 interface Props {
   open: boolean;
@@ -28,12 +43,28 @@ interface Props {
   submitting?: boolean;
 }
 
+function maskFillUpAnswer(sentence: string, answer: string): { masked: string; replacements: number } {
+  const source = sentence.trim();
+  const target = answer.trim();
+  if (!source || !target) return { masked: source, replacements: 0 };
+  const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`(^|[^\\p{L}\\p{N}_])${escaped}(?=$|[^\\p{L}\\p{N}_])`, "giu");
+  let replacements = 0;
+  const masked = source.replace(pattern, (_match, prefix: string) => {
+    replacements += 1;
+    return `${prefix}_____`;
+  });
+  return { masked, replacements };
+}
+
 export default function TeacherDailyLogDialog({
   open,
   onClose,
   onSave,
   submitting = false,
 }: Props) {
+  const pendingDailyLogUuidRef = useRef<string | null>(null);
+
   const [
     selectedAssignmentId,
     setSelectedAssignmentId,
@@ -45,18 +76,17 @@ export default function TeacherDailyLogDialog({
     "classroom" | "chapter" | "manualChapter" | "topic" | "subtopics" | "question" | "options" | "done"
   >("classroom");
 
-  // Additive Cross Question state. Existing lesson-planner and previous-log
-  // state remains independent and unchanged.
+  // V10 additive Cross Question state. The legacy scalar fields remain in the
+  // database for historical compatibility; new logs are created through the
+  // atomic multi-question RPC.
   const [chapterOptions, setChapterOptions] = useState<any[]>([]);
   const [selectedChapter, setSelectedChapter] = useState("");
   const [manualChapterName, setManualChapterName] = useState("");
   const OTHER_CHAPTER_VALUE = "__TP_OTHER_CHAPTER__";
-  const [crossQuestionText, setCrossQuestionText] = useState("");
-  const [crossQuestionImage, setCrossQuestionImage] = useState<File | null>(null);
-  const [crossQuestionImagePreview, setCrossQuestionImagePreview] = useState("");
-  const [crossQuestionImageViewerOpen, setCrossQuestionImageViewerOpen] = useState(false);
-  const [crossQuestionOptions, setCrossQuestionOptions] = useState(["", "", "", ""]);
-  const [crossQuestionCorrectIndex, setCrossQuestionCorrectIndex] = useState("");
+  const [crossQuestions, setCrossQuestions] = useState<TeacherCrossQuestionDraft[]>([
+    createEmptyTeacherCrossQuestion(),
+    createEmptyTeacherCrossQuestion(),
+  ]);
   const [crossQuestionError, setCrossQuestionError] = useState<string | null>(null);
   const [crossQuestionErrorRect, setCrossQuestionErrorRect] = useState<{ top: number; left: number; width: number; height: number; borderRadius: string } | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
@@ -235,24 +265,6 @@ export default function TeacherDailyLogDialog({
     return () => { active = false; };
   }, [selectedAssignmentId, assignments]);
 
-  useEffect(() => {
-    if (!crossQuestionImage) {
-      setCrossQuestionImagePreview("");
-      return;
-    }
-    const url = URL.createObjectURL(crossQuestionImage);
-    setCrossQuestionImagePreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [crossQuestionImage]);
-
-  useEffect(() => {
-    if (!crossQuestionImageViewerOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setCrossQuestionImageViewerOpen(false);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [crossQuestionImageViewerOpen]);
 
   function resetForm() {
     setSelectedAssignmentId("");
@@ -266,12 +278,7 @@ export default function TeacherDailyLogDialog({
     setConceptsCovered([]);
     setSelectedChapter("");
     setManualChapterName("");
-    setCrossQuestionText("");
-    setCrossQuestionImage(null);
-    setCrossQuestionImagePreview("");
-    setCrossQuestionImageViewerOpen(false);
-    setCrossQuestionOptions(["", "", "", ""]);
-    setCrossQuestionCorrectIndex("");
+    setCrossQuestions([createEmptyTeacherCrossQuestion(), createEmptyTeacherCrossQuestion()]);
     setCrossQuestionError(null);
     setCrossQuestionErrorRect(null);
     setPreviousLog(null);
@@ -362,10 +369,11 @@ export default function TeacherDailyLogDialog({
   }, [open, guidedStep, conceptsCovered.length]);
 
   useEffect(() => {
-    if (!open || guidedStep !== "question" || (!crossQuestionText.trim() && !crossQuestionImage)) return;
+    if (!open || guidedStep !== "question") return;
+    if (!crossQuestions.some((question) => question.questionText.trim() || question.imageFile)) return;
     const timeout = window.setTimeout(() => setGuidedStep("options"), 2000);
     return () => window.clearTimeout(timeout);
-  }, [open, guidedStep, crossQuestionText, crossQuestionImage]);
+  }, [open, guidedStep, crossQuestions]);
 
   const guidedHighlightStyle: CSSProperties = {
     border: "2px solid #2563EB",
@@ -569,141 +577,160 @@ export default function TeacherDailyLogDialog({
       return;
     }
 
-    const questionText = crossQuestionText.trim();
-    const normalizedQuestionOptions = crossQuestionOptions.map((option) => option.trim());
-    const hasCrossQuestion = Boolean(questionText || crossQuestionImage);
-
-    if (!hasCrossQuestion) {
-      showCrossQuestionError("Please enter a Cross Question or attach a question image before publishing the Daily Log.");
-      return;
-    }
-
-    // A Cross Question is chapter-scoped in the approved lesson flow.
     const resolvedChapterName =
       selectedChapter === OTHER_CHAPTER_VALUE
         ? manualChapterName.trim()
         : selectedChapter.trim();
 
-    if (hasCrossQuestion && !resolvedChapterName) {
+    if (!resolvedChapterName) {
       alert(
         selectedChapter === OTHER_CHAPTER_VALUE
-          ? "Please enter the chapter name before adding a Cross Question."
-          : "Please select a chapter before adding a Cross Question."
+          ? "Please enter the chapter name before adding Cross Questions."
+          : "Please select a chapter before adding Cross Questions."
       );
       return;
     }
-    if (hasCrossQuestion) {
-      if (!questionText && !crossQuestionImage) {
-        showCrossQuestionError("Enter a Cross Question or attach an image.");
-        return;
-      }
-      if (questionText && crossQuestionImage) {
-        showCrossQuestionError("Use either question text or an image, not both.");
-        return;
-      }
-      if (crossQuestionImage) {
-        const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-        if (!allowedTypes.includes(crossQuestionImage.type)) {
-          showCrossQuestionError("Please use a JPG, PNG, or WebP image.");
-          return;
-        }
-        if (crossQuestionImage.size > 5 * 1024 * 1024) {
-          showCrossQuestionError("The question image must be 5 MB or smaller.");
-          return;
-        }
-      }
-      if (normalizedQuestionOptions.some((option) => !option)) {
-        showCrossQuestionError("Please enter all four Cross Question options.");
-        return;
-      }
-      if (new Set(normalizedQuestionOptions.map((option) => option.toLocaleLowerCase())).size !== 4) {
-        showCrossQuestionError("All four Cross Question options must be unique.");
-        return;
-      }
-      if (!["0", "1", "2", "3"].includes(crossQuestionCorrectIndex)) {
-        showCrossQuestionError("Please choose the correct answer for the Cross Question.");
-        return;
-      }
+
+    const normalizedQuestions = crossQuestions.map((question) => ({
+      ...question,
+      questionText: question.questionText.trim(),
+      options: question.options.map((option) => option.trim()),
+      acceptedAnswers: question.acceptedAnswers.map((answer) => answer.trim()).filter(Boolean),
+    }));
+
+    if (normalizedQuestions.length < 2) {
+      showCrossQuestionError("Please add at least 2 Cross Questions.");
+      return;
     }
 
-    let uploadedImagePath: string | null = null;
-    if (hasCrossQuestion && crossQuestionImage) {
-      const supabase = getSupabaseClient();
-      const teacherUuid = String(getCurrentTeacher()?.teacherUuid ?? "").trim();
-      if (!supabase || !teacherUuid) {
-        alert("Your teacher session could not be verified. Please sign in again.");
-        return;
+    const uploadedPaths: string[] = [];
+    let databaseCreateStarted = false;
+    const supabase = getSupabaseClient();
+    const teacherUuid = String(getCurrentTeacher()?.teacherUuid ?? "").trim();
+    if (!supabase || !teacherUuid) {
+      alert("Your teacher session could not be verified. Please sign in again.");
+      return;
+    }
+
+    const questionPayload: Array<Record<string, unknown>> = [];
+    let dailyLogUuid = pendingDailyLogUuidRef.current ?? "";
+    try {
+      if (!dailyLogUuid) {
+        dailyLogUuid = createClientUuid();
+        pendingDailyLogUuidRef.current = dailyLogUuid;
       }
-      const extension = crossQuestionImage.type === "image/png" ? "png" : crossQuestionImage.type === "image/webp" ? "webp" : "jpg";
-      const safeToken = typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      uploadedImagePath = `${teacherUuid}/${String(selectedAssignment.id)}/${safeToken}.${extension}`;
-      const { error: uploadError } = await supabase.storage
-        .from("daily-log-cross-questions")
-        .upload(uploadedImagePath, crossQuestionImage, {
-          contentType: crossQuestionImage.type,
-          upsert: false,
-          cacheControl: "3600",
+      for (const [index, question] of normalizedQuestions.entries()) {
+        const hasText = Boolean(question.questionText);
+        const hasImage = Boolean(question.imageFile);
+        if (question.questionType === "FILL_UPS" && !hasText) {
+          throw new Error(`Cross Question ${index + 1}: Fill-ups require the complete sentence in text form.`);
+        }
+        if (question.questionType === "FILL_UPS" && hasImage) {
+          throw new Error(`Cross Question ${index + 1}: Fill-ups cannot use an image. Enter the complete sentence so the answer can be hidden.`);
+        }
+        if (hasText === hasImage) {
+          throw new Error(`Cross Question ${index + 1}: use either question text or an image, not both.`);
+        }
+
+        let imagePath: string | null = null;
+        if (question.imageFile) {
+          const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+          if (!allowedTypes.includes(question.imageFile.type)) throw new Error(`Cross Question ${index + 1}: please use a JPG, PNG, or WebP image.`);
+          if (question.imageFile.size > 5 * 1024 * 1024) throw new Error(`Cross Question ${index + 1}: the question image must be 5 MB or smaller.`);
+          const extension = question.imageFile.type === "image/png" ? "png" : question.imageFile.type === "image/webp" ? "webp" : "jpg";
+          const safeToken = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          imagePath = `${teacherUuid}/${String(selectedAssignment.id)}/${safeToken}.${extension}`;
+          const { error: uploadError } = await supabase.storage
+            .from("daily-log-cross-questions")
+            .upload(imagePath, question.imageFile, { contentType: question.imageFile.type, upsert: false, cacheControl: "3600" });
+          if (uploadError) throw uploadError;
+          uploadedPaths.push(imagePath);
+        }
+
+        if (question.questionType === "MCQ") {
+          if (question.options.length !== 4 || question.options.some((option) => !option) || new Set(question.options.map((option) => option.toLocaleLowerCase())).size !== 4) {
+            throw new Error(`Cross Question ${index + 1}: MCQ requires exactly 4 unique nonblank options.`);
+          }
+          if (!['0','1','2','3'].includes(question.correctIndex)) throw new Error(`Cross Question ${index + 1}: choose the correct answer.`);
+        } else if (question.questionType === "TRUE_FALSE") {
+          if (!['0','1'].includes(question.correctIndex)) throw new Error(`Cross Question ${index + 1}: choose True or False as the correct answer.`);
+        } else if (question.acceptedAnswers.length < 1) {
+          throw new Error(`Cross Question ${index + 1}: add at least one accepted answer.`);
+        } else {
+          const normalizedAnswers = question.acceptedAnswers.map((answer) => answer.toLocaleLowerCase()).filter(Boolean);
+          if (new Set(normalizedAnswers).size !== normalizedAnswers.length) {
+            throw new Error(`Cross Question ${index + 1}: accepted answers must be unique.`);
+          }
+          if (question.questionType === "FILL_UPS" && question.acceptedAnswers.length !== 1) {
+            throw new Error(`Cross Question ${index + 1}: Fill-ups require exactly one word or phrase to hide.`);
+          }
+        }
+
+        const fillUpResult = question.questionType === "FILL_UPS"
+          ? maskFillUpAnswer(question.questionText, question.acceptedAnswers[0] ?? "")
+          : null;
+        if (question.questionType === "FILL_UPS" && (!fillUpResult || fillUpResult.replacements < 1)) {
+          throw new Error(`Cross Question ${index + 1}: the word or phrase to hide must appear in the full sentence.`);
+        }
+        const fillUpDisplay = fillUpResult?.masked ?? null;
+
+        questionPayload.push({
+          question_type: question.questionType,
+          question_text: question.questionText || null,
+          image_path: imagePath,
+          // For Fill-ups, options[0] is a student-safe masked display sentence.
+          // The accepted answer itself stays in accepted_answers and is never sent to the student.
+          options: question.questionType === "MCQ"
+            ? question.options
+            : question.questionType === "FILL_UPS"
+              ? [fillUpDisplay]
+              : null,
+          correct_index: question.questionType === "MCQ" || question.questionType === "TRUE_FALSE" ? Number(question.correctIndex) : null,
+          accepted_answers: question.questionType === "FILL_UPS" || question.questionType === "ONE_WORD" ? question.acceptedAnswers : null,
         });
-      if (uploadError) {
-        console.error("CROSS QUESTION IMAGE UPLOAD FAILED", uploadError);
-        alert("The question image could not be uploaded. Please try again.");
-        return;
       }
+
+      databaseCreateStarted = true;
+      await onSave({
+        daily_log_uuid: dailyLogUuid,
+        teacher_assignment_uuid: selectedAssignment.id,
+        class_name: selectedAssignment.className,
+        section_name: selectedAssignment.sectionName,
+        subject_name: selectedAssignment.subjectName,
+        topic_name: topicName,
+        concepts_covered: normalizedConcepts,
+        chapter_name: resolvedChapterName ? selectedChapter === OTHER_CHAPTER_VALUE ? `__TP_MANUAL_CHAPTER__:${resolvedChapterName}` : resolvedChapterName : null,
+        multi_cross_questions: questionPayload,
+        page_from: Number(pageFrom),
+        page_to: Number(pageTo),
+        homework_given: homeworkGiven,
+        activity_conducted: activityConducted,
+        teacher_notes: teacherNotes,
+        log_date: getIndiaCalendarDateKey(),
+      });
+    } catch (error: any) {
+      // Storage is outside PostgreSQL's transaction. Never delete an uploaded
+      // image merely because the RPC returned an error: a network timeout can
+      // happen after PostgreSQL has already committed the Daily Log. The
+      // repository marks a confirmed committed transaction explicitly. Only
+      // when it confirms that the Daily Log UUID does not exist do we clean up
+      // the uploaded objects. If the confirmation query itself is uncertain,
+      // retaining the object is safer than leaving a committed DB row with a
+      // broken image reference.
+      const canSafelyDeleteUploadedImages =
+        uploadedPaths.length > 0 &&
+        supabase &&
+        (databaseCreateStarted
+          ? error?.__dailyLogCommitConfirmedAbsent === true
+          : true);
+      if (canSafelyDeleteUploadedImages) {
+        const { error: cleanupError } = await supabase.storage.from("daily-log-cross-questions").remove(uploadedPaths);
+        if (cleanupError) console.warn("CROSS QUESTION IMAGE CLEANUP FAILED", cleanupError);
+      }
+      showCrossQuestionError(String(error?.message ?? "The Daily Log could not be published."));
+      return;
     }
-
-    await onSave({
-      teacher_assignment_uuid:
-        selectedAssignment.id,
-
-      class_name:
-        selectedAssignment.className,
-
-      section_name:
-        selectedAssignment.sectionName,
-
-      subject_name:
-        selectedAssignment.subjectName,
-
-      topic_name:
-        topicName,
-
-      concepts_covered:
-        normalizedConcepts,
-
-      chapter_name: resolvedChapterName
-        ? selectedChapter === OTHER_CHAPTER_VALUE
-          ? `__TP_MANUAL_CHAPTER__:${resolvedChapterName}`
-          : resolvedChapterName
-        : null,
-      cross_question_text: questionText || null,
-      cross_question_image_path: uploadedImagePath,
-      cross_question_options: hasCrossQuestion ? normalizedQuestionOptions : null,
-      cross_question_correct_index: hasCrossQuestion ? Number(crossQuestionCorrectIndex) : null,
-
-      page_from:
-        Number(pageFrom),
-
-      page_to:
-        Number(pageTo),
-
-      homework_given:
-        homeworkGiven,
-
-      activity_conducted:
-        activityConducted,
-
-      teacher_notes:
-        teacherNotes,
-
-      // log_date is the classroom BUSINESS DATE.
-      // Store the India calendar date (YYYY-MM-DD), not a UTC timestamp.
-      // This keeps teacher submission and student "today" filtering aligned.
-      log_date:
-        getIndiaCalendarDateKey(),
-    });
-
+    pendingDailyLogUuidRef.current = null;
     resetForm();
     onClose();
   }
@@ -1536,73 +1563,12 @@ export default function TeacherDailyLogDialog({
               PAGE COVERAGE
              ========================================= */}
 
-          {/* Additive Cross Question section; existing Pages Covered fields are untouched. */}
-          <div id="tp-daily-log-question" style={{ ...sectionCardStyle, ...(guidedStep === "question" ? guidedHighlightStyle : {}) }}>
-            <div style={sectionLabelStyle}>Cross Question <span style={{ color: "#DC2626" }}>*</span></div>
-            <div style={{ fontSize: "12px", color: "#64748B", marginBottom: "10px", lineHeight: 1.5 }}>
-              Required: enter the question or attach one question image, fill all four options, and choose the correct answer.
-            </div>
-            <div style={fieldLabelStyle}>Question text (or use the image option below)</div>
-            <textarea
-              style={{ ...inputStyle, minHeight: "84px", resize: "vertical" }}
-              value={crossQuestionText}
-              onChange={(e) => setCrossQuestionText(e.target.value)}
-              placeholder="Type the question, or attach a question image below"
-              disabled={!!crossQuestionImage}
-              aria-required="true"
-            />
-            <div style={fieldLabelStyle}>Attach or capture question image <span style={{ color: "#64748B", fontWeight: 600 }}>(alternative to question text)</span></div>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              capture="environment"
-              onChange={(e) => {
-                const file = e.target.files?.[0] ?? null;
-                if (file && !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-                  alert("Please use a JPG, PNG, or WebP image.");
-                  e.currentTarget.value = "";
-                  setCrossQuestionImage(null);
-                  return;
-                }
-                if (file && file.size > 5 * 1024 * 1024) {
-                  alert("The question image must be 5 MB or smaller.");
-                  e.currentTarget.value = "";
-                  setCrossQuestionImage(null);
-                  return;
-                }
-                setCrossQuestionImage(file);
-                if (file) setCrossQuestionText("");
-              }}
-              style={{ ...inputStyle, padding: "10px" }}
-            />
-            {crossQuestionImage && <button type="button" onClick={() => { setCrossQuestionImage(null); setCrossQuestionImageViewerOpen(false); }} style={{ marginTop: 6 }}>Remove image</button>}
-            {crossQuestionImagePreview && (
-              <button type="button" onClick={() => setCrossQuestionImageViewerOpen(true)} aria-label="Enlarge selected cross-question image" style={{ display: "block", maxWidth: "100%", marginTop: "10px", padding: 0, border: 0, background: "transparent", cursor: "zoom-in" }}>
-                <img src={crossQuestionImagePreview} alt="Cross-question preview (select to enlarge)" style={{ display: "block", maxWidth: "100%", maxHeight: "260px", objectFit: "contain", borderRadius: "12px" }} />
-              </button>
-            )}
-            <div style={{ fontSize: "12px", color: "#64748B", marginTop: "6px" }}>
-              Use one image (JPG, PNG, or WebP, up to 5 MB) or question text. Students will see the image instead of text when an image is attached.
-            </div>
-            <div id="tp-daily-log-options" style={guidedStep === "options" ? guidedHighlightStyle : undefined}>
-            {crossQuestionOptions.map((option, index) => (
-              <div key={index} style={{ marginTop: "10px" }}>
-                <div style={fieldLabelStyle}>Option {index + 1} <span style={{ color: "#DC2626" }}>*</span></div>
-                <input
-                  style={inputStyle}
-                  value={option}
-                  onChange={(e) => setCrossQuestionOptions((current) => current.map((value, i) => i === index ? e.target.value : value))}
-                  placeholder={`Enter option ${index + 1}`}
-                  aria-required="true"
-                />
-                <label style={{ display: "inline-flex", gap: "8px", alignItems: "center", fontSize: "13px", color: "#334155" }}>
-                  <input type="radio" name="cross-question-correct-option" checked={crossQuestionCorrectIndex === String(index)} onChange={() => setCrossQuestionCorrectIndex(String(index))} aria-required="true" />
-                  Correct answer <span style={{ color: "#DC2626", fontWeight: 800 }}>*</span>
-                </label>
-              </div>
-            ))}
-            </div>
-          </div>
+          {/* V10 multi Cross Question builder. Existing lesson fields remain unchanged. */}
+          <TeacherDailyLogCrossQuestionBuilder
+            questions={crossQuestions}
+            onChange={setCrossQuestions}
+            guidedHighlight={guidedStep === "question" || guidedStep === "options"}
+          />
 
           <div style={sectionCardStyle}>
             <div style={sectionLabelStyle}>
@@ -2010,12 +1976,6 @@ export default function TeacherDailyLogDialog({
  .tp-log-previous-reference-loading div,.tp-log-previous-reference>div{font-size:7.8px !important}
 }
 `}</style>
-      {crossQuestionImageViewerOpen && crossQuestionImagePreview && (
-        <div role="dialog" aria-modal="true" aria-label="Selected cross-question image preview" onClick={(event) => { if (event.target === event.currentTarget) setCrossQuestionImageViewerOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 1300, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "rgba(2, 6, 23, 0.88)" }}>
-          <button type="button" onClick={() => setCrossQuestionImageViewerOpen(false)} aria-label="Close enlarged image" style={{ position: "absolute", top: 16, right: 16, zIndex: 1, width: 42, height: 42, border: "1px solid rgba(255,255,255,.65)", borderRadius: 999, background: "#fff", color: "#0f172a", fontSize: 26, cursor: "pointer" }}>×</button>
-          <img src={crossQuestionImagePreview} alt="Enlarged selected cross question" onClick={(event) => event.stopPropagation()} style={{ display: "block", maxWidth: "100%", maxHeight: "90vh", objectFit: "contain", borderRadius: 8 }} />
-        </div>
-      )}
       {crossQuestionError && crossQuestionErrorRect && (
         <div
           role="dialog"

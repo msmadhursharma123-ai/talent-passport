@@ -8,6 +8,8 @@ import {
   getTodaysLectureLogs,
   getStudentSubjects,
   getStudentFeedbackStatementData,
+  getStudentMultiCrossQuestions,
+  getStudentMultiCrossQuestionAttempts,
 } from "../data/studentGrowthPlanRepository";
 
 import {
@@ -38,6 +40,7 @@ import {
 } from "./loop1Feedback/Loop1FeedbackVerification";
 import Loop1FeedbackVerificationDialog from "./loop1Feedback/Loop1FeedbackVerificationDialog";
 import Loop1FeedbackVerificationQuestion from "./loop1Feedback/Loop1FeedbackVerificationQuestion";
+import MultiCrossQuestionFlow, { type MultiCrossQuestion, type MultiCrossQuestionAttempt } from "./MultiCrossQuestionFlow";
 
 import {
   calculateDailyFeedbackCreditSummaryFromLogs,
@@ -187,6 +190,8 @@ export default function DailyLectureFeedback() {
   const [submittedFeedback, setSubmittedFeedback] = useState<Record<string, any>>({});
   const [crossQuestionAnswers, setCrossQuestionAnswers] = useState<Record<string, number>>({});
   const [crossQuestionResults, setCrossQuestionResults] = useState<Record<string, boolean>>({});
+  const [multiCrossQuestionsByLog, setMultiCrossQuestionsByLog] = useState<Record<string, MultiCrossQuestion[]>>({});
+  const [multiCrossAttemptsByLog, setMultiCrossAttemptsByLog] = useState<Record<string, Record<string, MultiCrossQuestionAttempt>>>({});
 
   // Additive top-up state. Existing Loop-1 Cross Question state and handlers remain untouched.
   const loop1VerificationIntentRef = useRef(0);
@@ -198,6 +203,11 @@ export default function DailyLectureFeedback() {
   // needs a same-event guard to prevent the legacy Partial/Didn't scroll target
   // from overwriting the verification-question target.
   const loop1VerificationActivationLogIdRef = useRef<string | null>(null);
+  // Remembers whether a multi-question terminal wrong answer originated from
+  // the Complete selection. In that path Partial/Didn't remain switchable;
+  // when the student originally chose Partial/Didn't, the understanding
+  // choices are hidden after the wrong answer and concepts are shown directly.
+  const multiWrongStartedFromCompleteRef = useRef<Set<string>>(new Set());
   const [loop1VerificationStage, setLoop1VerificationStage] = useState<"idle" | "question" | "verification" | "corrected" | "wrong" | "no">("idle");
   const [loop1VerificationLogId, setLoop1VerificationLogId] = useState<string | null>(null);
   const [loop1VerificationAnswer, setLoop1VerificationAnswer] = useState<number | null>(null);
@@ -278,6 +288,41 @@ export default function DailyLectureFeedback() {
 
       setLectureLogs(todaysLogs ?? []);
       setIsLoadingLogs(false);
+
+      // V11 additive multi-question read path. Legacy scalar attempts remain
+      // loaded exactly as before for historical/Loop-2 compatibility.
+      if ((todaysLogs ?? []).length > 0) {
+        try {
+          const ids = (todaysLogs ?? []).map((log: any) => String(log.id ?? "")).filter(Boolean);
+          const [questions, attempts] = await Promise.all([
+            getStudentMultiCrossQuestions(ids),
+            getStudentMultiCrossQuestionAttempts(ids),
+          ]);
+          const questionMap: Record<string, MultiCrossQuestion[]> = {};
+          for (const row of questions as MultiCrossQuestion[]) {
+            const key = String(row.daily_log_uuid);
+            (questionMap[key] ??= []).push(row);
+          }
+          Object.values(questionMap).forEach((rows) => rows.sort((a, b) => a.question_order - b.question_order));
+          const attemptMap: Record<string, Record<string, MultiCrossQuestionAttempt>> = {};
+          for (const row of attempts as MultiCrossQuestionAttempt[]) {
+            const logKey = String(row.daily_log_uuid);
+            (attemptMap[logKey] ??= {})[String(row.question_uuid)] = row;
+          }
+          setMultiCrossQuestionsByLog(questionMap);
+          setMultiCrossAttemptsByLog(attemptMap);
+          loop1VerificationAttemptHistoryReadyRef.current = true;
+        } catch (multiError) {
+          // The new layer is isolated from the existing daily-log feed. A
+          // failure here must not break legacy logs or Loop-2.
+          console.error("MULTI CROSS QUESTION LOAD FAILED", multiError);
+          setMultiCrossQuestionsByLog({});
+          setMultiCrossAttemptsByLog({});
+        }
+      } else {
+        setMultiCrossQuestionsByLog({});
+        setMultiCrossAttemptsByLog({});
+      }
 
       // Restore the one-attempt lock after a refresh. The table's SELECT RLS
       // exposes only the signed-in student's own attempt rows.
@@ -475,6 +520,7 @@ export default function DailyLectureFeedback() {
     if (loop1VerificationActivationLogIdRef.current === logId) {
       loop1VerificationActivationLogIdRef.current = null;
     }
+    multiWrongStartedFromCompleteRef.current.delete(logId);
     setLoop1VerificationStage("idle");
     setLoop1VerificationLogId(null);
     setLoop1VerificationAnswer(null);
@@ -482,8 +528,47 @@ export default function DailyLectureFeedback() {
     setLoop1VerificationSecondSelection(null);
   }
 
+  function getMultiQuestionsForLog(logId: string): MultiCrossQuestion[] {
+    return multiCrossQuestionsByLog[logId] ?? [];
+  }
+
+  function hasMultiQuestions(logId: string): boolean {
+    return getMultiQuestionsForLog(logId).length >= 2;
+  }
+
+  function getMultiAttemptsForLog(logId: string): Record<string, MultiCrossQuestionAttempt> {
+    return multiCrossAttemptsByLog[logId] ?? {};
+  }
+
   function startLoop1Verification(log: any, level: string): boolean {
     if (!loop1VerificationAttemptHistoryReadyRef.current) return false;
+
+    if (hasMultiQuestions(log.id)) {
+      const questions = getMultiQuestionsForLog(log.id);
+      const attempts = getMultiAttemptsForLog(log.id);
+      const wrong = questions.some((question) => attempts[question.id]?.is_correct === false);
+      const complete = questions.every((question) => attempts[question.id]?.is_correct === true);
+      loop1VerificationIntentRef.current += 1;
+      loop1VerificationActivationLogIdRef.current = log.id;
+      setUnderstandingLevel(level);
+      setFeedbackSubmitError(null);
+      setLoop1VerificationLogId(log.id);
+      setLoop1VerificationAnswer(null);
+      setLoop1VerificationCorrect(null);
+      setLoop1VerificationSecondSelection(null);
+      if (complete) {
+        setLoop1VerificationStage("verification");
+        setGuidedScrollTarget({ logId: log.id, section: "question" });
+      } else if (wrong) {
+        setLoop1VerificationStage("wrong");
+        setGuidedScrollTarget({ logId: log.id, section: "concepts" });
+      } else {
+        setLoop1VerificationStage("question");
+        setGuidedScrollTarget({ logId: log.id, section: "question" });
+      }
+      return true;
+    }
+
     if (log.id in crossQuestionAnswers) return false;
     if (!hasLoop1VerificationQuestion(log)) return false;
     loop1VerificationIntentRef.current += 1;
@@ -498,10 +583,6 @@ export default function DailyLectureFeedback() {
     setLoop1VerificationCorrect(null);
     setLoop1VerificationSecondSelection(null);
     setLoop1VerificationStage("question");
-    // The verification question is rendered by the same state transition as the
-    // Partial/Didn't selection. Keep the existing guided-scroll mechanism, but
-    // explicitly target the newly rendered question so this step is guided on
-    // mobile, tablet, and desktop as well.
     setGuidedScrollTarget({ logId: log.id, section: "question" });
     return true;
   }
@@ -525,7 +606,13 @@ export default function DailyLectureFeedback() {
       if (option === "I completely understood.") {
         const selected = loop1VerificationAnswer;
         const correct = loop1VerificationCorrect;
-        void submitFeedback(log, option, selected, correct);
+        void submitFeedback(
+          log,
+          option,
+          selected,
+          correct,
+          { allowCorrectedSecondSelection: true }
+        );
         return;
       }
       if (option === "I partially understood." || option === "I didn't understand.") {
@@ -537,6 +624,20 @@ export default function DailyLectureFeedback() {
         // submission/reset or when the student explicitly chooses NO.
         setGuidedScrollTarget({ logId: log.id, section: "concepts" });
       }
+      return;
+    }
+
+    if (loop1VerificationLogId === log.id && loop1VerificationStage === "wrong") {
+      // A multi-question wrong answer is terminal for Cross Questions, but the
+      // student must immediately continue through the existing understanding →
+      // difficult-concept flow. Partial/Didn't-understand are allowed here;
+      // Complete/Absent remain rejected by the feedback gate.
+      if (option === "I partially understood." || option === "I didn't understand.") {
+        setUnderstandingLevel(option);
+        setFeedbackSubmitError(null);
+        setGuidedScrollTarget({ logId: log.id, section: "concepts" });
+      }
+      event.stopPropagation();
       return;
     }
 
@@ -625,14 +726,126 @@ export default function DailyLectureFeedback() {
     setGuidedScrollTarget({ logId: log.id, section: "concepts" });
   }
 
+  async function recordMultiCrossQuestionAttempt(log: any, question: MultiCrossQuestion, selectedValue: string): Promise<MultiCrossQuestionAttempt> {
+    const supabase = getSupabaseClient();
+    if (!supabase) throw new Error("Your session is unavailable. Please sign in again.");
+
+    const { data, error } = await (supabase as any).rpc("tp_v11_multi_record_cross_question_attempt", {
+      p_question_uuid: String(question.id),
+      p_selected_value: String(selectedValue),
+    });
+
+    if (error) {
+      // The RPC is idempotent by (daily_log_uuid, question_uuid, student_uuid).
+      // If the network/PostgREST response was lost after the database committed,
+      // recover the committed attempt before surfacing an error to the student.
+      try {
+        const recovered = await getStudentMultiCrossQuestionAttempts([String(log.id)]);
+        const existing = (recovered as MultiCrossQuestionAttempt[]).find(
+          (row) => String(row.question_uuid) === String(question.id)
+        );
+        if (existing) {
+          const normalizedRecovered: MultiCrossQuestionAttempt = {
+            daily_log_uuid: String(existing.daily_log_uuid),
+            question_uuid: String(existing.question_uuid),
+            selected_value: String(existing.selected_value ?? ""),
+            is_correct: existing.is_correct === true,
+            attempted_at: existing.attempted_at,
+          };
+          setMultiCrossAttemptsByLog((previous) => ({
+            ...previous,
+            [log.id]: { ...(previous[log.id] ?? {}), [question.id]: normalizedRecovered },
+          }));
+          return normalizedRecovered;
+        }
+      } catch {
+        // Preserve the original RPC error below. The recovery read is best-effort.
+      }
+      const message = String((error as any)?.message ?? "The Cross Question answer could not be recorded.");
+      throw new Error(message);
+    }
+
+    const attempt = Array.isArray(data) ? data[0] : data;
+    if (!attempt?.question_uuid) throw new Error("The Cross Question answer could not be confirmed.");
+
+    const normalizedAttempt: MultiCrossQuestionAttempt = {
+      daily_log_uuid: String(attempt.daily_log_uuid),
+      question_uuid: String(attempt.question_uuid),
+      selected_value: String(attempt.selected_value ?? ""),
+      is_correct: attempt.is_correct === true,
+      attempted_at: attempt.attempted_at,
+    };
+
+    setMultiCrossAttemptsByLog((previous) => ({
+      ...previous,
+      [log.id]: { ...(previous[log.id] ?? {}), [question.id]: normalizedAttempt },
+    }));
+
+    return normalizedAttempt;
+  }
+
+  function handleMultiAllCorrect(log: any, finalAttempt: MultiCrossQuestionAttempt) {
+    if (submittedFeedback[log.id]) return;
+    if (understandingLevel !== "I completely understood.") {
+      handleMultiVerificationAllCorrect(log);
+      return;
+    }
+    setUnderstandingLevel("I completely understood.");
+    setFeedbackSubmitError(null);
+    // The final attempt is passed directly because React state updates are
+    // asynchronous. This lets the server-side readiness gate see the complete
+    // question ledger in the same answer event and submit automatically.
+    void submitFeedback(
+      log,
+      "I completely understood.",
+      null,
+      true,
+      { multiFinalAttempt: finalAttempt }
+    );
+  }
+
+  function handleMultiVerificationAllCorrect(log: any) {
+    if (submittedFeedback[log.id]) return;
+    setLoop1VerificationStage("verification");
+    setGuidedScrollTarget({ logId: log.id, section: "question" });
+  }
+
+  function handleMultiWrong(log: any) {
+    if (submittedFeedback[log.id]) return;
+    if (understandingLevel === "I completely understood.") {
+      multiWrongStartedFromCompleteRef.current.add(log.id);
+    } else {
+      multiWrongStartedFromCompleteRef.current.delete(log.id);
+    }
+    // Preserve the student's current Partial/Didn't-understand selection.
+    // If the student originally chose Complete, keep that selection visible
+    // but disabled; Partial/Didn't-understand remain available for the
+    // required post-wrong understanding choice.
+    setLoop1VerificationLogId(log.id);
+    setLoop1VerificationStage("wrong");
+    setFeedbackSubmitError(null);
+    setGuidedScrollTarget({
+      logId: log.id,
+      section: understandingLevel === "I completely understood."
+        ? "understanding"
+        : "concepts",
+    });
+  }
+
   async function submitFeedback(
     log: any,
     understandingOverride?: string,
     crossQuestionSelectedIndex?: number | null,
-    crossQuestionIsCorrect?: boolean | null
+    crossQuestionIsCorrect?: boolean | null,
+    options?: {
+      allowCorrectedSecondSelection?: boolean;
+      multiFinalAttempt?: MultiCrossQuestionAttempt | null;
+    }
   ) {
     if (isSubmittingFeedbackId) return;
     const effectiveUnderstandingLevel = understandingOverride ?? understandingLevel;
+    const multiQuestions = getMultiQuestionsForLog(log.id);
+    const isMultiCrossQuestionLog = multiQuestions.length >= 2;
 
     // After Verification YES, the student must make a fresh second selection.
     // Do not allow the ordinary Submit button to reuse the cleared/previous
@@ -640,28 +853,79 @@ export default function DailyLectureFeedback() {
     if (
       loop1VerificationLogId === log.id &&
       loop1VerificationStage === "corrected" &&
-      loop1VerificationSecondSelection == null
+      loop1VerificationSecondSelection == null &&
+      !options?.allowCorrectedSecondSelection
     ) {
       setFeedbackSubmitError("Please choose your understanding level again.");
       return;
     }
 
-    // A Cross Question is mandatory only for the existing “I completely understood.”
-    // path. Never allow the ordinary submit button to bypass the one-attempt MCQ.
-    const hasCrossQuestion = Boolean(
-      (log.cross_question_text || log.cross_question_image_path) &&
-      Array.isArray(log.cross_question_options) &&
-      log.cross_question_options.length === 4
-    );
-    const attemptedCrossQuestion = crossQuestionSelectedIndex != null || log.id in crossQuestionAnswers;
-    const effectiveCrossQuestionCorrect = crossQuestionIsCorrect ?? crossQuestionResults[log.id];
-    if (hasCrossQuestion && effectiveUnderstandingLevel === "I completely understood." && !attemptedCrossQuestion) {
-      setFeedbackSubmitError("Please answer the Cross Question first.");
-      return;
-    }
-    if (hasCrossQuestion && effectiveUnderstandingLevel === "I completely understood." && effectiveCrossQuestionCorrect !== true) {
-      setFeedbackSubmitError("The Cross Question was answered incorrectly. Please choose your understanding level and submit the usual feedback.");
-      return;
+    // V11: new multi-question logs use the ordered question-level ledger.
+    // Legacy scalar logs continue through the existing gate unchanged.
+    if (isMultiCrossQuestionLog) {
+      const attempts = {
+        ...getMultiAttemptsForLog(log.id),
+        ...(options?.multiFinalAttempt?.question_uuid
+          ? { [options.multiFinalAttempt.question_uuid]: options.multiFinalAttempt }
+          : {}),
+      };
+      const wrong = multiQuestions.some((question) => attempts[question.id]?.is_correct === false);
+      const allCorrect = multiQuestions.every((question) => attempts[question.id]?.is_correct === true);
+      if (effectiveUnderstandingLevel === "I completely understood.") {
+        if (!allCorrect) {
+          setFeedbackSubmitError(wrong
+            ? "The Cross Question flow ended on an incorrect answer. Please choose your understanding level and complete the usual feedback."
+            : "Please answer all Cross Questions correctly first.");
+          return;
+        }
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+          setFeedbackSubmitError("Your session is unavailable. Please sign in again.");
+          return;
+        }
+        const { error: readyError } = await (supabase as any).rpc("tp_v11_multi_assert_feedback_ready", {
+          p_daily_log_uuid: log.id,
+          p_allow_partial_or_wrong: false,
+        });
+        if (readyError) {
+          setFeedbackSubmitError(String(readyError.message ?? "All Cross Questions must be completed correctly."));
+          return;
+        }
+      } else if (effectiveUnderstandingLevel !== ABSENT_FEEDBACK_OPTION) {
+        // Fail closed for Partial/Didn't-understand as well. The server accepts
+        // this branch only after a terminal wrong answer or after all questions
+        // are complete, so a transient multi-question read failure cannot turn
+        // into a question-free feedback submission.
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+          setFeedbackSubmitError("Your session is unavailable. Please sign in again.");
+          return;
+        }
+        const { error: readyError } = await (supabase as any).rpc("tp_v11_multi_assert_feedback_ready", {
+          p_daily_log_uuid: log.id,
+          p_allow_partial_or_wrong: true,
+        });
+        if (readyError) {
+          setFeedbackSubmitError(String(readyError.message ?? "Please complete the Cross Question flow before submitting this feedback."));
+          return;
+        }
+      }
+    } else {
+      const hasCrossQuestion = Boolean(
+        (log.cross_question_text || log.cross_question_image_path) &&
+        Array.isArray(log.cross_question_options) &&
+        log.cross_question_options.length === 4
+      );
+      const attemptedCrossQuestion = crossQuestionSelectedIndex != null || log.id in crossQuestionAnswers;
+      const effectiveCrossQuestionCorrect = crossQuestionIsCorrect ?? crossQuestionResults[log.id];
+      if (hasCrossQuestion && effectiveUnderstandingLevel === "I completely understood." && !attemptedCrossQuestion) {
+        setFeedbackSubmitError("Please answer the Cross Question first.");
+        return;
+      }
+      if (hasCrossQuestion && effectiveUnderstandingLevel === "I completely understood." && effectiveCrossQuestionCorrect !== true) {
+        setFeedbackSubmitError("The Cross Question was answered incorrectly. Please choose your understanding level and submit the usual feedback.");
+        return;
+      }
     }
 
     if (effectiveUnderstandingLevel.length === 0) {
@@ -4723,10 +4987,15 @@ return (
                             border: "1px solid #BFDBFE",
                           }}
                         >
-                          Please choose your understanding level again and submit the usual feedback.
+                          That answer is incorrect. choose your understanding again.
                         </div>
                       )}
 
+                    {!(
+                      loop1VerificationLogId === log.id &&
+                      loop1VerificationStage === "wrong" &&
+                      !multiWrongStartedFromCompleteRef.current.has(log.id)
+                    ) && (
                     <div
                       id={`dlf-understanding-${log.id}`}
                       className="dlf-option-grid"
@@ -4754,8 +5023,12 @@ return (
                                 (
                                   !(loop1VerificationLogId === log.id && loop1VerificationStage === "corrected") &&
                                   (option === "I completely understood." || option === ABSENT_FEEDBACK_OPTION) &&
-                                  log.id in crossQuestionAnswers &&
-                                  crossQuestionResults[log.id] === false
+                                  (
+                                    (log.id in crossQuestionAnswers && crossQuestionResults[log.id] === false) ||
+                                    (hasMultiQuestions(log.id) &&
+                                      loop1VerificationLogId === log.id &&
+                                      loop1VerificationStage === "wrong")
+                                  )
                                 )
                               }
                               checked={
@@ -4810,66 +5083,117 @@ return (
                       )}
 
                     </div>
-
-                    {loop1VerificationLogId === log.id && loop1VerificationStage === "question" && (
-                      <Loop1FeedbackVerificationQuestion
-                        log={log}
-                        disabled={loop1VerificationAnswerLockRef.current.has(log.id)}
-                        onAnswer={(selected) => handleLoop1VerificationAnswer(log, selected)}
-                        onImageClick={setCrossQuestionImageViewerUrl}
-                      />
                     )}
 
+
+                    {loop1VerificationLogId === log.id && loop1VerificationStage === "question" && (
+                      hasMultiQuestions(log.id) ? (
+                        <MultiCrossQuestionFlow
+                          logId={log.id}
+                          questions={getMultiQuestionsForLog(log.id)}
+                          attempts={getMultiAttemptsForLog(log.id)}
+                          disabled={isSubmittingFeedbackId === log.id}
+                          onAttempt={(question, selectedValue) => recordMultiCrossQuestionAttempt(log, question, selectedValue)}
+                          onAllCorrect={() => handleMultiVerificationAllCorrect(log)}
+                          onWrong={() => handleMultiWrong(log)}
+                          wrongMessage={
+                            understandingLevel === "I completely understood."
+                              ? "That answer is incorrect. choose your understanding again."
+                              : "That answer is incorrect. Please select the difficult concepts."
+                          }
+                          onError={(error) => {
+                            const message = String((error as any)?.message ?? "The Cross Question answer could not be recorded. Please refresh and try again.");
+                            setFeedbackSubmitError(message);
+                          }}
+                          onScrollNext={(question) => {
+                            window.requestAnimationFrame(() => {
+                              document.getElementById(`dlf-multi-question-${log.id}-${question.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                            });
+                          }}
+                        />
+                      ) : (
+                        <Loop1FeedbackVerificationQuestion
+                          log={log}
+                          disabled={loop1VerificationAnswerLockRef.current.has(log.id)}
+                          onAnswer={(selected) => handleLoop1VerificationAnswer(log, selected)}
+                          onImageClick={setCrossQuestionImageViewerUrl}
+                        />
+                      )
+                    )}
 
                     {!(loop1VerificationLogId === log.id && loop1VerificationStage === "corrected") && (
                       <>
-                    {(understandingLevel === "I completely understood." || (log.id in crossQuestionAnswers && !submittedFeedback[log.id])) &&
-                      Array.isArray(log.cross_question_options) &&
-                      log.cross_question_options.length === 4 &&
-                      (log.cross_question_text || log.cross_question_image_path) && (
-                      <div id={`dlf-question-${log.id}`} className="dlf-form-section" style={{ marginTop: 16, padding: 14, border: "1px solid #CBD5E1", borderRadius: 12 }}>
-                        <div className="dlf-form-label">Cross Question{log.chapter_name ? ` · ${String(log.chapter_name).replace(/^__TP_MANUAL_CHAPTER__:/, "")}` : ""}</div>
-                        {log.cross_question_image_path ? (
-                          log.cross_question_image_url ? <button type="button" onClick={() => setCrossQuestionImageViewerUrl(log.cross_question_image_url)} aria-label="Enlarge cross-question image" style={{ display: "block", maxWidth: "100%", margin: "10px auto", padding: 0, border: 0, background: "transparent", cursor: "zoom-in" }}><img src={log.cross_question_image_url} alt="Cross question (select to enlarge)" style={{ display: "block", maxWidth: "100%", maxHeight: 320, objectFit: "contain" }} /></button> : <div>Question image is unavailable. Please contact your teacher.</div>
-                        ) : <div style={{ whiteSpace: "pre-wrap", margin: "10px 0", fontWeight: 600 }}>{log.cross_question_text}</div>}
-                        {log.cross_question_options.map((option: string, index: number) => (
-                          <button key={`${log.id}-cross-${index}`} type="button"
-                            disabled={log.id in crossQuestionAnswers || isSubmittingFeedbackId === log.id}
-                            onClick={async () => {
-                              if (log.id in crossQuestionAnswers) return;
-                              const selected = Number(index);
-                              const supabase = getSupabaseClient();
-                              if (!supabase) {
-                                setFeedbackSubmitError("Your session is unavailable. Please sign in again.");
-                                return;
-                              }
-                              try {
-                                const { data, error } = await (supabase as any).rpc("tp_record_daily_cross_question_attempt", {
-                                  p_daily_log_uuid: log.id,
-                                  p_selected_index: selected,
-                                });
-                                if (error) throw error;
-                                const attempt = Array.isArray(data) ? data[0] : data;
-                                const correct = attempt?.is_correct === true;
-                                setCrossQuestionAnswers((previous) => ({ ...previous, [log.id]: selected }));
-                                setCrossQuestionResults((previous) => ({ ...previous, [log.id]: correct }));
-                                if (correct) {
-                                  void submitFeedback(log, "I completely understood.", selected, true);
-                                } else {
-                                  setUnderstandingLevel("");
-                                  setGuidedScrollTarget({ logId: log.id, section: "understanding" });
-                                }
-                              } catch (error: any) {
-                                console.error("CROSS QUESTION ATTEMPT FAILED", error);
-                                setFeedbackSubmitError(String(error?.message ?? "Your answer could not be recorded. Refresh the page to check whether it was already attempted."));
-                              }
+                    {(() => {
+                      const multiQuestions = getMultiQuestionsForLog(log.id);
+                      if (multiQuestions.length >= 2) {
+                        const attempts = getMultiAttemptsForLog(log.id);
+                        const hasStarted = Object.keys(attempts).length > 0;
+                        const shouldShow =
+                          !(loop1VerificationLogId === log.id && (loop1VerificationStage === "corrected" || loop1VerificationStage === "no" || loop1VerificationStage === "question")) &&
+                          (understandingLevel === "I completely understood." || hasStarted);
+                        if (!shouldShow) return null;
+                        return (
+                          <MultiCrossQuestionFlow
+                            logId={log.id}
+                            questions={multiQuestions}
+                            attempts={attempts}
+                            disabled={isSubmittingFeedbackId === log.id || loop1VerificationStage === "wrong"}
+                            onAttempt={(question, selectedValue) => recordMultiCrossQuestionAttempt(log, question, selectedValue)}
+                            onAllCorrect={(question, attempt) => handleMultiAllCorrect(log, attempt)}
+                            onWrong={() => handleMultiWrong(log)}
+                            wrongMessage={
+                              understandingLevel === "I completely understood."
+                                ? "That answer is incorrect. choose your understanding again."
+                                : "That answer is incorrect. Please select the difficult concepts."
+                            }
+                            onError={(error) => {
+                              const message = String((error as any)?.message ?? "The Cross Question answer could not be recorded. Please refresh and try again.");
+                              setFeedbackSubmitError(message);
                             }}
-                            style={{ display: "block", width: "100%", textAlign: "left", padding: "11px 12px", marginTop: 8, borderRadius: 9, border: "1px solid #CBD5E1", background: (log.id in crossQuestionAnswers && crossQuestionAnswers[log.id] === index) ? "#FEE2E2" : "#FFFFFF", cursor: log.id in crossQuestionAnswers ? "default" : "pointer" }}>
-                            {String.fromCharCode(65 + index)}. {option}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                            onScrollNext={(question) => {
+                              window.requestAnimationFrame(() => {
+                                document.getElementById(`dlf-multi-question-${log.id}-${question.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                              });
+                            }}
+                          />
+                        );
+                      }
+                      if (!((understandingLevel === "I completely understood." || (log.id in crossQuestionAnswers && !submittedFeedback[log.id])) && Array.isArray(log.cross_question_options) && log.cross_question_options.length === 4 && (log.cross_question_text || log.cross_question_image_path))) return null;
+                      return (
+                        <div id={`dlf-question-${log.id}`} className="dlf-form-section" style={{ marginTop: 16, padding: 14, border: "1px solid #CBD5E1", borderRadius: 12 }}>
+                          <div className="dlf-form-label">Cross Question{log.chapter_name ? ` · ${String(log.chapter_name).replace(/^__TP_MANUAL_CHAPTER__:/, "")}` : ""}</div>
+                          {log.cross_question_image_path ? (
+                            log.cross_question_image_url ? <button type="button" onClick={() => setCrossQuestionImageViewerUrl(log.cross_question_image_url)} aria-label="Enlarge cross-question image" style={{ display: "block", maxWidth: "100%", margin: "10px auto", padding: 0, border: 0, background: "transparent", cursor: "zoom-in" }}><img src={log.cross_question_image_url} alt="Cross question (select to enlarge)" style={{ display: "block", maxWidth: "100%", maxHeight: 320, objectFit: "contain" }} /></button> : <div>Question image is unavailable. Please contact your teacher.</div>
+                          ) : <div style={{ whiteSpace: "pre-wrap", margin: "10px 0", fontWeight: 600 }}>{log.cross_question_text}</div>}
+                          {log.cross_question_options.map((option: string, index: number) => (
+                            <button key={`${log.id}-cross-${index}`} type="button"
+                              disabled={log.id in crossQuestionAnswers || isSubmittingFeedbackId === log.id}
+                              onClick={async () => {
+                                if (log.id in crossQuestionAnswers) return;
+                                const selected = Number(index);
+                                const supabase = getSupabaseClient();
+                                if (!supabase) { setFeedbackSubmitError("Your session is unavailable. Please sign in again."); return; }
+                                try {
+                                  const { data, error } = await (supabase as any).rpc("tp_record_daily_cross_question_attempt", { p_daily_log_uuid: log.id, p_selected_index: selected });
+                                  if (error) throw error;
+                                  const attempt = Array.isArray(data) ? data[0] : data;
+                                  const correct = attempt?.is_correct === true;
+                                  setCrossQuestionAnswers((previous) => ({ ...previous, [log.id]: selected }));
+                                  setCrossQuestionResults((previous) => ({ ...previous, [log.id]: correct }));
+                                  if (correct) void submitFeedback(log, "I completely understood.", selected, true);
+                                  else { setUnderstandingLevel(""); setGuidedScrollTarget({ logId: log.id, section: "understanding" }); }
+                                } catch (error: any) {
+                                  console.error("CROSS QUESTION ATTEMPT FAILED", error);
+                                  setFeedbackSubmitError(String(error?.message ?? "Your answer could not be recorded. Refresh the page to check whether it was already attempted."));
+                                }
+                              }}
+                              style={{ display: "block", width: "100%", textAlign: "left", padding: "11px 12px", marginTop: 8, borderRadius: 9, border: "1px solid #CBD5E1", background: (log.id in crossQuestionAnswers && crossQuestionAnswers[log.id] === index) ? "#FEE2E2" : "#FFFFFF", cursor: log.id in crossQuestionAnswers ? "default" : "pointer" }}>
+                              {String.fromCharCode(65 + index)}. {option}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
                       </>
                     )}
                     {log.id in crossQuestionAnswers && crossQuestionResults[log.id] === false && !submittedFeedback[log.id] && (

@@ -615,3 +615,48 @@ export async function getProgressTrackerData() {
 export async function submitStudentLectureFeedback() {
   return null;
 }
+
+/* ============================================================
+   V11 MULTI CROSS QUESTION READS
+   Additive only: legacy Daily Log reads remain unchanged.
+============================================================ */
+
+export async function getStudentMultiCrossQuestions(dailyLogUuids: string[]) {
+  const supabase = getSupabaseClient();
+  const ids = Array.from(new Set(dailyLogUuids.filter(Boolean)));
+  if (!supabase || ids.length === 0) return [];
+
+  const { data, error } = await (supabase as any).rpc("tp_v11_multi_get_student_cross_questions", {
+    p_daily_log_uuids: ids,
+  });
+  if (error) throw error;
+
+  const rows = Array.isArray(data) ? data : [];
+  const withImages = await Promise.all(rows.map(async (row: any) => {
+    if (!row.image_path) return row;
+    try {
+      const { data: signed, error: signedError } = await supabase.storage
+        .from("daily-log-cross-questions")
+        .createSignedUrl(String(row.image_path), 60 * 60);
+      if (signedError) throw signedError;
+      return { ...row, image_url: signed?.signedUrl ?? null };
+    } catch (imageError) {
+      console.warn("MULTI CROSS QUESTION SIGNED IMAGE URL FAILED", imageError);
+      return { ...row, image_url: null };
+    }
+  }));
+
+  return withImages;
+}
+
+export async function getStudentMultiCrossQuestionAttempts(dailyLogUuids: string[]) {
+  const supabase = getSupabaseClient();
+  const ids = Array.from(new Set(dailyLogUuids.filter(Boolean)));
+  if (!supabase || ids.length === 0) return [];
+
+  const { data, error } = await (supabase as any).rpc("tp_v11_multi_get_student_cross_question_attempts", {
+    p_daily_log_uuids: ids,
+  });
+  if (error) throw error;
+  return Array.isArray(data) ? data : [];
+}
