@@ -30,6 +30,9 @@ export interface CanonicalExamPreparationRow {
   isUnresolved: true;
   source: "loop2" | "live" | "monthly";
   sourceFeedbackId: string | null;
+  /** Exact Loop-2 source identity when this canonical row represents a pending_teacher_doubts row. */
+  pendingDoubtId?: string | null;
+  /** Exact Live source identity when this canonical row represents a student_live_unresolved_doubts row. */
   liveRowId: string | null;
 }
 

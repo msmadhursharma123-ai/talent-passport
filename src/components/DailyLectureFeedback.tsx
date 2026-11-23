@@ -540,6 +540,22 @@ export default function DailyLectureFeedback() {
     return multiCrossAttemptsByLog[logId] ?? {};
   }
 
+  // V34 corrected: the understanding choice becomes immutable only after the
+  // first Multi Cross Question has actually been answered correctly. Before
+  // that point the student may move freely between Complete / Partial /
+  // Didn't / Absent. This is derived from the persisted attempt ledger so a
+  // refresh cannot accidentally reopen the choice after Q1 is correct.
+  function isMultiFirstQuestionAnsweredCorrectly(logId: string): boolean {
+    const questions = getMultiQuestionsForLog(logId);
+    if (questions.length < 2) return false;
+    const firstQuestion = [...questions].sort((a, b) => a.question_order - b.question_order)[0];
+    return getMultiAttemptsForLog(logId)[firstQuestion.id]?.is_correct === true;
+  }
+
+  function hasAnyMultiAttempt(logId: string): boolean {
+    return Object.keys(getMultiAttemptsForLog(logId)).length > 0;
+  }
+
   function startLoop1Verification(log: any, level: string): boolean {
     if (!loop1VerificationAttemptHistoryReadyRef.current) return false;
 
@@ -637,6 +653,51 @@ export default function DailyLectureFeedback() {
         setFeedbackSubmitError(null);
         setGuidedScrollTarget({ logId: log.id, section: "concepts" });
       }
+      event.stopPropagation();
+      return;
+    }
+
+    // V34 corrected: while Q1 has not been answered, the student may change
+    // the understanding choice without restarting the Cross Question flow.
+    // Absent temporarily removes the question; choosing Complete/Partial/
+    // Didn't brings the same Q1 flow back. Once Q1 is answered correctly,
+    // this branch no longer applies and the selection becomes locked.
+    if (
+      hasMultiQuestions(log.id) &&
+      loop1VerificationLogId === log.id &&
+      loop1VerificationStage === "question" &&
+      !hasAnyMultiAttempt(log.id)
+    ) {
+      loop1VerificationActivationLogIdRef.current = null;
+      setFeedbackSubmitError(null);
+      if (option === ABSENT_FEEDBACK_OPTION) {
+        setUnderstandingLevel(ABSENT_FEEDBACK_OPTION);
+        setConceptsNotUnderstood([]);
+        setSomethingElse(false);
+        setSomethingElseText("");
+        setAdditionalNote("");
+        clearLoop1Verification(log.id);
+        setGuidedScrollTarget({ logId: log.id, section: "understanding" });
+      } else if (
+        option === "I completely understood." ||
+        option === "I partially understood." ||
+        option === "I didn't understand."
+      ) {
+        setUnderstandingLevel(option);
+        setGuidedScrollTarget({ logId: log.id, section: "question" });
+      }
+      event.stopPropagation();
+      return;
+    }
+
+    // V34 corrected: after Q1 is answered correctly, no understanding change
+    // is allowed during the remaining Cross Question sequence. The terminal
+    // wrong branch above remains the deliberate V33 exception.
+    if (
+      hasMultiQuestions(log.id) &&
+      isMultiFirstQuestionAnsweredCorrectly(log.id) &&
+      !(loop1VerificationLogId === log.id && loop1VerificationStage === "corrected")
+    ) {
       event.stopPropagation();
       return;
     }
@@ -787,7 +848,12 @@ export default function DailyLectureFeedback() {
   function handleMultiAllCorrect(log: any, finalAttempt: MultiCrossQuestionAttempt) {
     if (submittedFeedback[log.id]) return;
     if (understandingLevel !== "I completely understood.") {
-      handleMultiVerificationAllCorrect(log);
+      // Preserve the V33 Partial/Didn't-understand completion path.
+      // This is intentionally local: the question-stage wrapper may call
+      // handleMultiAllCorrect() for Complete auto-submit, but non-Complete
+      // completion must enter the existing Verification state.
+      setLoop1VerificationStage("verification");
+      setGuidedScrollTarget({ logId: log.id, section: "question" });
       return;
     }
     setUnderstandingLevel("I completely understood.");
@@ -804,10 +870,12 @@ export default function DailyLectureFeedback() {
     );
   }
 
-  function handleMultiVerificationAllCorrect(log: any) {
+  function handleMultiVerificationAllCorrect(log: any, finalAttempt: MultiCrossQuestionAttempt) {
     if (submittedFeedback[log.id]) return;
-    setLoop1VerificationStage("verification");
-    setGuidedScrollTarget({ logId: log.id, section: "question" });
+    // Both MultiCrossQuestionFlow render paths use the same completion
+    // decision. Complete submits immediately; Partial/Didn't keep the existing
+    // Verification dialog.
+    handleMultiAllCorrect(log, finalAttempt);
   }
 
   function handleMultiWrong(log: any) {
@@ -5021,6 +5089,12 @@ return (
                                 loop1VerificationNoLockLogIdRef.current === log.id ||
                                 (loop1VerificationLogId === log.id && loop1VerificationStage === "no") ||
                                 (
+                                  hasMultiQuestions(log.id) &&
+                                  isMultiFirstQuestionAnsweredCorrectly(log.id) &&
+                                  loop1VerificationStage !== "wrong" &&
+                                  loop1VerificationStage !== "corrected"
+                                ) ||
+                                (
                                   !(loop1VerificationLogId === log.id && loop1VerificationStage === "corrected") &&
                                   (option === "I completely understood." || option === ABSENT_FEEDBACK_OPTION) &&
                                   (
@@ -5053,6 +5127,12 @@ return (
                                   return;
                                 }
                                 if (option === "I completely understood." && log.id in crossQuestionAnswers && crossQuestionResults[log.id] === false) return;
+                                if (
+                                  hasMultiQuestions(log.id) &&
+                                  isMultiFirstQuestionAnsweredCorrectly(log.id) &&
+                                  loop1VerificationStage !== "wrong" &&
+                                  loop1VerificationStage !== "corrected"
+                                ) return;
                                 setUnderstandingLevel(option);
 
                                 if (option === "I completely understood.") {
@@ -5094,7 +5174,7 @@ return (
                           attempts={getMultiAttemptsForLog(log.id)}
                           disabled={isSubmittingFeedbackId === log.id}
                           onAttempt={(question, selectedValue) => recordMultiCrossQuestionAttempt(log, question, selectedValue)}
-                          onAllCorrect={() => handleMultiVerificationAllCorrect(log)}
+                          onAllCorrect={(question, attempt) => handleMultiVerificationAllCorrect(log, attempt)}
                           onWrong={() => handleMultiWrong(log)}
                           wrongMessage={
                             understandingLevel === "I completely understood."
@@ -5207,7 +5287,8 @@ return (
                     ===================================== */}
 
                     {loop1VerificationLogId === log.id &&
-                      loop1VerificationStage === "wrong" && (
+                      loop1VerificationStage === "wrong" &&
+                      !multiWrongStartedFromCompleteRef.current.has(log.id) && (
                         <div
                           role="status"
                           style={{

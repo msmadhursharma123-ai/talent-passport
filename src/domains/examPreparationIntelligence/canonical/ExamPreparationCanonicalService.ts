@@ -22,6 +22,10 @@ import {
   examPreparationDateKey,
   isExamPreparationDateInRange,
 } from "./ExamPreparationDate";
+import {
+  getScalableLiveDoubtsForAssignments,
+  getScalablePendingDoubtsForAssignments,
+} from "./ExamPreparationScalableReadRepository";
 
 function client() {
   const supabase = getSupabaseClient();
@@ -100,16 +104,17 @@ async function fetchPendingRows(
     );
   }
 
-  if (options.scope === "teacher" && assignmentIds.length > 0) {
-    query = query.in("teacher_assignment_uuid", assignmentIds);
-  }
-
-  if (options.scope === "school" && assignmentIds.length > 0) {
-    query = query.in("teacher_assignment_uuid", assignmentIds);
-  }
-
   if (options.scope !== "student" && assignmentIds.length === 0) {
     return [];
+  }
+
+  // Teacher/School Exam Preparation can span a large Loop-2 ledger. Read it
+  // in bounded pages while preserving the exact same status contract and
+  // reconciliation inputs. Student scope remains on its existing direct
+  // query because it is already identity-bounded to one student.
+  if (options.scope === "teacher" || options.scope === "school") {
+    const rows = await getScalablePendingDoubtsForAssignments(assignmentIds);
+    return rows.filter(activeLoop2);
   }
 
   const { data, error } = await query;
@@ -197,8 +202,13 @@ async function fetchLiveRows(
     return getStudentLiveDoubtRows(true);
   }
 
-  if (options.scope === "teacher") {
-    return getLiveDoubtsForTeacherAssignments(assignmentIds, true);
+  if (options.scope === "teacher" || options.scope === "school") {
+    // Keep the read bounded to the already-authorized assignment universe and
+    // page the Live ledger. The reconciliation algorithm itself is unchanged.
+    return getScalableLiveDoubtsForAssignments(
+      assignmentIds,
+      schoolUuid || undefined,
+    );
   }
 
   const rows = await getLiveDoubtsForSchool(schoolUuid, true);
@@ -314,6 +324,11 @@ function canonicalizeReconciledRow(
       clean(live?.latest_source_feedback_id) ||
       clean(merged.source_feedback_id) ||
       null,
+    // Preserve both physical source identities. A reconciled current-state row
+    // can legitimately represent one Loop-2 row plus one Live row. Consumers
+    // must never infer the Loop-2 identity from `source`, because `source`
+    // describes the current representative state, not the complete provenance.
+    pendingDoubtId: clean(item.pending?.id) || null,
     liveRowId: clean(live?.id) || null,
   };
 }
@@ -704,6 +719,20 @@ export function buildSchoolExamPreparationResult(
   // remaining visible to the student/teacher for the same time range.
   const activeAssignments = assignments;
 
+  // Build the assignment index once. The previous projection repeatedly
+  // scanned the complete canonical row array for every assignment, which
+  // becomes unnecessarily expensive as the school ledger grows. This is a
+  // pure projection optimization: row membership, ordering, counts and
+  // canonical data remain unchanged.
+  const rowsByAssignment = new Map<string, CanonicalExamPreparationRow[]>();
+  for (const row of rows) {
+    const key = clean(row.teacherAssignmentUuid);
+    if (!key) continue;
+    const list = rowsByAssignment.get(key) ?? [];
+    list.push(row);
+    rowsByAssignment.set(key, list);
+  }
+
   const classroomMap = new Map<string, any>();
 
   for (const assignment of activeAssignments) {
@@ -722,17 +751,20 @@ export function buildSchoolExamPreparationResult(
     }
 
     const assignmentUuid = clean(assignment.id);
-    const assignmentRows = rows.filter(
-      (row) => row.teacherAssignmentUuid === assignmentUuid
-    );
+    const assignmentRows = rowsByAssignment.get(assignmentUuid) ?? [];
 
-    const studentIds = Array.from(
-      new Set(assignmentRows.map((row) => row.studentUuid))
-    );
+    const rowsByStudent = new Map<string, CanonicalExamPreparationRow[]>();
+    for (const row of assignmentRows) {
+      const studentUuid = clean(row.studentUuid);
+      if (!studentUuid) continue;
+      const list = rowsByStudent.get(studentUuid) ?? [];
+      list.push(row);
+      rowsByStudent.set(studentUuid, list);
+    }
 
-    const subjectStudents = studentIds
-      .map((studentUuid) =>
-        studentResult(assignmentRows, studentUuid)
+    const subjectStudents = Array.from(rowsByStudent.entries())
+      .map(([studentUuid, studentRows]) =>
+        ({ ...studentResult(studentRows, studentUuid), studentUuid })
       )
       .map((result) => ({
         ...result,

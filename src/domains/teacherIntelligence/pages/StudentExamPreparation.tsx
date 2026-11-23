@@ -19,6 +19,7 @@ import {
   buildExamPreparationRange,
 } from "../../examPreparationIntelligence/canonical/ExamPreparationDate";
 import StudentReraiseDoubtModal from "../../studentDoubtReraise/components/StudentReraiseDoubtModal";
+import StudentResolveRaisedDoubtModal from "../../studentExamRaisedDoubtResolution/components/StudentResolveRaisedDoubtModal";
 import {
   getStudentReraiseMarkerSet,
   reraiseSubjectTopicKey,
@@ -209,6 +210,20 @@ export default function StudentExamPreparation() {
             initialCustomStart={customStart}
             initialCustomEnd={customEnd}
             onReraised={loadReraiseMarkers}
+          />
+          <StudentResolveRaisedDoubtModal
+            subjectOptions={subjectOptions}
+            initialSubject={selectedSubject}
+            initialTimeFilter={timeFilter === "ALL" ? "30" : timeFilter}
+            initialCustomStart={customStart}
+            initialCustomEnd={customEnd}
+            onResolved={async () => {
+              const range = buildDateRange(timeFilter, customStart, customEnd);
+              if (range) {
+                await loadData(range.startDate ?? "", range.endDateExclusive ?? "");
+              }
+              await loadReraiseMarkers();
+            }}
           />
           <span className="tp-exam-live-badge">LIVE</span>
         </div>
