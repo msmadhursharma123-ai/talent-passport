@@ -198,6 +198,16 @@ export default function DailyLectureFeedback() {
   const [loop2QuestionImageFailedIds, setLoop2QuestionImageFailedIds] = useState<Record<string, boolean>>({});
   const [loop2QuestionImageLoadedIds, setLoop2QuestionImageLoadedIds] = useState<Record<string, boolean>>({});
   const [loop2QuestionMessage, setLoop2QuestionMessage] = useState<{ doubtId: string; correct: boolean; text: string } | null>(null);
+  // Additive Loop-2 terminal acknowledgement. This is UI-only: it is shown
+  // only after the existing authoritative response has been recorded, and
+  // the existing guided queue is allowed to continue only after the 850ms
+  // acknowledgement lifecycle completes or the student explicitly closes it.
+  const [loop2ResolutionPopup, setLoop2ResolutionPopup] = useState<{
+    doubtId: string;
+    kind: "DISCUSSED" | "NOT DISCUSSED";
+    text: string;
+  } | null>(null);
+  const loop2ResolutionPopupCloseRef = useRef<(() => void) | null>(null);
   const [loop2MultiQuestionsByDoubt, setLoop2MultiQuestionsByDoubt] = useState<Record<string, Loop2MultiCrossQuestion[]>>({});
   const [loop2MultiAttemptsByDoubt, setLoop2MultiAttemptsByDoubt] = useState<Record<string, Record<string, Loop2MultiCrossQuestionAttempt>>>({});
   const [loop2MultiLoadingDoubtId, setLoop2MultiLoadingDoubtId] = useState<string | null>(null);
@@ -1327,36 +1337,68 @@ export default function DailyLectureFeedback() {
     return attempt;
   }
 
+  async function showLoop2ResolutionPopup(
+    doubtId: string,
+    kind: "DISCUSSED" | "NOT DISCUSSED",
+  ) {
+    setLoop2ResolutionPopup({
+      doubtId,
+      kind,
+      text:
+        kind === "DISCUSSED"
+          ? "doubt succesfully discussed and resolved"
+          : "doubt not resolved",
+    });
+
+    await new Promise<void>((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        loop2ResolutionPopupCloseRef.current = null;
+        window.clearTimeout(timerId);
+        setLoop2ResolutionPopup(null);
+        resolve();
+      };
+      loop2ResolutionPopupCloseRef.current = finish;
+      const timerId = window.setTimeout(finish, 850);
+    });
+  }
+
+  function closeLoop2ResolutionPopup() {
+    loop2ResolutionPopupCloseRef.current?.();
+  }
+
   async function finishLoop2MultiTerminal(
     doubt: any,
     kind: "DISCUSSED" | "NOT DISCUSSED",
   ) {
     const doubtId = String(doubt.id);
 
-    activeLoop2QuestionDoubtRef.current = null;
-    setLoop2QuestionDoubtId(null);
-    pendingDoubtAutoSubmitLockRef.current.delete(doubtId);
-    setPendingDoubtAutoSubmittingId(null);
 
     /*
      * The SQL RPC already performed the authoritative terminal resolution.
-     * This function only reconciles the UI queue after that committed result.
+     * Keep the active doubt and guided-queue lock in place while the new
+     * terminal acknowledgement is visible. The queue is released only after
+     * the 850ms popup completes or the student closes it, so no other Loop-2 card can take ownership
+     * before the student sees what was recorded.
      */
-    setPendingDoubts((previous) =>
-      previous.filter((item: any) => String(item.id) !== doubtId),
-    );
-    setGuidedDoubtHighlightId(null);
+    setGuidedDoubtHighlightId(doubt.id);
     setFeedbackSubmitError(null);
-    setLoop2QuestionMessage({
-      doubtId,
-      correct: kind === "DISCUSSED",
-      text:
-        kind === "DISCUSSED"
-          ? "All Cross Questions were answered correctly. Your doubt has been resolved."
-          : "The answer was incorrect. This doubt is not marked as discussed.",
-    });
 
     try {
+      await showLoop2ResolutionPopup(doubtId, kind);
+
+      activeLoop2QuestionDoubtRef.current = null;
+      setLoop2QuestionDoubtId(null);
+      pendingDoubtAutoSubmitLockRef.current.delete(doubtId);
+      setPendingDoubtAutoSubmittingId(null);
+
+      setPendingDoubts((previous) =>
+        previous.filter((item: any) => String(item.id) !== doubtId),
+      );
+      setGuidedDoubtHighlightId(null);
+
       await loadDailyFeedbackCreditSummary();
       await continueAfterPendingDoubt(true);
     } catch (error) {
@@ -1369,7 +1411,8 @@ export default function DailyLectureFeedback() {
         error,
       );
     } finally {
-      window.setTimeout(() => setLoop2QuestionMessage(null), 1000);
+      // The terminal acknowledgement has its own 850ms-or-early-close lifecycle. No delayed
+      // guided-queue work is scheduled here.
     }
   }
 
@@ -1404,6 +1447,7 @@ export default function DailyLectureFeedback() {
         if (isLegacyLoop2Log(doubt)) {
           setFeedbackSubmitError(null);
           await submitStudentPendingDoubtResponse(doubt.id, "DISCUSSED");
+          await showLoop2ResolutionPopup(doubtId, "DISCUSSED");
           try {
             await continueAfterPendingDoubt(true);
           } catch (error) {
@@ -1515,6 +1559,7 @@ export default function DailyLectureFeedback() {
       // successfully saved NOT DISCUSSED response must not be described as
       // unsaved merely because the follow-up queue read fails.
       await submitStudentPendingDoubtResponse(doubt.id, response);
+      await showLoop2ResolutionPopup(String(doubt.id), "NOT DISCUSSED");
       try {
         await continueAfterPendingDoubt(true);
       } catch (refreshError) {
@@ -4330,6 +4375,108 @@ return (
 
 
     <div className="dlf-page">
+
+      {loop2ResolutionPopup && (
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 10000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px 16px",
+            background: "rgba(15, 23, 42, 0.18)",
+            backdropFilter: "blur(3px)",
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: "min(92vw, 500px)",
+              boxSizing: "border-box",
+              padding: "28px 52px 28px 28px",
+              borderRadius: 22,
+              background: "linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%)",
+              border: `1px solid ${loop2ResolutionPopup.kind === "DISCUSSED" ? "rgba(22, 163, 74, 0.28)" : "rgba(220, 38, 38, 0.24)"}`,
+              boxShadow: "0 24px 70px rgba(15, 23, 42, 0.28), 0 8px 24px rgba(15, 23, 42, 0.12)",
+              textAlign: "center",
+              lineHeight: 1.5,
+              color: "#0F172A",
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Close acknowledgement"
+              onClick={closeLoop2ResolutionPopup}
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                width: 36,
+                height: 36,
+                border: "none",
+                borderRadius: "50%",
+                background: "rgba(15, 23, 42, 0.06)",
+                color: "#475569",
+                fontSize: 25,
+                lineHeight: 1,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              ×
+            </button>
+
+            <div
+              aria-hidden="true"
+              style={{
+                width: 54,
+                height: 54,
+                margin: "0 auto 14px",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: loop2ResolutionPopup.kind === "DISCUSSED" ? "rgba(22, 163, 74, 0.12)" : "rgba(220, 38, 38, 0.10)",
+                color: loop2ResolutionPopup.kind === "DISCUSSED" ? "#16A34A" : "#DC2626",
+                fontSize: 30,
+                fontWeight: 900,
+              }}
+            >
+              {loop2ResolutionPopup.kind === "DISCUSSED" ? "✓" : "!"}
+            </div>
+
+            <div
+              style={{
+                marginBottom: 8,
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                color: loop2ResolutionPopup.kind === "DISCUSSED" ? "#16A34A" : "#DC2626",
+              }}
+            >
+              {loop2ResolutionPopup.kind === "DISCUSSED" ? "Doubt resolved" : "Progress update"}
+            </div>
+
+            <div
+              style={{
+                fontSize: "clamp(15px, 3.8vw, 19px)",
+                fontWeight: 800,
+                color: "#0F172A",
+              }}
+            >
+              {loop2ResolutionPopup.text}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* =====================================================
           DAY BEFORE YESTERDAY'S DOUBT FEEDBACK
