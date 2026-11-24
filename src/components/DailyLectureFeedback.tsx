@@ -31,6 +31,16 @@ import {
 } from "../domains/teacherIntelligence/repository/PendingTeacherDoubtRepository";
 
 import {
+  getLoop2MultiCrossCapability,
+  getLoop2MultiCrossQuestions,
+  getLoop2MultiCrossQuestionAttempts,
+  recordLoop2MultiCrossQuestionAttempt,
+  type Loop2MultiCrossQuestion,
+  type Loop2MultiCrossQuestionAttempt,
+  type Loop2MultiCrossCapability,
+} from "../domains/teacherIntelligence/repository/Loop2MultiCrossQuestionRepository";
+
+import {
   requireIdentity,
 } from "../services/identityService";
 import { getSupabaseClient } from "../supabaseClient";
@@ -41,6 +51,7 @@ import {
 import Loop1FeedbackVerificationDialog from "./loop1Feedback/Loop1FeedbackVerificationDialog";
 import Loop1FeedbackVerificationQuestion from "./loop1Feedback/Loop1FeedbackVerificationQuestion";
 import MultiCrossQuestionFlow, { type MultiCrossQuestion, type MultiCrossQuestionAttempt } from "./MultiCrossQuestionFlow";
+import Loop2MultiCrossQuestionFlow from "./Loop2MultiCrossQuestionFlow";
 
 import {
   calculateDailyFeedbackCreditSummaryFromLogs,
@@ -64,6 +75,7 @@ interface FeedbackStatementRow {
 
 const ALL_SUBJECTS_VALUE = "__ALL_SUBJECTS__";
 const ALL_SUBJECTS_LABEL = "All Subjects";
+const LOOP2_MULTICROSS_ROLLOUT_DATE = "2026-11-23";
 
 async function downloadPdfBlobOnWeb(blob: Blob, fileName: string) {
   const pdfUrl = URL.createObjectURL(blob);
@@ -186,6 +198,9 @@ export default function DailyLectureFeedback() {
   const [loop2QuestionImageFailedIds, setLoop2QuestionImageFailedIds] = useState<Record<string, boolean>>({});
   const [loop2QuestionImageLoadedIds, setLoop2QuestionImageLoadedIds] = useState<Record<string, boolean>>({});
   const [loop2QuestionMessage, setLoop2QuestionMessage] = useState<{ doubtId: string; correct: boolean; text: string } | null>(null);
+  const [loop2MultiQuestionsByDoubt, setLoop2MultiQuestionsByDoubt] = useState<Record<string, Loop2MultiCrossQuestion[]>>({});
+  const [loop2MultiAttemptsByDoubt, setLoop2MultiAttemptsByDoubt] = useState<Record<string, Record<string, Loop2MultiCrossQuestionAttempt>>>({});
+  const [loop2MultiLoadingDoubtId, setLoop2MultiLoadingDoubtId] = useState<string | null>(null);
   const [selectedResponse, setSelectedResponse] = useState<Record<string, string>>({});
   const [submittedFeedback, setSubmittedFeedback] = useState<Record<string, any>>({});
   const [crossQuestionAnswers, setCrossQuestionAnswers] = useState<Record<string, number>>({});
@@ -1148,10 +1163,6 @@ export default function DailyLectureFeedback() {
     }
   }
 
-  // Legacy Loop 2 records created before Cross Questions were introduced do
-  // not have an answer key. Only an exact original-log date before the local
-  // current date qualifies for the compatibility path; missing/invalid dates
-  // must never silently bypass the question check.
   function isLegacyLoop2Log(doubt: any): boolean {
     const log = historicalLectureLogs.find(
       (item: any) => String(item.id) === String(doubt.daily_log_uuid)
@@ -1171,61 +1182,265 @@ export default function DailyLectureFeedback() {
       return false;
     }
 
-    // Use the app's established India-calendar helper, not the device timezone.
-    return match[1] < getIndiaTodayKey();
+    // The mandatory Loop-2 Multi-Cross rollout began with Daily Logs submitted
+    // on 23-Nov-2026. Only logs submitted through 22-Nov-2026 may use the
+    // historical compatibility path when no Multi-Cross question set exists.
+    // Never use the device's current date or the pending-doubt creation date
+    // to decide this exception.
+    return match[1] < LOOP2_MULTICROSS_ROLLOUT_DATE;
+  }
+
+  function getLoop2MultiQuestionsForDoubt(
+    doubtId: string,
+  ): Loop2MultiCrossQuestion[] {
+    return loop2MultiQuestionsByDoubt[doubtId] ?? [];
+  }
+
+  function getLoop2MultiAttemptsForDoubt(
+    doubtId: string,
+  ): Record<string, Loop2MultiCrossQuestionAttempt> {
+    return loop2MultiAttemptsByDoubt[doubtId] ?? {};
+  }
+
+  async function openLoop2MultiCrossQuestion(doubt: any): Promise<Loop2MultiCrossCapability> {
+    const doubtId = String(doubt.id);
+
+    if (loop2MultiLoadingDoubtId === doubtId) return "UNAVAILABLE";
+
+    setFeedbackSubmitError(null);
+    setLoop2MultiLoadingDoubtId(doubtId);
+
+    try {
+      /*
+       * Capability is a server-authoritative enum. An empty question result is
+       * never interpreted as legacy fallback because empty can also mean
+       * unauthorized, resolved, malformed, or missing. Only the explicit
+       * LEGACY_FALLBACK capability is allowed to return false here.
+       */
+      const capability = await getLoop2MultiCrossCapability(doubtId);
+
+      if (capability === "LEGACY_FALLBACK") {
+        return capability;
+      }
+
+      if (capability !== "MULTI_CROSS") {
+        setFeedbackSubmitError(
+          capability === "BLOCKED"
+            ? "The Cross Question set cannot be verified safely right now. Your doubt has not been changed. Please ask your teacher to finish the question set and try again."
+            : "We could not verify this learning gap safely. Your doubt has not been changed. Please refresh and try again.",
+        );
+        return capability;
+      }
+
+      const questions = await getLoop2MultiCrossQuestions(doubtId);
+      if (questions.length < 2) {
+        throw new Error(
+          "The server reported Multi-Cross capability, but the question set could not be loaded safely.",
+        );
+      }
+
+      const attempts = await getLoop2MultiCrossQuestionAttempts(doubtId);
+
+      const attemptMap: Record<string, Loop2MultiCrossQuestionAttempt> = {};
+      for (const attempt of attempts) {
+        attemptMap[String(attempt.question_uuid)] = attempt;
+      }
+
+      setLoop2MultiQuestionsByDoubt((previous) => ({
+        ...previous,
+        [doubtId]: questions,
+      }));
+      setLoop2MultiAttemptsByDoubt((previous) => ({
+        ...previous,
+        [doubtId]: attemptMap,
+      }));
+
+      activeLoop2QuestionDoubtRef.current = doubtId;
+      setLoop2QuestionDoubtId(doubtId);
+      setGuidedDoubtHighlightId(doubt.id);
+      setGuidedScrollTarget({ logId: doubt.id, section: "loop2question" });
+      return capability;
+    } catch (error) {
+      console.error("LOOP-2 MULTI CROSS CAPABILITY LOAD FAILED", error);
+      setFeedbackSubmitError(
+        "We could not verify the Cross Question set for this learning gap. Your doubt has not been changed. Please refresh and try again.",
+      );
+      return "UNAVAILABLE";
+    } finally {
+      setLoop2MultiLoadingDoubtId((current) =>
+        current === doubtId ? null : current,
+      );
+    }
+  }
+
+  function closeLoop2MultiBeforeFirstAttempt(doubt: any) {
+    const doubtId = String(doubt.id);
+    const attempts = getLoop2MultiAttemptsForDoubt(doubtId);
+
+    /*
+     * NOT DISCUSSED is a cancellation only before Q1 is attempted.
+     * It deliberately does NOT call the resolver and does NOT write an
+     * attempt row. YES can therefore reopen Q1 later.
+     */
+    if (Object.keys(attempts).length > 0) return;
+
+    activeLoop2QuestionDoubtRef.current = null;
+    setLoop2QuestionDoubtId(null);
+    setSelectedResponse((previous) => ({
+      ...previous,
+      [doubtId]: "NOT DISCUSSED",
+    }));
+    setFeedbackSubmitError(null);
+    setGuidedDoubtHighlightId(null);
+    pendingDoubtAutoSubmitLockRef.current.delete(doubtId);
+    setPendingDoubtAutoSubmittingId(null);
+  }
+
+  async function recordLoop2MultiAttempt(
+    doubt: any,
+    question: MultiCrossQuestion,
+    selectedValue: string,
+  ): Promise<Loop2MultiCrossQuestionAttempt> {
+    const doubtId = String(doubt.id);
+
+    if (
+      activeLoop2QuestionDoubtRef.current !== doubtId ||
+      loop2QuestionDoubtId !== doubtId
+    ) {
+      throw new Error("This learning-gap question is no longer active.");
+    }
+
+    const attempt = await recordLoop2MultiCrossQuestionAttempt(
+      doubtId,
+      String(question.id),
+      selectedValue,
+    );
+
+    setLoop2MultiAttemptsByDoubt((previous) => ({
+      ...previous,
+      [doubtId]: {
+        ...(previous[doubtId] ?? {}),
+        [question.id]: attempt,
+      },
+    }));
+
+    return attempt;
+  }
+
+  async function finishLoop2MultiTerminal(
+    doubt: any,
+    kind: "DISCUSSED" | "NOT DISCUSSED",
+  ) {
+    const doubtId = String(doubt.id);
+
+    activeLoop2QuestionDoubtRef.current = null;
+    setLoop2QuestionDoubtId(null);
+    pendingDoubtAutoSubmitLockRef.current.delete(doubtId);
+    setPendingDoubtAutoSubmittingId(null);
+
+    /*
+     * The SQL RPC already performed the authoritative terminal resolution.
+     * This function only reconciles the UI queue after that committed result.
+     */
+    setPendingDoubts((previous) =>
+      previous.filter((item: any) => String(item.id) !== doubtId),
+    );
+    setGuidedDoubtHighlightId(null);
+    setFeedbackSubmitError(null);
+    setLoop2QuestionMessage({
+      doubtId,
+      correct: kind === "DISCUSSED",
+      text:
+        kind === "DISCUSSED"
+          ? "All Cross Questions were answered correctly. Your doubt has been resolved."
+          : "The answer was incorrect. This doubt is not marked as discussed.",
+    });
+
+    try {
+      await loadDailyFeedbackCreditSummary();
+      await continueAfterPendingDoubt(true);
+    } catch (error) {
+      /*
+       * Terminal state is already committed. A refresh/read failure must never
+       * turn a successful resolution into a false failure message.
+       */
+      console.error(
+        "LOOP-2 MULTI TERMINAL SAVED BUT QUEUE REFRESH FAILED",
+        error,
+      );
+    } finally {
+      window.setTimeout(() => setLoop2QuestionMessage(null), 1000);
+    }
   }
 
   async function handlePendingDoubtDiscussed(doubt: any) {
-    // The guided queue must remain sequential. A synchronous global guard
-    // prevents a second card from starting another save before React rerenders.
-    // Also keep the student on the currently open Cross Question until it is
-    // completed; another card must not replace or bypass that guided step.
+    // Acquire the existing synchronous guided-queue lock BEFORE any await.
+    // This prevents two cards from simultaneously entering capability detection
+    // and racing to become the active Loop-2 question.
     if (pendingDoubtAutoSubmitLockRef.current.size > 0) return;
     if (
       activeLoop2QuestionDoubtRef.current !== null &&
       activeLoop2QuestionDoubtRef.current !== String(doubt.id)
     ) return;
 
-    if (isLegacyLoop2Log(doubt)) {
-      const doubtId = String(doubt.id);
-      if (pendingDoubtAutoSubmitLockRef.current.has(doubtId)) return;
-      pendingDoubtAutoSubmitLockRef.current.add(doubtId);
-      setPendingDoubtAutoSubmittingId(doubtId);
-      try {
-        // Backward compatibility: logs dated before today predate the required
-        // Cross Question, so preserve the original one-tap Yes -> DISCUSSED flow.
-        setFeedbackSubmitError(null);
-        try {
+    const doubtId = String(doubt.id);
+    pendingDoubtAutoSubmitLockRef.current.add(doubtId);
+    setPendingDoubtAutoSubmittingId(doubtId);
+
+    try {
+      /* Capability is determined from the exact pending doubt's Daily Log.
+       * Date is never used to decide Multi-Cross capability. */
+      const capability = await openLoop2MultiCrossQuestion(doubt);
+      if (capability === "MULTI_CROSS") {
+        // Keep the lock while the active Multi-Cross UI owns the guided queue.
+        return;
+      }
+
+      /* LEGACY_FALLBACK is allowed only for the pre-rollout Daily Log boundary.
+       * From 23-Nov-2026 onward, a missing/incomplete Multi-Cross set must not
+       * silently bypass the mandatory question requirement.
+       */
+      if (capability === "LEGACY_FALLBACK") {
+        if (isLegacyLoop2Log(doubt)) {
+          setFeedbackSubmitError(null);
           await submitStudentPendingDoubtResponse(doubt.id, "DISCUSSED");
-        } catch (error) {
-          console.error("LEGACY PENDING DOUBT RESPONSE SUBMISSION FAILED", error);
-          setFeedbackSubmitError("We could not save your response. Your doubt has not been marked resolved. Please try again.");
+          try {
+            await continueAfterPendingDoubt(true);
+          } catch (error) {
+            console.error("LEGACY DOUBT SAVED BUT QUEUE REFRESH FAILED", error);
+            setPendingDoubts((previous) =>
+              previous.filter((item: any) => String(item.id) !== doubtId),
+            );
+            setFeedbackSubmitError(
+              "Your response was saved, but we could not refresh the next item. This doubt has been removed from the current view to prevent a duplicate submission. Please refresh the page to continue.",
+            );
+          }
           return;
         }
 
-        // A refresh/navigation error after a successful save must not be
-        // misreported as a failed save, which could encourage duplicate retries.
-        try {
-          await continueAfterPendingDoubt(true);
-        } catch (error) {
-          console.error("LEGACY DOUBT SAVED BUT QUEUE REFRESH FAILED", error);
-          // The response has already been saved successfully. Remove this
-          // card from the local queue so a stale render cannot offer a second
-          // submission while the student refreshes to recover the queue.
-          setPendingDoubts((previous) =>
-            previous.filter((item: any) => String(item.id) !== doubtId)
-          );
-          setFeedbackSubmitError("Your response was saved, but we could not refresh the next item. This doubt has been removed from the current view to prevent a duplicate submission. Please refresh the page to continue.");
-        }
-      } finally {
-        pendingDoubtAutoSubmitLockRef.current.delete(doubtId);
-        setPendingDoubtAutoSubmittingId(null);
+        setFeedbackSubmitError(
+          "Cross Questions are required for Daily Logs submitted on or after 23-Nov-2026. This question set is incomplete, so your doubt has not been changed. Please ask your teacher to finish the Cross Question set and try again.",
+        );
+        return;
       }
-      return;
-    }
 
-    // Today's and future logs must use the Cross Question verification flow.
-    openLoop2CrossQuestion(doubt);
+      // BLOCKED/UNAVAILABLE are fail-closed. The capability loader already
+      // supplied the user-facing verification error; never enter the legacy
+      // Loop-2 question path for these states.
+    } catch (error) {
+      console.error("LOOP-2 PENDING DOUBT RESPONSE FAILED", error);
+      setFeedbackSubmitError(
+        "We could not save your response. Your doubt has not been marked resolved. Please try again.",
+      );
+    } finally {
+      // A live Multi-Cross sequence owns the lock until cancel/terminal.
+      if (activeLoop2QuestionDoubtRef.current !== doubtId) {
+        pendingDoubtAutoSubmitLockRef.current.delete(doubtId);
+        setPendingDoubtAutoSubmittingId((current) =>
+          current === doubtId ? null : current,
+        );
+      }
+    }
   }
 
   function openLoop2CrossQuestion(doubt: any) {
@@ -4248,7 +4463,40 @@ return (
                 </p>
 
 
-                {questionOpen && originalLog && (
+                {questionOpen &&
+                  getLoop2MultiQuestionsForDoubt(String(doubt.id)).length >= 2 && (
+                    <Loop2MultiCrossQuestionFlow
+                      doubtId={String(doubt.id)}
+                      questions={getLoop2MultiQuestionsForDoubt(String(doubt.id))}
+                      attempts={getLoop2MultiAttemptsForDoubt(String(doubt.id))}
+                      disabled={
+                        loop2MultiLoadingDoubtId === String(doubt.id)
+                      }
+                      onAttempt={(question, selectedValue) =>
+                        recordLoop2MultiAttempt(doubt, question, selectedValue)
+                      }
+                      onBeforeFirstAttemptCancel={() =>
+                        closeLoop2MultiBeforeFirstAttempt(doubt)
+                      }
+                      onTerminalWrong={() => {
+                        void finishLoop2MultiTerminal(doubt, "NOT DISCUSSED");
+                      }}
+                      onAllCorrect={(_question, _attempt) => {
+                        void finishLoop2MultiTerminal(doubt, "DISCUSSED");
+                      }}
+                      onError={(error) => {
+                        console.error("LOOP-2 MULTI CROSS ANSWER FAILED", error);
+                        setFeedbackSubmitError(
+                          String(
+                            (error as any)?.message ??
+                              "The Cross Question answer could not be recorded. Please refresh and try again.",
+                          ),
+                        );
+                      }}
+                    />
+                  )}
+
+                {questionOpen && getLoop2MultiQuestionsForDoubt(String(doubt.id)).length < 2 && originalLog && (
                   <div
                     id={`dlf-loop2-question-${doubt.id}`}
                     className="dlf-gap-meta"
