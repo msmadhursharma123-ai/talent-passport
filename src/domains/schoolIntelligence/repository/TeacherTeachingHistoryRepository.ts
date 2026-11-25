@@ -19,6 +19,12 @@ export interface TeacherTeachingHistoryAssignment {
   createdAt: string;
 }
 
+export interface TeacherTeachingHistoryAbsence {
+  teacherUuid: string;
+  absenceDate: string;
+  markedAt: string;
+}
+
 export interface TeacherTeachingHistoryLog {
   id: string;
   teacherAssignmentUuid: string;
@@ -32,6 +38,7 @@ export interface TeacherTeachingHistoryData {
   teachers: TeacherTeachingHistoryTeacher[];
   assignments: TeacherTeachingHistoryAssignment[];
   logs: TeacherTeachingHistoryLog[];
+  absences: TeacherTeachingHistoryAbsence[];
   excludedDates: string[];
 }
 
@@ -75,13 +82,24 @@ export async function getTeacherTeachingHistory(
     .order("section_name", { ascending: true })
     .order("subject_name", { ascending: true });
 
-  const [teacherResult, assignmentResult] = await Promise.all([
+  let absenceQuery = supabase
+    .from("teacher_daily_absences")
+    .select("teacher_uuid,absence_date,created_at")
+    .eq("school_uuid", schoolUuid)
+    .gte("absence_date", startDate)
+    .lte("absence_date", endDate);
+
+  if (teacherUuid) absenceQuery = absenceQuery.eq("teacher_uuid", teacherUuid);
+
+  const [teacherResult, assignmentResult, absenceResult] = await Promise.all([
     teacherQuery,
     assignmentQuery,
+    absenceQuery,
   ]);
 
   if (teacherResult.error) throw teacherResult.error;
   if (assignmentResult.error) throw assignmentResult.error;
+  if (absenceResult.error) throw absenceResult.error;
 
   const teachers: TeacherTeachingHistoryTeacher[] = (teacherResult.data ?? []).map((row: any) => ({
     teacherUuid: String(row.teacher_uuid ?? ""),
@@ -91,6 +109,16 @@ export async function getTeacherTeachingHistory(
   })).filter((row: TeacherTeachingHistoryTeacher) => Boolean(row.teacherUuid));
 
   const selectedTeacherIds = new Set(teachers.map((teacher) => teacher.teacherUuid));
+
+  const absences: TeacherTeachingHistoryAbsence[] = (absenceResult.data ?? [])
+    .map((row: any) => ({
+      teacherUuid: String(row.teacher_uuid ?? ""),
+      absenceDate: String(row.absence_date ?? ""),
+      markedAt: String(row.created_at ?? ""),
+    }))
+    .filter((row: TeacherTeachingHistoryAbsence) =>
+      Boolean(row.teacherUuid && row.absenceDate) && selectedTeacherIds.has(row.teacherUuid)
+    );
 
   const assignments: TeacherTeachingHistoryAssignment[] = (assignmentResult.data ?? [])
     .map((row: any) => ({
@@ -126,7 +154,7 @@ export async function getTeacherTeachingHistory(
     .filter(Boolean);
 
   if (!assignmentIds.length) {
-    return { teachers, assignments, logs: [], excludedDates };
+    return { teachers, assignments, logs: [], absences, excludedDates };
   }
 
   const { data, error } = await supabase
@@ -151,5 +179,5 @@ export async function getTeacherTeachingHistory(
     createdAt: String(row.created_at ?? ""),
   })).filter((row: TeacherTeachingHistoryLog) => Boolean(row.id && row.teacherAssignmentUuid && row.logDate));
 
-  return { teachers, assignments, logs, excludedDates };
+  return { teachers, assignments, logs, absences, excludedDates };
 }

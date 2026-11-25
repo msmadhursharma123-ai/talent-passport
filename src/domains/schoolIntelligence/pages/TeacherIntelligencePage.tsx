@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import { loadSchoolIntelligence } from "../viewmodels/SchoolIntelligenceViewModel";
 import type { SchoolTeacherLiveStatus } from "../types/SchoolIntelligenceModels";
 import { downloadOrSharePdfBlob } from "../../../services/platform/nativeDocumentService";
+import { getSchoolTeacherAbsencesToday } from "../../teacherIntelligence/repository/TeacherDailyAttendanceRepository";
 import SchoolAnalyticsLoadingPopup from "../components/SchoolAnalyticsLoadingPopup";
 import {
   getTeacherTeachingHistory,
@@ -24,12 +25,13 @@ function todayDate(){return isoDate(new Date())}
 function dateRange(start:string,end:string,excludedDates:Set<string>){const values:string[]=[];const cursor=new Date(`${start}T00:00:00`);const finish=new Date(`${end}T00:00:00`);if(!Number.isFinite(cursor.getTime())||!Number.isFinite(finish.getTime())||cursor>finish)return values;while(cursor<=finish){const key=isoDate(cursor);if(cursor.getDay()!==0&&!excludedDates.has(key))values.push(key);cursor.setDate(cursor.getDate()+1)}return values}
 function formatDate(value:string){if(!value)return "—";const date=new Date(`${value}T00:00:00`);return Number.isFinite(date.getTime())?date.toLocaleDateString([],{day:"2-digit",month:"short",year:"numeric"}):value}
 function escapePdfText(value:unknown){return String(value??"").replace(/\s+/g," ").trim()}
-interface HistoryRow{key:string;date:string;teacherName:string;subjectName:string;className:string;sectionName:string;status:"SUBMITTED"|"MISSED";topics:string[];subtopics:string[]}
+interface HistoryRow{key:string;date:string;teacherName:string;subjectName:string;className:string;sectionName:string;status:"SUBMITTED"|"MISSED"|"ABSENT";topics:string[];subtopics:string[]}
 function buildHistoryRows(data:TeacherTeachingHistoryData|null,startDate:string,endDate:string,selectedTeacherUuid:string):HistoryRow[]{
  if(!data)return [];
  const teacherMap=new Map(data.teachers.map(teacher=>[teacher.teacherUuid,teacher]));
  const logsByAssignmentDate=new Map<string,TeacherTeachingHistoryLog[]>();
  for(const log of data.logs){const key=`${log.teacherAssignmentUuid}::${log.logDate}`;const current=logsByAssignmentDate.get(key)??[];current.push(log);logsByAssignmentDate.set(key,current)}
+ const absenceDatesByTeacher=new Set(data.absences.map(absence=>`${absence.teacherUuid}::${absence.absenceDate}`));
  const rows:HistoryRow[]=[];const dates=dateRange(startDate,endDate,new Set(data.excludedDates));const candidateAssignments=data.assignments.filter(assignment=>!selectedTeacherUuid||assignment.teacherUuid===selectedTeacherUuid);
  // Active assignments are the authoritative classroom roster for missed-log marking.
  // Historical inactive assignments are still shown when they contain a published log
@@ -37,7 +39,7 @@ function buildHistoryRows(data:TeacherTeachingHistoryData|null,startDate:string,
  // the assignment was deactivated. This preserves historical teaching evidence without
  // treating old classroom assignments as currently expected daily submissions.
  const assignments=candidateAssignments.filter(assignment=>assignment.isActive!==false||dates.some(date=>(logsByAssignmentDate.get(`${assignment.id}::${date}`)??[]).length>0));
- for(const assignment of assignments){const teacher=teacherMap.get(assignment.teacherUuid);const assignmentStartDate=assignment.createdAt?assignment.createdAt.slice(0,10):"";for(const date of dates){const logs=logsByAssignmentDate.get(`${assignment.id}::${date}`)??[];if(!logs.length&&(assignment.isActive===false||teacher?.isActive===false))continue;if(!logs.length&&!assignmentStartDate)continue;if(!logs.length&&assignmentStartDate&&date<assignmentStartDate)continue;const topics=Array.from(new Set(logs.map(log=>log.topicName.trim()).filter(Boolean)));const subtopics=Array.from(new Set(logs.flatMap(log=>log.conceptsCovered).map(value=>value.trim()).filter(Boolean)));rows.push({key:`${assignment.id}::${date}`,date,teacherName:teacher?.teacherName??"Teacher",subjectName:assignment.subjectName||teacher?.subject||"—",className:assignment.className||"—",sectionName:assignment.sectionName||"—",status:logs.length?"SUBMITTED":"MISSED",topics,subtopics})}}
+ for(const assignment of assignments){const teacher=teacherMap.get(assignment.teacherUuid);const assignmentStartDate=assignment.createdAt?assignment.createdAt.slice(0,10):"";for(const date of dates){const logs=logsByAssignmentDate.get(`${assignment.id}::${date}`)??[];if(!logs.length&&(assignment.isActive===false||teacher?.isActive===false))continue;if(!logs.length&&!assignmentStartDate)continue;if(!logs.length&&assignmentStartDate&&date<assignmentStartDate)continue;const topics=Array.from(new Set(logs.map(log=>log.topicName.trim()).filter(Boolean)));const subtopics=Array.from(new Set(logs.flatMap(log=>log.conceptsCovered).map(value=>value.trim()).filter(Boolean)));rows.push({key:`${assignment.id}::${date}`,date,teacherName:teacher?.teacherName??"Teacher",subjectName:assignment.subjectName||teacher?.subject||"—",className:assignment.className||"—",sectionName:assignment.sectionName||"—",status:logs.length?"SUBMITTED":absenceDatesByTeacher.has(`${assignment.teacherUuid}::${date}`)?"ABSENT":"MISSED",topics,subtopics})}}
  return rows.sort((a,b)=>a.date!==b.date?b.date.localeCompare(a.date):a.teacherName.localeCompare(b.teacherName)||`${a.className}-${a.sectionName}-${a.subjectName}`.localeCompare(`${b.className}-${b.sectionName}-${b.subjectName}`));
 }
 
@@ -50,31 +52,90 @@ export default function TeacherIntelligencePage(){
  const [historyLoading,setHistoryLoading]=useState(false);
  const [historyError,setHistoryError]=useState<string|null>(null);
  const [historyPdfLoading,setHistoryPdfLoading]=useState(false);
- async function load(forceRefresh=false){setLoading(true);try{const x=await loadSchoolIntelligence(undefined,undefined,undefined,{forceRefresh});const next=x.teacherLiveStatus??[];setTeachers(next);setSelectedId(old=>next.some(t=>t.teacherUuid===old)?old:(next.find(t=>t.isPresentToday)?.teacherUuid??next[0]?.teacherUuid??""));}finally{setLoading(false)}}
+ async function load(forceRefresh=false){
+  setLoading(true);
+  try{
+    const [snapshotResult, absenceResult] = await Promise.allSettled([
+      loadSchoolIntelligence(undefined,undefined,undefined,{forceRefresh}),
+      getSchoolTeacherAbsencesToday(),
+    ]);
+
+    if(snapshotResult.status==="rejected"){
+      throw snapshotResult.reason;
+    }
+
+    const x=snapshotResult.value;
+    const absences=absenceResult.status==="fulfilled"?absenceResult.value:[];
+    if(absenceResult.status==="rejected"){
+      console.error("SCHOOL TEACHER ABSENCE STATUS LOAD FAILED",absenceResult.reason);
+    }
+
+    const absenceByTeacher=new Map(
+      absences.map(absence=>[absence.teacherUuid,absence] as const)
+    );
+
+    const next=(x.teacherLiveStatus??[]).map(teacher=>{
+      const absence=absenceByTeacher.get(teacher.teacherUuid);
+
+      // A published Daily Log is stronger evidence of actual teaching activity.
+      // Therefore an accidental/late absence marker never hides a real lecture.
+      const isAbsentToday=!teacher.isPresentToday && Boolean(absence);
+
+      return {
+        ...teacher,
+        isAbsentToday,
+        absenceMarkedAt:isAbsentToday?absence?.markedAt:"",
+      };
+    });
+
+    setTeachers(next);
+    setSelectedId(old=>next.some(t=>t.teacherUuid===old)
+      ?old
+      :(next.find(t=>t.isPresentToday)?.teacherUuid??next[0]?.teacherUuid??""));
+  }finally{
+    setLoading(false);
+  }
+}
  useEffect(()=>{void load(false);const id=window.setInterval(()=>void load(true),60000);return()=>window.clearInterval(id)},[]);
  const selected=useMemo(()=>teachers.find(t=>t.teacherUuid===selectedId)??teachers[0],[teachers,selectedId]);
  const active=teachers.filter(t=>t.isPresentToday).length;
+ const absent=teachers.filter(t=>!t.isPresentToday&&t.isAbsentToday).length;
+ const awaiting=teachers.length-active-absent;
  const historyRows=useMemo(()=>buildHistoryRows(historyData,historyStartDate,historyEndDate,historyTeacherUuid),[historyData,historyStartDate,historyEndDate,historyTeacherUuid]);
  const historyTeacherOptions=useMemo(()=>{const map=new Map<string,string>();for(const teacher of historyData?.teachers??[])map.set(teacher.teacherUuid,teacher.teacherName);if(map.size)return Array.from(map.entries()).sort((a,b)=>a[1].localeCompare(b[1]));return teachers.map(teacher=>[teacher.teacherUuid,teacher.teacherName] as const).sort((a,b)=>a[1].localeCompare(b[1]))},[historyData,teachers]);
  async function fetchHistory(){setHistoryError(null);if(!historyStartDate||!historyEndDate){setHistoryError("Please select both a start date and an end date.");return}if(historyStartDate>historyEndDate){setHistoryError("Start date cannot be after end date.");return}if(historyEndDate>todayDate()){setHistoryError("End date cannot be in the future.");return}setHistoryLoading(true);try{const data=await getTeacherTeachingHistory(historyStartDate,historyEndDate,historyTeacherUuid||undefined);setHistoryData(data)}catch(error){console.error("TEACHER TEACHING HISTORY LOAD FAILED",error);setHistoryData(null);setHistoryError(error instanceof Error?error.message:"Unable to fetch teacher log history.")}finally{setHistoryLoading(false)}}
- async function downloadHistoryPdf(){if(!historyRows.length||historyPdfLoading)return;setHistoryPdfLoading(true);try{const teacherLabel=historyTeacherUuid?historyTeacherOptions.find(([id])=>id===historyTeacherUuid)?.[1]??"Selected Teacher":"All Teachers";const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4",compress:true});const margin=10,pageWidth=297,pageHeight=210;const columns=[{title:"Date",width:24},{title:"Teacher",width:38},{title:"Subject",width:32},{title:"Class",width:24},{title:"Status",width:25},{title:"Topics",width:58},{title:"Subtopics / Concepts",width:76}];const lineHeight=4.2;let y=margin;const drawHeader=()=>{doc.setFont("helvetica","bold");doc.setFontSize(14);doc.text("Teacher Daily Log History",margin,y);y+=6;doc.setFont("helvetica","normal");doc.setFontSize(8);doc.text(`Teacher: ${escapePdfText(teacherLabel)}   |   Period: ${formatDate(historyStartDate)} to ${formatDate(historyEndDate)}`,margin,y);y+=6;let x=margin;doc.setFillColor(248,250,252);doc.setDrawColor(210,220,232);doc.rect(margin,y-4,pageWidth-margin*2,8,"FD");doc.setFont("helvetica","bold");doc.setFontSize(7);for(const column of columns){doc.text(column.title,x+1.5,y);x+=column.width}y+=5};drawHeader();const wrap=(text:string,width:number)=>doc.splitTextToSize(escapePdfText(text)||"—",width-3).slice(0,7);for(const row of historyRows){const values=[formatDate(row.date),row.teacherName,row.subjectName,`${row.className}${row.sectionName?` - ${row.sectionName}`:""}`,row.status==="SUBMITTED"?"Submitted":"MISSED",row.topics.length?row.topics.join(", "):"No log submitted",row.subtopics.length?row.subtopics.join(", "):row.status==="MISSED"?"No log submitted":"No subtopics recorded"];const wrapped=values.map((value,index)=>wrap(value,columns[index].width));const rowHeight=Math.max(7,...wrapped.map(lines=>lines.length*lineHeight+3));if(y+rowHeight>pageHeight-margin){doc.addPage();y=margin;drawHeader()}let x=margin;if(row.status==="MISSED"){doc.setFillColor(255,241,242);doc.setDrawColor(255,205,211);doc.rect(margin,y-3.5,pageWidth-margin*2,rowHeight,"FD")}doc.setFont("helvetica",row.status==="MISSED"?"bold":"normal");doc.setFontSize(6.7);wrapped.forEach((lines,index)=>{if(index===4&&row.status==="MISSED")doc.setTextColor(190,30,55);else doc.setTextColor(11,29,56);doc.text(lines,x+1.5,y);x+=columns[index].width});doc.setTextColor(11,29,56);y+=rowHeight}const blob=doc.output("blob");await downloadOrSharePdfBlob(blob,`Teacher-Daily-Log-History-${historyStartDate}-to-${historyEndDate}.pdf`,"Talent Passport — Teacher Daily Log History")}catch(error){console.error("TEACHER LOG HISTORY PDF FAILED",error);window.alert("Unable to generate the teacher log history report. Please try again.")}finally{setHistoryPdfLoading(false)}}
+ async function downloadHistoryPdf(){if(!historyRows.length||historyPdfLoading)return;setHistoryPdfLoading(true);try{const teacherLabel=historyTeacherUuid?historyTeacherOptions.find(([id])=>id===historyTeacherUuid)?.[1]??"Selected Teacher":"All Teachers";const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4",compress:true});const margin=10,pageWidth=297,pageHeight=210;const columns=[{title:"Date",width:24},{title:"Teacher",width:38},{title:"Subject",width:32},{title:"Class",width:24},{title:"Status",width:25},{title:"Topics",width:58},{title:"Subtopics / Concepts",width:76}];const lineHeight=4.2;let y=margin;const drawHeader=()=>{doc.setFont("helvetica","bold");doc.setFontSize(14);doc.text("Teacher Daily Log History",margin,y);y+=6;doc.setFont("helvetica","normal");doc.setFontSize(8);doc.text(`Teacher: ${escapePdfText(teacherLabel)}   |   Period: ${formatDate(historyStartDate)} to ${formatDate(historyEndDate)}`,margin,y);y+=6;let x=margin;doc.setFillColor(248,250,252);doc.setDrawColor(210,220,232);doc.rect(margin,y-4,pageWidth-margin*2,8,"FD");doc.setFont("helvetica","bold");doc.setFontSize(7);for(const column of columns){doc.text(column.title,x+1.5,y);x+=column.width}y+=5};drawHeader();const wrap=(text:string,width:number)=>doc.splitTextToSize(escapePdfText(text)||"—",width-3).slice(0,7);for(const row of historyRows){const values=[formatDate(row.date),row.teacherName,row.subjectName,`${row.className}${row.sectionName?` - ${row.sectionName}`:""}`,row.status==="SUBMITTED"?"Submitted":row.status==="ABSENT"?"ABSENT":"MISSED",row.topics.length?row.topics.join(", "):"No log submitted",row.subtopics.length?row.subtopics.join(", "):row.status!=="SUBMITTED"?"No log submitted":"No subtopics recorded"];const wrapped=values.map((value,index)=>wrap(value,columns[index].width));const rowHeight=Math.max(7,...wrapped.map(lines=>lines.length*lineHeight+3));if(y+rowHeight>pageHeight-margin){doc.addPage();y=margin;drawHeader()}let x=margin;if(row.status!=="SUBMITTED"){doc.setFillColor(255,241,242);doc.setDrawColor(255,205,211);doc.rect(margin,y-3.5,pageWidth-margin*2,rowHeight,"FD")}doc.setFont("helvetica",row.status!=="SUBMITTED"?"bold":"normal");doc.setFontSize(6.7);wrapped.forEach((lines,index)=>{if(index===4&&row.status!=="SUBMITTED")doc.setTextColor(190,30,55);else doc.setTextColor(11,29,56);doc.text(lines,x+1.5,y);x+=columns[index].width});doc.setTextColor(11,29,56);y+=rowHeight}const blob=doc.output("blob");await downloadOrSharePdfBlob(blob,`Teacher-Daily-Log-History-${historyStartDate}-to-${historyEndDate}.pdf`,"Talent Passport — Teacher Daily Log History")}catch(error){console.error("TEACHER LOG HISTORY PDF FAILED",error);window.alert("Unable to generate the teacher log history report. Please try again.")}finally{setHistoryPdfLoading(false)}}
  return <main className="school-page ti-page"><style>{css}</style><div className="school-stack">
   <section className="school-hero"><p className="school-eyebrow">Live Teaching Intelligence</p><h1 className="school-title">Teacher Intelligence</h1><p className="school-copy">Today's teacher activity and classroom coverage, built directly from published Daily Logs in the authenticated school.</p></section>
   <section className="ti-audit">
-   <div className="ti-head"><div><span>TEACHER ATTENDANCE & DAILY LOG ACTIVITY</span><h2>Principal's School Live Teaching Audit</h2><p>A Daily Log published today is verified evidence of today's teaching activity.</p></div><div className="ti-totals"><b>● {active} ACTIVE TODAY</b><b className="off">● {teachers.length-active} NO LOG TODAY</b></div></div>
+   <div className="ti-head"><div><span>TEACHER ATTENDANCE & DAILY LOG ACTIVITY</span><h2>Principal's School Live Teaching Audit</h2><p>A Daily Log published today is verified evidence of today's teaching activity.</p></div><div className="ti-totals"><b>● {active} ACTIVE TODAY</b><b className="off">● {absent} ABSENT TODAY</b><b className="wait">● {awaiting} AWAITING LOG</b></div></div>
    {loading&&!teachers.length?<><SchoolAnalyticsLoadingPopup active={loading} page="teacher" /><div className="ti-empty-dark">Loading teacher activity…</div></>:<>
     <div className="ti-cue">← Scroll left or right to view every teacher →</div>
     <div className="ti-scroll"><div className="ti-track">{teachers.map((t,i)=><button type="button" key={t.teacherUuid} onClick={()=>setSelectedId(t.teacherUuid)} className={`ti-card ${selected?.teacherUuid===t.teacherUuid?"selected":""}`}>
      <div className="ti-card-id"><span>ID: TCH{String(i+1).padStart(3,"0")}</span><i className={t.isPresentToday?"live":"offline"}/></div>
      <strong>{t.teacherName}</strong><small>{t.subjects.join(", ")||"No subject assigned"}</small>
-     <div className={`ti-status ${t.isPresentToday?"live":"offline"}`}>● {t.isPresentToday?`${t.todayLogCount} LOG${t.todayLogCount===1?"":"S"} TODAY`:"NO LOG SUBMITTED TODAY"}</div>
-     <em>{t.isPresentToday?`Last activity ${time(t.lastActivityAt)}`:"Awaiting today's activity"}</em>
+     <div className={`ti-status ${t.isPresentToday?"live":t.isAbsentToday?"absent":"offline"}`}>
+       ● {t.isPresentToday
+         ?`${t.todayLogCount} LOG${t.todayLogCount===1?"":"S"} TODAY`
+         :t.isAbsentToday
+           ?"ABSENT TODAY"
+           :"NO LOG SUBMITTED TODAY"}
+      </div>
+     <em>{t.isPresentToday
+        ?`Last activity ${time(t.lastActivityAt)}`
+        :t.isAbsentToday
+          ?"Teacher marked absent today"
+          :"Awaiting today's activity"}</em>
     </button>)}</div></div>
    </>}
   </section>
   {selected&&<section className="school-section ti-feed-section">
-   <div className="school-section-head"><div><p className="school-eyebrow">Today's Live Classroom Feed</p><h2 className="school-section-title">{selected.teacherName}</h2><p className="school-section-copy">{selected.classrooms.join(" · ")||"No active classroom assignment"}</p></div><div className="ti-badges"><span className={selected.isPresentToday?"present":"absent"}>{selected.isPresentToday?"● ACTIVE TODAY":"● NO LOG TODAY"}</span><span className="school-pill">{selected.todayLogCount} Today's Logs</span></div></div>
-   {!selected.todayLectures.length?<div className="school-empty ti-feed-empty">No Daily Log has been published by this teacher today. This feed will populate when today's first lecture is submitted.</div>:
+   <div className="school-section-head"><div><p className="school-eyebrow">Today's Live Classroom Feed</p><h2 className="school-section-title">{selected.teacherName}</h2><p className="school-section-copy">{selected.classrooms.join(" · ")||"No active classroom assignment"}</p></div><div className="ti-badges"><span className={selected.isPresentToday?"present":selected.isAbsentToday?"marked-absent":"absent"}>{selected.isPresentToday?"● ACTIVE TODAY":selected.isAbsentToday?"● ABSENT TODAY":"● NO LOG TODAY"}</span><span className="school-pill">{selected.todayLogCount} Today's Logs</span></div></div>
+   {!selected.todayLectures.length?<div className={`school-empty ti-feed-empty ${selected.isAbsentToday?"ti-feed-absence":""}`}>
+      {selected.isAbsentToday
+        ?"Teacher marked absent today. No Daily Log is expected from this teacher today."
+        :"No Daily Log has been published by this teacher today. This feed will populate when today's first lecture is submitted."}
+     </div>:
    <div className="ti-feed">{selected.todayLectures.map((l,i)=><article className="ti-lecture" key={l.logUuid}>
     <div className="ti-lecture-head"><div><span>LIVE LOG {String(i+1).padStart(2,"0")}</span><h3>{l.classroom} · {l.subjectName}</h3><p>{l.topicName}</p></div><b>{time(l.createdAt)}</b></div>
     <div className="ti-concepts"><label>Concepts Covered</label><div>{l.conceptsCovered.length?l.conceptsCovered.map((c,j)=><span key={j}>{c}</span>):<span>No concepts recorded</span>}</div></div>
@@ -95,7 +156,7 @@ export default function TeacherIntelligencePage(){
    {historyLoading&&<div className="ti-history-loading">Loading teacher log history for the selected period…</div>}
    {!historyLoading&&!historyData&&<div className="ti-history-empty">Select a teacher or All Teachers, choose the date range, and click <strong>Fetch Logs History</strong>.</div>}
    {!historyLoading&&historyData&&historyRows.length===0&&<div className="ti-history-empty">No assigned classroom-days were found for the selected period.</div>}
-   {!historyLoading&&historyRows.length>0&&<><div className="ti-history-note"><span>RED ROW = NO DAILY LOG SUBMITTED</span><span>SUBMITTED ROWS SHOW THE TOPIC AND SUBTOPICS / CONCEPTS RECORDED THAT DAY</span></div><div className="ti-history-scroll"><table className="ti-history-table"><thead><tr><th>Date</th><th>Teacher</th><th>Subject</th><th>Class / Section</th><th>Status</th><th>Topic(s) Taught</th><th>Subtopics / Concepts</th></tr></thead><tbody>{historyRows.map(row=><tr key={row.key} className={row.status==="MISSED"?"missed":"submitted"}><td>{formatDate(row.date)}</td><td><strong>{row.teacherName}</strong></td><td>{row.subjectName}</td><td>{row.className} - {row.sectionName}</td><td><span className={`ti-history-status ${row.status==="MISSED"?"missed":"submitted"}`}>{row.status==="MISSED"?"MISSED":"SUBMITTED"}</span></td><td>{row.topics.length?row.topics.map((topic,index)=><span className="ti-history-chip" key={`${row.key}-topic-${index}`}>{topic}</span>):<span className="ti-history-muted">No log submitted</span>}</td><td>{row.subtopics.length?row.subtopics.map((topic,index)=><span className="ti-history-chip ti-history-chip-blue" key={`${row.key}-subtopic-${index}`}>{topic}</span>):<span className="ti-history-muted">{row.status==="MISSED"?"No log submitted":"No subtopics recorded"}</span>}</td></tr>)}</tbody></table></div></>}
+   {!historyLoading&&historyRows.length>0&&<><div className="ti-history-note"><span>RED ROW = NO DAILY LOG SUBMITTED</span><span>SUBMITTED ROWS SHOW THE TOPIC AND SUBTOPICS / CONCEPTS RECORDED THAT DAY</span></div><div className="ti-history-scroll"><table className="ti-history-table"><thead><tr><th>Date</th><th>Teacher</th><th>Subject</th><th>Class / Section</th><th>Status</th><th>Topic(s) Taught</th><th>Subtopics / Concepts</th></tr></thead><tbody>{historyRows.map(row=><tr key={row.key} className={row.status!=="SUBMITTED"?"missed":"submitted"}><td>{formatDate(row.date)}</td><td><strong>{row.teacherName}</strong></td><td>{row.subjectName}</td><td>{row.className} - {row.sectionName}</td><td><span className={`ti-history-status ${row.status!=="SUBMITTED"?"missed":"submitted"}`}>{row.status==="MISSED"?"MISSED":row.status==="ABSENT"?"ABSENT":"SUBMITTED"}</span></td><td>{row.topics.length?row.topics.map((topic,index)=><span className="ti-history-chip" key={`${row.key}-topic-${index}`}>{topic}</span>):<span className="ti-history-muted">No log submitted</span>}</td><td>{row.subtopics.length?row.subtopics.map((topic,index)=><span className="ti-history-chip ti-history-chip-blue" key={`${row.key}-subtopic-${index}`}>{topic}</span>):<span className="ti-history-muted">{row.status!=="SUBMITTED"?"No log submitted":"No subtopics recorded"}</span>}</td></tr>)}</tbody></table></div></>}
   </section>
  </div></main>
 }
@@ -134,7 +195,7 @@ const css=`
 .ti-head p{margin:7px 0 0;color:#5D7190;font-size:11px;font-weight:650}
 .ti-totals{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap}
 .ti-totals b{padding:8px 11px;border:1px solid #AEE8C0;border-radius:999px;background:#F2FCF5;color:#168A43;font-size:9px;white-space:nowrap}
-.ti-totals b.off{border-color:#FFD1D6;background:#FFF5F6;color:#D92D4F}
+.ti-totals b.off{border-color:#FCA5A5;background:#FFF5F5;color:#B91C1C}.ti-totals b.wait{border-color:#CBD5E1;background:#F8FAFC;color:#64748B}
 .ti-cue{display:flex;align-items:center;justify-content:space-between;margin:16px 0 9px;padding:10px 12px;border:1px solid #E0E6EF;border-radius:10px;background:#F8FAFD;color:#657896;font-size:9px;font-weight:800}
 .ti-scroll{width:100%;max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;padding-bottom:8px}
 .ti-scroll::-webkit-scrollbar{height:7px}.ti-scroll::-webkit-scrollbar-track{background:#EDF1F7;border-radius:99px}.ti-scroll::-webkit-scrollbar-thumb{background:#C7D1DF;border-radius:99px}
@@ -149,13 +210,13 @@ const css=`
 .ti-card strong{display:block;margin-top:11px;font-size:12px;font-weight:900;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ti-card small{display:block;margin-top:5px;color:#657896;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ti-status{margin-top:11px;width:max-content;padding:5px 7px;border-radius:999px;font-size:8px;font-weight:900}
-.ti-status.live{border:1px solid #AEE8C0;background:#F2FCF5;color:#168A43}.ti-status.offline{border:1px solid #FFD1D6;background:#FFF5F6;color:#D92D4F}
+.ti-status.live{border:1px solid #AEE8C0;background:#F2FCF5;color:#168A43}.ti-status.offline{border:1px solid #FFD1D6;background:#FFF5F6;color:#D92D4F}.ti-status.absent{border:1px solid #FCA5A5;background:#FFF5F5;color:#B91C1C}
 .ti-card.selected .ti-status.live{background:#FFF;border-color:#AEE8C0}.ti-card.selected .ti-status.offline{background:#FFF;border-color:#FFD1D6}
 .ti-card em{display:block;margin-top:8px;color:#8A9AB1;font-size:8px;font-style:normal}
 .ti-empty-dark{padding:20px 0;color:#657896;font-size:11px}
 .ti-feed-section{margin-top:18px}.ti-badges{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .ti-badges>span:first-child{padding:7px 10px;border-radius:999px;font-size:8px;font-weight:900}
-.ti-badges .present{background:#F2FCF5;color:#168A43;border:1px solid #AEE8C0}.ti-badges .absent{background:#FFF5F6;color:#D92D4F;border:1px solid #FFD1D6}
+.ti-badges .present{background:#F2FCF5;color:#168A43;border:1px solid #AEE8C0}.ti-badges .absent{background:#FFF5F6;color:#D92D4F;border:1px solid #FFD1D6}.ti-badges .marked-absent{background:#FFF5F5;color:#B91C1C;border:1px solid #FCA5A5}
 .ti-feed{display:grid;gap:13px;margin-top:16px}
 .ti-lecture{overflow:hidden;border:1px solid #DCE4EF;border-radius:16px;background:#FFF}
 .ti-lecture-head{display:flex;justify-content:space-between;gap:14px;padding:16px 18px;background:linear-gradient(90deg,#FFF9F3 0%,#FFF 72%);border-bottom:1px solid #E8EDF4}

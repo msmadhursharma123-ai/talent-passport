@@ -114,6 +114,9 @@ export interface SchoolTeacherLiveStatus {
   teacherUuid:string; teacherName:string; subjects:string[]; classrooms:string[];
   isPresentToday:boolean; todayLogCount:number; lastActivityAt:string;
   todayLectures:SchoolTeacherLiveLecture[];
+  /** Additive attendance signal: true only when the teacher explicitly marked absent today. */
+  isAbsentToday?: boolean;
+  absenceMarkedAt?: string;
 }
 
 export interface SchoolIntelligenceSnapshot {

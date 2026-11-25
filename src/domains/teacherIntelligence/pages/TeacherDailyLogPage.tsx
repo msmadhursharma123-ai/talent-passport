@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 
 import TeacherDailyLogDialog from "../dialogs/TeacherDailyLogDialog";
 import TeacherDailyLogHistory from "../components/TeacherDailyLogHistory";
+import TeacherDailyAbsenceButton from "../components/TeacherDailyAbsenceButton";
 
 import {
   saveTeacherDailyLog,
@@ -623,14 +624,27 @@ async function handleSave(
             </p>
           </div>
 
-          <button
-            onClick={() =>
-              setOpenDialog(true)
-            }
-            style={buttonStyle}
+          <div
+            className="tp-publish-actions"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: "8px",
+              flexWrap: "wrap",
+            }}
           >
-            + Publish Today's Lecture
-          </button>
+            <button
+              onClick={() =>
+                setOpenDialog(true)
+              }
+              style={buttonStyle}
+            >
+              + Publish Today's Lecture
+            </button>
+
+            <TeacherDailyAbsenceButton disabled={isPublishing} />
+          </div>
         </div>
       </div>
 
@@ -1298,6 +1312,12 @@ async function handleSave(
   .tp-record-item > div:last-child { padding: 0 !important; font-size: inherit !important; }
   .tp-record-item > div:last-child > div:first-child { padding: 5px 8px !important; font-size: 7px !important; }
 
+}
+
+.tp-publish-actions { max-width: 100%; }
+
+@media (max-width: 760px) {
+  .tp-publish-actions { width: 100%; justify-content: flex-end; }
 }
 
 @media (max-width: 600px) {

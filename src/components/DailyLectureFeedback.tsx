@@ -181,6 +181,8 @@ function readLoop1FeedbackDraftEnvelope(logId: string): Loop1FeedbackDraftEnvelo
 // Every server draft SAVE — event-boundary, hydration reconciliation, or
 // recovery — must pass through this same serialized/retried/tracked path.
 // The existing V60 Supabase RPC remains the authoritative persistence API.
+type Loop1FeedbackDraftServerExecutionGuard = (envelope: Loop1FeedbackDraftEnvelope) => boolean;
+
 const loop1FeedbackDraftServerChains = new Map<string, Promise<void>>();
 const loop1FeedbackDraftPendingWrites = new Map<string, Promise<boolean>>();
 const loop1FeedbackDraftUnsyncedLogs = new Set<string>();
@@ -215,6 +217,7 @@ function enqueueLoop1FeedbackDraftServerOperation(
 async function saveLoop1FeedbackDraftEnvelopeWithRetry(
   logId: string,
   envelope: Loop1FeedbackDraftEnvelope,
+  shouldExecute?: Loop1FeedbackDraftServerExecutionGuard,
 ): Promise<void> {
   const payload = {
     ...envelope.draft,
@@ -228,9 +231,19 @@ async function saveLoop1FeedbackDraftEnvelopeWithRetry(
   let lastError: unknown = null;
 
   for (let attempt = 0; attempt < retryDelays.length; attempt += 1) {
+    // V79: an envelope can remain queued behind an earlier server operation
+    // long enough for its ownership/value to become stale. Revalidate at the
+    // actual RPC boundary, not only when the envelope was admitted. A stale
+    // envelope is a deliberate no-op, not a persistence failure.
+    if (shouldExecute && !shouldExecute(envelope)) return;
+
     if (retryDelays[attempt] > 0) {
       await new Promise((resolve) => window.setTimeout(resolve, retryDelays[attempt]));
     }
+
+    // Re-check after the retry delay as ownership may have changed while this
+    // envelope was waiting behind the prior attempt.
+    if (shouldExecute && !shouldExecute(envelope)) return;
 
     try {
       const saved = await saveStudentLoop1FeedbackDraft(
@@ -287,10 +300,11 @@ async function saveLoop1FeedbackDraftEnvelopeWithRetry(
 function queueLoop1FeedbackDraftServerEnvelope(
   logId: string,
   envelope: Loop1FeedbackDraftEnvelope,
+  shouldExecute?: Loop1FeedbackDraftServerExecutionGuard,
 ): Promise<boolean> {
   const operation = enqueueLoop1FeedbackDraftServerOperation(
     logId,
-    () => saveLoop1FeedbackDraftEnvelopeWithRetry(logId, envelope),
+    () => saveLoop1FeedbackDraftEnvelopeWithRetry(logId, envelope, shouldExecute),
   );
   const tracked = operation
     .then(() => {
@@ -318,7 +332,12 @@ function queueLoop1FeedbackDraftServerEnvelope(
   return tracked;
 }
 
-function writeLoop1FeedbackDraft(logId: string, draft: Loop1FeedbackDraft, syncServer = false): Promise<boolean> {
+function writeLoop1FeedbackDraft(
+  logId: string,
+  draft: Loop1FeedbackDraft,
+  syncServer = false,
+  shouldExecute?: Loop1FeedbackDraftServerExecutionGuard,
+): Promise<boolean> {
   const storageKey = getLoop1FeedbackDraftStorageKey();
   const clientId = getLoop1FeedbackDraftClientId();
   let revision = 0;
@@ -346,12 +365,13 @@ function writeLoop1FeedbackDraft(logId: string, draft: Loop1FeedbackDraft, syncS
 
   if (!syncServer) return Promise.resolve(true);
 
-  return queueLoop1FeedbackDraftServerEnvelope(logId, {
+  const envelope: Loop1FeedbackDraftEnvelope = {
     draft,
     revision,
     clientId,
     updatedAt,
-  });
+  };
+  return queueLoop1FeedbackDraftServerEnvelope(logId, envelope, shouldExecute);
 }
 
 async function flushLoop1FeedbackDraft(logId: string): Promise<boolean> {
@@ -539,6 +559,36 @@ export default function DailyLectureFeedback() {
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   const [understandingLevel, setUnderstandingLevel] = useState("");
+
+  // V78: authoritative in-memory ownership for the unfinished understanding
+  // value. V77 correctly fenced stale renders by ownership generation, but it
+  // did not protect the active generation from a later writer whose React
+  // snapshot still contained the pre-selection empty value. Every explicit
+  // understanding transition therefore claims the value here synchronously.
+  // A non-empty claimed value may never be replaced by an implicit empty
+  // background snapshot. An empty value is allowed only when an explicit
+  // transition intentionally clears understanding (for example Verification
+  // YES -> fresh second selection).
+  const loop1UnderstandingDraftAuthorityRef = useRef<Map<string, { generation: number; value: string }>>(new Map());
+
+  function claimLoop1UnderstandingDraftAuthority(logId: string, value: string) {
+    loop1UnderstandingDraftAuthorityRef.current.set(logId, {
+      generation: loop1FeedbackDraftOwnershipGenerationRef.current,
+      value,
+    });
+  }
+
+  function clearLoop1UnderstandingDraftAuthority(logId: string) {
+    loop1UnderstandingDraftAuthorityRef.current.delete(logId);
+  }
+
+  function getLoop1UnderstandingDraftAuthority(logId: string): string | null {
+    const authority = loop1UnderstandingDraftAuthorityRef.current.get(logId);
+    if (!authority) return null;
+    if (authority.generation !== loop1FeedbackDraftOwnershipGenerationRef.current) return null;
+    return authority.value;
+  }
+
   // V68: keep the synchronous resume context keyed to the exact Daily Log.
   // A single global fallback value can leak the previous card's understanding
   // into a newly opened card during the render/hydration boundary. The keyed
@@ -549,6 +599,10 @@ export default function DailyLectureFeedback() {
   });
 
   function setLoop1UnderstandingLevelForLog(logId: string, value: string) {
+    // V78: claim the exact value before React state changes. This is the
+    // synchronous ownership source used by all later draft writers in this
+    // generation.
+    claimLoop1UnderstandingDraftAuthority(logId, value);
     loop1UnderstandingResumeRef.current = { logId, value };
     setUnderstandingLevel(value);
   }
@@ -560,6 +614,9 @@ export default function DailyLectureFeedback() {
   }
 
   function prepareLoop1UnderstandingResume(logId: string) {
+    // V78: a new ownership generation starts without a carried understanding
+    // authority. Hydration or the next user event must claim this card's value.
+    clearLoop1UnderstandingDraftAuthority(logId);
     loop1UnderstandingResumeRef.current = { logId, value: "" };
   }
 
@@ -588,6 +645,10 @@ export default function DailyLectureFeedback() {
   }
 
   function openLoop1FeedbackCard(logId: string) {
+    // V77: invalidate every writer belonging to the previously rendered card
+    // before releasing the V76 close guard. A reopen is a new ownership
+    // generation even when the same Daily Log is opened again.
+    advanceLoop1FeedbackDraftOwnershipGeneration();
     // V76: opening a card starts a fresh ownership boundary. If this is the
     // card that was just closed, release its temporary write suppression now
     // so normal event/effect persistence can resume.
@@ -682,6 +743,80 @@ export default function DailyLectureFeedback() {
   // This is deliberately scoped to the exact log being closed.
   const loop1FeedbackDraftClosingLogIdRef = useRef<string | null>(null);
 
+  // V77: every open/close cycle gets a monotonically increasing ownership
+  // generation. The generation is captured by React effects from the render
+  // that created them, while the ref is advanced synchronously at the close
+  // boundary. This makes an older effect unable to write after CANCEL/card
+  // switch has reset the transient state, even if React runs that older
+  // effect after the close handler has yielded. Reopening the same Daily Log
+  // creates a new generation, so only the new card owner may persist state.
+  const [loop1FeedbackDraftOwnershipGeneration, setLoop1FeedbackDraftOwnershipGeneration] = useState(0);
+  const loop1FeedbackDraftOwnershipGenerationRef = useRef(0);
+
+  function advanceLoop1FeedbackDraftOwnershipGeneration(): number {
+    const nextGeneration = loop1FeedbackDraftOwnershipGenerationRef.current + 1;
+    loop1FeedbackDraftOwnershipGenerationRef.current = nextGeneration;
+    setLoop1FeedbackDraftOwnershipGeneration(nextGeneration);
+    return nextGeneration;
+  }
+
+  // V79: queue-execution ownership guard. V78 correctly made the active
+  // understanding value authoritative at envelope creation, but the queued
+  // server operation could still execute later with that immutable envelope.
+  // Revalidate the exact ownership generation, close boundary, current card,
+  // current local envelope version, and active understanding authority at the
+  // RPC execution/retry boundary. This is intentionally a no-op for stale work.
+  function isLoop1FeedbackDraftServerEnvelopeStillOwned(
+    logId: string,
+    envelope: Loop1FeedbackDraftEnvelope,
+    generation: number,
+  ): boolean {
+    // V80: a close/switch handler advances ownership before it awaits the
+    // already-admitted server save. That pre-close envelope is still the
+    // authoritative value that must be flushed. Therefore the execution guard
+    // must distinguish:
+    //   (1) normal active-card execution, which requires the current generation
+    //       and active-card ownership; and
+    //   (2) the close boundary, where the current durable envelope is explicitly
+    //       allowed to finish even though the generation has already advanced.
+    // The local durable-envelope comparison below remains mandatory in both
+    // cases, so an older queued envelope cannot overwrite a newer snapshot.
+    const isCloseFlushForThisLog = loop1FeedbackDraftClosingLogIdRef.current === logId;
+    if (!isCloseFlushForThisLog) {
+      if (generation !== loop1FeedbackDraftOwnershipGenerationRef.current) return false;
+      if (expandedCard !== logId) return false;
+    }
+
+    // localStorage is the synchronous admission record when available. If the
+    // browser storage API itself is unavailable, do not turn that unrelated
+    // storage failure into a server-sync failure; generation/active-card checks
+    // (for normal execution) and the active understanding authority below remain
+    // active in that fallback case.
+    const storageKey = getLoop1FeedbackDraftStorageKey();
+    if (storageKey && typeof window !== "undefined") {
+      try {
+        const raw = window.localStorage.getItem(storageKey);
+        if (raw) {
+          const currentEnvelope = readLoop1FeedbackDraftEnvelope(logId);
+          if (!currentEnvelope) return false;
+          if (currentEnvelope.revision !== envelope.revision) return false;
+          if (currentEnvelope.clientId !== envelope.clientId) return false;
+          if (currentEnvelope.updatedAt !== envelope.updatedAt) return false;
+        }
+      } catch {
+        // Keep the generation/authority guard active even if storage cannot be
+        // read at this instant. The server RPC remains the fallback authority.
+      }
+    }
+
+    const ownedUnderstandingLevel = getLoop1UnderstandingDraftAuthority(logId);
+    if (ownedUnderstandingLevel !== null && ownedUnderstandingLevel !== envelope.draft.understandingLevel) {
+      return false;
+    }
+
+    return true;
+  }
+
   // Event-boundary persistence helper: state/effect persistence is retained for
   // normal updates, but any user action that can change an unfinished draft also
   // snapshots the resulting value synchronously before navigation/unmount can win.
@@ -694,10 +829,27 @@ export default function DailyLectureFeedback() {
     // flushes the newest durable snapshot and only then resets transient state.
     if (loop1FeedbackDraftClosingLogIdRef.current === logId) return;
 
+    // V77: the helper itself also validates render ownership. A stale callback
+    // from an older render therefore cannot persist after CANCEL/card switch,
+    // even if it arrives through an event/async callback rather than the
+    // generic effect. Current-render callers have matching state/ref values.
+    if (loop1FeedbackDraftOwnershipGeneration !== loop1FeedbackDraftOwnershipGenerationRef.current) return;
+
+    const explicitUnderstandingOverride = Object.prototype.hasOwnProperty.call(overrides, "understandingLevel")
+      ? overrides.understandingLevel as string
+      : undefined;
+    if (explicitUnderstandingOverride !== undefined) {
+      // V78: explicit event-boundary transitions are the only source allowed
+      // to intentionally claim an empty understanding value.
+      claimLoop1UnderstandingDraftAuthority(logId, explicitUnderstandingOverride);
+    }
+    const ownedUnderstandingLevel = getLoop1UnderstandingDraftAuthority(logId);
     const effectiveUnderstandingLevel =
-      overrides.understandingLevel ?? getEffectiveLoop1UnderstandingLevel(logId);
+      explicitUnderstandingOverride !== undefined
+        ? explicitUnderstandingOverride
+        : ownedUnderstandingLevel ?? getEffectiveLoop1UnderstandingLevel(logId);
     const isVerificationForLog = loop1VerificationLogId === logId;
-    writeLoop1FeedbackDraft(logId, {
+    const draft: Loop1FeedbackDraft = {
       understandingLevel: effectiveUnderstandingLevel,
       conceptsNotUnderstood,
       somethingElse,
@@ -711,7 +863,14 @@ export default function DailyLectureFeedback() {
       verificationNoLock: loop1VerificationNoLockLogIdRef.current === logId,
       wrongStartedFromComplete: multiWrongStartedFromCompleteRef.current.has(logId),
       ...overrides,
-    }, true);
+    };
+    const generation = loop1FeedbackDraftOwnershipGeneration;
+    writeLoop1FeedbackDraft(
+      logId,
+      draft,
+      true,
+      (envelope) => isLoop1FeedbackDraftServerEnvelopeStillOwned(logId, envelope, generation),
+    );
   }
 
   const [dailyFeedbackEarnedCredits, setDailyFeedbackEarnedCredits] = useState(0);
@@ -755,10 +914,16 @@ export default function DailyLectureFeedback() {
   // so legacy/non-Multi-Cross feedback is never altered by this feature.
   useEffect(() => {
     if (!expandedCard || submittedFeedback[expandedCard]) return;
+    if (loop1FeedbackDraftClosingLogIdRef.current === expandedCard) return;
     if ((multiCrossQuestionsByLog[expandedCard] ?? []).length < 2) return;
     if (!loop1VerificationAttemptHistoryReadyRef.current) return;
     if (loop1FeedbackDraftHydratedLogId === expandedCard) return;
 
+    // V77: hydration belongs to the render generation that opened this card.
+    // If the card closes/reopens while any await is in flight, this generation
+    // becomes stale and the old hydration is forbidden from reconciling or
+    // restoring state into the new owner.
+    const hydrationOwnershipGeneration = loop1FeedbackDraftOwnershipGeneration;
     let cancelled = false;
     const hydrate = async () => {
       const wasTouchedBeforeHydration = loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard);
@@ -766,7 +931,11 @@ export default function DailyLectureFeedback() {
       const serverDraft = !wasTouchedBeforeHydration ? await getStudentLoop1FeedbackDraft(expandedCard) : null;
       let draft = localEnvelope?.draft ?? null;
 
-      if (!cancelled && !loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard)) {
+      if (
+        !cancelled &&
+        hydrationOwnershipGeneration === loop1FeedbackDraftOwnershipGenerationRef.current &&
+        !loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard)
+      ) {
         const serverPayload = serverDraft?.payload as any;
         const serverMeta = serverPayload?._tp_loop1_draft_meta;
         const serverRevision = Number.isSafeInteger(serverDraft?.client_revision) && serverDraft.client_revision >= 0
@@ -826,12 +995,35 @@ export default function DailyLectureFeedback() {
               updatedAt: localEnvelope.updatedAt || new Date().toISOString(),
             },
           };
-          const reconciliationSaved = await queueLoop1FeedbackDraftServerEnvelope(expandedCard, {
+          // V77: do not start a local-wins server reconciliation after this
+          // hydration owner has already been closed. The local snapshot remains
+          // available for the next owner to reconcile safely.
+          if (
+            cancelled ||
+            hydrationOwnershipGeneration !== loop1FeedbackDraftOwnershipGenerationRef.current ||
+            loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard)
+          ) return;
+
+          const reconciliationEnvelope: Loop1FeedbackDraftEnvelope = {
             draft: localEnvelope.draft,
             revision: localMeta._tp_loop1_draft_meta.revision,
             clientId: localMeta._tp_loop1_draft_meta.clientId,
             updatedAt: localMeta._tp_loop1_draft_meta.updatedAt,
-          });
+          };
+          const reconciliationSaved = await queueLoop1FeedbackDraftServerEnvelope(
+            expandedCard,
+            reconciliationEnvelope,
+            (envelope) => {
+              if (cancelled || hydrationOwnershipGeneration !== loop1FeedbackDraftOwnershipGenerationRef.current) return false;
+              if (loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard)) return false;
+              return isLoop1FeedbackDraftServerEnvelopeStillOwned(expandedCard, envelope, hydrationOwnershipGeneration);
+            },
+          );
+          if (
+            cancelled ||
+            hydrationOwnershipGeneration !== loop1FeedbackDraftOwnershipGenerationRef.current ||
+            loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard)
+          ) return;
           if (!reconciliationSaved) {
             // The local snapshot remains the visible recovery source, but the
             // log is explicitly marked unsynced. Any in-app navigation must
@@ -856,7 +1048,11 @@ export default function DailyLectureFeedback() {
         }
       }
 
-      if (cancelled || loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard)) return;
+      if (
+        cancelled ||
+        hydrationOwnershipGeneration !== loop1FeedbackDraftOwnershipGenerationRef.current ||
+        loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard)
+      ) return;
       if (draft) {
       // V68: if a persisted wrong-terminal draft predates the explicit origin
       // marker, derive that marker from the persisted Complete selection.
@@ -927,7 +1123,11 @@ export default function DailyLectureFeedback() {
               if (recoveryAttempts[recoveryIndex] > 0) {
                 await new Promise((resolve) => window.setTimeout(resolve, recoveryAttempts[recoveryIndex]));
               }
-              if (cancelled || loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard)) break;
+              if (
+                cancelled ||
+                hydrationOwnershipGeneration !== loop1FeedbackDraftOwnershipGenerationRef.current ||
+                loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard)
+              ) break;
 
               try {
                 const { data: replayData, error: replayError } = await (supabase as any).rpc(
@@ -989,6 +1189,10 @@ export default function DailyLectureFeedback() {
       const recoveredVerificationStage = hasLedgerVerification
         ? (ledgerResult ? "verification" : "wrong")
         : draft.verificationStage;
+      // V78: hydration claims the restored value for this ownership generation
+      // before React state is restored, so the generic writer cannot later use
+      // the pre-hydration empty snapshot to clobber a non-empty draft.
+      claimLoop1UnderstandingDraftAuthority(expandedCard, draft.understandingLevel);
       loop1UnderstandingResumeRef.current = { logId: expandedCard, value: draft.understandingLevel };
       setUnderstandingLevel(draft.understandingLevel);
       setConceptsNotUnderstood(draft.conceptsNotUnderstood);
@@ -1021,7 +1225,7 @@ export default function DailyLectureFeedback() {
     return () => {
       cancelled = true;
     };
-  }, [expandedCard, submittedFeedback, multiCrossQuestionsByLog, multiCrossAttemptsByLog, loop1FeedbackDraftHydratedLogId, crossQuestionAnswers, crossQuestionResults]);
+  }, [expandedCard, submittedFeedback, multiCrossQuestionsByLog, multiCrossAttemptsByLog, loop1FeedbackDraftHydratedLogId, crossQuestionAnswers, crossQuestionResults, loop1FeedbackDraftOwnershipGeneration]);
 
   // Save an unfinished feedback draft as soon as the student has actually
   // interacted with the open card. This early write is intentionally allowed
@@ -1032,6 +1236,13 @@ export default function DailyLectureFeedback() {
   // normal gate continues to protect against stale-card overwrites.
   useEffect(() => {
     if (!expandedCard || submittedFeedback[expandedCard]) return;
+
+    // V77: this effect belongs to the render generation that created it. If a
+    // later CANCEL/card switch has already advanced ownership, the old effect
+    // must not persist the transient reset state even if it runs late.
+    const effectOwnershipGeneration = loop1FeedbackDraftOwnershipGeneration;
+    if (effectOwnershipGeneration !== loop1FeedbackDraftOwnershipGenerationRef.current) return;
+
     // V76: the close boundary is stronger than the background save effect.
     // CANCEL/card-switch flushes the newest durable draft first; once closing
     // begins, this effect must not write the transient reset state back over it.
@@ -1050,7 +1261,7 @@ export default function DailyLectureFeedback() {
     // Never let this background save clobber the V70/V71/V72 resume context.
     const effectiveUnderstandingLevelForSave = getEffectiveLoop1UnderstandingLevel(expandedCard);
 
-    writeLoop1FeedbackDraft(expandedCard, {
+    const effectDraft: Loop1FeedbackDraft = {
       understandingLevel: effectiveUnderstandingLevelForSave,
       conceptsNotUnderstood,
       somethingElse,
@@ -1063,12 +1274,20 @@ export default function DailyLectureFeedback() {
       verificationSecondSelection: loop1VerificationLogId === expandedCard ? loop1VerificationSecondSelection : null,
       verificationNoLock: loop1VerificationNoLockLogIdRef.current === expandedCard,
       wrongStartedFromComplete: multiWrongStartedFromCompleteRef.current.has(expandedCard),
-    }, isConfirmedMultiCross);
+    };
+    const effectGeneration = loop1FeedbackDraftOwnershipGeneration;
+    writeLoop1FeedbackDraft(
+      expandedCard,
+      effectDraft,
+      isConfirmedMultiCross,
+      (envelope) => isLoop1FeedbackDraftServerEnvelopeStillOwned(expandedCard, envelope, effectGeneration),
+    );
   }, [
     expandedCard,
     submittedFeedback,
     multiCrossQuestionsByLog,
     loop1FeedbackDraftHydratedLogId,
+    loop1FeedbackDraftOwnershipGeneration,
     understandingLevel,
     conceptsNotUnderstood,
     somethingElse,
@@ -1332,11 +1551,15 @@ export default function DailyLectureFeedback() {
   }
 
   function resetFeedbackForm() {
+    // V77: successful submission is also a terminal ownership boundary. No
+    // background writer from the pre-submit render may recreate the draft.
+    advanceLoop1FeedbackDraftOwnershipGeneration();
     if (expandedCard) {
       loop1FeedbackDraftUserTouchedLogIdsRef.current.delete(expandedCard);
       multiWrongStartedFromCompleteRef.current.delete(expandedCard);
     }
     resetLoop1TransientFeedbackState();
+    if (expandedCard) clearLoop1UnderstandingDraftAuthority(expandedCard);
     setLoop1FeedbackDraftHydratedLogId(null);
     clearLoop1UnderstandingResume(expandedCard);
     setExpandedCard(null);
@@ -1380,6 +1603,14 @@ export default function DailyLectureFeedback() {
     // state. A render/callback for another log must never inherit the prior
     // card's React state.
     if (expandedCard !== logId) return "";
+
+    // V78: the active generation's explicit understanding authority wins over
+    // a stale React snapshot. This is the missing boundary exposed by V77's
+    // runtime Network trace: the UI still showed Partial, but a later writer
+    // serialized understandingLevel="" from an older render.
+    const ownedUnderstandingLevel = getLoop1UnderstandingDraftAuthority(logId);
+    if (ownedUnderstandingLevel !== null) return ownedUnderstandingLevel;
+
     const resume = loop1UnderstandingResumeRef.current;
     if (understandingLevel === "" && resume.logId === logId && resume.value) {
       return resume.value;
@@ -1709,6 +1940,9 @@ export default function DailyLectureFeedback() {
   function handleLoop1VerificationDecision(log: any, wantsToCorrect: boolean) {
     if (loop1VerificationLogId !== log.id || loop1VerificationStage !== "verification") return;
     if (wantsToCorrect) {
+      // V78: this is an intentional empty-understanding transition, not a
+      // background clobber. Claim the explicit empty value before persisting it.
+      claimLoop1UnderstandingDraftAuthority(log.id, "");
       // Verification YES starts a fresh second understanding selection.
       // The original Partial/Didn't choice must not remain selected or be
       // reusable by the ordinary Submit button.
@@ -6534,6 +6768,11 @@ return (
                             // unmounted while its authoritative server draft is still
                             // unresolved.
                             if (expandedCard && expandedCard !== log.id) {
+                              // V77: advance ownership BEFORE claiming the V76
+                              // closing boundary. Every effect from the old render
+                              // is now stale even if React runs it after this
+                              // handler yields to the server flush.
+                              advanceLoop1FeedbackDraftOwnershipGeneration();
                               // V76: claim the old card's closing boundary BEFORE
                               // awaiting the server flush. Any late effect/event
                               // from the old card is now forbidden from writing
@@ -6878,7 +7117,7 @@ return (
                                   setCrossQuestionAnswers((previous) => ({ ...previous, [log.id]: selected }));
                                   setCrossQuestionResults((previous) => ({ ...previous, [log.id]: correct }));
                                   if (correct) void submitFeedback(log, "I completely understood.", selected, true);
-                                  else { setLoop1UnderstandingLevelForLog(log.id, ""); setGuidedScrollTarget({ logId: log.id, section: "understanding" }); }
+                                  else { claimLoop1UnderstandingDraftAuthority(log.id, ""); setLoop1UnderstandingLevelForLog(log.id, ""); setGuidedScrollTarget({ logId: log.id, section: "understanding" }); }
                                 } catch (error: any) {
                                   console.error("CROSS QUESTION ATTEMPT FAILED", error);
                                   setFeedbackSubmitError(String(error?.message ?? "Your answer could not be recorded. Refresh the page to check whether it was already attempted."));
@@ -7107,6 +7346,10 @@ return (
                           // preserves V70's server-backed persistence/retry guarantee before
                           // the card is closed. On reopen, openLoop1FeedbackCard() performs
                           // the V70 transient reset and hydration restores this log only.
+                          // V77: advance ownership BEFORE flushing. The old
+                          // render is permanently stale; reopening the same card
+                          // will receive a new generation.
+                          advanceLoop1FeedbackDraftOwnershipGeneration();
                           // V76: claim the closing boundary BEFORE flushing.
                           // The flush persists the latest good draft; the guard
                           // then prevents any background/event writer from saving
@@ -7123,6 +7366,7 @@ return (
                           loop1FeedbackDraftUserTouchedLogIdsRef.current.delete(log.id);
                           setFeedbackSubmitError(null);
                           resetLoop1TransientFeedbackState();
+                          clearLoop1UnderstandingDraftAuthority(log.id);
                           setLoop1FeedbackDraftHydratedLogId(null);
                           clearLoop1UnderstandingResume(log.id);
                           setExpandedCard(null);
