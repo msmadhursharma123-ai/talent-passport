@@ -26,6 +26,12 @@ import {
 } from "../data/studentDailyFeedbackRepository";
 
 import {
+  getStudentLoop1FeedbackDraft,
+  saveStudentLoop1FeedbackDraft,
+  deleteStudentLoop1FeedbackDraft,
+} from "../data/studentLoop1FeedbackDraftRepository";
+
+import {
   getPendingDoubtsByStudent,
   submitStudentPendingDoubtResponse,
 } from "../domains/teacherIntelligence/repository/PendingTeacherDoubtRepository";
@@ -76,6 +82,359 @@ interface FeedbackStatementRow {
 const ALL_SUBJECTS_VALUE = "__ALL_SUBJECTS__";
 const ALL_SUBJECTS_LABEL = "All Subjects";
 const LOOP2_MULTICROSS_ROLLOUT_DATE = "2026-11-23";
+
+// Loop-1 feedback drafts are deliberately client-local draft state only. The
+// authoritative Cross Question history remains the existing database ledger;
+// this draft layer only restores the same in-progress feedback choices when
+// the student leaves the page and later returns before a successful submit.
+const LOOP1_FEEDBACK_DRAFT_STORAGE_KEY = "tp_loop1_feedback_draft_v53";
+
+type Loop1FeedbackDraft = {
+  understandingLevel: string;
+  conceptsNotUnderstood: string[];
+  somethingElse: boolean;
+  somethingElseText: string;
+  additionalNote: string;
+  verificationStage: "idle" | "question" | "verification" | "corrected" | "wrong" | "no";
+  verificationLogId: string | null;
+  verificationAnswer: number | null;
+  verificationCorrect: boolean | null;
+  verificationSecondSelection: string | null;
+  verificationNoLock: boolean;
+  wrongStartedFromComplete: boolean;
+};
+
+type Loop1FeedbackDraftEnvelope = {
+  draft: Loop1FeedbackDraft;
+  revision: number;
+  clientId: string;
+  updatedAt: string;
+};
+
+let loop1FeedbackDraftClientId: string | null = null;
+const loop1FeedbackDraftRevisionFallback = new Map<string, number>();
+
+function getLoop1FeedbackDraftClientId(): string {
+  if (loop1FeedbackDraftClientId) return loop1FeedbackDraftClientId;
+  loop1FeedbackDraftClientId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `tp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return loop1FeedbackDraftClientId;
+}
+
+function normalizeLoop1FeedbackDraft(draft: any): Loop1FeedbackDraft | null {
+  if (!draft || typeof draft !== "object") return null;
+  return {
+    understandingLevel: typeof draft.understandingLevel === "string" ? draft.understandingLevel : "",
+    conceptsNotUnderstood: Array.isArray(draft.conceptsNotUnderstood)
+      ? draft.conceptsNotUnderstood.filter((value: unknown): value is string => typeof value === "string")
+      : [],
+    somethingElse: draft.somethingElse === true,
+    somethingElseText: typeof draft.somethingElseText === "string" ? draft.somethingElseText : "",
+    additionalNote: typeof draft.additionalNote === "string" ? draft.additionalNote : "",
+    verificationStage: ["idle", "question", "verification", "corrected", "wrong", "no"].includes(draft.verificationStage)
+      ? draft.verificationStage
+      : "idle",
+    verificationLogId: typeof draft.verificationLogId === "string" ? draft.verificationLogId : null,
+    verificationAnswer: Number.isInteger(draft.verificationAnswer) ? draft.verificationAnswer : null,
+    verificationCorrect: typeof draft.verificationCorrect === "boolean" ? draft.verificationCorrect : null,
+    verificationSecondSelection: typeof draft.verificationSecondSelection === "string" ? draft.verificationSecondSelection : null,
+    verificationNoLock: draft.verificationNoLock === true,
+    wrongStartedFromComplete: draft.wrongStartedFromComplete === true,
+  };
+}
+
+function getLoop1FeedbackDraftStorageKey(): string | null {
+  try {
+    const identity = requireIdentity();
+    return `${LOOP1_FEEDBACK_DRAFT_STORAGE_KEY}:${String(identity.studentUuid)}`;
+  } catch {
+    return null;
+  }
+}
+
+function readLoop1FeedbackDraftEnvelope(logId: string): Loop1FeedbackDraftEnvelope | null {
+  const storageKey = getLoop1FeedbackDraftStorageKey();
+  if (!storageKey || typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(storageKey);
+    if (!raw) return null;
+    const allDrafts = JSON.parse(raw);
+    const stored = allDrafts?.[String(logId)];
+    const draft = normalizeLoop1FeedbackDraft(stored?.draft ?? stored);
+    if (!draft) return null;
+    return {
+      draft,
+      revision: Number.isSafeInteger(stored?.revision) && stored.revision >= 0 ? stored.revision : 0,
+      clientId: typeof stored?.clientId === "string" ? stored.clientId : "",
+      updatedAt: typeof stored?.updatedAt === "string" ? stored.updatedAt : "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+// All server-draft writes and deletes for the same Daily Log share one
+// serialized chain. A delete must never race an older save and allow a stale
+// draft to resurrect after successful submission/cancellation.
+// Canonical Loop-1 server-draft writer boundary.
+// Every server draft SAVE — event-boundary, hydration reconciliation, or
+// recovery — must pass through this same serialized/retried/tracked path.
+// The existing V60 Supabase RPC remains the authoritative persistence API.
+const loop1FeedbackDraftServerChains = new Map<string, Promise<void>>();
+const loop1FeedbackDraftPendingWrites = new Map<string, Promise<boolean>>();
+const loop1FeedbackDraftUnsyncedLogs = new Set<string>();
+
+function enqueueLoop1FeedbackDraftServerOperation(
+  logId: string,
+  operation: () => Promise<void>,
+): Promise<void> {
+  const previous = loop1FeedbackDraftServerChains.get(logId) ?? Promise.resolve();
+  const next = previous
+    .catch(() => undefined)
+    .then(operation);
+  loop1FeedbackDraftServerChains.set(logId, next);
+
+  // Cleanup must not create an unhandled rejected promise when `next` rejects.
+  void next.then(
+    () => {
+      if (loop1FeedbackDraftServerChains.get(logId) === next) {
+        loop1FeedbackDraftServerChains.delete(logId);
+      }
+    },
+    () => {
+      if (loop1FeedbackDraftServerChains.get(logId) === next) {
+        loop1FeedbackDraftServerChains.delete(logId);
+      }
+    },
+  );
+
+  return next;
+}
+
+async function saveLoop1FeedbackDraftEnvelopeWithRetry(
+  logId: string,
+  envelope: Loop1FeedbackDraftEnvelope,
+): Promise<void> {
+  const payload = {
+    ...envelope.draft,
+    _tp_loop1_draft_meta: {
+      revision: envelope.revision,
+      clientId: envelope.clientId,
+      updatedAt: envelope.updatedAt,
+    },
+  };
+  const retryDelays = [0, 100, 250, 500];
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt < retryDelays.length; attempt += 1) {
+    if (retryDelays[attempt] > 0) {
+      await new Promise((resolve) => window.setTimeout(resolve, retryDelays[attempt]));
+    }
+
+    try {
+      const saved = await saveStudentLoop1FeedbackDraft(
+        logId,
+        payload,
+        envelope.clientId,
+        envelope.revision,
+        envelope.updatedAt,
+      );
+      if (saved) return;
+
+      // A false result can mean the server already contains a newer writer's
+      // envelope. Confirm that before treating it as a persistence failure.
+      const serverDraft = await getStudentLoop1FeedbackDraft(logId);
+      if (serverDraft) {
+        const serverMeta = (serverDraft.payload as any)?._tp_loop1_draft_meta;
+        const serverVersion = {
+          updatedAt: typeof serverDraft.client_updated_at === "string" && serverDraft.client_updated_at
+            ? serverDraft.client_updated_at
+            : (typeof serverMeta?.updatedAt === "string" ? serverMeta.updatedAt : ""),
+          revision: Number.isSafeInteger(serverDraft.client_revision) && serverDraft.client_revision >= 0
+            ? serverDraft.client_revision
+            : (Number.isSafeInteger(serverMeta?.revision) && serverMeta.revision >= 0 ? serverMeta.revision : 0),
+          clientId: typeof serverDraft.client_id === "string" && serverDraft.client_id
+            ? serverDraft.client_id
+            : (typeof serverMeta?.clientId === "string" ? serverMeta.clientId : ""),
+        };
+        const compare = (
+          left: { updatedAt: string; revision: number; clientId: string },
+          right: { updatedAt: string; revision: number; clientId: string },
+        ) => {
+          if (left.updatedAt !== right.updatedAt) return left.updatedAt > right.updatedAt ? 1 : -1;
+          if (left.revision !== right.revision) return left.revision > right.revision ? 1 : -1;
+          if (left.clientId !== right.clientId) return left.clientId > right.clientId ? 1 : -1;
+          return 0;
+        };
+        const intendedVersion = {
+          updatedAt: envelope.updatedAt,
+          revision: envelope.revision,
+          clientId: envelope.clientId,
+        };
+        if (compare(serverVersion, intendedVersion) >= 0) return;
+      }
+
+      lastError = new Error("Loop-1 server draft save was not confirmed.");
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError ?? new Error("Loop-1 server draft save was not confirmed.");
+}
+
+function queueLoop1FeedbackDraftServerEnvelope(
+  logId: string,
+  envelope: Loop1FeedbackDraftEnvelope,
+): Promise<boolean> {
+  const operation = enqueueLoop1FeedbackDraftServerOperation(
+    logId,
+    () => saveLoop1FeedbackDraftEnvelopeWithRetry(logId, envelope),
+  );
+  const tracked = operation
+    .then(() => {
+      loop1FeedbackDraftUnsyncedLogs.delete(logId);
+      return true;
+    })
+    .catch((error) => {
+      loop1FeedbackDraftUnsyncedLogs.add(logId);
+      console.error("LOOP1 SERVER DRAFT SYNC FAILED", error);
+      return false;
+    });
+  loop1FeedbackDraftPendingWrites.set(logId, tracked);
+  void tracked.then(
+    () => {
+      if (loop1FeedbackDraftPendingWrites.get(logId) === tracked) {
+        loop1FeedbackDraftPendingWrites.delete(logId);
+      }
+    },
+    () => {
+      if (loop1FeedbackDraftPendingWrites.get(logId) === tracked) {
+        loop1FeedbackDraftPendingWrites.delete(logId);
+      }
+    },
+  );
+  return tracked;
+}
+
+function writeLoop1FeedbackDraft(logId: string, draft: Loop1FeedbackDraft, syncServer = false): Promise<boolean> {
+  const storageKey = getLoop1FeedbackDraftStorageKey();
+  const clientId = getLoop1FeedbackDraftClientId();
+  let revision = 0;
+  let updatedAt = new Date().toISOString();
+
+  if (storageKey && typeof window !== "undefined") {
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      const allDrafts = raw ? JSON.parse(raw) : {};
+      const previous = allDrafts?.[String(logId)];
+      revision = Number.isSafeInteger(previous?.revision) && previous.revision >= 0 ? previous.revision + 1 : 1;
+      const envelope: Loop1FeedbackDraftEnvelope = { draft, revision, clientId, updatedAt };
+      allDrafts[String(logId)] = envelope;
+      window.localStorage.setItem(storageKey, JSON.stringify(allDrafts));
+    } catch {
+      const previousRevision = loop1FeedbackDraftRevisionFallback.get(logId) ?? 0;
+      revision = Math.max(Date.now(), previousRevision + 1);
+      loop1FeedbackDraftRevisionFallback.set(logId, revision);
+    }
+  } else {
+    const previousRevision = loop1FeedbackDraftRevisionFallback.get(logId) ?? 0;
+    revision = Math.max(Date.now(), previousRevision + 1);
+    loop1FeedbackDraftRevisionFallback.set(logId, revision);
+  }
+
+  if (!syncServer) return Promise.resolve(true);
+
+  return queueLoop1FeedbackDraftServerEnvelope(logId, {
+    draft,
+    revision,
+    clientId,
+    updatedAt,
+  });
+}
+
+async function flushLoop1FeedbackDraft(logId: string): Promise<boolean> {
+  const pending = loop1FeedbackDraftPendingWrites.get(logId);
+  if (pending) return pending;
+  if (loop1FeedbackDraftUnsyncedLogs.has(logId)) return false;
+  const chain = loop1FeedbackDraftServerChains.get(logId);
+  if (chain) {
+    try {
+      await chain;
+      return true;
+    } catch (error) {
+      console.error("LOOP1 SERVER DRAFT FLUSH FAILED", error);
+      return false;
+    }
+  }
+  return true;
+}
+
+function writeLoop1FeedbackDraftEnvelope(logId: string, envelope: Loop1FeedbackDraftEnvelope) {
+  const storageKey = getLoop1FeedbackDraftStorageKey();
+  if (!storageKey || typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(storageKey);
+    const allDrafts = raw ? JSON.parse(raw) : {};
+    allDrafts[String(logId)] = envelope;
+    window.localStorage.setItem(storageKey, JSON.stringify(allDrafts));
+  } catch {
+    // Recovery remains server-backed.
+  }
+}
+
+async function clearLoop1FeedbackDraft(logId: string): Promise<boolean> {
+  const storageKey = getLoop1FeedbackDraftStorageKey();
+
+  // Queue the delete behind every earlier server save for this log. The
+  // successful-feedback acknowledgement must never race a pending draft save.
+  try {
+    await enqueueLoop1FeedbackDraftServerOperation(logId, async () => {
+      const retryDelays = [0, 100, 250, 500];
+      let lastError: unknown = null;
+      for (let attempt = 0; attempt < retryDelays.length; attempt += 1) {
+        if (retryDelays[attempt] > 0) {
+          await new Promise((resolve) => window.setTimeout(resolve, retryDelays[attempt]));
+        }
+        try {
+          const deleted = await deleteStudentLoop1FeedbackDraft(logId);
+          if (deleted) return;
+          lastError = new Error("Loop-1 server draft delete was not confirmed.");
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      throw lastError ?? new Error("Loop-1 server draft delete was not confirmed.");
+    });
+
+    // Only remove the local cache after the server-side draft deletion has been
+    // confirmed. If the server is temporarily unavailable, retaining the local
+    // snapshot preserves the recovery fallback instead of destroying the only
+    // immediately available copy.
+    loop1FeedbackDraftUnsyncedLogs.delete(logId);
+
+    if (storageKey && typeof window !== "undefined") {
+      try {
+        const raw = window.localStorage.getItem(storageKey);
+        if (raw) {
+          const allDrafts = JSON.parse(raw);
+          if (allDrafts && typeof allDrafts === "object") {
+            delete allDrafts[String(logId)];
+            window.localStorage.setItem(storageKey, JSON.stringify(allDrafts));
+          }
+        }
+      } catch {
+        // The authoritative server draft is already cleared. A local-cache
+        // cleanup failure must not block the completed acknowledgement path.
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error("LOOP1 SERVER DRAFT DELETE FAILED", error);
+    return false;
+  }
+}
 
 async function downloadPdfBlobOnWeb(blob: Blob, fileName: string) {
   const pdfUrl = URL.createObjectURL(blob);
@@ -180,6 +539,68 @@ export default function DailyLectureFeedback() {
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   const [understandingLevel, setUnderstandingLevel] = useState("");
+  // V68: keep the synchronous resume context keyed to the exact Daily Log.
+  // A single global fallback value can leak the previous card's understanding
+  // into a newly opened card during the render/hydration boundary. The keyed
+  // context makes the fallback valid only for the log that actually supplied it.
+  const loop1UnderstandingResumeRef = useRef<{ logId: string | null; value: string }>({
+    logId: null,
+    value: "",
+  });
+
+  function setLoop1UnderstandingLevelForLog(logId: string, value: string) {
+    loop1UnderstandingResumeRef.current = { logId, value };
+    setUnderstandingLevel(value);
+  }
+
+  function clearLoop1UnderstandingResume(logId?: string | null) {
+    if (logId == null || loop1UnderstandingResumeRef.current.logId === logId) {
+      loop1UnderstandingResumeRef.current = { logId: null, value: "" };
+    }
+  }
+
+  function prepareLoop1UnderstandingResume(logId: string) {
+    loop1UnderstandingResumeRef.current = { logId, value: "" };
+  }
+
+  // V70: one explicit card-transition boundary. Every path that opens a
+  // Loop-1 feedback card first resets ALL transient feedback/verification UI
+  // state synchronously, then binds the resume context to the target Daily
+  // Log. The previous card's durable draft and server question ledger are not
+  // deleted or mutated; they remain available for target-specific hydration.
+  // This makes card ownership explicit instead of relying on the current
+  // verificationLogId being non-null.
+  function resetLoop1TransientFeedbackState() {
+    loop1VerificationIntentRef.current += 1;
+    loop1VerificationAnswerLockRef.current.clear();
+    loop1VerificationNoLockLogIdRef.current = null;
+    loop1VerificationActivationLogIdRef.current = null;
+    setLoop1VerificationStage("idle");
+    setLoop1VerificationLogId(null);
+    setLoop1VerificationAnswer(null);
+    setLoop1VerificationCorrect(null);
+    setLoop1VerificationSecondSelection(null);
+    setUnderstandingLevel("");
+    setConceptsNotUnderstood([]);
+    setSomethingElse(false);
+    setSomethingElseText("");
+    setAdditionalNote("");
+  }
+
+  function openLoop1FeedbackCard(logId: string) {
+    // V76: opening a card starts a fresh ownership boundary. If this is the
+    // card that was just closed, release its temporary write suppression now
+    // so normal event/effect persistence can resume.
+    if (loop1FeedbackDraftClosingLogIdRef.current === logId) {
+      loop1FeedbackDraftClosingLogIdRef.current = null;
+    }
+    resetLoop1TransientFeedbackState();
+    loop1FeedbackDraftUserTouchedLogIdsRef.current.delete(logId);
+    setLoop1FeedbackDraftHydratedLogId(null);
+    prepareLoop1UnderstandingResume(logId);
+    setExpandedCard(logId);
+    setFeedbackSubmitError(null);
+  }
   const [conceptsNotUnderstood, setConceptsNotUnderstood] = useState<string[]>([]);
   const [somethingElse, setSomethingElse] = useState(false);
   const [somethingElseText, setSomethingElseText] = useState("");
@@ -202,6 +623,8 @@ export default function DailyLectureFeedback() {
   // only after the existing authoritative response has been recorded, and
   // the existing guided queue is allowed to continue only after the 850ms
   // acknowledgement lifecycle completes or the student explicitly closes it.
+  const [loop1FeedbackSuccessPopup, setLoop1FeedbackSuccessPopup] = useState(false);
+  const loop1FeedbackSuccessPopupCloseRef = useRef<(() => void) | null>(null);
   const [loop2ResolutionPopup, setLoop2ResolutionPopup] = useState<{
     doubtId: string;
     kind: "DISCUSSED" | "NOT DISCUSSED";
@@ -244,6 +667,52 @@ export default function DailyLectureFeedback() {
 
   const [isSubmittingFeedbackId, setIsSubmittingFeedbackId] = useState<string | null>(null);
   const [feedbackSubmitError, setFeedbackSubmitError] = useState<string | null>(null);
+  // Prevent a newly opened card from overwriting its stored draft with the
+  // previous card's React state before the draft has been rehydrated.
+  const [loop1FeedbackDraftHydratedLogId, setLoop1FeedbackDraftHydratedLogId] = useState<string | null>(null);
+  // If the student interacts with a newly opened card before its question map
+  // finishes loading, that live interaction must win over an older saved draft.
+  // This prevents late hydration from unexpectedly reverting a fresh choice.
+  const loop1FeedbackDraftUserTouchedLogIdsRef = useRef<Set<string>>(new Set());
+
+  // V76: a closing card owns a short-lived write-suppression boundary. Once
+  // CANCEL or an in-app card switch begins, the newest draft has already been
+  // flushed (or is being flushed) and the transient React reset must never be
+  // allowed to generate a second, empty draft write for that closing Daily Log.
+  // This is deliberately scoped to the exact log being closed.
+  const loop1FeedbackDraftClosingLogIdRef = useRef<string | null>(null);
+
+  // Event-boundary persistence helper: state/effect persistence is retained for
+  // normal updates, but any user action that can change an unfinished draft also
+  // snapshots the resulting value synchronously before navigation/unmount can win.
+  function persistLoop1FeedbackDraftSnapshot(
+    logId: string,
+    overrides: Partial<Loop1FeedbackDraft> = {},
+  ) {
+    // V76: once this Daily Log has entered its close boundary, no later UI
+    // event is allowed to enqueue another draft write. The close path first
+    // flushes the newest durable snapshot and only then resets transient state.
+    if (loop1FeedbackDraftClosingLogIdRef.current === logId) return;
+
+    const effectiveUnderstandingLevel =
+      overrides.understandingLevel ?? getEffectiveLoop1UnderstandingLevel(logId);
+    const isVerificationForLog = loop1VerificationLogId === logId;
+    writeLoop1FeedbackDraft(logId, {
+      understandingLevel: effectiveUnderstandingLevel,
+      conceptsNotUnderstood,
+      somethingElse,
+      somethingElseText,
+      additionalNote,
+      verificationStage: isVerificationForLog ? loop1VerificationStage : "idle",
+      verificationLogId: isVerificationForLog ? loop1VerificationLogId : null,
+      verificationAnswer: isVerificationForLog ? loop1VerificationAnswer : null,
+      verificationCorrect: isVerificationForLog ? loop1VerificationCorrect : null,
+      verificationSecondSelection: isVerificationForLog ? loop1VerificationSecondSelection : null,
+      verificationNoLock: loop1VerificationNoLockLogIdRef.current === logId,
+      wrongStartedFromComplete: multiWrongStartedFromCompleteRef.current.has(logId),
+      ...overrides,
+    }, true);
+  }
 
   const [dailyFeedbackEarnedCredits, setDailyFeedbackEarnedCredits] = useState(0);
   const [dailyFeedbackLostCredits, setDailyFeedbackLostCredits] = useState(0);
@@ -278,6 +747,339 @@ export default function DailyLectureFeedback() {
     if (!loop1VerificationLogId || loop1VerificationLogId === expandedCard) return;
     clearLoop1Verification(loop1VerificationLogId);
   }, [expandedCard, loop1VerificationLogId]);
+
+  // Rehydrate only an unfinished Loop-1 Multi-Cross feedback card. The
+  // question ledger in the database remains authoritative for Q1/Q2/Q3...;
+  // this session draft restores only the surrounding feedback selections.
+  // Importantly, hydration waits until the Multi-Cross question map is loaded
+  // so legacy/non-Multi-Cross feedback is never altered by this feature.
+  useEffect(() => {
+    if (!expandedCard || submittedFeedback[expandedCard]) return;
+    if ((multiCrossQuestionsByLog[expandedCard] ?? []).length < 2) return;
+    if (!loop1VerificationAttemptHistoryReadyRef.current) return;
+    if (loop1FeedbackDraftHydratedLogId === expandedCard) return;
+
+    let cancelled = false;
+    const hydrate = async () => {
+      const wasTouchedBeforeHydration = loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard);
+      const localEnvelope = wasTouchedBeforeHydration ? null : readLoop1FeedbackDraftEnvelope(expandedCard);
+      const serverDraft = !wasTouchedBeforeHydration ? await getStudentLoop1FeedbackDraft(expandedCard) : null;
+      let draft = localEnvelope?.draft ?? null;
+
+      if (!cancelled && !loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard)) {
+        const serverPayload = serverDraft?.payload as any;
+        const serverMeta = serverPayload?._tp_loop1_draft_meta;
+        const serverRevision = Number.isSafeInteger(serverDraft?.client_revision) && serverDraft.client_revision >= 0
+          ? serverDraft.client_revision
+          : (Number.isSafeInteger(serverMeta?.revision) && serverMeta.revision >= 0 ? serverMeta.revision : 0);
+        const localRevision = localEnvelope?.revision ?? 0;
+        const localClientId = localEnvelope?.clientId ?? "";
+        const serverClientId = typeof serverDraft?.client_id === "string" && serverDraft.client_id
+          ? serverDraft.client_id
+          : (typeof serverMeta?.clientId === "string" ? serverMeta.clientId : "");
+        const localUpdatedAt = localEnvelope?.updatedAt ?? "";
+        const serverUpdatedAt = typeof serverDraft?.client_updated_at === "string" && serverDraft.client_updated_at
+          ? serverDraft.client_updated_at
+          : (typeof serverMeta?.updatedAt === "string" ? serverMeta.updatedAt : "");
+        const localVersion = {
+          updatedAt: localUpdatedAt,
+          revision: localRevision,
+          clientId: localClientId,
+        };
+        const serverVersion = {
+          updatedAt: serverUpdatedAt,
+          revision: serverRevision,
+          clientId: serverClientId,
+        };
+        const compareDraftVersions = (left: typeof localVersion, right: typeof serverVersion) => {
+          if (left.updatedAt !== right.updatedAt) return left.updatedAt > right.updatedAt ? 1 : -1;
+          if (left.revision !== right.revision) return left.revision > right.revision ? 1 : -1;
+          if (left.clientId !== right.clientId) return left.clientId > right.clientId ? 1 : -1;
+          return 0;
+        };
+        const versionComparison = compareDraftVersions(localVersion, serverVersion);
+        const serverWins = !!serverPayload && versionComparison < 0;
+        const localWins = !!localEnvelope && versionComparison >= 0;
+
+        if (serverWins) {
+          const serverNormalized = normalizeLoop1FeedbackDraft(serverPayload);
+          if (serverNormalized) {
+            draft = serverNormalized;
+            writeLoop1FeedbackDraftEnvelope(expandedCard, {
+              draft: serverNormalized,
+              revision: serverRevision,
+              clientId: typeof serverDraft?.client_id === "string" && serverDraft.client_id
+                ? serverDraft.client_id
+                : (typeof serverMeta?.clientId === "string" ? serverMeta.clientId : getLoop1FeedbackDraftClientId()),
+              updatedAt: serverUpdatedAt || (typeof serverDraft?.updated_at === "string" && serverDraft.updated_at
+                ? serverDraft.updated_at
+                : new Date().toISOString()),
+            });
+          }
+        } else if (localWins && localEnvelope) {
+          draft = localEnvelope.draft;
+          const localMeta = {
+            ...localEnvelope.draft,
+            _tp_loop1_draft_meta: {
+              revision: localEnvelope.revision,
+              clientId: localEnvelope.clientId || getLoop1FeedbackDraftClientId(),
+              updatedAt: localEnvelope.updatedAt || new Date().toISOString(),
+            },
+          };
+          const reconciliationSaved = await queueLoop1FeedbackDraftServerEnvelope(expandedCard, {
+            draft: localEnvelope.draft,
+            revision: localMeta._tp_loop1_draft_meta.revision,
+            clientId: localMeta._tp_loop1_draft_meta.clientId,
+            updatedAt: localMeta._tp_loop1_draft_meta.updatedAt,
+          });
+          if (!reconciliationSaved) {
+            // The local snapshot remains the visible recovery source, but the
+            // log is explicitly marked unsynced. Any in-app navigation must
+            // therefore stop until a later canonical save succeeds.
+            loop1FeedbackDraftUnsyncedLogs.add(expandedCard);
+          }
+        } else if (!localEnvelope && serverPayload) {
+          const serverNormalized = normalizeLoop1FeedbackDraft(serverPayload);
+          if (serverNormalized) {
+            draft = serverNormalized;
+            writeLoop1FeedbackDraftEnvelope(expandedCard, {
+              draft: serverNormalized,
+              revision: serverRevision,
+              clientId: typeof serverDraft?.client_id === "string" && serverDraft.client_id
+                ? serverDraft.client_id
+                : (typeof serverMeta?.clientId === "string" ? serverMeta.clientId : getLoop1FeedbackDraftClientId()),
+              updatedAt: serverUpdatedAt || (typeof serverDraft?.updated_at === "string" && serverDraft.updated_at
+                ? serverDraft.updated_at
+                : new Date().toISOString()),
+            });
+          }
+        }
+      }
+
+      if (cancelled || loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard)) return;
+      if (draft) {
+      // V68: if a persisted wrong-terminal draft predates the explicit origin
+      // marker, derive that marker from the persisted Complete selection.
+      if (draft.verificationStage === "wrong" && draft.understandingLevel === "I completely understood.") {
+        draft = { ...draft, wrongStartedFromComplete: true };
+      }
+      // Reconcile the surrounding verification state against the authoritative
+      // Loop-1 Multi-Cross attempt ledger before restoring the draft. This is
+      // recovery-only: it never submits feedback on mount. If the last answer
+      // committed but the browser disappeared before the local transition
+      // handler ran, the server ledger still determines whether the unfinished
+      // flow is wrong-terminal or ready for the verification decision.
+      const hydratedMultiQuestions = multiCrossQuestionsByLog[expandedCard] ?? [];
+      const hydratedMultiAttempts = multiCrossAttemptsByLog[expandedCard] ?? {};
+      const hydratedMultiWrong = hydratedMultiQuestions.some(
+        (question) => hydratedMultiAttempts[question.id]?.is_correct === false,
+      );
+      const hydratedMultiAllCorrect = hydratedMultiQuestions.length >= 2 && hydratedMultiQuestions.every(
+        (question) => hydratedMultiAttempts[question.id]?.is_correct === true,
+      );
+      if (hydratedMultiWrong) {
+        draft = {
+          ...draft,
+          verificationLogId: expandedCard,
+          verificationStage: "wrong",
+          verificationNoLock: false,
+        };
+      } else if (hydratedMultiAllCorrect) {
+        draft = {
+          ...draft,
+          verificationLogId: expandedCard,
+          // Complete keeps the completed question ledger visible without
+          // opening the verification dialog; Partial/Didn't must resume at
+          // the existing verification decision. Neither branch submits here.
+          verificationStage:
+            draft.understandingLevel === "I completely understood."
+              ? "question"
+              : "verification",
+          verificationNoLock: false,
+        };
+      }
+      // If the student left while the legacy verification RPC was still in
+      // flight, the local/server draft can contain the selected answer while
+      // verificationCorrect is still null. The existing server attempt ledger
+      // is authoritative, so refresh that one legacy attempt before deciding
+      // what state to restore. This closes the exact:
+      // answer -> immediate leave -> RPC commits -> reopen race.
+      let ledgerAnswer = crossQuestionAnswers[expandedCard];
+      let ledgerResult = crossQuestionResults[expandedCard];
+      const needsLegacyLedgerRecovery =
+        draft.verificationLogId === expandedCard &&
+        draft.verificationAnswer !== null &&
+        draft.verificationCorrect === null &&
+        !(ledgerAnswer === draft.verificationAnswer && typeof ledgerResult === "boolean");
+
+      if (needsLegacyLedgerRecovery) {
+        try {
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            // Recover through the SAME existing authoritative RPC first.
+            // The RPC is idempotent for an exact replay, so if the original
+            // answer transaction is still in flight, this recovery call is
+            // serialized by the database and returns the authoritative
+            // attempt once it exists. This avoids relying on an arbitrary
+            // client-side timeout window. No result is invented.
+            const recoveryAttempts = [0, 100, 250];
+            for (let recoveryIndex = 0; recoveryIndex < recoveryAttempts.length; recoveryIndex += 1) {
+              if (recoveryAttempts[recoveryIndex] > 0) {
+                await new Promise((resolve) => window.setTimeout(resolve, recoveryAttempts[recoveryIndex]));
+              }
+              if (cancelled || loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard)) break;
+
+              try {
+                const { data: replayData, error: replayError } = await (supabase as any).rpc(
+                  "tp_record_daily_cross_question_attempt",
+                  {
+                    p_daily_log_uuid: expandedCard,
+                    p_selected_index: draft.verificationAnswer,
+                  },
+                );
+                if (!replayError) {
+                  const replayAttempt = Array.isArray(replayData) ? replayData[0] : replayData;
+                  if (replayAttempt && typeof replayAttempt.is_correct === "boolean") {
+                    ledgerAnswer = Number(draft.verificationAnswer);
+                    ledgerResult = replayAttempt.is_correct === true;
+                    setCrossQuestionAnswers((previous) => ({ ...previous, [expandedCard]: ledgerAnswer as number }));
+                    setCrossQuestionResults((previous) => ({ ...previous, [expandedCard]: ledgerResult as boolean }));
+                    break;
+                  }
+                }
+              } catch (replayRecoveryError) {
+                console.warn("LOOP1 VERIFICATION RPC RECOVERY RETRY FAILED", replayRecoveryError);
+              }
+
+              // If the replay RPC cannot currently return the authoritative
+              // attempt, read the same legacy ledger as a secondary recovery
+              // path. It is only accepted when the server exposes the exact
+              // selected answer and its boolean result.
+              try {
+                const { data: ledgerAttempt, error: ledgerError } = await (supabase as any)
+                  .from("student_daily_cross_question_attempts")
+                  .select("selected_index,is_correct")
+                  .eq("daily_log_uuid", expandedCard)
+                  .maybeSingle();
+                if (!ledgerError && ledgerAttempt && Number(ledgerAttempt.selected_index) === Number(draft.verificationAnswer) && typeof ledgerAttempt.is_correct === "boolean") {
+                  ledgerAnswer = Number(ledgerAttempt.selected_index);
+                  ledgerResult = ledgerAttempt.is_correct === true;
+                  setCrossQuestionAnswers((previous) => ({ ...previous, [expandedCard]: ledgerAnswer as number }));
+                  setCrossQuestionResults((previous) => ({ ...previous, [expandedCard]: ledgerResult as boolean }));
+                  break;
+                }
+              } catch (ledgerRecoveryError) {
+                console.warn("LOOP1 VERIFICATION LEDGER RECOVERY FAILED", ledgerRecoveryError);
+              }
+            }
+          }
+        } catch (ledgerRecoveryError) {
+          console.warn("LOOP1 VERIFICATION LEDGER RECOVERY FAILED", ledgerRecoveryError);
+        }
+      }
+
+      const hasLedgerVerification =
+        draft.verificationLogId === expandedCard &&
+        draft.verificationAnswer !== null &&
+        ledgerAnswer === draft.verificationAnswer &&
+        typeof ledgerResult === "boolean";
+      const recoveredVerificationCorrect = hasLedgerVerification
+        ? ledgerResult
+        : draft.verificationCorrect;
+      const recoveredVerificationStage = hasLedgerVerification
+        ? (ledgerResult ? "verification" : "wrong")
+        : draft.verificationStage;
+      loop1UnderstandingResumeRef.current = { logId: expandedCard, value: draft.understandingLevel };
+      setUnderstandingLevel(draft.understandingLevel);
+      setConceptsNotUnderstood(draft.conceptsNotUnderstood);
+      setSomethingElse(draft.somethingElse);
+      setSomethingElseText(draft.somethingElseText);
+      setAdditionalNote(draft.additionalNote);
+      setLoop1VerificationStage(recoveredVerificationStage);
+      setLoop1VerificationLogId(draft.verificationLogId === expandedCard ? draft.verificationLogId : null);
+      setLoop1VerificationAnswer(draft.verificationAnswer);
+      setLoop1VerificationCorrect(recoveredVerificationCorrect);
+      setLoop1VerificationSecondSelection(draft.verificationSecondSelection);
+      if (draft.verificationNoLock && draft.verificationLogId === expandedCard) {
+        loop1VerificationNoLockLogIdRef.current = expandedCard;
+      } else if (loop1VerificationNoLockLogIdRef.current === expandedCard) {
+        loop1VerificationNoLockLogIdRef.current = null;
+      }
+      if (draft.wrongStartedFromComplete && draft.verificationLogId === expandedCard) {
+        multiWrongStartedFromCompleteRef.current.add(expandedCard);
+      } else {
+        multiWrongStartedFromCompleteRef.current.delete(expandedCard);
+      }
+      }
+
+      // Mark hydration through React state so the save effect cannot run with
+      // stale state from the previous card in the same effect cycle.
+      setLoop1FeedbackDraftHydratedLogId(expandedCard);
+    };
+
+    void hydrate();
+    return () => {
+      cancelled = true;
+    };
+  }, [expandedCard, submittedFeedback, multiCrossQuestionsByLog, multiCrossAttemptsByLog, loop1FeedbackDraftHydratedLogId, crossQuestionAnswers, crossQuestionResults]);
+
+  // Save an unfinished feedback draft as soon as the student has actually
+  // interacted with the open card. This early write is intentionally allowed
+  // before the Multi-Cross question map finishes loading: otherwise a student
+  // who selects an option and immediately leaves could lose that selection.
+  // The draft is still only rehydrated for confirmed Loop-1 Multi-Cross cards,
+  // so legacy/non-Multi-Cross UI behavior is unchanged. After hydration, the
+  // normal gate continues to protect against stale-card overwrites.
+  useEffect(() => {
+    if (!expandedCard || submittedFeedback[expandedCard]) return;
+    // V76: the close boundary is stronger than the background save effect.
+    // CANCEL/card-switch flushes the newest durable draft first; once closing
+    // begins, this effect must not write the transient reset state back over it.
+    if (loop1FeedbackDraftClosingLogIdRef.current === expandedCard) return;
+    const isConfirmedMultiCross = (multiCrossQuestionsByLog[expandedCard] ?? []).length >= 2;
+    const wasTouched = loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard);
+    if (!wasTouched && loop1FeedbackDraftHydratedLogId !== expandedCard) return;
+    if (isConfirmedMultiCross === false && !wasTouched) return;
+
+    // V73: the generic draft effect must use the same log-scoped synchronous
+    // understanding source as every answer-event boundary. After a terminal
+    // wrong answer, React state can still be one render behind while the
+    // resume ref already contains the authoritative Partial/Didn't selection.
+    // Reading raw `understandingLevel` here could therefore overwrite the
+    // correct wrong-terminal draft with an empty understanding value.
+    // Never let this background save clobber the V70/V71/V72 resume context.
+    const effectiveUnderstandingLevelForSave = getEffectiveLoop1UnderstandingLevel(expandedCard);
+
+    writeLoop1FeedbackDraft(expandedCard, {
+      understandingLevel: effectiveUnderstandingLevelForSave,
+      conceptsNotUnderstood,
+      somethingElse,
+      somethingElseText,
+      additionalNote,
+      verificationStage: loop1VerificationStage,
+      verificationLogId: loop1VerificationLogId === expandedCard ? loop1VerificationLogId : null,
+      verificationAnswer: loop1VerificationLogId === expandedCard ? loop1VerificationAnswer : null,
+      verificationCorrect: loop1VerificationLogId === expandedCard ? loop1VerificationCorrect : null,
+      verificationSecondSelection: loop1VerificationLogId === expandedCard ? loop1VerificationSecondSelection : null,
+      verificationNoLock: loop1VerificationNoLockLogIdRef.current === expandedCard,
+      wrongStartedFromComplete: multiWrongStartedFromCompleteRef.current.has(expandedCard),
+    }, isConfirmedMultiCross);
+  }, [
+    expandedCard,
+    submittedFeedback,
+    multiCrossQuestionsByLog,
+    loop1FeedbackDraftHydratedLogId,
+    understandingLevel,
+    conceptsNotUnderstood,
+    somethingElse,
+    somethingElseText,
+    additionalNote,
+    loop1VerificationStage,
+    loop1VerificationLogId,
+    loop1VerificationAnswer,
+    loop1VerificationCorrect,
+    loop1VerificationSecondSelection,
+  ]);
 
   useEffect(() => {
     if (!guidedScrollTarget) return;
@@ -427,6 +1229,9 @@ export default function DailyLectureFeedback() {
           }
         }
 
+        for (const submittedLogId of Object.keys(feedbackMap)) {
+          clearLoop1FeedbackDraft(String(submittedLogId));
+        }
         setSubmittedFeedback(feedbackMap);
       } else {
         console.error("TODAY FEEDBACK STATUS LOAD FAILED", feedbackResult.reason);
@@ -527,12 +1332,14 @@ export default function DailyLectureFeedback() {
   }
 
   function resetFeedbackForm() {
+    if (expandedCard) {
+      loop1FeedbackDraftUserTouchedLogIdsRef.current.delete(expandedCard);
+      multiWrongStartedFromCompleteRef.current.delete(expandedCard);
+    }
+    resetLoop1TransientFeedbackState();
+    setLoop1FeedbackDraftHydratedLogId(null);
+    clearLoop1UnderstandingResume(expandedCard);
     setExpandedCard(null);
-    setUnderstandingLevel("");
-    setConceptsNotUnderstood([]);
-    setAdditionalNote("");
-    setSomethingElse(false);
-    setSomethingElseText("");
     setFeedbackSubmitError(null);
   }
 
@@ -565,6 +1372,21 @@ export default function DailyLectureFeedback() {
     return multiCrossAttemptsByLog[logId] ?? {};
   }
 
+  // V68: a resumed Multi-Cross answer must use the persisted understanding
+  // context even if its callback was created during the hydration boundary.
+  // The ref is populated only from the same durable/user-selected value.
+  function getEffectiveLoop1UnderstandingLevel(logId: string): string {
+    // Only the currently open Daily Log may consume the transient feedback
+    // state. A render/callback for another log must never inherit the prior
+    // card's React state.
+    if (expandedCard !== logId) return "";
+    const resume = loop1UnderstandingResumeRef.current;
+    if (understandingLevel === "" && resume.logId === logId && resume.value) {
+      return resume.value;
+    }
+    return understandingLevel;
+  }
+
   // V34 corrected: the understanding choice becomes immutable only after the
   // first Multi Cross Question has actually been answered correctly. Before
   // that point the student may move freely between Complete / Partial /
@@ -591,12 +1413,32 @@ export default function DailyLectureFeedback() {
       const complete = questions.every((question) => attempts[question.id]?.is_correct === true);
       loop1VerificationIntentRef.current += 1;
       loop1VerificationActivationLogIdRef.current = log.id;
-      setUnderstandingLevel(level);
+      setLoop1UnderstandingLevelForLog(log.id, level);
       setFeedbackSubmitError(null);
       setLoop1VerificationLogId(log.id);
       setLoop1VerificationAnswer(null);
       setLoop1VerificationCorrect(null);
       setLoop1VerificationSecondSelection(null);
+      const nextVerificationStage: Loop1FeedbackDraft["verificationStage"] = complete
+        ? "verification"
+        : wrong
+          ? "wrong"
+          : "question";
+
+      // Event-boundary durability: do not rely on the post-state effect for
+      // activation. The student can leave immediately after this radio event.
+      // Persist the complete resulting verification transition synchronously.
+      persistLoop1FeedbackDraftSnapshot(log.id, {
+        understandingLevel: level,
+        verificationLogId: log.id,
+        verificationAnswer: null,
+        verificationCorrect: null,
+        verificationSecondSelection: null,
+        verificationStage: nextVerificationStage,
+        verificationNoLock: false,
+        wrongStartedFromComplete: wrong && level === "I completely understood.",
+      });
+
       if (complete) {
         setLoop1VerificationStage("verification");
         setGuidedScrollTarget({ logId: log.id, section: "question" });
@@ -617,13 +1459,27 @@ export default function DailyLectureFeedback() {
       loop1VerificationNoLockLogIdRef.current = null;
     }
     loop1VerificationActivationLogIdRef.current = log.id;
-    setUnderstandingLevel(level);
+    setLoop1UnderstandingLevelForLog(log.id, level);
     setFeedbackSubmitError(null);
     setLoop1VerificationLogId(log.id);
     setLoop1VerificationAnswer(null);
     setLoop1VerificationCorrect(null);
     setLoop1VerificationSecondSelection(null);
     setLoop1VerificationStage("question");
+    // Event-boundary durability for the legacy single-question verification
+    // path as well. This is harmless for the server draft layer (which remains
+    // enabled only for confirmed Loop-1 Multi-Cross logs) and protects the
+    // local draft snapshot from an immediate leave before the effect runs.
+    persistLoop1FeedbackDraftSnapshot(log.id, {
+      understandingLevel: level,
+      verificationLogId: log.id,
+      verificationAnswer: null,
+      verificationCorrect: null,
+      verificationSecondSelection: null,
+      verificationStage: "question",
+      verificationNoLock: false,
+      wrongStartedFromComplete: false,
+    });
     setGuidedScrollTarget({ logId: log.id, section: "question" });
     return true;
   }
@@ -638,12 +1494,27 @@ export default function DailyLectureFeedback() {
       return;
     }
 
+    // V75: this understanding radio handler owns the event because its
+    // onChangeCapture stops propagation. Mark the Daily Log as user-touched
+    // at the same boundary so hydration cannot later treat this fresh choice
+    // as an untouched card and overwrite it with an older empty draft.
+    loop1FeedbackDraftUserTouchedLogIdsRef.current.add(log.id);
+
     if (loop1VerificationLogId === log.id && loop1VerificationStage === "corrected") {
       event.stopPropagation();
       if (option === ABSENT_FEEDBACK_OPTION) return;
       setLoop1VerificationSecondSelection(option);
-      setUnderstandingLevel(option);
+      setLoop1UnderstandingLevelForLog(log.id, option);
       setFeedbackSubmitError(null);
+      // The understanding radio grid stops propagation, so the outer form
+      // capture writer cannot be relied on for this second selection. Persist
+      // the event-boundary value synchronously before any leave/unmount can win.
+      persistLoop1FeedbackDraftSnapshot(log.id, {
+        understandingLevel: option,
+        verificationLogId: log.id,
+        verificationStage: "corrected",
+        verificationSecondSelection: option,
+      });
       if (option === "I completely understood.") {
         const selected = loop1VerificationAnswer;
         const correct = loop1VerificationCorrect;
@@ -674,8 +1545,18 @@ export default function DailyLectureFeedback() {
       // difficult-concept flow. Partial/Didn't-understand are allowed here;
       // Complete/Absent remain rejected by the feedback gate.
       if (option === "I partially understood." || option === "I didn't understand.") {
-        setUnderstandingLevel(option);
+        setLoop1UnderstandingLevelForLog(log.id, option);
         setFeedbackSubmitError(null);
+        // The understanding grid stops propagation, so persist this terminal
+        // wrong-stage selection at the same event boundary as the state update.
+        // This is the durable source that hydration can restore after cancel,
+        // tab switch, navigation, or component unmount.
+        persistLoop1FeedbackDraftSnapshot(log.id, {
+          understandingLevel: option,
+          verificationLogId: log.id,
+          verificationStage: "wrong",
+          wrongStartedFromComplete: multiWrongStartedFromCompleteRef.current.has(log.id),
+        });
         setGuidedScrollTarget({ logId: log.id, section: "concepts" });
       }
       event.stopPropagation();
@@ -696,7 +1577,24 @@ export default function DailyLectureFeedback() {
       loop1VerificationActivationLogIdRef.current = null;
       setFeedbackSubmitError(null);
       if (option === ABSENT_FEEDBACK_OPTION) {
-        setUnderstandingLevel(ABSENT_FEEDBACK_OPTION);
+        // Persist the full cancellation result synchronously. The capture
+        // handler has already recorded the radio value, but the subsequent
+        // state clearing must also survive an immediate leave.
+        persistLoop1FeedbackDraftSnapshot(log.id, {
+          understandingLevel: ABSENT_FEEDBACK_OPTION,
+          conceptsNotUnderstood: [],
+          somethingElse: false,
+          somethingElseText: "",
+          additionalNote: "",
+          verificationStage: "idle",
+          verificationLogId: null,
+          verificationAnswer: null,
+          verificationCorrect: null,
+          verificationSecondSelection: null,
+          verificationNoLock: false,
+          wrongStartedFromComplete: false,
+        });
+        setLoop1UnderstandingLevelForLog(log.id, ABSENT_FEEDBACK_OPTION);
         setConceptsNotUnderstood([]);
         setSomethingElse(false);
         setSomethingElseText("");
@@ -708,7 +1606,16 @@ export default function DailyLectureFeedback() {
         option === "I partially understood." ||
         option === "I didn't understand."
       ) {
-        setUnderstandingLevel(option);
+        setLoop1UnderstandingLevelForLog(log.id, option);
+        // The understanding grid stops propagation, so the outer form
+        // onChangeCapture cannot provide the immediate durability boundary.
+        // Persist the selected value now; the existing effect remains only the
+        // normal backup writer.
+        persistLoop1FeedbackDraftSnapshot(log.id, {
+          understandingLevel: option,
+          verificationLogId: log.id,
+          verificationStage: "question",
+        });
         setGuidedScrollTarget({ logId: log.id, section: "question" });
       }
       event.stopPropagation();
@@ -754,6 +1661,11 @@ export default function DailyLectureFeedback() {
 
     const intent = loop1VerificationIntentRef.current;
     loop1VerificationAnswerLockRef.current.add(log.id);
+    persistLoop1FeedbackDraftSnapshot(log.id, {
+      verificationStage: "question",
+      verificationAnswer: selected,
+      verificationCorrect: null,
+    });
 
     try {
       const { data, error } = await (supabase as any).rpc("tp_record_daily_cross_question_attempt", {
@@ -771,8 +1683,18 @@ export default function DailyLectureFeedback() {
 
       if (correct) {
         setLoop1VerificationStage("verification");
+        persistLoop1FeedbackDraftSnapshot(log.id, {
+          verificationStage: "verification",
+          verificationAnswer: selected,
+          verificationCorrect: true,
+        });
       } else {
         setLoop1VerificationStage("wrong");
+        persistLoop1FeedbackDraftSnapshot(log.id, {
+          verificationStage: "wrong",
+          verificationAnswer: selected,
+          verificationCorrect: false,
+        });
         setGuidedScrollTarget({ logId: log.id, section: "concepts" });
       }
     } catch (error: any) {
@@ -790,7 +1712,24 @@ export default function DailyLectureFeedback() {
       // Verification YES starts a fresh second understanding selection.
       // The original Partial/Didn't choice must not remain selected or be
       // reusable by the ordinary Submit button.
-      setUnderstandingLevel("");
+      // Persist the complete YES -> corrected transition synchronously. This
+      // removes the last dependency on a post-render effect for verification
+      // state, second-selection state, and cleared learning-gap fields.
+      persistLoop1FeedbackDraftSnapshot(log.id, {
+        understandingLevel: "",
+        conceptsNotUnderstood: [],
+        somethingElse: false,
+        somethingElseText: "",
+        additionalNote: "",
+        verificationLogId: log.id,
+        verificationAnswer: loop1VerificationAnswer,
+        verificationCorrect: loop1VerificationCorrect,
+        verificationSecondSelection: null,
+        verificationStage: "corrected",
+        verificationNoLock: false,
+        wrongStartedFromComplete: false,
+      });
+      setLoop1UnderstandingLevelForLog(log.id, "");
       setLoop1VerificationSecondSelection(null);
       setConceptsNotUnderstood([]);
       setSomethingElse(false);
@@ -806,6 +1745,14 @@ export default function DailyLectureFeedback() {
     // understanding radio at this point must never restart the verification
     // question. The state is cleared only by normal form reset/submission.
     loop1VerificationNoLockLogIdRef.current = log.id;
+    persistLoop1FeedbackDraftSnapshot(log.id, {
+      verificationLogId: log.id,
+      verificationAnswer: loop1VerificationAnswer,
+      verificationCorrect: loop1VerificationCorrect,
+      verificationSecondSelection: null,
+      verificationStage: "no",
+      verificationNoLock: true,
+    });
     setLoop1VerificationSecondSelection(null);
     setLoop1VerificationStage("no");
     setFeedbackSubmitError(null);
@@ -872,16 +1819,28 @@ export default function DailyLectureFeedback() {
 
   function handleMultiAllCorrect(log: any, finalAttempt: MultiCrossQuestionAttempt) {
     if (submittedFeedback[log.id]) return;
-    if (understandingLevel !== "I completely understood.") {
+    const effectiveUnderstandingLevel = getEffectiveLoop1UnderstandingLevel(log.id);
+    if (effectiveUnderstandingLevel !== "I completely understood.") {
       // Preserve the V33 Partial/Didn't-understand completion path.
       // This is intentionally local: the question-stage wrapper may call
       // handleMultiAllCorrect() for Complete auto-submit, but non-Complete
       // completion must enter the existing Verification state.
+      // The final Multi-Cross attempt is already authoritative on the server.
+      // Persist the resulting verification transition synchronously before the
+      // UI moves to the verification dialog, so Q3 -> leave cannot lose it.
+      persistLoop1FeedbackDraftSnapshot(log.id, {
+        verificationLogId: log.id,
+        verificationStage: "verification",
+        verificationAnswer: null,
+        verificationCorrect: null,
+        verificationSecondSelection: null,
+        verificationNoLock: false,
+      });
       setLoop1VerificationStage("verification");
       setGuidedScrollTarget({ logId: log.id, section: "question" });
       return;
     }
-    setUnderstandingLevel("I completely understood.");
+    setLoop1UnderstandingLevelForLog(log.id, "I completely understood.");
     setFeedbackSubmitError(null);
     // The final attempt is passed directly because React state updates are
     // asynchronous. This lets the server-side readiness gate see the complete
@@ -905,21 +1864,45 @@ export default function DailyLectureFeedback() {
 
   function handleMultiWrong(log: any) {
     if (submittedFeedback[log.id]) return;
-    if (understandingLevel === "I completely understood.") {
+
+    // V72: the wrong-terminal transition is an answer-event boundary. Do not
+    // rely only on the React state closure here because MultiCrossQuestionFlow
+    // reports the terminal wrong answer from its own effect after the server
+    // attempt commits. The log-scoped resume ref is synchronously updated by
+    // every understanding-selection event, so it is the strongest in-session
+    // source for the student's Partial/Didn't-understand choice at this exact
+    // transition. Fall back to the existing effective resolver when the ref is
+    // not populated (for example, a Complete-origin flow).
+    const resume = loop1UnderstandingResumeRef.current;
+    const effectiveUnderstandingLevel =
+      resume.logId === log.id && resume.value
+        ? resume.value
+        : getEffectiveLoop1UnderstandingLevel(log.id);
+
+    if (effectiveUnderstandingLevel === "I completely understood.") {
       multiWrongStartedFromCompleteRef.current.add(log.id);
     } else {
       multiWrongStartedFromCompleteRef.current.delete(log.id);
     }
-    // Preserve the student's current Partial/Didn't-understand selection.
-    // If the student originally chose Complete, keep that selection visible
-    // but disabled; Partial/Didn't-understand remain available for the
-    // required post-wrong understanding choice.
+
+    // Preserve the student's current understanding selection DURABLY on the
+    // wrong-terminal transition. This explicit override closes the V70/V71
+    // edge case where the question ledger correctly restored Q1/Q2 as wrong,
+    // but the surrounding understanding value was not guaranteed to survive
+    // the leave/reopen boundary. The server draft must therefore carry the
+    // same value that was used to choose the wrong-state UI.
     setLoop1VerificationLogId(log.id);
     setLoop1VerificationStage("wrong");
+    persistLoop1FeedbackDraftSnapshot(log.id, {
+      understandingLevel: effectiveUnderstandingLevel,
+      verificationLogId: log.id,
+      verificationStage: "wrong",
+      wrongStartedFromComplete: multiWrongStartedFromCompleteRef.current.has(log.id),
+    });
     setFeedbackSubmitError(null);
     setGuidedScrollTarget({
       logId: log.id,
-      section: understandingLevel === "I completely understood."
+      section: effectiveUnderstandingLevel === "I completely understood."
         ? "understanding"
         : "concepts",
     });
@@ -1106,6 +2089,26 @@ export default function DailyLectureFeedback() {
         setDailyFeedbackTotalCredits((value) => value + 1);
       }
 
+      const draftCleared = await clearLoop1FeedbackDraft(log.id);
+      if (!draftCleared) {
+        // The submitted feedback is already authoritative, but Gate-4 requires
+        // the unfinished draft cleanup to complete before acknowledgement or
+        // guided-queue continuation. Do not show a success popup or advance
+        // the queue while the server draft still cannot be confirmed cleared.
+        setFeedbackSubmitError(
+          "Feedback was submitted, but unfinished draft cleanup could not be confirmed. Please keep this page open and try again."
+        );
+        return;
+      }
+      loop1FeedbackDraftUserTouchedLogIdsRef.current.delete(log.id);
+
+      // Only Multi-Cross Loop-1 feedback gets the acknowledgement. It is
+      // shown after the authoritative feedback save and before the existing
+      // guided transition; no question/verification flow is changed here.
+      if (isMultiCrossQuestionLog) {
+        await showLoop1FeedbackSuccessPopup();
+      }
+
       resetFeedbackForm();
 
       // Continue the guided journey through today's remaining unsubmitted
@@ -1117,7 +2120,7 @@ export default function DailyLectureFeedback() {
       );
 
       if (nextUnsubmittedLog) {
-        setExpandedCard(nextUnsubmittedLog.id);
+        openLoop1FeedbackCard(nextUnsubmittedLog.id);
         setGuidedScrollTarget({
           logId: nextUnsubmittedLog.id,
           section: "understanding",
@@ -1166,7 +2169,16 @@ export default function DailyLectureFeedback() {
     );
 
     if (nextTodayLog) {
-      setExpandedCard(nextTodayLog.id);
+      if (expandedCard && expandedCard !== nextTodayLog.id) {
+        const draftFlushed = await flushLoop1FeedbackDraft(expandedCard);
+        if (!draftFlushed) {
+          setFeedbackSubmitError(
+            "Your unfinished feedback could not be saved to the server yet. Please keep this page open and try again."
+          );
+          return;
+        }
+      }
+      openLoop1FeedbackCard(nextTodayLog.id);
       setGuidedScrollTarget({ logId: nextTodayLog.id, section: "understanding" });
     } else {
       setGuidedScrollTarget({ logId: "", section: "credits" });
@@ -1347,7 +2359,7 @@ export default function DailyLectureFeedback() {
       text:
         kind === "DISCUSSED"
           ? "doubt succesfully discussed and resolved"
-          : "doubt not resolved",
+          : "doubt not resolved, check progress tracker",
     });
 
     await new Promise<void>((resolve) => {
@@ -1367,6 +2379,28 @@ export default function DailyLectureFeedback() {
 
   function closeLoop2ResolutionPopup() {
     loop2ResolutionPopupCloseRef.current?.();
+  }
+
+  async function showLoop1FeedbackSuccessPopup() {
+    setLoop1FeedbackSuccessPopup(true);
+
+    await new Promise<void>((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        loop1FeedbackSuccessPopupCloseRef.current = null;
+        window.clearTimeout(timerId);
+        setLoop1FeedbackSuccessPopup(false);
+        resolve();
+      };
+      loop1FeedbackSuccessPopupCloseRef.current = finish;
+      const timerId = window.setTimeout(finish, 850);
+    });
+  }
+
+  function closeLoop1FeedbackSuccessPopup() {
+    loop1FeedbackSuccessPopupCloseRef.current?.();
   }
 
   async function finishLoop2MultiTerminal(
@@ -1587,7 +2621,16 @@ export default function DailyLectureFeedback() {
             (candidate) => !submittedFeedback[candidate.id]
           );
           if (nextTodayLog) {
-            setExpandedCard(nextTodayLog.id);
+            if (expandedCard && expandedCard !== nextTodayLog.id) {
+              const draftFlushed = await flushLoop1FeedbackDraft(expandedCard);
+              if (!draftFlushed) {
+                setFeedbackSubmitError(
+                  "Your unfinished feedback could not be saved to the server yet. Please keep this page open and try again."
+                );
+                return;
+              }
+            }
+            openLoop1FeedbackCard(nextTodayLog.id);
             setGuidedScrollTarget({ logId: nextTodayLog.id, section: "understanding" });
           } else {
             setGuidedScrollTarget({ logId: "", section: "credits" });
@@ -1699,7 +2742,16 @@ export default function DailyLectureFeedback() {
             (candidate) => !submittedFeedback[candidate.id]
           );
           if (nextTodayLog) {
-            setExpandedCard(nextTodayLog.id);
+            if (expandedCard && expandedCard !== nextTodayLog.id) {
+              const draftFlushed = await flushLoop1FeedbackDraft(expandedCard);
+              if (!draftFlushed) {
+                setFeedbackSubmitError(
+                  "Your unfinished feedback could not be saved to the server yet. Please keep this page open and try again."
+                );
+                return;
+              }
+            }
+            openLoop1FeedbackCard(nextTodayLog.id);
             setGuidedScrollTarget({ logId: nextTodayLog.id, section: "understanding" });
           } else {
             setGuidedScrollTarget({ logId: "", section: "credits" });
@@ -4376,6 +5428,108 @@ return (
 
     <div className="dlf-page">
 
+      {loop1FeedbackSuccessPopup && (
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 10000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px 16px",
+            background: "rgba(15, 23, 42, 0.18)",
+            backdropFilter: "blur(3px)",
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: "min(92vw, 500px)",
+              boxSizing: "border-box",
+              padding: "28px 52px 28px 28px",
+              borderRadius: 22,
+              background: "linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%)",
+              border: "1px solid rgba(22, 163, 74, 0.28)",
+              boxShadow: "0 24px 70px rgba(15, 23, 42, 0.28), 0 8px 24px rgba(15, 23, 42, 0.12)",
+              textAlign: "center",
+              lineHeight: 1.5,
+              color: "#0F172A",
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Close acknowledgement"
+              onClick={closeLoop1FeedbackSuccessPopup}
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                width: 36,
+                height: 36,
+                border: "none",
+                borderRadius: "50%",
+                background: "rgba(15, 23, 42, 0.06)",
+                color: "#475569",
+                fontSize: 25,
+                lineHeight: 1,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              ×
+            </button>
+
+            <div
+              aria-hidden="true"
+              style={{
+                width: 54,
+                height: 54,
+                margin: "0 auto 14px",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(22, 163, 74, 0.12)",
+                color: "#16A34A",
+                fontSize: 30,
+                fontWeight: 900,
+              }}
+            >
+              ✓
+            </div>
+
+            <div
+              style={{
+                marginBottom: 8,
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                color: "#16A34A",
+              }}
+            >
+              Feedback submitted
+            </div>
+
+            <div
+              style={{
+                fontSize: "clamp(15px, 3.8vw, 19px)",
+                fontWeight: 800,
+                color: "#0F172A",
+              }}
+            >
+              Feedback successfully submitted
+            </div>
+          </div>
+        </div>
+      )}
+
       {loop2ResolutionPopup && (
         <div
           role="status"
@@ -5365,24 +6519,38 @@ return (
 
 
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             // The daily-feedback launcher is idempotent while a feedback
                             // flow is already open. A repeated click must never reset the
                             // current step back to the understanding choices.
                             if (expandedCard === log.id) return;
                             if (loop1VerificationLogId === log.id && loop1VerificationStage !== "idle") return;
 
-                            setExpandedCard(log.id);
-
-                            setUnderstandingLevel("");
-
-                            setConceptsNotUnderstood([]);
-
-                            setAdditionalNote("");
-
-                            setSomethingElse(false);
-
-                            setSomethingElseText("");
+                            // Before switching away from an open feedback card, wait for
+                            // its newest server-draft write to finish. The event-boundary
+                            // snapshot is already in localStorage synchronously; this
+                            // awaited flush closes the remaining immediate-leave window
+                            // for in-app navigation and prevents the old card from being
+                            // unmounted while its authoritative server draft is still
+                            // unresolved.
+                            if (expandedCard && expandedCard !== log.id) {
+                              // V76: claim the old card's closing boundary BEFORE
+                              // awaiting the server flush. Any late effect/event
+                              // from the old card is now forbidden from writing
+                              // transient reset state over the durable draft.
+                              loop1FeedbackDraftClosingLogIdRef.current = expandedCard;
+                              const draftFlushed = await flushLoop1FeedbackDraft(expandedCard);
+                              if (!draftFlushed) {
+                                loop1FeedbackDraftClosingLogIdRef.current = null;
+                                setFeedbackSubmitError(
+                                  "Your unfinished feedback could not be saved to the server yet. Please keep this page open and try again."
+                                );
+                                return;
+                              }
+                              loop1FeedbackDraftUserTouchedLogIdsRef.current.delete(expandedCard);
+                            }
+                            loop1FeedbackDraftUserTouchedLogIdsRef.current.delete(log.id);
+                            openLoop1FeedbackCard(log.id);
 
                             // First guided step: after opening the feedback form,
                             // take the student directly to the understanding choices.
@@ -5409,7 +6577,60 @@ return (
 
                 {expandedCard === log.id && (
 
-                  <div className="dlf-form">
+                  <div
+                    className="dlf-form"
+                    onChangeCapture={(event) => {
+                      loop1FeedbackDraftUserTouchedLogIdsRef.current.add(log.id);
+                      const target = event.target as HTMLInputElement | HTMLTextAreaElement | null;
+                      if (!target) return;
+
+                      if (target instanceof HTMLInputElement && target.type === "radio") {
+                        const isCorrectedSecondSelection =
+                          loop1VerificationLogId === log.id &&
+                          loop1VerificationStage === "corrected";
+                        persistLoop1FeedbackDraftSnapshot(log.id, {
+                          understandingLevel: target.value,
+                          verificationSecondSelection: isCorrectedSecondSelection ? target.value : loop1VerificationSecondSelection,
+                        });
+                        return;
+                      }
+
+                      if (target instanceof HTMLInputElement && target.type === "checkbox") {
+                        const labelText = target.parentElement?.textContent?.trim() ?? "";
+                        if (labelText === "Something Else") {
+                          persistLoop1FeedbackDraftSnapshot(log.id, {
+                            somethingElse: target.checked,
+                            somethingElseText: target.checked ? somethingElseText : "",
+                          });
+                          return;
+                        }
+                        const concept = labelText;
+                        if (concept) {
+                          const nextConcepts = target.checked
+                            ? Array.from(new Set([...conceptsNotUnderstood, concept]))
+                            : conceptsNotUnderstood.filter((item) => item !== concept);
+                          persistLoop1FeedbackDraftSnapshot(log.id, { conceptsNotUnderstood: nextConcepts });
+                        }
+                        return;
+                      }
+
+                      if (target instanceof HTMLTextAreaElement) {
+                        const isSomethingElseText = target.placeholder === "Describe the concept or learning gap...";
+                        persistLoop1FeedbackDraftSnapshot(log.id, isSomethingElseText
+                          ? { somethingElseText: target.value }
+                          : { additionalNote: target.value });
+                      }
+                    }}
+                    onInputCapture={(event) => {
+                      loop1FeedbackDraftUserTouchedLogIdsRef.current.add(log.id);
+                      const target = event.target as HTMLTextAreaElement | null;
+                      if (!target || target.tagName !== "TEXTAREA") return;
+                      const isSomethingElseText = target.placeholder === "Describe the concept or learning gap...";
+                      persistLoop1FeedbackDraftSnapshot(log.id, isSomethingElseText
+                        ? { somethingElseText: target.value }
+                        : { additionalNote: target.value });
+                    }}
+                  >
 
 
                     <div className="dlf-form-head">
@@ -5503,7 +6724,7 @@ return (
                               checked={
                                 loop1VerificationLogId === log.id && loop1VerificationStage === "corrected"
                                   ? loop1VerificationSecondSelection === option
-                                  : understandingLevel === option
+                                  : getEffectiveLoop1UnderstandingLevel(log.id) === option
                               }
                               onChange={() => {
                                 // After verification YES, the second understanding selection is
@@ -5528,7 +6749,7 @@ return (
                                   loop1VerificationStage !== "wrong" &&
                                   loop1VerificationStage !== "corrected"
                                 ) return;
-                                setUnderstandingLevel(option);
+                                setLoop1UnderstandingLevelForLog(log.id, option);
 
                                 if (option === "I completely understood.") {
                                   setGuidedScrollTarget({ logId: log.id, section: "question" });
@@ -5572,7 +6793,7 @@ return (
                           onAllCorrect={(question, attempt) => handleMultiVerificationAllCorrect(log, attempt)}
                           onWrong={() => handleMultiWrong(log)}
                           wrongMessage={
-                            understandingLevel === "I completely understood."
+                            getEffectiveLoop1UnderstandingLevel(log.id) === "I completely understood."
                               ? "That answer is incorrect. choose your understanding again."
                               : "That answer is incorrect. Please select the difficult concepts."
                           }
@@ -5603,9 +6824,10 @@ return (
                       if (multiQuestions.length >= 2) {
                         const attempts = getMultiAttemptsForLog(log.id);
                         const hasStarted = Object.keys(attempts).length > 0;
+                        const effectiveUnderstandingLevel = getEffectiveLoop1UnderstandingLevel(log.id);
                         const shouldShow =
                           !(loop1VerificationLogId === log.id && (loop1VerificationStage === "corrected" || loop1VerificationStage === "no" || loop1VerificationStage === "question")) &&
-                          (understandingLevel === "I completely understood." || hasStarted);
+                          (effectiveUnderstandingLevel === "I completely understood." || hasStarted);
                         if (!shouldShow) return null;
                         return (
                           <MultiCrossQuestionFlow
@@ -5617,7 +6839,7 @@ return (
                             onAllCorrect={(question, attempt) => handleMultiAllCorrect(log, attempt)}
                             onWrong={() => handleMultiWrong(log)}
                             wrongMessage={
-                              understandingLevel === "I completely understood."
+                              effectiveUnderstandingLevel === "I completely understood."
                                 ? "That answer is incorrect. choose your understanding again."
                                 : "That answer is incorrect. Please select the difficult concepts."
                             }
@@ -5656,7 +6878,7 @@ return (
                                   setCrossQuestionAnswers((previous) => ({ ...previous, [log.id]: selected }));
                                   setCrossQuestionResults((previous) => ({ ...previous, [log.id]: correct }));
                                   if (correct) void submitFeedback(log, "I completely understood.", selected, true);
-                                  else { setUnderstandingLevel(""); setGuidedScrollTarget({ logId: log.id, section: "understanding" }); }
+                                  else { setLoop1UnderstandingLevelForLog(log.id, ""); setGuidedScrollTarget({ logId: log.id, section: "understanding" }); }
                                 } catch (error: any) {
                                   console.error("CROSS QUESTION ATTEMPT FAILED", error);
                                   setFeedbackSubmitError(String(error?.message ?? "Your answer could not be recorded. Refresh the page to check whether it was already attempted."));
@@ -5697,10 +6919,10 @@ return (
                         </div>
                       )}
 
-                    {understandingLevel !== "" &&
-                      understandingLevel !==
+                    {getEffectiveLoop1UnderstandingLevel(log.id) !== "" &&
+                      getEffectiveLoop1UnderstandingLevel(log.id) !==
                         "I completely understood." &&
-                      understandingLevel !== ABSENT_FEEDBACK_OPTION &&
+                      getEffectiveLoop1UnderstandingLevel(log.id) !== ABSENT_FEEDBACK_OPTION &&
                       (
                         loop1VerificationLogId !== log.id ||
                         loop1VerificationStage === "idle" ||
@@ -5870,21 +7092,40 @@ return (
 
                       <button
                         disabled={isSubmittingFeedbackId === log.id}
-                        onClick={() => {
+                        onClick={async () => {
 
                           if (isSubmittingFeedbackId === log.id) return;
 
+                          // V71: CANCEL closes the current feedback UI but does NOT
+                          // delete the unfinished Loop-1 Multi-Cross draft. The question
+                          // attempt ledger and the durable feedback draft are both resume
+                          // state. Deleting the draft here was the V70-only failure boundary:
+                          // after Q1 wrong/correct or Q2 resume, CANCEL erased the parent
+                          // state needed to restore verification/subtopic context on reopen.
+                          //
+                          // First wait for the newest server draft write to finish. This
+                          // preserves V70's server-backed persistence/retry guarantee before
+                          // the card is closed. On reopen, openLoop1FeedbackCard() performs
+                          // the V70 transient reset and hydration restores this log only.
+                          // V76: claim the closing boundary BEFORE flushing.
+                          // The flush persists the latest good draft; the guard
+                          // then prevents any background/event writer from saving
+                          // the transient reset state that follows CANCEL.
+                          loop1FeedbackDraftClosingLogIdRef.current = log.id;
+                          const draftFlushed = await flushLoop1FeedbackDraft(log.id);
+                          if (!draftFlushed) {
+                            loop1FeedbackDraftClosingLogIdRef.current = null;
+                            setFeedbackSubmitError(
+                              "Your unfinished feedback could not be saved to the server yet. Please keep this page open and try again."
+                            );
+                            return;
+                          }
+                          loop1FeedbackDraftUserTouchedLogIdsRef.current.delete(log.id);
+                          setFeedbackSubmitError(null);
+                          resetLoop1TransientFeedbackState();
+                          setLoop1FeedbackDraftHydratedLogId(null);
+                          clearLoop1UnderstandingResume(log.id);
                           setExpandedCard(null);
-
-                          setUnderstandingLevel("");
-
-                          setConceptsNotUnderstood([]);
-
-                          setAdditionalNote("");
-
-                          setSomethingElse(false);
-
-                          setSomethingElseText("");
 
                         }}
                         className="dlf-cancel-button"
