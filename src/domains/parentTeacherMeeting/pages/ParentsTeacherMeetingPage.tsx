@@ -3,6 +3,7 @@ import {
   getPTMAllTimeEvidence,
   getPTMDateRangeEvidence,
   getPTMPreparedDataset,
+  getSchoolPTMPreparedDataset,
 } from "../repository/PTMRepository";
 import {
   buildPTMReport,
@@ -69,7 +70,7 @@ function reportFileName(report: PTMReport) {
   return `Talent-Passport-PTM-${safeStudent || "Student"}.pdf`;
 }
 
-export default function ParentsTeacherMeetingPage() {
+export default function ParentsTeacherMeetingPage({ scope = "teacher" }: { scope?: "teacher" | "school" }) {
   const [dataset, setDataset] = useState<PTMPreparedDataset | null>(null);
   const [search, setSearch] = useState("");
   const [className, setClassName] = useState("");
@@ -95,7 +96,9 @@ export default function ParentsTeacherMeetingPage() {
     setLoading(true);
     setError("");
     try {
-      const prepared = await getPTMPreparedDataset();
+      const prepared = scope === "school"
+        ? await getSchoolPTMPreparedDataset()
+        : await getPTMPreparedDataset();
       setDataset(prepared);
     } catch (loadError: any) {
       console.error("PTM PRELOAD FAILED", loadError);
@@ -107,20 +110,23 @@ export default function ParentsTeacherMeetingPage() {
 
   const classOptions = useMemo(() => {
     if (!dataset) return [];
-    return Array.from(new Set(dataset.assignments.map((assignment) => assignment.className).filter(Boolean))).sort((a, b) => a.localeCompare(b));
-  }, [dataset]);
+    const source = scope === "school"
+      ? dataset.students.map((student) => student.className)
+      : dataset.assignments.map((assignment) => assignment.className);
+    return Array.from(new Set(source.filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  }, [dataset, scope]);
 
   const sectionOptions = useMemo(() => {
     if (!dataset) return [];
-    return Array.from(
-      new Set(
-        dataset.assignments
+    const source = scope === "school"
+      ? dataset.students
+          .filter((student) => !className || same(student.className, className))
+          .map((student) => student.sectionName)
+      : dataset.assignments
           .filter((assignment) => !className || same(assignment.className, className))
-          .map((assignment) => assignment.sectionName)
-          .filter(Boolean)
-      )
-    ).sort((a, b) => a.localeCompare(b));
-  }, [dataset, className]);
+          .map((assignment) => assignment.sectionName);
+    return Array.from(new Set(source.filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  }, [dataset, className, scope]);
 
   const visibleStudents = useMemo(() => {
     if (!dataset) return [];
@@ -508,10 +514,10 @@ export default function ParentsTeacherMeetingPage() {
       <div className="ptm-shell">
         <section className="ptm-hero">
           <div className="ptm-hero-copy">
-          <div className="ptm-eyebrow">Teacher Portal · Parent Discussion Intelligence</div>
+          <div className="ptm-eyebrow">{scope === "school" ? "School Portal · Parent Discussion Intelligence" : "Teacher Portal · Parent Discussion Intelligence"}</div>
           <h1 className="ptm-title">Parents Teacher Meeting</h1>
           <p className="ptm-copy">
-   Get detailed insights into each assigned student’s learning progress, subject performance, and pending doubts to facilitate a productive parent-teacher discussion.
+   Get detailed insights into each student’s learning progress, subject performance, and pending doubts to facilitate a productive parent-teacher discussion.
           </p>
           <div className="ptm-prepared">BACKGROUND INTELLIGENCE · SUBJECTS · FEEDBACK · TOPICS · PENDING DOUBTS</div>
           </div>
@@ -572,11 +578,11 @@ export default function ParentsTeacherMeetingPage() {
           <div className="ptm-status">
             <span>
               {loading
-                ? "Preparing teacher-assigned student intelligence…"
+                ? (scope === "school" ? "Preparing school-wide student intelligence…" : "Preparing teacher-assigned student intelligence…")
                 : loadingCustom
                     ? "Preparing the selected time period…"
                     : dataset
-                    ? `${dataset.students.length} assigned students · ${dataset.assignments.length} active subject assignments prepared`
+                    ? `${dataset.students.length} ${scope === "school" ? "students" : "assigned students"} · ${dataset.assignments.length} active subject assignments prepared`
                     : "No prepared data"}
             </span>
             {filtersTouched && <span>{visibleStudents.length} matching student{visibleStudents.length === 1 ? "" : "s"}</span>}
@@ -610,8 +616,8 @@ export default function ParentsTeacherMeetingPage() {
               </div>
             ) : (
               <div className="ptm-empty">
-                <div className="ptm-empty-title">No assigned student matches this selection</div>
-                <div className="ptm-empty-copy">Change the search, class or section. PTM only exposes students who belong to classrooms assigned to the authenticated teacher.</div>
+                <div className="ptm-empty-title">No student matches this selection</div>
+                <div className="ptm-empty-copy">Change the search, class or section.</div>
               </div>
             )}
           </section>

@@ -742,6 +742,24 @@ export default function DailyLectureFeedback() {
   // allowed to generate a second, empty draft write for that closing Daily Log.
   // This is deliberately scoped to the exact log being closed.
   const loop1FeedbackDraftClosingLogIdRef = useRef<string | null>(null);
+  // V81: the close boundary owns one exact durable envelope. Advancing the
+  // generation must not turn the close exception into a blanket permission for
+  // every queued envelope for the same Daily Log. The envelope captured at the
+  // instant of close is the only pre-close server write allowed to finish.
+  const loop1FeedbackDraftClosingEnvelopeRef = useRef<Map<string, Loop1FeedbackDraftEnvelope>>(new Map());
+
+  function captureLoop1FeedbackDraftClosingEnvelope(logId: string) {
+    const envelope = readLoop1FeedbackDraftEnvelope(logId);
+    if (envelope) {
+      loop1FeedbackDraftClosingEnvelopeRef.current.set(logId, envelope);
+    } else {
+      loop1FeedbackDraftClosingEnvelopeRef.current.delete(logId);
+    }
+  }
+
+  function clearLoop1FeedbackDraftClosingEnvelope(logId: string) {
+    loop1FeedbackDraftClosingEnvelopeRef.current.delete(logId);
+  }
 
   // V77: every open/close cycle gets a monotonically increasing ownership
   // generation. The generation is captured by React effects from the render
@@ -782,7 +800,22 @@ export default function DailyLectureFeedback() {
     // The local durable-envelope comparison below remains mandatory in both
     // cases, so an older queued envelope cannot overwrite a newer snapshot.
     const isCloseFlushForThisLog = loop1FeedbackDraftClosingLogIdRef.current === logId;
-    if (!isCloseFlushForThisLog) {
+    if (isCloseFlushForThisLog) {
+      // V81: close execution is no longer a blanket same-log exception. Only
+      // the exact durable envelope captured when close began may cross the
+      // generation boundary. Any later/older queued envelope is stale work.
+      const closingEnvelope = loop1FeedbackDraftClosingEnvelopeRef.current.get(logId);
+      if (closingEnvelope) {
+        if (closingEnvelope.revision !== envelope.revision) return false;
+        if (closingEnvelope.clientId !== envelope.clientId) return false;
+        if (closingEnvelope.updatedAt !== envelope.updatedAt) return false;
+      } else {
+        // If localStorage was unavailable at the close boundary, retain the
+        // existing server-backed generation/authority safety instead of
+        // inventing an exact envelope identity.
+        if (generation !== loop1FeedbackDraftOwnershipGenerationRef.current) return false;
+      }
+    } else {
       if (generation !== loop1FeedbackDraftOwnershipGenerationRef.current) return false;
       if (expandedCard !== logId) return false;
     }
@@ -967,13 +1000,43 @@ export default function DailyLectureFeedback() {
           return 0;
         };
         const versionComparison = compareDraftVersions(localVersion, serverVersion);
-        const serverWins = !!serverPayload && versionComparison < 0;
-        const localWins = !!localEnvelope && versionComparison >= 0;
+        const localNormalized = localEnvelope?.draft ?? null;
+        const serverNormalizedForOwnership = serverPayload ? normalizeLoop1FeedbackDraft(serverPayload) : null;
+        const localEmptyUnderstandingIsImplicit = Boolean(
+          localNormalized &&
+          localNormalized.understandingLevel === "" &&
+          !(
+            localNormalized.verificationStage === "corrected" &&
+            localNormalized.verificationLogId === expandedCard &&
+            localNormalized.verificationAnswer !== null &&
+            localNormalized.verificationCorrect === true
+          )
+        );
+        const serverHasDurableUnderstanding = Boolean(
+          serverNormalizedForOwnership &&
+          serverNormalizedForOwnership.understandingLevel !== ""
+        );
+        // V81: semantic ownership outranks a raw local revision when the
+        // local envelope is only an implicit empty understanding snapshot. A
+        // non-empty server draft is durable user intent and must not be
+        // overwritten merely because an older React render/local envelope has
+        // a higher revision. The sole intentional empty state is the explicit
+        // Verification YES -> corrected transition, identified above.
+        const preserveServerUnderstandingOverImplicitLocalEmpty =
+          localEmptyUnderstandingIsImplicit && serverHasDurableUnderstanding;
+        const serverWins =
+          !!serverPayload && (versionComparison < 0 || preserveServerUnderstandingOverImplicitLocalEmpty);
+        const localWins =
+          !!localEnvelope && versionComparison >= 0 && !preserveServerUnderstandingOverImplicitLocalEmpty;
 
         if (serverWins) {
-          const serverNormalized = normalizeLoop1FeedbackDraft(serverPayload);
+          const serverNormalized = serverNormalizedForOwnership;
           if (serverNormalized) {
             draft = serverNormalized;
+            // V81: establish ownership BEFORE any subsequent hydration work.
+            // This prevents a later generic writer from seeing a null authority
+            // while this server-selected draft is being restored.
+            claimLoop1UnderstandingDraftAuthority(expandedCard, draft.understandingLevel);
             writeLoop1FeedbackDraftEnvelope(expandedCard, {
               draft: serverNormalized,
               revision: serverRevision,
@@ -987,6 +1050,11 @@ export default function DailyLectureFeedback() {
           }
         } else if (localWins && localEnvelope) {
           draft = localEnvelope.draft;
+          // V81: hydration ownership is established synchronously BEFORE the
+          // local-wins reconciliation envelope is admitted to the server queue.
+          // This closes the exact V80 hole where authority was still null while
+          // an empty local envelope could enter the RPC chain.
+          claimLoop1UnderstandingDraftAuthority(expandedCard, draft.understandingLevel);
           const localMeta = {
             ...localEnvelope.draft,
             _tp_loop1_draft_meta: {
@@ -1031,9 +1099,12 @@ export default function DailyLectureFeedback() {
             loop1FeedbackDraftUnsyncedLogs.add(expandedCard);
           }
         } else if (!localEnvelope && serverPayload) {
-          const serverNormalized = normalizeLoop1FeedbackDraft(serverPayload);
+          const serverNormalized = serverNormalizedForOwnership;
           if (serverNormalized) {
             draft = serverNormalized;
+            // V81: establish the selected server draft as the current owner
+            // before React state restoration can trigger a background writer.
+            claimLoop1UnderstandingDraftAuthority(expandedCard, draft.understandingLevel);
             writeLoop1FeedbackDraftEnvelope(expandedCard, {
               draft: serverNormalized,
               revision: serverRevision,
@@ -1054,6 +1125,10 @@ export default function DailyLectureFeedback() {
         loop1FeedbackDraftUserTouchedLogIdsRef.current.has(expandedCard)
       ) return;
       if (draft) {
+      // V81: every hydration outcome owns its selected understanding before
+      // any later recovery/effect path can write the draft. This is intentionally
+      // idempotent with the branch-level claims above.
+      claimLoop1UnderstandingDraftAuthority(expandedCard, draft.understandingLevel);
       // V68: if a persisted wrong-terminal draft predates the explicit origin
       // marker, derive that marker from the persisted Complete selection.
       if (draft.verificationStage === "wrong" && draft.understandingLevel === "I completely understood.") {
@@ -6768,25 +6843,28 @@ return (
                             // unmounted while its authoritative server draft is still
                             // unresolved.
                             if (expandedCard && expandedCard !== log.id) {
-                              // V77: advance ownership BEFORE claiming the V76
-                              // closing boundary. Every effect from the old render
-                              // is now stale even if React runs it after this
-                              // handler yields to the server flush.
-                              advanceLoop1FeedbackDraftOwnershipGeneration();
-                              // V76: claim the old card's closing boundary BEFORE
-                              // awaiting the server flush. Any late effect/event
-                              // from the old card is now forbidden from writing
-                              // transient reset state over the durable draft.
+                              // V81: capture the exact durable envelope BEFORE
+                              // advancing ownership. Only this envelope may cross
+                              // the close-generation boundary during the flush.
                               loop1FeedbackDraftClosingLogIdRef.current = expandedCard;
+                              captureLoop1FeedbackDraftClosingEnvelope(expandedCard);
+                              // V77: advance ownership after the exact close
+                              // envelope has been captured. Every effect from the
+                              // old render is now stale even if React runs it after
+                              // this handler yields to the server flush.
+                              advanceLoop1FeedbackDraftOwnershipGeneration();
                               const draftFlushed = await flushLoop1FeedbackDraft(expandedCard);
                               if (!draftFlushed) {
                                 loop1FeedbackDraftClosingLogIdRef.current = null;
+                                clearLoop1FeedbackDraftClosingEnvelope(expandedCard);
                                 setFeedbackSubmitError(
                                   "Your unfinished feedback could not be saved to the server yet. Please keep this page open and try again."
                                 );
                                 return;
                               }
                               loop1FeedbackDraftUserTouchedLogIdsRef.current.delete(expandedCard);
+                              clearLoop1FeedbackDraftClosingEnvelope(expandedCard);
+                              loop1FeedbackDraftClosingLogIdRef.current = null;
                             }
                             loop1FeedbackDraftUserTouchedLogIdsRef.current.delete(log.id);
                             openLoop1FeedbackCard(log.id);
@@ -7346,24 +7424,26 @@ return (
                           // preserves V70's server-backed persistence/retry guarantee before
                           // the card is closed. On reopen, openLoop1FeedbackCard() performs
                           // the V70 transient reset and hydration restores this log only.
-                          // V77: advance ownership BEFORE flushing. The old
-                          // render is permanently stale; reopening the same card
-                          // will receive a new generation.
-                          advanceLoop1FeedbackDraftOwnershipGeneration();
-                          // V76: claim the closing boundary BEFORE flushing.
-                          // The flush persists the latest good draft; the guard
-                          // then prevents any background/event writer from saving
-                          // the transient reset state that follows CANCEL.
+                          // V81: capture the exact durable envelope BEFORE
+                          // advancing ownership. Only this envelope may cross
+                          // the close-generation boundary during the flush.
                           loop1FeedbackDraftClosingLogIdRef.current = log.id;
+                          captureLoop1FeedbackDraftClosingEnvelope(log.id);
+                          // V77: the old render is permanently stale; reopening
+                          // the same card will receive a new generation.
+                          advanceLoop1FeedbackDraftOwnershipGeneration();
                           const draftFlushed = await flushLoop1FeedbackDraft(log.id);
                           if (!draftFlushed) {
                             loop1FeedbackDraftClosingLogIdRef.current = null;
+                            clearLoop1FeedbackDraftClosingEnvelope(log.id);
                             setFeedbackSubmitError(
                               "Your unfinished feedback could not be saved to the server yet. Please keep this page open and try again."
                             );
                             return;
                           }
                           loop1FeedbackDraftUserTouchedLogIdsRef.current.delete(log.id);
+                          clearLoop1FeedbackDraftClosingEnvelope(log.id);
+                          loop1FeedbackDraftClosingLogIdRef.current = null;
                           setFeedbackSubmitError(null);
                           resetLoop1TransientFeedbackState();
                           clearLoop1UnderstandingDraftAuthority(log.id);

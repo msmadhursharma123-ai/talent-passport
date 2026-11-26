@@ -1,5 +1,5 @@
 import { getSupabaseClient } from "../../../supabaseClient";
-import { getCurrentTeacher } from "../../../services/identityService";
+import { getCurrentSchool, getCurrentTeacher } from "../../../services/identityService";
 import { getCanonicalPTMExamPreparationRows } from "../../examPreparationIntelligence/canonical/ExamPreparationCanonicalService";
 import type { CanonicalExamPreparationRow } from "../../examPreparationIntelligence/canonical/ExamPreparationTypes";
 import {
@@ -514,7 +514,9 @@ export async function getPTMPreparedDataset(): Promise<PTMPreparedDataset> {
 
   const { ledger: doubtLedger, currentDoubts: pendingDoubts, liveRows } = doubtEvidence;
 
-  const assignmentMap = new Map(assignments.map((assignment) => [assignment.id, assignment]));
+  const assignmentMap = new Map<string, PTMAssignment>(
+    assignments.map((assignment): [string, PTMAssignment] => [assignment.id, assignment])
+  );
   const logs = rawLogs.map((row) => mapLog(row, assignmentMap));
   const rawFeedback = await queryFeedback(logs.map((log) => log.id));
 
@@ -528,6 +530,116 @@ export async function getPTMPreparedDataset(): Promise<PTMPreparedDataset> {
     teacherName: teacher.teacherName ?? "Teacher",
     schoolUuid: teacher.schoolUuid,
     schoolName: teacher.schoolName ?? "",
+    assignments,
+    students,
+    logs,
+    feedback: effectiveFeedback.map(mapFeedback),
+    pendingDoubts,
+    doubtLedger,
+  };
+}
+
+async function loadAllSchoolStudents(
+  schoolUuid: string,
+  schoolName: string
+): Promise<PTMStudent[]> {
+  const supabase = getSupabaseClient();
+  if (!supabase || !schoolUuid) return [];
+
+  const { data, error } = await (supabase as any)
+    .from("students_master")
+    .select(
+      "student_uuid,student_name,student_id,student_email,school_uuid,school_name,class_name,section_name"
+    )
+    .eq("school_uuid", schoolUuid);
+
+  if (error) throw error;
+
+  let rows = data ?? [];
+  if (rows.length === 0 && schoolName) {
+    const fallback = await (supabase as any)
+      .from("students_master")
+      .select(
+        "student_uuid,student_name,student_id,student_email,school_uuid,school_name,class_name,section_name"
+      )
+      .eq("school_name", schoolName);
+    if (fallback.error) throw fallback.error;
+    rows = fallback.data ?? [];
+  }
+
+  return rows
+    .map((row: any) => mapStudent(row, schoolName))
+    .filter((student: PTMStudent) => student.schoolUuid === schoolUuid);
+}
+
+export async function getSchoolPTMPreparedDataset(): Promise<PTMPreparedDataset> {
+  const school = getCurrentSchool();
+  if (!school?.schoolUuid) throw new Error("School identity is not available.");
+
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  /*
+   * SCHOOL PTM SCOPE:
+   * The authenticated School Portal identity is the only school boundary.
+   * Unlike the teacher PTM loader, there is intentionally no teacher filter.
+   * The school administrator must see every active classroom/subject
+   * assignment and every student belonging to this school.
+   */
+  const { data: assignmentRows, error: assignmentError } = await (supabase as any)
+    .from("teacher_classroom_assignments")
+    .select(
+      "id,teacher_uuid,school_uuid,class_name,section_name,subject_name,is_active"
+    )
+    .eq("school_uuid", school.schoolUuid)
+    .eq("is_active", true);
+
+  if (assignmentError) throw assignmentError;
+
+  const assignments = (assignmentRows ?? [])
+    .map((row: any) => mapAssignment(row))
+    .filter((assignment: PTMAssignment) => assignment.id && assignment.isActive);
+
+  const assignmentIds: string[] = unique(assignments.map((assignment) => assignment.id));
+  const [students] = await Promise.all([
+    loadAllSchoolStudents(school.schoolUuid, school.schoolName ?? ""),
+  ]);
+
+  if (assignmentIds.length === 0) {
+    return {
+      teacherUuid: "",
+      teacherName: school.principalName ?? "School Admin",
+      schoolUuid: school.schoolUuid,
+      schoolName: school.schoolName ?? "",
+      assignments: [],
+      students,
+      logs: [],
+      feedback: [],
+      pendingDoubts: [],
+      doubtLedger: [],
+    };
+  }
+
+  const today = todayIndia();
+  const preloadStart = shiftDays(today, -PRELOAD_DAYS + 1);
+  const [rawLogs, doubtEvidence] = await Promise.all([
+    queryLogs(assignmentIds, preloadStart, today),
+    queryDoubtLedger(assignmentIds, preloadStart, today),
+  ]);
+
+  const { ledger: doubtLedger, currentDoubts: pendingDoubts, liveRows } = doubtEvidence;
+  const assignmentMap = new Map<string, PTMAssignment>(
+    assignments.map((assignment): [string, PTMAssignment] => [assignment.id, assignment])
+  );
+  const logs = rawLogs.map((row) => mapLog(row, assignmentMap));
+  const rawFeedback = await queryFeedback(logs.map((log) => log.id));
+  const effectiveFeedback = mergeFeedbackUnderstandingLevels(rawFeedback, liveRows ?? []);
+
+  return {
+    teacherUuid: "",
+    teacherName: school.principalName ?? "School Admin",
+    schoolUuid: school.schoolUuid,
+    schoolName: school.schoolName ?? "",
     assignments,
     students,
     logs,
