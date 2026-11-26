@@ -340,7 +340,7 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
     warnings.push("One or more teacher account creation timestamps are not exposed; those timelines begin at the earliest available teacher-assignment creation date (bounded by the selected academic-year start date).");
   }
   warnings.push("Total Logs Missed is intentionally unavailable: the source project has no teacher/class timetable or expected teaching-day schedule. Counting weekdays without a log would falsely label non-teaching days as missed.");
-  warnings.push("Student-derived metrics use the exact school/year ACTIVE enrollment roster when present. Only when that query succeeds with zero rows for the CURRENT ACTIVE year may the existing Learning Evidence Engine active-profile compatibility path be used for recent 30-day periods; mutable profiles are never projected onto older historical periods.");
+  warnings.push("Student-derived metrics use the exact school/year ACTIVE enrollment roster when present. When the selected year is the CURRENT ACTIVE year and the year-linked enrollment query succeeds with zero rows, Track Record uses the same school-scoped students_master compatibility roster as the Learning Evidence Engine across the selected academic-year periods; no fallback is used for partial/failed enrollment reads or non-current years.");
   const endDate = academicEnd;
 
   const logRows = await queryChunks("teacher_daily_logs", assignmentIds, "teacher_assignment_uuid",
@@ -529,14 +529,16 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
       }
       mutableRoster.forEach((members, key) => legacyRosterByClassroom.set(key, members));
       legacyRosterAvailable = true;
-      warnings.push("DATA-COMPATIBILITY LIMITATION: zero student_academic_enrollments rows exist for the CURRENT ACTIVE academic year. For recent reporting windows only, roster membership uses active school-scoped students_master profiles, matching the existing Learning Evidence Engine's zero-row compatibility path. These mutable profiles are not a verified historical roster; older periods and year-over-year comparisons remain unavailable until year-linked, effective-dated enrollments are populated.");
+      warnings.push("DATA-COMPATIBILITY LIMITATION: zero student_academic_enrollments rows exist for the CURRENT ACTIVE academic year. Track Record therefore uses the same active school-scoped students_master compatibility roster as the Learning Evidence Engine for all periods inside the selected current academic year. This preserves canonical calculation-source parity, but the mutable profile roster is not an effective-dated historical membership ledger; intra-year transfers/withdrawals cannot be reconstructed until year-linked enrollment history is populated.");
     } catch (error: any) {
       warnings.push(`Current-year legacy roster compatibility could not be used: ${error?.message ?? "roster validation failed"}. Student-derived metrics remain unavailable.`);
     }
   } else if (!enrollmentLookupFailed && enrollmentRows.length === 0) {
-    warnings.push("No student_academic_enrollments rows were returned for the selected academic year. Legacy students_master fallback is restricted to the CURRENT ACTIVE academic year; historical-year student-derived metrics remain unavailable.");
+    warnings.push(currentActiveAcademicYear
+      ? "No student_academic_enrollments rows were returned for the CURRENT ACTIVE academic year. Track Record may use the validated school-scoped students_master compatibility roster across all periods in this selected academic year; historical-year Track Record views remain fail-closed without year-linked enrollment data."
+      : "No student_academic_enrollments rows were returned for the selected non-current academic year. The legacy students_master compatibility roster is not used to reconstruct a historical academic year; student-derived metrics remain unavailable.");
   } else if (!enrollmentLookupFailed && enrollmentRows.length > 0) {
-    warnings.push("The enrollment source has no effective-from/effective-to dates. The exact year-linked ACTIVE roster may be used only for recent reporting windows in the CURRENT ACTIVE academic year; older periods remain unavailable rather than applying today's roster to historical membership.");
+    warnings.push("The enrollment source has no effective-from/effective-to dates. The exact year-linked ACTIVE roster may be reused across all periods in the selected academic year, but intra-year transfer or withdrawal changes cannot be reconstructed from the current schema.");
   }
 
   const verifiedRosterByYear = new Map<string, ReadonlyMap<string, ReadonlySet<string>> | null>();
@@ -579,11 +581,11 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
   });
 
   const now = isoDay(new Date().toISOString());
-  // Keep the compatibility snapshot within the same rolling 30-day evidence
-  // horizon used by the existing Learning Evidence Engine. A current roster
-  // snapshot is allowed only when every log contributing to a period falls
-  // inside that rolling window; older evidence is never re-rostered today.
-  const recentEvidenceStart = addDays(now, -29);
+  // Track Record is an academic-year history view. The roster source must be
+  // selected once from the authoritative year-linked roster, or from the
+  // explicitly gated zero-row CURRENT ACTIVE-year compatibility roster. The
+  // latter uses the same canonical roster source as Learning Evidence Engine;
+  // it is not used for failed/partial enrollment reads or older academic years.
   // Match the assignment population used by SchoolIntelligenceRepository
   // (.eq("is_active", true)) and TeachingJournalRepository's active-assignment
   // grouping. Historical/inactive assignment rows remain available to the
@@ -788,24 +790,35 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
       const canonicalClosureRate = calculateDoubtClosureRate(periodClosureDoubts);
       const canonicalClosureDetails = buildClosureDetails(periodClosureDoubts);
       const periodAcademicYearIds = [academicYearId];
-      const rosterSnapshotAllowedForPeriod =
-        currentActiveAcademicYear && periodLogs.length > 0 &&
-        periodLogs.every((log: any) => isoDay(log.log_date) >= recentEvidenceStart);
+      // A verified year-linked roster is authoritative for every period inside
+      // the selected academic year. When that table is genuinely empty for the
+      // CURRENT ACTIVE year, use the same validated students_master compatibility
+      // roster that Learning Evidence Engine uses in its zero-row migration path.
+      // Never use that compatibility source after a failed/partial enrollment
+      // read or for a non-current academic year.
+      const yearLinkedRosterAvailable = !enrollmentLookupFailed && enrollmentRows.length > 0;
+      const currentYearCompatibilityRosterAvailable =
+        !enrollmentLookupFailed &&
+        enrollmentRows.length === 0 &&
+        currentActiveAcademicYear &&
+        legacyRosterAvailable;
+      const rosterAvailableForPeriod = periodLogs.length > 0 &&
+        (yearLinkedRosterAvailable || currentYearCompatibilityRosterAvailable);
       let rosterIds: string[] = [];
-      if (periodAcademicYearIds.length === 1 && rosterSnapshotAllowedForPeriod) {
+      if (periodAcademicYearIds.length === 1 && rosterAvailableForPeriod) {
         const classroomKey = classroomRosterKey(group.className, group.sectionName);
         const yearRoster = getVerifiedYearRoster(periodAcademicYearIds[0]);
         const classRoster = yearRoster?.get(classroomKey);
-        const legacyClassRoster = enrollmentRows.length === 0 && legacyRosterAvailable
+        const legacyClassRoster = currentYearCompatibilityRosterAvailable
           ? legacyRosterByClassroom.get(classroomKey)
           : undefined;
         const selectedRoster = classRoster ?? legacyClassRoster;
         rosterIds = selectedRoster ? Array.from(selectedRoster) : [];
         if (!selectedRoster) {
-          warnings.push(`No usable school-scoped ACTIVE roster exists for ${group.className} ${group.sectionName} in the selected current academic year ${periodAcademicYearIds[0]}. Student-derived metrics remain unavailable for affected periods.`);
+          warnings.push(`No usable school-scoped ACTIVE roster exists for ${group.className} ${group.sectionName} in the selected academic year ${periodAcademicYearIds[0]}. Student-derived metrics remain unavailable for affected periods.`);
         }
-      } else if (!rosterSnapshotAllowedForPeriod) {
-        warnings.push(`Student-derived metrics for ${group.className} ${group.sectionName} ${period.label} are withheld because a current ACTIVE roster snapshot is not authoritative for this historical or out-of-window period. Effective-dated enrollment history is required.`);
+      } else if (!rosterAvailableForPeriod && periodLogs.length > 0) {
+        warnings.push(`Student-derived metrics for ${group.className} ${group.sectionName} ${period.label} are withheld because no authoritative school/year roster is available for this period. A verified year-linked roster is required, or—only for the CURRENT ACTIVE year with zero enrollment rows—the validated Learning Evidence Engine compatibility roster.`);
       }
       const rosterSet = new Set(rosterIds);
       const lectureMetrics = periodLogs.map((log: any) => calculateLearningLectureMetrics({
@@ -928,20 +941,21 @@ export async function loadTrackRecordData(audience: TrackRecordAudience): Promis
         subtopics: uniqueSubtopics.map(x => ({ label: x })),
         logsSubmitted: periodLogs.map((x: any) => ({ label: isoDay(x.log_date), value: clean(x.topic_name) })),
       };
-      // The existing Learning Evidence Engine uses the exact ACTIVE
-      // year-linked roster, or its explicitly documented zero-row legacy
-      // compatibility path, for a rolling 30-day current-year evidence window.
-      // Track Record follows that same bounded rule. Outside that window, a
-      // current snapshot cannot reconstruct historical transfers/withdrawals.
+      // Student-derived metrics are withheld only when the period has logs but
+      // no authoritative roster source was available. The canonical calculation
+      // itself is unchanged; this boundary only decides whether its required
+      // student denominator can be supplied safely.
       const rosterDependentMetricIds: TrackRecordMetricId[] = [
         "feedback", "health", "understanding", "partial", "didNotUnderstand",
         "doubtRate", "below50", "above80",
       ];
-      if (!rosterSnapshotAllowedForPeriod) {
+      if (!rosterAvailableForPeriod) {
         rosterDependentMetricIds.forEach(key => {
           metricValues[key] = {
             ...blankMetric(key), value: null, display: "—", unit: "unavailable",
-            note: "Historical student membership cannot be reconstructed from a current roster snapshot. This metric is withheld outside the recent current-year evidence window until effective-dated enrollment history is available.",
+            note: periodLogs.length === 0
+              ? "No teaching logs exist in this reporting period; learning performance is not measured as zero."
+              : "No authoritative school/year student roster was available for this reporting period. The metric is withheld rather than calculated with an unverified denominator.",
           };
           details[key] = [];
         });
