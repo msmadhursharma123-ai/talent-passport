@@ -279,12 +279,85 @@ function DoubtGroupRows({
   );
 }
 
+function ActiveDoubtTeacherTable({ detail }: { detail: SchoolOverviewCardDetailSnapshot }) {
+  return (
+    <section className="school-overview-detail-teacher-table-section">
+      <SectionHead title="Teacher-wise Active Doubts" count={`${detail.activeDoubtTeacherRows.length} teachers`} />
+      {!detail.activeDoubtTeacherRows.length ? (
+        <Empty text="No active doubts were recorded for the selected period." />
+      ) : (
+        <div className="school-overview-detail-teacher-table-wrap">
+          <table className="school-overview-detail-teacher-table">
+            <thead>
+              <tr>
+                <th>Teacher name</th>
+                <th>Total active doubts</th>
+                <th>Class · Section · Subject · Doubts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {detail.activeDoubtTeacherRows.map((row, index) => (
+                <tr key={`${row.teacherName}-${index}`}>
+                  <td data-label="Teacher name"><strong>{row.teacherName}</strong></td>
+                  <td data-label="Total active doubts"><b>{row.activeDoubtCount}</b></td>
+                  <td data-label="Class · Section · Subject · Doubts">
+                    <div className="school-overview-detail-teacher-breakdown">
+                      {row.breakdown.map(item => (
+                        <span key={`${item.className}|${item.sectionName}|${item.subjectName}`}>
+                          Class {item.className} · {item.sectionName} · {item.subjectName} · <b>{item.doubtCount}</b>
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function DoubtClosureTeacherTable({ detail }: { detail: SchoolOverviewCardDetailSnapshot }) {
+  return (
+    <section className="school-overview-detail-teacher-table-section">
+      <SectionHead title="Teacher-wise Doubt Closure" count={`${detail.doubtClosureTeacherRows.length} teachers`} />
+      {!detail.doubtClosureTeacherRows.length ? (
+        <Empty text="No doubts were recorded for the selected period." />
+      ) : (
+        <div className="school-overview-detail-teacher-table-wrap">
+          <table className="school-overview-detail-teacher-table school-overview-detail-closure-table">
+            <thead>
+              <tr>
+                <th>Teacher name</th>
+                <th>Total doubts resolved</th>
+                <th>Total doubts remaining</th>
+              </tr>
+            </thead>
+            <tbody>
+              {detail.doubtClosureTeacherRows.map((row, index) => (
+                <tr key={`${row.teacherName}-${index}`}>
+                  <td data-label="Teacher name"><strong>{row.teacherName}</strong></td>
+                  <td data-label="Total doubts resolved"><b>{row.resolvedDoubtCount}</b></td>
+                  <td data-label="Total doubts remaining"><b>{row.remainingDoubtCount}</b></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ActiveDoubtsDetail({ detail }: { detail: SchoolOverviewCardDetailSnapshot }) {
   if (detail.doubtsLoadFailed) {
     return <Empty text="Pending-doubt data could not be retrieved. Active Doubts is unavailable, not zero. Refresh and retry." />;
   }
   return (
     <>
+      <ActiveDoubtTeacherTable detail={detail} />
       <div className="school-overview-detail-summary-grid compact">
         <span>School active doubts <b>{detail.activeDoubts.length}</b></span>
         <span>Class / section groups <b>{detail.activeDoubtGroups.length}</b></span>
@@ -301,6 +374,7 @@ function DoubtClosureDetail({ detail }: { detail: SchoolOverviewCardDetailSnapsh
   const resolved = detail.doubtClosure.filter(row => row.resolved).length;
   return (
     <>
+      <DoubtClosureTeacherTable detail={detail} />
       <div className="school-overview-detail-summary-grid">
         <span>Total raised <b>{detail.doubtClosure.length}</b></span>
         <span>Resolved <b>{resolved}</b></span>
@@ -612,8 +686,25 @@ const CSS = `
 .school-overview-detail-doubt-subject-head>b{color:#0F172A;font-size:15px;font-weight:950;white-space:nowrap}
 .school-overview-detail-doubt-subject .school-overview-detail-list{margin-top:8px}
 
+.school-overview-detail-teacher-table-section{margin-bottom:12px;padding:12px;border:1px solid #CBD5E1;border-radius:14px;background:#F8FAFC}
+.school-overview-detail-teacher-table-wrap{width:100%;overflow-x:auto;border:1px solid #E2E8F0;border-radius:10px;background:#FFF}
+.school-overview-detail-teacher-table{width:100%;min-width:680px;border-collapse:collapse;table-layout:fixed}
+.school-overview-detail-teacher-table th,.school-overview-detail-teacher-table td{padding:9px 10px;border-bottom:1px solid #EEF2F7;text-align:left;vertical-align:top}
+.school-overview-detail-teacher-table th{color:#475569;background:#F8FAFC;font-size:9.5px;font-weight:950;letter-spacing:.15px}
+.school-overview-detail-teacher-table td{color:#334155;font-size:10px;font-weight:700;line-height:1.45}
+.school-overview-detail-teacher-table tr:last-child td{border-bottom:0}
+.school-overview-detail-teacher-table th:nth-child(1),.school-overview-detail-teacher-table td:nth-child(1){width:25%}
+.school-overview-detail-teacher-table th:nth-child(2),.school-overview-detail-teacher-table td:nth-child(2){width:19%;text-align:center}
+.school-overview-detail-teacher-table th:nth-child(3),.school-overview-detail-teacher-table td:nth-child(3){width:56%}
+.school-overview-detail-teacher-table td strong{color:#0F172A;font-weight:950}
+.school-overview-detail-teacher-table td b{color:#0F172A;font-weight:950}
+.school-overview-detail-teacher-breakdown{display:flex;flex-wrap:wrap;gap:5px}
+.school-overview-detail-teacher-breakdown span{display:inline-block;padding:4px 6px;border:1px solid #E2E8F0;border-radius:7px;background:#FCFCFB;color:#475569;font-size:9px;font-weight:750}
+.school-overview-detail-closure-table{min-width:500px}
+.school-overview-detail-closure-table th:nth-child(1),.school-overview-detail-closure-table td:nth-child(1){width:45%}
+.school-overview-detail-closure-table th:nth-child(2),.school-overview-detail-closure-table td:nth-child(2),.school-overview-detail-closure-table th:nth-child(3),.school-overview-detail-closure-table td:nth-child(3){width:27.5%;text-align:center}
 @media(max-width:1024px){.school-overview-detail-overlay{padding:10px}.school-overview-detail-modal{width:min(820px,100%);max-height:92vh;border-radius:18px}.school-overview-detail-head{padding:17px 19px 13px}.school-overview-detail-kicker{font-size:10px}.school-overview-detail-head h3{font-size:23px}.school-overview-detail-head p{font-size:11px}.school-overview-detail-body{padding:11px}.school-overview-detail-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.school-overview-detail-summary-grid.compact{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-mini-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.school-overview-detail-class-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-name-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-explanation p{font-size:10.5px}.school-overview-detail-card-head strong{font-size:11.5px}.school-overview-detail-card-head span{font-size:9.5px}.school-overview-detail-card-head>b{font-size:18px}.school-overview-detail-doubt-class-head strong{font-size:13px}.school-overview-detail-doubt-class-head>b{font-size:20px}.school-overview-detail-doubt-stats,.school-overview-detail-doubt-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-understanding-stats,.school-overview-detail-understanding-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-topic-log-head{display:block}.school-overview-detail-topic-log-head span{display:block;margin-top:3px}}
-@media(max-width:600px){.school-overview-detail-overlay{padding:5px}.school-overview-detail-modal{width:100%;max-width:none;max-height:95vh;border-radius:14px}.school-overview-detail-head{padding:12px 13px 10px}.school-overview-detail-kicker{font-size:8px;letter-spacing:.85px}.school-overview-detail-head h3{font-size:20px}.school-overview-detail-head p{font-size:9.5px}.school-overview-detail-close{width:32px;height:32px;font-size:21px}.school-overview-detail-body{padding:8px}.school-overview-detail-summary-grid,.school-overview-detail-summary-grid.compact,.school-overview-detail-mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-class-grid,.school-overview-detail-name-grid{grid-template-columns:1fr}.school-overview-detail-card-head strong{font-size:10.5px}.school-overview-detail-card-head span{font-size:9px}.school-overview-detail-card-head>b{font-size:16px}.school-overview-detail-student-main{display:block}.school-overview-detail-student-main strong{font-size:10.5px}.school-overview-detail-student-main span{display:block;margin-top:3px;font-size:9px}.school-overview-detail-student-metrics{margin-top:5px}.school-overview-detail-group-head{display:block}.school-overview-detail-group-head span{display:block;margin-top:4px}.school-overview-detail-explanation p{font-size:9.5px}.school-overview-detail-summary-grid span{font-size:9px}.school-overview-detail-summary-grid b{font-size:13px}.school-overview-detail-mini-grid span{font-size:9px}.school-overview-detail-doubt-topic{font-size:10px}.school-overview-detail-doubt-meta{font-size:9px}.school-overview-detail-doubt-class{padding:10px}.school-overview-detail-doubt-class-head strong{font-size:11px}.school-overview-detail-doubt-class-head span{font-size:8.5px}.school-overview-detail-doubt-class-head>b{font-size:18px}.school-overview-detail-doubt-stats,.school-overview-detail-doubt-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.school-overview-detail-understanding-class{padding:10px}.school-overview-detail-understanding-class-head strong,.school-overview-detail-topic-class-head strong{font-size:11px}.school-overview-detail-understanding-class-head span,.school-overview-detail-topic-class-head span{font-size:8.5px}.school-overview-detail-understanding-class-head>b,.school-overview-detail-topic-class-head>b{font-size:18px}.school-overview-detail-understanding-stats,.school-overview-detail-understanding-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.school-overview-detail-understanding-stats span{font-size:8.5px}.school-overview-detail-understanding-stats b{font-size:12px}.school-overview-detail-understanding-subject-list,.school-overview-detail-topic-subject-list{padding-left:6px}.school-overview-detail-understanding-subject,.school-overview-detail-topic-subject{padding:8px}.school-overview-detail-understanding-subject-head strong,.school-overview-detail-topic-subject-head strong{font-size:10.5px}.school-overview-detail-understanding-subject-head span,.school-overview-detail-topic-subject-head span{font-size:8.5px}.school-overview-detail-understanding-subject-head>b,.school-overview-detail-topic-subject-head>b{font-size:13px}.school-overview-detail-topic-class{padding:10px}.school-overview-detail-topic-log-head strong{font-size:10px}.school-overview-detail-topic-log-head span,.school-overview-detail-topic-log-teacher,.school-overview-detail-topic-log-subtopics{font-size:8.5px}.school-overview-detail-doubt-stats span{font-size:8.5px}.school-overview-detail-doubt-stats b{font-size:12px}.school-overview-detail-doubt-subject-list{padding-left:6px}.school-overview-detail-doubt-subject{padding:8px}.school-overview-detail-doubt-subject-head strong{font-size:10.5px}.school-overview-detail-doubt-subject-head span{font-size:8.5px}.school-overview-detail-doubt-subject-head>b{font-size:13px}}
+@media(max-width:600px){.school-overview-detail-teacher-table-section{padding:9px}.school-overview-detail-teacher-table-wrap{overflow:visible;border:0;background:transparent}.school-overview-detail-teacher-table,.school-overview-detail-closure-table{min-width:0;border:0}.school-overview-detail-teacher-table thead{display:none}.school-overview-detail-teacher-table,.school-overview-detail-teacher-table tbody,.school-overview-detail-teacher-table tr,.school-overview-detail-teacher-table td{display:block;width:100%}.school-overview-detail-teacher-table tr{margin-bottom:7px;border:1px solid #E2E8F0;border-radius:9px;background:#FFF;padding:7px}.school-overview-detail-teacher-table tr:last-child{margin-bottom:0}.school-overview-detail-teacher-table td{display:flex;justify-content:space-between;gap:10px;padding:6px 4px;border-bottom:1px solid #F1F5F9;text-align:right}.school-overview-detail-teacher-table td:last-child{border-bottom:0}.school-overview-detail-teacher-table td::before{content:attr(data-label);color:#64748B;font-size:8.5px;font-weight:850;text-align:left}.school-overview-detail-teacher-table td:nth-child(2),.school-overview-detail-closure-table td:nth-child(2),.school-overview-detail-closure-table td:nth-child(3){text-align:right}.school-overview-detail-teacher-breakdown{justify-content:flex-end;max-width:72%}.school-overview-detail-teacher-breakdown span{font-size:8.5px}.school-overview-detail-overlay{padding:5px}.school-overview-detail-modal{width:100%;max-width:none;max-height:95vh;border-radius:14px}.school-overview-detail-head{padding:12px 13px 10px}.school-overview-detail-kicker{font-size:8px;letter-spacing:.85px}.school-overview-detail-head h3{font-size:20px}.school-overview-detail-head p{font-size:9.5px}.school-overview-detail-close{width:32px;height:32px;font-size:21px}.school-overview-detail-body{padding:8px}.school-overview-detail-summary-grid,.school-overview-detail-summary-grid.compact,.school-overview-detail-mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.school-overview-detail-class-grid,.school-overview-detail-name-grid{grid-template-columns:1fr}.school-overview-detail-card-head strong{font-size:10.5px}.school-overview-detail-card-head span{font-size:9px}.school-overview-detail-card-head>b{font-size:16px}.school-overview-detail-student-main{display:block}.school-overview-detail-student-main strong{font-size:10.5px}.school-overview-detail-student-main span{display:block;margin-top:3px;font-size:9px}.school-overview-detail-student-metrics{margin-top:5px}.school-overview-detail-group-head{display:block}.school-overview-detail-group-head span{display:block;margin-top:4px}.school-overview-detail-explanation p{font-size:9.5px}.school-overview-detail-summary-grid span{font-size:9px}.school-overview-detail-summary-grid b{font-size:13px}.school-overview-detail-mini-grid span{font-size:9px}.school-overview-detail-doubt-topic{font-size:10px}.school-overview-detail-doubt-meta{font-size:9px}.school-overview-detail-doubt-class{padding:10px}.school-overview-detail-doubt-class-head strong{font-size:11px}.school-overview-detail-doubt-class-head span{font-size:8.5px}.school-overview-detail-doubt-class-head>b{font-size:18px}.school-overview-detail-doubt-stats,.school-overview-detail-doubt-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.school-overview-detail-understanding-class{padding:10px}.school-overview-detail-understanding-class-head strong,.school-overview-detail-topic-class-head strong{font-size:11px}.school-overview-detail-understanding-class-head span,.school-overview-detail-topic-class-head span{font-size:8.5px}.school-overview-detail-understanding-class-head>b,.school-overview-detail-topic-class-head>b{font-size:18px}.school-overview-detail-understanding-stats,.school-overview-detail-understanding-stats.subject{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.school-overview-detail-understanding-stats span{font-size:8.5px}.school-overview-detail-understanding-stats b{font-size:12px}.school-overview-detail-understanding-subject-list,.school-overview-detail-topic-subject-list{padding-left:6px}.school-overview-detail-understanding-subject,.school-overview-detail-topic-subject{padding:8px}.school-overview-detail-understanding-subject-head strong,.school-overview-detail-topic-subject-head strong{font-size:10.5px}.school-overview-detail-understanding-subject-head span,.school-overview-detail-topic-subject-head span{font-size:8.5px}.school-overview-detail-understanding-subject-head>b,.school-overview-detail-topic-subject-head>b{font-size:13px}.school-overview-detail-topic-class{padding:10px}.school-overview-detail-topic-log-head strong{font-size:10px}.school-overview-detail-topic-log-head span,.school-overview-detail-topic-log-teacher,.school-overview-detail-topic-log-subtopics{font-size:8.5px}.school-overview-detail-doubt-stats span{font-size:8.5px}.school-overview-detail-doubt-stats b{font-size:12px}.school-overview-detail-doubt-subject-list{padding-left:6px}.school-overview-detail-doubt-subject{padding:8px}.school-overview-detail-doubt-subject-head strong{font-size:10.5px}.school-overview-detail-doubt-subject-head span{font-size:8.5px}.school-overview-detail-doubt-subject-head>b{font-size:13px}}
 `;
 
 

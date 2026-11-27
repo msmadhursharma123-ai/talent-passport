@@ -83,6 +83,7 @@ export interface SchoolOverviewUnderstandingDetail {
 
 export interface SchoolOverviewDoubtDetailRow {
   id: string;
+  teacherUuid: string;
   studentUuid: string;
   studentName: string;
   teacherName: string;
@@ -95,6 +96,26 @@ export interface SchoolOverviewDoubtDetailRow {
   status: string;
   studentResponse: string;
   resolved: boolean;
+}
+
+
+export interface SchoolOverviewActiveDoubtTeacherBreakdown {
+  className: string;
+  sectionName: string;
+  subjectName: string;
+  doubtCount: number;
+}
+
+export interface SchoolOverviewActiveDoubtTeacherRow {
+  teacherName: string;
+  activeDoubtCount: number;
+  breakdown: SchoolOverviewActiveDoubtTeacherBreakdown[];
+}
+
+export interface SchoolOverviewDoubtClosureTeacherRow {
+  teacherName: string;
+  resolvedDoubtCount: number;
+  remainingDoubtCount: number;
 }
 
 export interface SchoolOverviewDoubtSubjectGroup {
@@ -221,8 +242,10 @@ export interface SchoolOverviewCardDetailSnapshot {
   period: SchoolOverviewCardDetailPeriod;
   understanding: SchoolOverviewUnderstandingDetail;
   activeDoubts: SchoolOverviewDoubtDetailRow[];
+  activeDoubtTeacherRows: SchoolOverviewActiveDoubtTeacherRow[];
   activeDoubtGroups: SchoolOverviewDoubtClassGroup[];
   doubtClosure: SchoolOverviewDoubtDetailRow[];
+  doubtClosureTeacherRows: SchoolOverviewDoubtClosureTeacherRow[];
   doubtClosureGroups: SchoolOverviewDoubtClassGroup[];
   responses: SchoolOverviewResponseDetail;
   topicsTaught: SchoolOverviewTopicDayGroup[];
