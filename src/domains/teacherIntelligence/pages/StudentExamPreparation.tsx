@@ -867,6 +867,22 @@ const styles = `
 }
 
 @media (max-width: 600px) {
+  .tp-exam-heading-card {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: start !important;
+  }
+
+  .tp-exam-header-actions {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    width: max-content;
+    max-width: 100%;
+  }
+
   .tp-exam-filter-bar {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 5px;
