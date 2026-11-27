@@ -153,10 +153,19 @@ export interface SchoolOverviewResponseSubjectGroup {
   students: SchoolOverviewResponseStudentRow[];
 }
 
+export interface SchoolOverviewResponseAssignmentDetail {
+  assignmentUuid: string;
+  className: string;
+  sectionName: string;
+  responseStudentObservations: number;
+  absentStudentObservations: number;
+}
+
 export interface SchoolOverviewResponseDetail {
   cardValue: number;
   submittedLearningResponses: number;
   absentFeedbackObservations: number;
+  assignmentDetails: SchoolOverviewResponseAssignmentDetail[];
   days: SchoolOverviewResponseDayGroup[];
 }
 
@@ -208,6 +217,15 @@ export interface SchoolOverviewTopicClassGroup {
   subjects: SchoolOverviewTopicSubjectGroup[];
 }
 
+export interface SchoolOverviewTeacherAssignmentDetail {
+  assignmentUuid: string;
+  expectedLogs: number;
+  submittedLogs: number;
+  missedLogs: number;
+  lectureCount: number;
+  healthPercentageSum: number;
+}
+
 export interface SchoolOverviewTeacherDetailRow {
   teacherUuid: string;
   teacherName: string;
@@ -217,6 +235,7 @@ export interface SchoolOverviewTeacherDetailRow {
     sectionName: string;
     subjectName: string;
   }>;
+  assignmentDetails: SchoolOverviewTeacherAssignmentDetail[];
   expectedLogs: number;
   submittedLogs: number;
   missedLogs: number;

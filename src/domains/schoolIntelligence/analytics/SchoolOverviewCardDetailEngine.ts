@@ -566,12 +566,28 @@ function buildResponses(raw: SchoolOverviewCardDetailRawData) {
   }));
 
   const activeAssignments = raw.assignments.filter(a => a.is_active !== false);
-  const lectureMetrics = activeAssignments.flatMap(assignment => assignmentMetrics(raw, assignment).metrics);
-  const aggregate = aggregateLearningLectureMetrics(lectureMetrics);
+  const assignmentDetails = activeAssignments.map(assignment => {
+    const aggregate = assignmentMetrics(raw, assignment).aggregate;
+    return {
+      assignmentUuid: String(assignment.id ?? ""),
+      className: clean(assignment.class_name),
+      sectionName: clean(assignment.section_name),
+      responseStudentObservations: aggregate.responseStudentObservations,
+      absentStudentObservations: aggregate.absentStudentObservations,
+    };
+  });
+  const aggregate = assignmentDetails.reduce(
+    (totals, assignment) => ({
+      responseStudentObservations: totals.responseStudentObservations + assignment.responseStudentObservations,
+      absentStudentObservations: totals.absentStudentObservations + assignment.absentStudentObservations,
+    }),
+    { responseStudentObservations: 0, absentStudentObservations: 0 },
+  );
   return {
     cardValue: aggregate.responseStudentObservations + aggregate.absentStudentObservations,
     submittedLearningResponses: aggregate.responseStudentObservations,
     absentFeedbackObservations: aggregate.absentStudentObservations,
+    assignmentDetails,
     days: dayGroups,
   };
 }
@@ -744,6 +760,22 @@ function buildTeachers(raw: SchoolOverviewCardDetailRawData, startDate: string, 
         sectionName: clean(a.section_name),
         subjectName: clean(a.subject_name, "Subject"),
       })).sort((a, b) => `${a.className}|${a.sectionName}|${a.subjectName}`.localeCompare(`${b.className}|${b.sectionName}|${b.subjectName}`)),
+      assignmentDetails: assignments.map(assignment => {
+        const assignmentUuid = String(assignment.id ?? "");
+        const assignmentLogs = raw.logs.filter(log => String(log.teacher_assignment_uuid ?? "") === assignmentUuid);
+        const assignmentSubmitted = new Set(
+          assignmentLogs.map(log => `${assignmentUuid}|${clean(log.log_date)}`),
+        ).size;
+        const assignmentAggregate = assignmentMetrics(raw, assignment).aggregate;
+        return {
+          assignmentUuid,
+          expectedLogs: days.length,
+          submittedLogs: assignmentSubmitted,
+          missedLogs: Math.max(0, days.length - assignmentSubmitted),
+          lectureCount: assignmentAggregate.lectureCount,
+          healthPercentageSum: assignmentAggregate.healthPercentageSum,
+        };
+      }),
       expectedLogs: assignments.length * days.length,
       submittedLogs: submitted,
       missedLogs: Math.max(0, assignments.length * days.length - submitted),
@@ -858,6 +890,204 @@ function buildStudents(raw: SchoolOverviewCardDetailRawData) {
   return Array.from(groups.values())
     .map(group => ({ ...group, students: group.students.sort((a, b) => a.studentName.localeCompare(b.studentName)) }))
     .sort((a, b) => `${a.className}|${a.sectionName}`.localeCompare(`${b.className}|${b.sectionName}`));
+}
+
+export const SCHOOL_OVERVIEW_ALL_CLASS_SECTION = "__ALL_CLASS_SECTIONS__";
+
+export interface SchoolOverviewClassSectionOption {
+  className: string;
+  sectionName: string;
+}
+
+export function schoolOverviewClassSectionKey(className: unknown, sectionName: unknown) {
+  return JSON.stringify([clean(className).toLowerCase(), clean(sectionName).toLowerCase()]);
+}
+
+function matchesSchoolOverviewClassSection(className: unknown, sectionName: unknown, selected: string) {
+  return schoolOverviewClassSectionKey(className, sectionName) === selected;
+}
+
+export function collectSchoolOverviewClassSections(
+  detail: SchoolOverviewCardDetailSnapshot,
+): SchoolOverviewClassSectionOption[] {
+  const map = new Map<string, SchoolOverviewClassSectionOption>();
+  const add = (className: unknown, sectionName: unknown) => {
+    const classValue = clean(className);
+    const sectionValue = clean(sectionName);
+    if (!classValue || !sectionValue) return;
+    const key = schoolOverviewClassSectionKey(classValue, sectionValue);
+    if (!map.has(key)) map.set(key, { className: classValue, sectionName: sectionValue });
+  };
+
+  detail.students.forEach(group => add(group.className, group.sectionName));
+  detail.classesReporting.forEach(group => add(group.className, group.sectionName));
+  detail.understanding.assignments.forEach(assignment => add(assignment.className, assignment.sectionName));
+  detail.understanding.classGroups.forEach(group => add(group.className, group.sectionName));
+  detail.activeDoubts.forEach(row => add(row.className, row.sectionName));
+  detail.activeDoubtGroups.forEach(group => add(group.className, group.sectionName));
+  detail.doubtClosure.forEach(row => add(row.className, row.sectionName));
+  detail.doubtClosureGroups.forEach(group => add(group.className, group.sectionName));
+  detail.responses.assignmentDetails.forEach(assignment => add(assignment.className, assignment.sectionName));
+  detail.responses.days.forEach(day => day.groups.forEach(group => add(group.className, group.sectionName)));
+  detail.topicClassGroups.forEach(group => add(group.className, group.sectionName));
+  detail.topicsTaught.forEach(day => day.groups.forEach(group => add(group.className, group.sectionName)));
+  detail.activeTeachers.forEach(teacher => teacher.assignments.forEach(assignment => add(assignment.className, assignment.sectionName)));
+
+  return Array.from(map.values()).sort((a, b) =>
+    `${a.className}|${a.sectionName}`.localeCompare(`${b.className}|${b.sectionName}`),
+  );
+}
+
+function rebuildActiveDoubtTeacherRows(rows: SchoolOverviewDoubtDetailRow[]) {
+  return buildActiveDoubtTeacherRows(rows);
+}
+
+function rebuildDoubtClosureTeacherRows(rows: SchoolOverviewDoubtDetailRow[]) {
+  return buildDoubtClosureTeacherRows(rows);
+}
+
+function rebuildTeacherRanks(teachers: SchoolOverviewTeacherDetailRow[]) {
+  const ranked = teachers
+    .filter(teacher => teacher.classHealthPercentage !== null)
+    .sort(
+      (a, b) =>
+        (b.classHealthPercentage! - a.classHealthPercentage!) ||
+        a.teacherName.localeCompare(b.teacherName) ||
+        a.teacherUuid.localeCompare(b.teacherUuid),
+    );
+  ranked.forEach((teacher, index) => {
+    teacher.rank = index + 1;
+  });
+  return teachers;
+}
+
+export function projectSchoolOverviewCardDetailByClassSection(
+  detail: SchoolOverviewCardDetailSnapshot,
+  selected: string,
+): SchoolOverviewCardDetailSnapshot {
+  if (selected === SCHOOL_OVERVIEW_ALL_CLASS_SECTION) return detail;
+
+  const matches = (className: unknown, sectionName: unknown) =>
+    matchesSchoolOverviewClassSection(className, sectionName, selected);
+
+  const activeDoubts = detail.activeDoubts.filter(row => matches(row.className, row.sectionName));
+  const doubtClosure = detail.doubtClosure.filter(row => matches(row.className, row.sectionName));
+  const activeDoubtGroups = buildDoubtGroups(activeDoubts);
+  const doubtClosureGroups = buildDoubtGroups(doubtClosure);
+
+  const understandingAssignments = detail.understanding.assignments.filter(
+    assignment => matches(assignment.className, assignment.sectionName),
+  );
+  const understandingGroups = detail.understanding.classGroups.filter(
+    group => matches(group.className, group.sectionName),
+  );
+  const understandingEligible = understandingGroups.reduce(
+    (sum, group) => sum + group.eligibleStudentObservations,
+    0,
+  );
+  const understandingComplete = understandingGroups.reduce(
+    (sum, group) => sum + group.completeStudentObservations,
+    0,
+  );
+  const understandingPartial = understandingGroups.reduce(
+    (sum, group) => sum + group.partialStudentObservations,
+    0,
+  );
+  const understandingDidntUnderstand = understandingGroups.reduce(
+    (sum, group) => sum + group.didntUnderstandStudentObservations,
+    0,
+  );
+
+  const responseAssignmentDetails = detail.responses.assignmentDetails.filter(
+    assignment => matches(assignment.className, assignment.sectionName),
+  );
+  const responseSubmitted = responseAssignmentDetails.reduce(
+    (sum, assignment) => sum + assignment.responseStudentObservations,
+    0,
+  );
+  const responseAbsent = responseAssignmentDetails.reduce(
+    (sum, assignment) => sum + assignment.absentStudentObservations,
+    0,
+  );
+  const responseDays = detail.responses.days
+    .map(day => ({
+      ...day,
+      groups: day.groups.filter(group => matches(group.className, group.sectionName)),
+    }))
+    .filter(day => day.groups.length > 0);
+
+  const topicClassGroups = detail.topicClassGroups.filter(
+    group => matches(group.className, group.sectionName),
+  );
+  const topicDays = detail.topicsTaught
+    .map(day => ({
+      ...day,
+      groups: day.groups.filter(group => matches(group.className, group.sectionName)),
+    }))
+    .filter(day => day.groups.length > 0);
+
+  const activeTeachers = detail.activeTeachers
+    .map(teacher => {
+      const assignments = teacher.assignments.filter(
+        assignment => matches(assignment.className, assignment.sectionName),
+      );
+      const assignmentIds = new Set(assignments.map(assignment => assignment.assignmentUuid));
+      const assignmentDetails = teacher.assignmentDetails.filter(
+        detailRow => assignmentIds.has(detailRow.assignmentUuid),
+      );
+      const expectedLogs = assignmentDetails.reduce((sum, row) => sum + row.expectedLogs, 0);
+      const submittedLogs = assignmentDetails.reduce((sum, row) => sum + row.submittedLogs, 0);
+      const missedLogs = assignmentDetails.reduce((sum, row) => sum + row.missedLogs, 0);
+      const lectureCount = assignmentDetails.reduce((sum, row) => sum + row.lectureCount, 0);
+      const healthPercentageSum = assignmentDetails.reduce((sum, row) => sum + row.healthPercentageSum, 0);
+      return {
+        ...teacher,
+        assignments,
+        assignmentDetails,
+        expectedLogs,
+        submittedLogs,
+        missedLogs,
+        classHealthPercentage: lectureCount ? Math.round(healthPercentageSum / lectureCount) : null,
+        rank: null,
+      };
+    })
+    .filter(teacher => teacher.assignments.length > 0);
+  rebuildTeacherRanks(activeTeachers);
+
+  return {
+    ...detail,
+    understanding: {
+      ...detail.understanding,
+      cardValue: understandingEligible ? Math.round((understandingComplete / understandingEligible) * 100) : 0,
+      classSectionCount: understandingGroups.length,
+      eligibleStudentObservations: understandingEligible,
+      completeStudentObservations: understandingComplete,
+      partialStudentObservations: understandingPartial,
+      didntUnderstandStudentObservations: understandingDidntUnderstand,
+      assignments: understandingAssignments,
+      classGroups: understandingGroups,
+    },
+    activeDoubts,
+    activeDoubtTeacherRows: rebuildActiveDoubtTeacherRows(activeDoubts),
+    activeDoubtGroups,
+    doubtClosure,
+    doubtClosureTeacherRows: rebuildDoubtClosureTeacherRows(doubtClosure),
+    doubtClosureGroups,
+    responses: {
+      ...detail.responses,
+      cardValue: responseSubmitted + responseAbsent,
+      submittedLearningResponses: responseSubmitted,
+      absentFeedbackObservations: responseAbsent,
+      assignmentDetails: responseAssignmentDetails,
+      days: responseDays,
+    },
+    topicsTaught: topicDays,
+    topicClassSectionCount: topicClassGroups.length,
+    topicClassGroups,
+    activeTeachers,
+    classesReporting: detail.classesReporting.filter(row => matches(row.className, row.sectionName)),
+    students: detail.students.filter(group => matches(group.className, group.sectionName)),
+  };
 }
 
 export function buildSchoolOverviewCardDetail(
