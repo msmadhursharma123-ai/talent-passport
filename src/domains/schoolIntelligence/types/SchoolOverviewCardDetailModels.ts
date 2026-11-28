@@ -112,10 +112,18 @@ export interface SchoolOverviewActiveDoubtTeacherRow {
   breakdown: SchoolOverviewActiveDoubtTeacherBreakdown[];
 }
 
+export interface SchoolOverviewDoubtClosureTeacherBreakdown {
+  className: string;
+  sectionName: string;
+  subjectName: string;
+  doubtCount: number;
+}
+
 export interface SchoolOverviewDoubtClosureTeacherRow {
   teacherName: string;
   resolvedDoubtCount: number;
   remainingDoubtCount: number;
+  remainingBreakdown: SchoolOverviewDoubtClosureTeacherBreakdown[];
 }
 
 export interface SchoolOverviewDoubtSubjectGroup {

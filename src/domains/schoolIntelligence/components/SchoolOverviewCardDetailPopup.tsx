@@ -338,18 +338,38 @@ function DoubtClosureTeacherTable({ detail }: { detail: SchoolOverviewCardDetail
             <thead>
               <tr>
                 <th>Teacher name</th>
+                <th>Total doubts asked</th>
                 <th>Total doubts resolved</th>
                 <th>Total doubts remaining</th>
+                <th>Doubt closure</th>
+                <th>Remaining · Class · Section · Subject · Doubts</th>
               </tr>
             </thead>
             <tbody>
-              {detail.doubtClosureTeacherRows.map((row, index) => (
-                <tr key={`${row.teacherName}-${index}`}>
-                  <td data-label="Teacher name"><strong>{row.teacherName}</strong></td>
-                  <td data-label="Total doubts resolved"><b>{row.resolvedDoubtCount}</b></td>
-                  <td data-label="Total doubts remaining"><b>{row.remainingDoubtCount}</b></td>
-                </tr>
-              ))}
+              {detail.doubtClosureTeacherRows.map((row, index) => {
+                const totalAsked = row.resolvedDoubtCount + row.remainingDoubtCount;
+                const closureRate = totalAsked ? Math.round((row.resolvedDoubtCount / totalAsked) * 100) : 0;
+                return (
+                  <tr key={`${row.teacherName}-${index}`}>
+                    <td data-label="Teacher name"><strong>{row.teacherName}</strong></td>
+                    <td data-label="Total doubts asked"><b>{totalAsked}</b></td>
+                    <td data-label="Total doubts resolved"><b>{row.resolvedDoubtCount}</b></td>
+                    <td data-label="Total doubts remaining"><b>{row.remainingDoubtCount}</b></td>
+                    <td data-label="Doubt closure"><b>{closureRate}%</b></td>
+                    <td data-label="Remaining · Class · Section · Subject · Doubts">
+                      <div className="school-overview-detail-teacher-breakdown">
+                        {row.remainingBreakdown.length ? row.remainingBreakdown.map(item => (
+                          <span key={JSON.stringify([item.className, item.sectionName, item.subjectName])}>
+                            Class {item.className} · {item.sectionName} · {item.subjectName} · <b>{item.doubtCount}</b>
+                          </span>
+                        )) : (
+                          <span>No remaining doubts</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -758,9 +778,10 @@ const CSS = `
 .school-overview-detail-teacher-table td b{color:#0F172A;font-weight:950}
 .school-overview-detail-teacher-breakdown{display:flex;flex-wrap:wrap;gap:5px}
 .school-overview-detail-teacher-breakdown span{display:inline-block;padding:4px 6px;border:1px solid #E2E8F0;border-radius:7px;background:#FCFCFB;color:#475569;font-size:9px;font-weight:750}
-.school-overview-detail-closure-table{min-width:500px}
-.school-overview-detail-closure-table th:nth-child(1),.school-overview-detail-closure-table td:nth-child(1){width:45%}
-.school-overview-detail-closure-table th:nth-child(2),.school-overview-detail-closure-table td:nth-child(2),.school-overview-detail-closure-table th:nth-child(3),.school-overview-detail-closure-table td:nth-child(3){width:27.5%;text-align:center}
+.school-overview-detail-closure-table{min-width:1040px}
+.school-overview-detail-closure-table th:nth-child(1),.school-overview-detail-closure-table td:nth-child(1){width:18%}
+.school-overview-detail-closure-table th:nth-child(2),.school-overview-detail-closure-table td:nth-child(2),.school-overview-detail-closure-table th:nth-child(3),.school-overview-detail-closure-table td:nth-child(3),.school-overview-detail-closure-table th:nth-child(4),.school-overview-detail-closure-table td:nth-child(4),.school-overview-detail-closure-table th:nth-child(5),.school-overview-detail-closure-table td:nth-child(5){width:12%;text-align:center}
+.school-overview-detail-closure-table th:nth-child(6),.school-overview-detail-closure-table td:nth-child(6){width:34%}
 .school-overview-detail-scope-filter{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 12px;margin-bottom:12px;border:1px solid #E2E8F0;border-radius:12px;background:#F8FAFC}
 .school-overview-detail-scope-filter>div{min-width:0}
 .school-overview-detail-scope-filter strong{display:block;color:#0F172A;font-size:11px;font-weight:950}
@@ -773,12 +794,12 @@ const CSS = `
 @media(max-width:1024px){
   .school-overview-detail-teacher-table-wrap{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
   .school-overview-detail-teacher-table{min-width:680px}
-  .school-overview-detail-closure-table{min-width:500px}
+  .school-overview-detail-closure-table{min-width:1040px}
 }
 @media(max-width:600px){
   .school-overview-detail-teacher-table-wrap{overflow-x:auto;overflow-y:hidden;border:1px solid #E2E8F0;border-radius:10px;background:#FFF}
   .school-overview-detail-teacher-table,.school-overview-detail-closure-table{display:table;width:100%;min-width:680px;border:0;border-collapse:collapse;table-layout:fixed}
-  .school-overview-detail-closure-table{min-width:500px}
+  .school-overview-detail-closure-table{min-width:1040px}
   .school-overview-detail-teacher-table thead{display:table-header-group}
   .school-overview-detail-teacher-table tbody{display:table-row-group}
   .school-overview-detail-teacher-table tr{display:table-row;margin:0;border:0;border-radius:0;background:transparent;padding:0}

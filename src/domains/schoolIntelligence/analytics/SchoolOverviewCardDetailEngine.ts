@@ -14,6 +14,7 @@ import type {
   SchoolOverviewDoubtClassGroup,
   SchoolOverviewDoubtDetailRow,
   SchoolOverviewDoubtSubjectGroup,
+  SchoolOverviewDoubtClosureTeacherBreakdown,
   SchoolOverviewResponseSubjectGroup,
   SchoolOverviewStudentContribution,
   SchoolOverviewTopicClassGroup,
@@ -842,25 +843,58 @@ function buildActiveDoubtTeacherRows(rows: SchoolOverviewDoubtDetailRow[]) {
 }
 
 function buildDoubtClosureTeacherRows(rows: SchoolOverviewDoubtDetailRow[]) {
-  const teachers = new Map<string, { teacherName: string; resolvedDoubtCount: number; remainingDoubtCount: number }>();
+  type TeacherBucket = {
+    teacherName: string;
+    resolvedDoubtCount: number;
+    remainingDoubtCount: number;
+    remainingBreakdown: Map<string, SchoolOverviewDoubtClosureTeacherBreakdown>;
+  };
+
+  const teachers = new Map<string, TeacherBucket>();
   for (const row of rows) {
     const teacherKey = row.teacherUuid || `name:${row.teacherName}`;
     const teacher = teachers.get(teacherKey) ?? {
       teacherName: row.teacherName,
       resolvedDoubtCount: 0,
       remainingDoubtCount: 0,
+      remainingBreakdown: new Map(),
     };
-    if (row.resolved) teacher.resolvedDoubtCount += 1;
-    else teacher.remainingDoubtCount += 1;
+    if (row.resolved) {
+      teacher.resolvedDoubtCount += 1;
+    } else {
+      teacher.remainingDoubtCount += 1;
+      const breakdownKey = JSON.stringify([row.className, row.sectionName, row.subjectName]);
+      const breakdown = teacher.remainingBreakdown.get(breakdownKey) ?? {
+        className: row.className,
+        sectionName: row.sectionName,
+        subjectName: row.subjectName,
+        doubtCount: 0,
+      };
+      breakdown.doubtCount += 1;
+      teacher.remainingBreakdown.set(breakdownKey, breakdown);
+    }
     teachers.set(teacherKey, teacher);
   }
 
-  return Array.from(teachers.values()).sort(
-    (a, b) =>
-      (b.resolvedDoubtCount + b.remainingDoubtCount) -
-        (a.resolvedDoubtCount + a.remainingDoubtCount) ||
-      a.teacherName.localeCompare(b.teacherName),
-  );
+  return Array.from(teachers.values())
+    .map(teacher => ({
+      teacherName: teacher.teacherName,
+      resolvedDoubtCount: teacher.resolvedDoubtCount,
+      remainingDoubtCount: teacher.remainingDoubtCount,
+      remainingBreakdown: Array.from(teacher.remainingBreakdown.values()).sort(
+        (a, b) =>
+          b.doubtCount - a.doubtCount ||
+          `${a.className}|${a.sectionName}|${a.subjectName}`.localeCompare(
+            `${b.className}|${b.sectionName}|${b.subjectName}`,
+          ),
+      ),
+    }))
+    .sort(
+      (a, b) =>
+        (b.resolvedDoubtCount + b.remainingDoubtCount) -
+          (a.resolvedDoubtCount + a.remainingDoubtCount) ||
+        a.teacherName.localeCompare(b.teacherName),
+    );
 }
 
 function buildClasses(raw: SchoolOverviewCardDetailRawData) {
