@@ -21,26 +21,6 @@ const TITLES: Record<SchoolOverviewCardKey, string> = {
   students: "Students Detail",
 };
 
-const EXPLANATIONS: Record<SchoolOverviewCardKey, string> = {
-  understanding:
-    "The card remains the existing canonical school-level understanding percentage: complete-understanding student observations divided by eligible student observations. The evidence is grouped first by class and section, then by subject and teacher, with the student-level observations behind each subject. Health contribution is shown separately so the 50% value of Partial understanding is never confused with the full-understanding percentage.",
-  activeDoubts:
-    "This card remains the existing unresolved-doubt count after the same canonical Live / Loop 2 resolution classifier. Only unresolved records are shown here, with the exact student, classroom, teacher, topic, subtopic and raised date.",
-  doubtClosure:
-    "The card remains the existing canonical closure calculation: resolved doubts divided by all raised doubts in the selected period. Every doubt record is listed below so resolved and unresolved evidence can be verified directly.",
-  responses:
-    "The card remains the existing response count. The detail shows actual submitted learning responses by day, then class, section and subject. Absent feedback is not presented as a submitted learning response; it remains part of the existing card calculation exactly as before.",
-  topicsTaught:
-    "The card remains the existing published Daily Log count. The evidence is grouped first by class and section, then by subject and teacher, with every published log showing its date, topic and recorded concepts/subtopics exactly from the Daily Log.",
-  activeTeachers:
-    "The card remains the existing active-teacher count. Each teacher is shown with every active class, section and subject assignment, expected Daily Logs, submitted logs, missed logs and a deterministic rank by the same canonical class-health calculation used by School Intelligence.",
-  classesReporting:
-    "The card remains the existing class/section reporting count: unique class and section pairs represented by published Daily Logs in the selected period. The list below is the evidence behind that count.",
-  students:
-    "The card remains the existing school student count. Students are grouped by their class and section using the school-scoped student roster already used by School Intelligence.",
-};
-
-
 function periodLabel(detail: SchoolOverviewCardDetailSnapshot) {
   return `${detail.period.startDate} → ${detail.period.endDate}`;
 }
@@ -768,7 +748,7 @@ const CSS = `
 .school-overview-detail-teacher-table-wrap{width:100%;overflow-x:auto;border:1px solid #E2E8F0;border-radius:10px;background:#FFF}
 .school-overview-detail-teacher-table{width:100%;min-width:680px;border-collapse:collapse;table-layout:fixed}
 .school-overview-detail-teacher-table th,.school-overview-detail-teacher-table td{padding:9px 10px;border-bottom:1px solid #EEF2F7;text-align:left;vertical-align:top}
-.school-overview-detail-teacher-table th{color:#475569;background:#F8FAFC;font-size:9.5px;font-weight:950;letter-spacing:.15px}
+.school-overview-detail-teacher-table th{color:#9A3413;background:#FFF7ED;font-size:9.5px;font-weight:950;letter-spacing:.15px}
 .school-overview-detail-teacher-table td{color:#334155;font-size:10px;font-weight:700;line-height:1.45}
 .school-overview-detail-teacher-table tr:last-child td{border-bottom:0}
 .school-overview-detail-teacher-table th:nth-child(1),.school-overview-detail-teacher-table td:nth-child(1){width:25%}
@@ -804,7 +784,7 @@ const CSS = `
   .school-overview-detail-teacher-table tbody{display:table-row-group}
   .school-overview-detail-teacher-table tr{display:table-row;margin:0;border:0;border-radius:0;background:transparent;padding:0}
   .school-overview-detail-teacher-table th,.school-overview-detail-teacher-table td{display:table-cell;padding:9px 10px;border-bottom:1px solid #EEF2F7;text-align:left;vertical-align:top}
-  .school-overview-detail-teacher-table th{color:#475569;background:#F8FAFC;font-size:9.5px;font-weight:950;letter-spacing:.15px}
+  .school-overview-detail-teacher-table th{color:#9A3413;background:#FFF7ED;font-size:9.5px;font-weight:950;letter-spacing:.15px}
   .school-overview-detail-teacher-table td{color:#334155;font-size:10px;font-weight:700;line-height:1.45}
   .school-overview-detail-teacher-table tr:last-child td{border-bottom:0}
   .school-overview-detail-teacher-table td::before{content:none}
@@ -892,10 +872,6 @@ export default function SchoolOverviewCardDetailPopup({
             <CloseButton onClose={onClose} />
           </header>
           <div className="school-overview-detail-body">
-            <div className="school-overview-detail-explanation">
-              <strong>How this number is calculated</strong>
-              <p>{EXPLANATIONS[card]}</p>
-            </div>
             {loading && <Empty text="Preparing the selected-period evidence…" />}
             {!loading && error && <Empty text={error} />}
             {!loading && !error && detail && (
